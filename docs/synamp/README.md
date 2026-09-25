@@ -1,7 +1,32 @@
 # SynAmp — Plan & Decisions
 
-> Status: research/architecture draft (v0.1). This is the source of truth for
-> scope decisions. Everything here is a proposal to react to, not a commitment.
+> Status: Phase 0 decisions accepted. This document is the source of truth for
+> scope decisions; the accepted calls live in [`DECISIONS.md`](./DECISIONS.md)
+> and the sections below are the reasoning behind them.
+
+## How this plan changed
+
+This project began as a fork of Webamp, a browser reimplementation of Winamp,
+on the assumption that the music app would be grown out of it. Surveying the
+ecosystem changed the shape of the plan:
+
+- **Webamp is only a player UI** — no server, no library, no scanning, no
+  metadata, no streaming, no transcoding. Forking it reaches a small fraction of
+  the goal, so "modify Webamp" was the wrong shape for the project.
+- **Subsonic/OpenSubsonic already solved "talk to my own music server"** — it is
+  a de-facto standard, with polished native clients already available for phone
+  and desktop (play:Sub, substreamer, Symfonium, Feishin, …) including
+  CarPlay/Android Auto. Native apps never needed to be written.
+- **Navidrome already solved the library core** — scan, tag, transcode and the
+  Subsonic API are years of undifferentiated work that did not need redoing.
+
+So the plan moved from *"modify Webamp"* to *"build a music system that keeps
+Webamp's parts as components"*: the classic skin engine as an optional Classic
+mode, and the Milkdrop/Butterchurn visualizer, reused rather than rebuilt. The
+upstream-only packages that came with the fork — demo site, documentation site,
+skin database, social-preview generator, modern-skin prototype, examples — have
+been removed from this repository. What remains from the fork is a small parts
+drawer: `packages/webamp`, `packages/ani-cursor`, `packages/winamp-eqf`.
 
 ## TL;DR — the one big finding
 
@@ -38,22 +63,20 @@ source of components (mainly the Milkdrop visualizer) rather than a foundation.
 | 9 | Online radio | **Radio Browser API** (radio-browser.info) — free, community, ~50k stations, JSON REST. This is exactly what Bose SoundTouch's directory was. | High |
 | 10 | Licensing caution | Reusing **Navidrome (GPL-3.0)** and **Essentia (AGPL-3.0)** has implications *if you distribute this to other people*. MIT/self-host-only is fine. | High |
 
-## Open questions for you
+## Hardware baseline (resolved)
 
-1. **Which Synology model do you have?** This determines CPU, RAM, and whether
-   hardware transcoding is available. It also tells us how big the analysis
-   offload has to be.
-2. **Rough size of the library** — you mentioned 4,000+ artist folders. Track
-   count and total TB matter for indexing and for how long the first AI pass runs.
-3. **What Mac do you have (Apple Silicon?)** — it may be a great place to run the
-   analysis pipeline and even to host the "brain" during development.
-4. **Upload bandwidth at home** — remote streaming of lossless files needs a lot;
-   this decides how aggressive transcoding must be.
-5. Do you want to start building after this, or keep iterating on the plan first?
+Every question this section used to ask is answered, and the answers are the
+baseline that each decision here was made against:
 
-**Hardware baseline resolved (2026-09-23):** DS1825+ / Ryzen V1500B (x86-64, no
-iGPU) · 274 GB / 45,739 files · M4 Pro MacBook Pro 48 GB as the brain machine ·
-1 Gbps symmetric fiber. See [`DECISIONS.md`](./DECISIONS.md#hardware-baseline-as-supplied-2026-09-23).
+| Role | Spec |
+|---|---|
+| NAS | Synology DS1825+, AMD Ryzen V1500B (x86-64, no iGPU), DSM 7.4.1-90080 |
+| Library | 274 GB / 45,739 files (growing) |
+| Brain machine | MacBook Pro, M4 Pro, 48 GB |
+| Network | 1 Gbps symmetric fiber |
+
+See [`DECISIONS.md`](./DECISIONS.md#hardware-baseline-as-supplied-2026-09-23)
+for what each of these implies for the design.
 
 ## Read next
 
@@ -65,7 +88,7 @@ iGPU) · 274 GB / 45,739 files · M4 Pro MacBook Pro 48 GB as the brain machine 
 - [`../roadmap/index.html`](../roadmap/index.html) — generated visual roadmap
   (built from `ROADMAP.md`; run `pnpm roadmap:build` to regenerate)
 
-## Sources consulted (this session)
+## Sources consulted
 
 Background reading that backs the recommendations above:
 

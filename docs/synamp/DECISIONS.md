@@ -73,18 +73,23 @@ for others is a stated future goal:
   expensive, so do not bake an AGPL dependency into the serving path.
 
 ### D7 — Repository layout *(accepted)*
-Product monorepo; the Webamp fork is kept intact as a source of parts (Classic
-mode + Butterchurn) rather than the foundation.
+Product monorepo; what survives from the Webamp fork is a small parts drawer —
+Classic-mode skin engine and Milkdrop/Butterchurn — not the foundation. The
+upstream-only packages (demo site, documentation site, skin database,
+social-preview generator, modern-skin prototype, examples) were removed on
+2026-09-24; the fork history remains in git.
 
 ```
-apps/web          SynAmp front-end (React + TS + Vite)
-apps/brain        SynAmp API (Node + TS) — playlists · AI · session state
-services/analyzer Analysis worker (Python) — runs on the Mac, not the NAS
-packages/*        Webamp fork — kept as-is (Classic mode + Milkdrop)
-tools/roadmap     Markdown → single-file HTML roadmap generator
-deploy/           docker-compose stack for the Synology
-docs/synamp/      This plan
-docs/roadmap/     Generated visual roadmap
+apps/web                SynAmp front-end (React + TS + Vite)
+apps/brain              SynAmp API (Node + TS) — playlists · AI · session state
+services/analyzer       Analysis worker (Python) — runs on the Mac, not the NAS
+packages/webamp         Retained fork part — Classic skin mode + Milkdrop
+packages/ani-cursor     Retained fork part — .ani cursors
+packages/winamp-eqf     Retained fork part — Winamp .eqf presets
+tools/roadmap           Markdown → single-file HTML roadmap generator
+deploy/                 docker-compose stack for the Synology
+docs/synamp/            This plan
+docs/roadmap/           Generated visual roadmap
 ```
 
 ## Open items (not blocking)

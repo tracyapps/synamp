@@ -28,14 +28,22 @@ The plan is therefore **not** "modify Webamp". It is:
 |---|---|---|
 | `packages/webamp` skin engine & window layout | **Keep as a mode, not the base** | Full Winamp skin support is a genuine crown jewel for nostalgia, but its layout is fixed-pixel, absolutely-positioned, and hostile to "use all my big screens". Use it for a "Classic" mode; don't build the new library UI on it. |
 | Milkdrop / Butterchurn visualizer (already integrated + patched here) | **Keep — high value** | Directly delivers the "visualizers for fun" wish with almost zero work. |
-| `.wsz` skin parsing / skin database | **Keep, optional** | Great for a skin gallery later; not on the critical path. |
+| `.wsz` skin parsing | **Keep** | Lives in `packages/webamp`; useful for a skin gallery later, but not on the critical path. |
+| Skin database *service* (skins.webamp.org, Twitter/Discord bots) | **Removed** | Upstream-only. The `.wsz` parsing above is what matters here; the service was deleted from this repo on 2026-09-24. |
 | Playlist component | **Reference only** | Winamp's playlist is a flat list. Your needs (folders, nesting, roll-ups, 100k items) need a new model. |
 | `winamp-eqf` (EQ presets), `ani-cursor` | **Keep** | Small, MIT, reusable. |
-| `webamp-modern` prototype | **Ignore** | Unfinished experiment. |
+| `webamp-modern` prototype | **Removed** | Unfinished experiment; deleted from this repo on 2026-09-24 along with the other upstream-only packages. |
 | Build system (pnpm + turbo + vitest + TS) | **Keep** | Modern and sane; reuse for the new front-end. |
 
 Net: this repo is a useful drawer of parts and a licensing-clean starting point,
 but the new system will be new code.
+
+The upstream-only packages that came with the fork — the demo site, the
+Docusaurus documentation site, the skin database, the social-preview generator,
+the `webamp-modern` prototype and the `examples/` — were removed from this
+repository on 2026-09-24. The fork history remains in git, and upstream is still
+a git remote, so nothing is lost. What is left is listed above: the skin engine,
+the visualizer, and two small MIT packages.
 
 ## 3. System overview
 

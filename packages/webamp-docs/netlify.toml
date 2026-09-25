@@ -1,6 +1,0 @@
-[build]
-command = "pnpm run build-turbo"
-publish = "build"
-
-[build.environment]
-NODE_VERSION = "22.11.0"

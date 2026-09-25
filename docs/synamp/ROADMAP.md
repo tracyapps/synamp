@@ -20,8 +20,9 @@ Legend: 🎯 goal · 📦 deliverables · ✅ done-when · ⚠️ risk
 📦
 - Decide **library core**: adopt Navidrome vs build a custom Node/TS core (§4 of ARCHITECTURE).
 - Decide **licence strategy** (§17) — it changes what analysis stack we may use.
-- Reset the repo: keep Webamp packages as a `legacy/` reference, scaffold the new
-  app packages (`web`, `brain`, `worker`) alongside.
+- Reset the repo: retain `packages/webamp`, `packages/ani-cursor` and
+  `packages/winamp-eqf` as a parts drawer, retire the rest of the fork, and
+  scaffold the new app packages (`web`, `brain`, `worker`) alongside.
 - Stand up the Docker Compose skeleton (edge, web, core, db).
 
 ✅

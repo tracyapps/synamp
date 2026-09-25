@@ -11,27 +11,10 @@
       "dependsOn": ["ani-cursor#build", "winamp-eqf#build", "webamp#type-check"],
       "outputs": ["built/**"]
     },
-    "webamp-demo#build": {
-      "dependsOn": ["ani-cursor#build", "winamp-eqf#build"],
-      "outputs": ["dist/**"]
-    },
-    "webamp-docs#build": {
-      "dependsOn": ["webamp#build"],
-      "outputs": ["build/**", ".docusaurus/**"]
-    },
     "ani-cursor#type-check": {},
     "winamp-eqf#type-check": {},
     "webamp#type-check": {
       "dependsOn": ["ani-cursor#build", "winamp-eqf#build"]
-    },
-    "webamp-docs#type-check": {
-      "dependsOn": ["webamp#build"]
-    },
-    "skin-database#type-check": {
-      "dependsOn": ["skin-database#grats"]
-    },
-    "skin-database#grats": {
-      "outputs": ["api/graphql/schema.graphql", "api/graphql/schema.ts"]
     },
     "ani-cursor#test": {
       "outputs": []
@@ -43,16 +26,6 @@
       "dependsOn": ["ani-cursor#build", "winamp-eqf#build"],
       "outputs": []
     },
-    "webamp-modern#build": {
-      "outputs": ["build/**"]
-    },
-    "webamp-modern#test": {
-      "outputs": []
-    },
-    "skin-database#test": {
-      "dependsOn": ["skin-database#grats"],
-      "outputs": []
-    },
     "webamp#integration-tests": {
       "dependsOn": ["ani-cursor#build", "winamp-eqf#build"],
       "outputs": []
@@ -61,10 +34,6 @@
       "dependsOn": ["ani-cursor#build", "winamp-eqf#build"]
     },
     "ani-cursor#lint": {},
-    "skin-database#lint": {},
-    "skin-museum-og#lint": {},
-    "webamp-docs#lint": {},
-    "webamp-modern#lint": {},
     "winamp-eqf#lint": {},
     "dev": {
       "cache": false,

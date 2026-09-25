@@ -1,122 +1,99 @@
-[![gzip size](https://img.badgesize.io/https:/unpkg.com/webamp/built/webamp.lazy-bundle.min.js?label=gzip&compression=gzip)](https://bundlephobia.com/result?p=webamp)
-[![Discord](https://img.shields.io/discord/434058775012311061.svg)](https://webamp.org/chat)
+# SynAmp
 
-# Webamp
+A self-hosted music system for one person's library: your files, your hardware,
+no streaming subscription. SynAmp runs on a Synology NAS and aims to add the
+things off-the-shelf music servers don't have — natural-language playlists,
+roll-up playlists, a DJ mode, and party tools — on top of a mature library core.
 
-A reimplementation of Winamp in HTML5 and JavaScript with full skin support.
-As seen on [TechCrunch], [Motherboard], [Gizmodo], Hacker News ([1], [2], [3], [4]), and [elsewhere](./packages/webamp/docs/press.md).
+## Origin and pivot
 
-[![Screenshot of Webamp](https://raw.githubusercontent.com/captbaritone/webamp/master/packages/webamp-demo/images/preview.png)](https://webamp.org)
+This project started as a **fork of [Webamp](https://github.com/captbaritone/webamp)**,
+a browser reimplementation of Winamp, on the assumption that the music app would
+be grown out of it. Surveying the ecosystem changed that plan:
 
-Check out this [Twitter thread](https://twitter.com/captbaritone/status/961274714013319168) for an illustrated list of features. Works in modern versions of Edge, Firefox, Safari and Chrome. IE is [not supported](http://caniuse.com/#feat=audio-api).
+- **Webamp is only a player UI.** It has no server, no library, no scanning, no
+  metadata, no streaming and no transcoding. Forking it reaches a small fraction
+  of the goal, so "modify Webamp" was the wrong shape for the project.
+- **Subsonic/OpenSubsonic already solved "talk to my own music server".** It is a
+  de-facto standard wire protocol, and polished native clients already exist for
+  phone and desktop — play:Sub, substreamer, Symfonium, Feishin and more,
+  including CarPlay/Android Auto. There was no reason to write native apps.
+- **Navidrome already solved the library core.** Scanning, tagging, transcoding
+  and the Subsonic API are years of undifferentiated work that did not need
+  redoing.
 
-## Read the docs
+So the plan pivoted from *"modify Webamp"* to *"build a music system that keeps
+Webamp's parts as components"*: the classic skin engine as an optional Classic
+mode, and the Milkdrop/Butterchurn visualizer, reused rather than rebuilt. The
+upstream-only packages that came with the fork — the demo site, the documentation
+site, the skin database, the social-preview generator, the modern-skin prototype
+and the usage examples — have been **removed from this repository**, because
+nothing here uses them and they only obscured what the project now is. The full
+fork history remains in git, and upstream is one remote away.
 
-**The [Webamp Documentation](https://docs.webamp.org) site contains detailed instructions showing how to add Webamp to your site and customize it to meet your needs.**
+The plan itself, including the decisions this pivot rests on, is in
+[`docs/synamp/`](docs/synamp/README.md).
 
-## About This Repository
+## What it is made of
 
-Webamp uses a [monorepo](https://en.wikipedia.org/wiki/Monorepo) approach, so in addition to the Webamp NPM module, this repository contains code for a few closely related projects and some pieces of Webamp which are published as standalone modules:
+| Part | Where | Role |
+|---|---|---|
+| Library core | `deploy/` (Navidrome, PostgreSQL + pgvector) | Scan, tag, transcode, stream; speaks Subsonic/OpenSubsonic to native clients |
+| SynAmp brain | `apps/brain` | Playlists, library intelligence, the authoritative playback session |
+| SynAmp web | `apps/web` | The new front-end: library, playlists, queue, later DJ and party views |
+| Analysis worker | `services/analyzer` | Off-NAS audio analysis (embeddings, BPM/key, mood). **Runs on the brain machine, not the NAS** |
+| Parts drawer | `packages/webamp`, `packages/ani-cursor`, `packages/winamp-eqf` | Retained fork pieces: classic skin engine, `.ani` cursors, Winamp `.eqf` parsing |
+| Tooling | `tools/roadmap` | Generates the visual roadmap from `docs/synamp/ROADMAP.md` |
 
-- [`packages/webamp`](https://github.com/captbaritone/webamp/tree/master/packages/webamp): The [Webamp NPM module](https://www.npmjs.com/package/webamp)
-- [`packages/webamp-demo`](https://github.com/captbaritone/webamp/tree/master/packages/webamp-demo): The demo site which lives at [webamp.org](https://webamp.org)
-- [`packages/webamp-docs`](https://github.com/captbaritone/webamp/tree/master/packages/webamp-docs): The documentation site for Webamp the NPM library which lives at [docs.webamp.org](https://docs.webamp.org)
-- [`packages/ani-cursor`](https://github.com/captbaritone/webamp/tree/master/packages/ani-cursor): An NPM module for rendering animiated `.ani` cursors as CSS animations
-- [`packages/skin-database`](https://github.com/captbaritone/webamp/tree/master/packages/skin-database): The server component of https://skins.webamp.org which also runs our [Twitter bot](https://twitter.com/winampskins), and a Discord bot for our community chat
-- [`packages/winamp-eqf`](https://github.com/captbaritone/webamp/tree/master/packages/winamp-eqf): An NPM module for parsing and constructing Winamp equalizer preset files (`.eqf`)
-- [`packages/webamp-modern`](https://github.com/captbaritone/webamp/tree/master/packages/webamp-modern): A prototype exploring rendering "modern" Winamp skins in the browser
-- [`examples`](https://github.com/captbaritone/webamp/tree/master/examples): A few examples showing how to use the NPM module
-
-## Community
-
-Join our community chat on Discord: <https://discord.gg/fBTDMqR>
-
-Related communites:
-
-- [Winamp Community Update Pack] - "New plug-ins to add additional features to Winamp as well as replacement plug-ins to provide better implementations of some of the plug-ins natively included with Winamp". ([Forum](https://getwacup.com/community/) / [Discord server](https://discord.gg/5pVTdbj))
-
-## In the Wild
-
-An incomplete list of websites using Webamp:
-
-- [Internet Archive](https://blog.archive.org/2018/10/02/dont-click-on-the-llama/) - The Internet Archive lets you preview winamp skins and listen to audio tracks using Webamp
-- [Winampify.io](https://winampify.io/) - An online Spotify client using Webamp
-- [Webamp Desktop](https://desktop.webamp.org/) - An Electron app version of Webamp
-- [98.js.org](https://98.js.org/) - A Windows 98 clone in JavaScript ([GitHub](https://github.com/1j01/98))
-- [winxp.now.sh](https://winxp.now.sh/) - A Windows XP clone in JavaScript with React ([GitHub](https://github.com/ShizukuIchi))
-- [Try Andy's Desk](https://desk.glitchy.website/) - A quirky Windows themed desktop experience.
-- [www.dkdomino.zone](https://www.dkdomino.zone/album.html) - Someone's personal music player
-- [Bamp](https://www.bamp.skin) - A web app for a tool that converts winamp skins to/from a format that streamlines skin design. ([GitHub](https://github.com/dp-mason/bamp))
-
-## Thanks
-
-- [Butterchurn](https://github.com/jberg/butterchurn), the amazing Milkdrop 2 WebGL implementation. Built and integrated into Webamp by: [jberg](https://github.com/jberg)
-- Research and feature prototyping: @PAEz
-- Beta feedback, catching many small UI inconsistencies: [LuigiHann](https://twitter.com/LuigiHann)
-- Beta feedback and insider answers to obscure Winamp questions: [Darren Owen](https://twitter.com/The_DoctorO)
-- Donating the `webamp` NPM module name: [Dave Eddy](http://daveeddy.com/)
-
-Thank you to [Justin Frankel](http://www.1014.org/) and everyone at Nullsoft
-for Winamp which inspired so many of us.
-
-## License
-
-While the Winamp name, interface, and, sample audio file are surely property of
-Nullsoft, the code within this project is released under the [MIT
-License](LICENSE.txt). That being said, if you do anything interesting with
-this code, please let me know. I'd love to see it.
+The NAS is a Synology DS1825+ (AMD Ryzen V1500B, x86-64, no GPU). Anything that
+needs a GPU runs on a separate "brain machine" instead.
 
 ## Development
 
-This repository uses [Turborepo](https://turbo.build/) for efficient monorepo management. Turborepo provides intelligent caching and parallel execution of tasks across all packages.
-
-### Quick Start
+Requires Node.js ≥ 22 and pnpm 9.
 
 ```bash
-# Install dependencies
 pnpm install
 
-# Build all packages (automatically handles dependencies)
-npx turbo build
-
-# Build library bundles for packages that need them
-npx turbo build-library
-
-# Run all tests
-npx turbo test
-
-# Lint and type-check all packages
-npx turbo lint type-check
-
-# Work on a specific package and its dependencies
-npx turbo dev --filter="webamp"
+pnpm brain:dev    # API on :3001
+pnpm web:dev      # UI on :5173 (Vite proxies /api and /health to the brain)
 ```
 
-### Package Dependencies
+The brain has no build step — Node strips the TypeScript types at runtime. The
+web app is type-checked and bundled with Vite.
 
-The monorepo dependency graph is automatically managed by Turborepo:
+```bash
+pnpm type-check        # brain, web, and the retained packages
+pnpm --filter @synamp/web build
+pnpm roadmap:build     # regenerate docs/roadmap/index.html from the roadmap markdown
+```
 
-- `ani-cursor` and `winamp-eqf` are standalone packages built with TypeScript
-- `webamp` depends on both `ani-cursor` and `winamp-eqf` for workspace linking
-- All packages are built in the correct topological order
-- Builds are cached and only rebuild what has changed
+## Deploying
 
-### Available Tasks
+The NAS stack is Docker Compose: Navidrome plus PostgreSQL always, and the
+brain/web/edge services behind an `app` profile. See
+[`deploy/README.md`](deploy/README.md) for the layout, the one-time DSM setup and
+the gotchas that only show up on Synology.
 
-- `build` - Main build output (Vite for demos, TypeScript compilation for libraries)
-- `build-library` - Library bundles for NPM publishing (only applies to `webamp`)
-- `test` - Run unit tests with Jest
-- `type-check` - TypeScript type checking without emitting files
-- `lint` - ESLint code quality checks
-- `dev` - Development server (for packages that support it)
+## Documentation
 
-For more details on individual packages, see their respective README files.
+- [`docs/synamp/README.md`](docs/synamp/README.md) — plan, TL;DR and the decision table
+- [`docs/synamp/DECISIONS.md`](docs/synamp/DECISIONS.md) — accepted decisions and the hardware baseline
+- [`docs/synamp/ARCHITECTURE.md`](docs/synamp/ARCHITECTURE.md) — full system design
+- [`docs/synamp/ROADMAP.md`](docs/synamp/ROADMAP.md) — phased plan
+- [`docs/synamp/STORAGE-LAYOUT.md`](docs/synamp/STORAGE-LAYOUT.md) — NAS share layout
+- [`docs/roadmap/index.html`](docs/roadmap/index.html) — generated visual roadmap
+- [`deploy/README.md`](deploy/README.md) — deploying and operating the NAS stack
 
-[techcrunch]: https://techcrunch.com/2018/02/09/whip-the-llamas-ass-with-this-javascript-winamp-emulator/
-[motherboard]: https://motherboard.vice.com/en_us/article/qvebbv/winamp-2-mp3-music-player-emulator
-[gizmodo]: https://gizmodo.com/winamp-2-has-been-immortalized-in-html5-for-your-pleasu-1655373653
-[1]: https://news.ycombinator.com/item?id=8565665
-[2]: https://news.ycombinator.com/item?id=15314629
-[3]: https://news.ycombinator.com/item?id=16333550
-[4]: https://news.ycombinator.com/item?id=17583997
-[winamp community update pack]: https://getwacup.com/
+## Lineage and licence
+
+The code in this repository is released under the [MIT License](LICENSE.txt). It
+is a fork of [captbaritone/webamp](https://github.com/captbaritone/webamp) —
+thank you to Justin Frankel and everyone at Nullsoft for Winamp, and to
+captbaritone for the Webamp reimplementation. The Winamp name, interface and
+sample audio file remain the property of Nullsoft.
+
+Personal self-hosting is unaffected by third-party licensing, but the stack does
+depend on **Navidrome (GPL-3.0)** and, for analysis, potentially **Essentia
+(AGPL-3.0)**. That matters if SynAmp is ever distributed to other people — see
+the licensing decision in [`docs/synamp/DECISIONS.md`](docs/synamp/DECISIONS.md).

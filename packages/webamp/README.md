@@ -1,17 +1,23 @@
 # Webamp NPM Module
 
+> **Retained vendored part of the SynAmp fork.** This package is kept as a parts
+> drawer — the classic skin engine and the Milkdrop/Butterchurn visualizer. It is
+> not published from this repository. The upstream-only pieces that used to sit
+> around it (demo site, documentation site, skin database, `webamp-modern`
+> prototype, `examples/`) were removed on 2026-09-24.
+
 ## Development
 
-The demo site in `packages/webamp-demo` imports the library source directly, so you can iterate on the library with live reloading:
+Work directly in `packages/webamp`:
 
-    cd packages/webamp-demo
-    pnpm start
-
-Any edits to library source files in `packages/webamp/js/` are immediately reflected in the browser — no rebuild needed.
-
-    # Run tests
     cd packages/webamp
-    pnpm test
+    pnpm test        # unit tests (vitest)
+    pnpm type-check  # tsc
+    pnpm run build   # build the library bundles into ./built
+
+There is no live-reloading demo site in this fork — the upstream
+`packages/webamp-demo` no longer exists here. Rebuild with `pnpm run build` to
+pick up changes to source files under `js/`.
 
 ## Building
 
@@ -33,23 +39,14 @@ To update snapshots run
 
 ## Cutting a Release
 
+Upstream publishes this package to npm; this fork does not. If that ever
+changes, the flow is:
+
 1. Update the version number in `package.json`
 2. Rename the "Next" title at the top of `CHANGELOG.md` to the new version number and ensure it is up to date
 3. Update the static `VERSION` property of the `Webamp` class in `webampLazy.tsx`
-4. Git commit
-5. `cd packages/webamp`
-6. `npm publish`
-7. Git tag the commit (e.g. `1.4.2` or `1.4.3-beta.3`)
-8. Push tag to GitHub `git push origin <TAG_NAME>`
-9. Update all the examples to use the new version:
-
-- `minimal/index.html`
-- `minimalMilkdrop/index.html`
-- `webpack/package.json`
-- `webpackLazyLoad/package.json`
-- https://codesandbox.io/s/y0xypox60z
-
-8. Commit and push
+4. `cd packages/webamp` and `npm publish`
+5. Git tag the commit (e.g. `1.4.2` or `1.4.3-beta.3`) and push the tag
 
 ## Reference
 
