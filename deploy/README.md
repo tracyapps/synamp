@@ -93,8 +93,10 @@ The worker writes results into the `db` service, which *does* run on the NAS.
 
 - Audio transcoding is cheap: the V1500B handles several simultaneous audio
   streams. Hardware acceleration is irrelevant (that is a video concern).
-- The `--profile app` services need the Dockerfiles in `apps/brain` and
-  `apps/web`. Until those exist, the base profile already gives you a working
-  library + Subsonic server.
+- The `--profile app` services build from the relative contexts `../apps/brain`
+  and `../apps/web`, so `deploy/` has to sit **inside the repo** (`<repo>/deploy`,
+  with `<repo>/apps/` present). Copying only `deploy/` to the NAS is not enough
+  for that profile. The base profile still gives you a working library +
+  Subsonic server on its own.
 - **Never bind-mount `DATA_DIR` from a network share.** Postgres needs real file
   locking; a network filesystem can corrupt it. Local disk or the NAS only.
