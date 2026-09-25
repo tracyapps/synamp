@@ -5,3 +5,11 @@ dist
 
 # Turborepo cache
 .turbo
+
+# macOS
+.DS_Store
+
+# Deployment secrets and app state — never commit either
+.env
+deploy/.env
+deploy/data/

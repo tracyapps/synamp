@@ -1,0 +1,28 @@
+# SynAmp edge.
+#
+# Phase 0 listens on plain :80 for LAN / Tailscale use. Add a real hostname here
+# (e.g. `music.example.com { ... }`) and Caddy will obtain a certificate
+# automatically. Do NOT expose :80 to the public internet without TLS.
+
+:80 {
+	encode zstd gzip
+
+	# The brain API (session, playlists, library intelligence).
+	handle /api/* {
+		reverse_proxy brain:3001
+	}
+	handle /health {
+		reverse_proxy brain:3001
+	}
+
+	# Subsonic endpoint on the library core, so existing native clients
+	# (play:Sub, substreamer, Symfonium, Feishin, …) can talk to SynAmp.
+	handle /rest/* {
+		reverse_proxy core:4533
+	}
+
+	# The SynAmp web app.
+	handle {
+		reverse_proxy web:80
+	}
+}

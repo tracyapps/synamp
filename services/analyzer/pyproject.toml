@@ -1,0 +1,24 @@
+[project]
+name = "synamp-analyzer"
+version = "0.0.0"
+description = "SynAmp offline analysis worker — runs on the brain machine, never on the NAS."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+# Analysis models are intentionally NOT declared yet — see docs/synamp/DECISIONS.md
+# (D6, licensing). The plan is to prefer permissively-licensed models and keep
+# AGPL components out of any network-offered serving path. Candidates:
+#   audio embeddings .... CLAP-class
+#   features ............ Essentia (AGPL-3.0 — caution) / permissive alternatives
+#   lyrics .............. LRCLIB / Genius + embeddings
+
+[project.scripts]
+synamp-analyze = "synamp_analyzer.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

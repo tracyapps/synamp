@@ -1,0 +1,106 @@
+# SynAmp — deployment stack for the Synology NAS (DSM 7 Container Manager)
+#
+# Layout (see docs/synamp/STORAGE-LAYOUT.md):
+#   music library  ->  /volume1/music/library   (MUSIC_PATH, mounted READ-ONLY)
+#   app + state    ->  /volume1/docker/synamp   (DATA_DIR; this is what you back up)
+#
+# Host roles:
+#   db / core / brain / web / edge  ->  run on the NAS
+#   the analysis worker             ->  does NOT run here; it runs on the brain
+#                                       machine (M4 Pro). See deploy/README.md.
+#
+#   docker compose --env-file .env up -d                  # library only (works today)
+#   docker compose --env-file .env --profile app up -d    # + brain, web, edge
+
+name: synamp
+
+services:
+  # --- brain database: playlists, session state, embeddings -------------------
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-synamp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-synamp}
+    volumes:
+      - ${DATA_DIR:?set DATA_DIR in deploy/.env}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-synamp} -d ${POSTGRES_DB:-synamp}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [synamp]
+
+  # --- library core: scan, transcode, Subsonic/OpenSubsonic -------------------
+  core:
+    image: deluan/navidrome:latest
+    restart: unless-stopped
+    environment:
+      ND_MUSICFOLDER: /music
+      ND_DATAFOLDER: /data
+      ND_SCANSCHEDULE: ${ND_SCANSCHEDULE:-1h}
+      ND_LOGLEVEL: ${ND_LOGLEVEL:-info}
+      ND_SESSIONTIMEOUT: 24h
+      # Remote clients live on the WAN; transcode there, keep originals on the LAN.
+      ND_ENABLE_TRANSCODING: "true"
+      ND_TRANSCODINGCACHESIZE: ${TRANSCODE_CACHE:-1GiB}
+    volumes:
+      - ${MUSIC_PATH:?set MUSIC_PATH in deploy/.env}:/music:ro
+      - ${DATA_DIR:?set DATA_DIR in deploy/.env}/navidrome:/data
+    ports:
+      - "${CORE_PORT:-4533}:4533"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4533/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks: [synamp]
+
+  # --- SynAmp brain: playlists, AI wiring, playback session -------------------
+  brain:
+    profiles: ["app"]
+    build:
+      context: ../apps/brain
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      BRAIN_PORT: "3001"
+      BRAIN_HOST: 0.0.0.0
+      DATABASE_URL: postgres://${POSTGRES_USER:-synamp}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-synamp}
+      LIBRARY_PATH: /music
+      CORE_URL: http://core:4533
+    volumes:
+      - ${MUSIC_PATH:?set MUSIC_PATH in deploy/.env}:/music:ro
+    expose:
+      - "3001"
+    networks: [synamp]
+
+  # --- SynAmp web app ---------------------------------------------------------
+  web:
+    profiles: ["app"]
+    build:
+      context: ../apps/web
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks: [synamp]
+
+  # --- edge: single entry point, TLS, routing ---------------------------------
+  edge:
+    profiles: ["app"]
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [brain, web, core]
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${DATA_DIR:?set DATA_DIR in deploy/.env}/caddy:/data
+      - ${DATA_DIR:?set DATA_DIR in deploy/.env}/caddy-config:/config
+    networks: [synamp]
+
+networks:
+  synamp:

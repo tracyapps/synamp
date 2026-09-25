@@ -16,7 +16,11 @@
     "lint": "npx turbo lint",
     "type-check": "pnpm --filter webamp type-check && pnpm --filter ani-cursor type-check && pnpm --filter skin-database type-check && pnpm --filter webamp-docs type-check && pnpm --filter winamp-eqf type-check",
     "deploy": "npx turbo build webamp-modern#build --concurrency 1 && mv packages/webamp-modern/build packages/webamp-demo/dist/modern",
+    "roadmap:build": "node tools/roadmap/build.mjs",
     "format": "prettier --write '**/*.{js,ts,tsx}'"
+    ,
+    "brain:dev": "pnpm --filter @synamp/brain dev",
+    "web:dev": "pnpm --filter @synamp/web dev"
   },
   "devDependencies": {
     "@babel/preset-typescript": "^7.16.7",

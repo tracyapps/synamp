@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SynAmp — Roadmap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e0e10; --surface:#16161a; --text:#ececec; --muted:#8a8a94;
+  --accent:#e0a33e; --hair:rgba(255,255,255,.08);
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --disp:"Space Grotesk","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(224,163,62,.38)}
+a:hover{border-bottom-color:var(--accent)}
+code{font-family:var(--mono);font-size:.87em;color:#d8cbb2;
+  background:rgba(255,255,255,.045);padding:1px 5px;border-radius:3px}
+strong{font-weight:500;color:#f5f5f7}
+.page{max-width:1300px;margin:0 auto;padding:0 44px}
+
+/* ---- cover ---- */
+.cover{padding:104px 0 0;border-bottom:1px solid var(--hair)}
+.wordmark{font-family:var(--mono);font-size:12px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--disp);font-weight:600;font-size:clamp(38px,5.1vw,62px);
+  line-height:1.02;letter-spacing:-.028em;margin:22px 0 0;max-width:20ch}
+.lede{max-width:64ch;font-size:19px;line-height:1.55;color:#dcdce1;margin:28px 0 0}
+.intro-p{max-width:64ch;font-size:15.5px;line-height:1.62;color:#b6b6bd;margin:16px 0 0}
+.meta{display:flex;flex-wrap:wrap;gap:0 34px;margin:36px 0 0;
+  font-family:var(--mono);font-size:12px;color:var(--muted)}
+.meta div{display:flex;gap:9px;padding:5px 0}
+.meta dt{color:#63636d}
+.legend{display:flex;flex-wrap:wrap;gap:20px;margin:24px 0 0;
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:8px}
+
+/* ---- timeline ---- */
+.timeline{list-style:none;display:grid;grid-template-columns:repeat(8,1fr);
+  margin:46px 0 0;padding:0;border-top:1px solid var(--hair)}
+.seg{padding:15px 14px 18px;border-right:1px solid var(--hair);position:relative}
+.seg:last-child{border-right:0}
+.seg .n{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--muted)}
+.seg .t{display:block;margin-top:8px;font-size:12.5px;line-height:1.34;color:#a4a4ad}
+.seg.is-current .n{color:var(--accent)}
+.seg.is-current .t{color:var(--text)}
+.seg.is-current::before{content:"";position:absolute;left:0;right:0;top:-1px;height:2px;background:var(--accent)}
+
+/* ---- layout ---- */
+.layout{display:grid;grid-template-columns:198px 1fr;gap:66px;padding:58px 0 0}
+.toc{position:sticky;top:34px;align-self:start}
+.toc h2{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 18px}
+.toc ol{list-style:none;margin:0;padding:0}
+.toc li{margin:0}
+.toc a{display:flex;gap:11px;padding:7px 0;font-size:13.5px;line-height:1.35;
+  color:#a4a4ad;border-bottom:0}
+.toc a:hover{color:var(--text)}
+.toc .num{font-family:var(--mono);font-size:11px;color:#63636d;flex:none;padding-top:2px}
+.toc a.is-current,.toc a.is-current .num{color:var(--accent)}
+
+/* ---- sections ---- */
+.section{padding-bottom:70px;border-bottom:1px solid var(--hair)}
+.section + .section{padding-top:58px}
+.section:last-child{border-bottom:0}
+.phase-label{font-family:var(--mono);font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--accent)}
+h2{font-family:var(--disp);font-weight:600;font-size:clamp(25px,2.7vw,34px);
+  line-height:1.1;letter-spacing:-.02em;margin:15px 0 0;max-width:26ch}
+.block{display:grid;grid-template-columns:158px 1fr;gap:30px;padding:26px 0;
+  border-top:1px solid var(--hair);margin-top:28px}
+.block:first-of-type{margin-top:30px}
+.block-label{display:flex;align-items:baseline;gap:9px;font-family:var(--mono);
+  font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);
+  padding-top:3px}
+.block-label span{padding-top:1px}
+.gl{width:15px;height:15px;flex:none;position:relative;top:2px;
+  fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+.gl .f{fill:currentColor;stroke:none}
+.block--goal .block-label,.block--goal .block-body{color:#dcdce1}
+.block--goal .block-body p{font-size:17.5px;line-height:1.55;max-width:60ch;margin:0}
+.block--risk .block-label,.block--risk .block-body{color:var(--muted)}
+.block--risk .block-body p{font-size:14.5px;max-width:64ch;margin:0}
+.block-body p{max-width:66ch;margin:0 0 12px}
+.block-body p:last-child{margin-bottom:0}
+.block-body ul{margin:0;padding:0;list-style:none}
+.block-body ul ul{margin:8px 0 10px}
+.block-body li{position:relative;padding-left:19px;margin:0 0 9px;max-width:66ch}
+.block-body li:last-child{margin-bottom:0}
+.block-body li::before{content:"";position:absolute;left:2px;top:.72em;
+  width:6px;height:1px;background:#56565f}
+.block-body ul ul li::before{background:#3d3d45}
+.block-body .numlist{margin:0;padding:0;list-style:none;counter-reset:n}
+.block-body .numlist li{counter-increment:n;padding-left:28px}
+.block-body .numlist li::before{content:counter(n);
+  font-family:var(--mono);font-size:11px;color:var(--accent);
+  left:0;top:.28em;width:auto;height:auto;background:none}
+.empty{color:#4a4a52}
+.callout{max-width:58ch;font-family:var(--disp);font-weight:500;font-size:20px;
+  line-height:1.42;letter-spacing:-.01em;color:#f5f5f7;margin:32px 0 0}
+
+/* ---- colophon ---- */
+.colophon{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;
+  padding:40px 0 92px;border-top:1px solid var(--hair);margin-top:0;
+  font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.colophon b{font-weight:400;color:#a4a4ad}
+
+@media (max-width:900px){
+  .page{padding:0 22px}
+  .cover{padding-top:64px}
+  .layout{grid-template-columns:1fr;gap:0;padding-top:40px}
+  .toc{position:static;padding-bottom:34px;border-bottom:1px solid var(--hair);margin-bottom:36px}
+  .toc ol{display:flex;flex-wrap:wrap;gap:6px 22px}
+  .timeline{grid-template-columns:repeat(2,1fr)}
+  .seg:nth-child(2n){border-right:0}
+  .block{grid-template-columns:1fr;gap:10px}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="cover">
+    <div class="wordmark">SynAmp</div>
+    <h1>SynAmp — Roadmap</h1>
+    <p class="lede">Sequencing principle: <strong>get you off your streaming subscriptions as early as possible</strong>, then build the things that don't exist anywhere else.</p>
+    <p class="intro-p">The "replace Spotify/Apple Music/whatever" milestone is deliberately <strong>Phase 1</strong>, not the end — because that only needs library + player + remote access, and every one of those has a mature open-source answer. The differentiators (AI library intelligence, roll-up playlists, DJ mode, party tools) come after, and the architecture is designed so they slot in without rework.</p>
+    <div class="legend"><span><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" class="f"/></svg>Goal</span><span><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.9 14 5 8 8.1 2 5 8 1.9Z"/><path d="M2 8 8 11.1 14 8"/><path d="M2 11 8 14.1 14 11"/></svg>Deliverables</span><span><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6 6.4 12 13 4.3"/></svg>Exit criteria</span><span><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1 14.5 13H1.5L8 2.1Z"/><path d="M8 6.4v3.1"/><circle cx="8" cy="11.3" r=".6" class="f"/></svg>Risk</span></div>
+    <dl class="meta">
+      <div><dt>source</dt><dd>docs/synamp/ROADMAP.md</dd></div>
+      <div><dt>generated</dt><dd>2026-09-23</dd></div>
+      <div><dt>baseline</dt><dd>DS1825+ · M4 Pro · 274 GB / 45,739 files</dd></div>
+    </dl>
+    <ol class="timeline"><li class="seg is-current"><span class="n">00</span><span class="t">Foundations and the two real decisions</span></li><li class="seg"><span class="n">01</span><span class="t">"Cancel the subscriptions" (the milestone that matters)</span></li><li class="seg"><span class="n">02</span><span class="t">The playlist system that scales</span></li><li class="seg"><span class="n">03</span><span class="t">The Brain v1: library intelligence</span></li><li class="seg"><span class="n">04</span><span class="t">Quick wins: radio + visualizers</span></li><li class="seg"><span class="n">05</span><span class="t">Gapless, crossfade, DJ mode</span></li><li class="seg"><span class="n">06</span><span class="t">Party tools</span></li><li class="seg"><span class="n">07</span><span class="t">Native clients &amp; distribution</span></li></ol>
+  </header>
+  <div class="layout">
+    <aside class="toc">
+      <h2>Phases</h2>
+      <ol><li><a href="#phase-0" class="is-current"><span class="num">00</span><span>Foundations and the two real decisions</span></a></li><li><a href="#phase-1"><span class="num">01</span><span>"Cancel the subscriptions" (the milestone that matters)</span></a></li><li><a href="#phase-2"><span class="num">02</span><span>The playlist system that scales</span></a></li><li><a href="#phase-3"><span class="num">03</span><span>The Brain v1: library intelligence</span></a></li><li><a href="#phase-4"><span class="num">04</span><span>Quick wins: radio + visualizers</span></a></li><li><a href="#phase-5"><span class="num">05</span><span>Gapless, crossfade, DJ mode</span></a></li><li><a href="#phase-6"><span class="num">06</span><span>Party tools</span></a></li><li><a href="#phase-7"><span class="num">07</span><span>Native clients &amp; distribution</span></a></li><li><a href="#extra-0"><span class="num">—</span><span>Cross-cutting</span></a></li></ol>
+    </aside>
+    <main><section class="section" id="phase-0">
+      <div class="phase-label">Phase 0</div>
+      <h2>Foundations and the two real decisions</h2>
+      <div class="block block--goal"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" class="f"/></svg><span>Goal</span></div><div class="block-body"><p>Agree the shape of the system before writing the app.</p></div></div><div class="block block--deliverables"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.9 14 5 8 8.1 2 5 8 1.9Z"/><path d="M2 8 8 11.1 14 8"/><path d="M2 11 8 14.1 14 11"/></svg><span>Deliverables</span></div><div class="block-body"><ul><li>Decide <strong>library core</strong>: adopt Navidrome vs build a custom Node/TS core (§4 of ARCHITECTURE).</li><li>Decide <strong>licence strategy</strong> (§17) — it changes what analysis stack we may use.</li><li>Reset the repo: keep Webamp packages as a <code>legacy/</code> reference, scaffold the new app packages (<code>web</code>, <code>brain</code>, <code>worker</code>) alongside.</li><li>Stand up the Docker Compose skeleton (edge, web, core, db).</li></ul></div></div><div class="block block--exit"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6 6.4 12 13 4.3"/></svg><span>Exit criteria</span></div><div class="block-body"><ul><li>A <code>docker compose up</code> on the Mac serves Navidrome against a sample folder and a Subsonic client can connect and play.</li><li>The three decisions above are written down.</li></ul></div></div><div class="block block--risk"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1 14.5 13H1.5L8 2.1Z"/><path d="M8 6.4v3.1"/><circle cx="8" cy="11.3" r=".6" class="f"/></svg><span>Risk</span></div><div class="block-body"><p>Don't over-scaffold. Phase 0 is a weekend, not a month.</p></div></div>
+      
+    </section><section class="section" id="phase-1">
+      <div class="phase-label">Phase 1</div>
+      <h2>"Cancel the subscriptions" (the milestone that matters)</h2>
+      <div class="block block--goal"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" class="f"/></svg><span>Goal</span></div><div class="block-body"><p>Stream your real library, anywhere, on all your devices.</p></div></div><div class="block block--deliverables"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.9 14 5 8 8.1 2 5 8 1.9Z"/><path d="M2 8 8 11.1 14 8"/><path d="M2 11 8 14.1 14 11"/></svg><span>Deliverables</span></div><div class="block-body"><ul><li>Navidrome (or custom core) scanning the <strong>real</strong> NAS music share.</li><li>Remote access via <strong>Tailscale</strong>; verify from phone on cellular.</li><li>Transcoding profiles: original on LAN, ~256 kbps on WAN.</li><li>Install 2–3 <strong>existing Subsonic native apps</strong> (one iOS, one desktop) and confirm playback, background audio, lock-screen controls, CarPlay.</li><li>Subsonic playlist import so your existing playlists come across.</li></ul></div></div><div class="block block--exit"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6 6.4 12 13 4.3"/></svg><span>Exit criteria</span></div><div class="block-body"><ul><li>You play your own music from your phone on cellular and from your Mac at home.</li><li>You can delete (or downgrade) a streaming subscription without losing access to your music.</li><li>A third-party native app plays your library with working lock-screen controls.</li></ul></div></div><div class="block block--risk"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1 14.5 13H1.5L8 2.1Z"/><path d="M8 6.4v3.1"/><circle cx="8" cy="11.3" r=".6" class="f"/></svg><span>Risk</span></div><div class="block-body"><p>Upload bandwidth; metadata quality on a 4k-artist library (expect a cleanup pass — see Phase 3, but a <code>beets</code>/Picard pass may be needed here first).</p></div></div>
+      <p class="callout"><strong>This is the phase that changes your life. Everything after it is upside.</strong></p>
+    </section><section class="section" id="phase-2">
+      <div class="phase-label">Phase 2</div>
+      <h2>The playlist system that scales</h2>
+      <div class="block block--goal"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" class="f"/></svg><span>Goal</span></div><div class="block-body"><p>Playlists as good as (better than) the old Winamp experience, at library scale.</p></div></div><div class="block block--deliverables"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.9 14 5 8 8.1 2 5 8 1.9Z"/><path d="M2 8 8 11.1 14 8"/><path d="M2 11 8 14.1 14 11"/></svg><span>Deliverables</span></div><div class="block-body"><ul><li>Playlist <strong>tree model</strong>: folders, nesting, ordering, drag/drop, multi-select.</li><li><strong>Roll-up playlists</strong> with <code>merge | shuffle | interleave | weighted</code> modes.</li><li>Smart/rule-based playlists (BPM, key, energy, mood, instrumental, piano…).</li><li><strong>Virtualized</strong> list rendering (100k rows).</li><li>Export to Subsonic playlists so native apps can see them.</li><li>A <strong>SynAmp web player</strong> (the new front-end) — library browse, playlists, queue.</li></ul></div></div><div class="block block--exit"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6 6.4 12 13 4.3"/></svg><span>Exit criteria</span></div><div class="block-body"><ul><li>You build a folder of a dozen playlists, drop a roll-up on top, hit shuffle, and it correctly randomises across everything beneath it (recursively).</li><li>Scrolling a 100k-track library is smooth.</li></ul></div></div><div class="block block--risk"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1 14.5 13H1.5L8 2.1Z"/><path d="M8 6.4v3.1"/><circle cx="8" cy="11.3" r=".6" class="f"/></svg><span>Risk</span></div><div class="block-body"><p>Playlist-tree performance and drag/drop UX are the real work here, not the DB.</p></div></div>
+      
+    </section><section class="section" id="phase-3">
+      <div class="phase-label">Phase 3</div>
+      <h2>The Brain v1: library intelligence</h2>
+      <div class="block block--goal"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" class="f"/></svg><span>Goal</span></div><div class="block-body"><p>The thing no one else has: "make me a playlist that sounds like X".</p></div></div><div class="block block--deliverables"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.9 14 5 8 8.1 2 5 8 1.9Z"/><path d="M2 8 8 11.1 14 8"/><path d="M2 11 8 14.1 14 11"/></svg><span>Deliverables</span></div><div class="block-body"><ul><li><strong>Analysis worker</strong> (on the Mac/cloud, <strong>not</strong> the NAS) producing per track:<ul><li>audio embeddings (CLAP-class)</li><li>BPM, key, energy, danceability, mood</li><li>instrumental/"no words" score, instrument presence (<strong>piano</strong>)</li><li>lyrics text + lyric embeddings</li></ul></li><li><strong>Brain DB</strong> (Postgres + pgvector) + resumable job queue for 100k+ tracks.</li><li><strong>Natural-language → structured query</strong> LLM layer.</li><li>"Sounds like these two specific tracks" via embedding nearest-neighbour.</li><li><strong>👍/👎, skip, remove-from-playlist</strong> capture + a simple, <em>explainable</em> re-ranker.</li><li><strong>Live updates</strong>: new files analysed in the background appear in playlists with no refresh.</li><li>Show <em>why</em> each track is included (this is what makes it trustworthy).</li></ul></div></div><div class="block block--exit"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6 6.4 12 13 4.3"/></svg><span>Exit criteria</span></div><div class="block-body"><ul><li>"ambient focus, no words, no piano, more energetic" returns a credible list.</li><li>"similar feel to Hat Shaped Hat + Fire Door" returns tracks that are <em>sonically</em> close and excludes the wrong-Ani tracks.</li><li>Adding an album to the NAS surfaces it in smart playlists without a restart.</li></ul></div></div><div class="block block--risk"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1 14.5 13H1.5L8 2.1Z"/><path d="M8 6.4v3.1"/><circle cx="8" cy="11.3" r=".6" class="f"/></svg><span>Risk</span></div><div class="block-body"><p>First analysis pass on a large library is hours-to-days; <strong>design the queue to be resumable and to run incrementally</strong> from day one. Gender inference must ship as a soft, overridable boost, not a trustworthy filter.</p></div></div>
+      
+    </section><section class="section" id="phase-4">
+      <div class="phase-label">Phase 4</div>
+      <h2>Quick wins: radio + visualizers</h2>
+      <div class="block block--goal"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" class="f"/></svg><span>Goal</span></div><div class="block-body"><p>Cheap, high-delight features, delivered in parallel with heavier phases.</p></div></div><div class="block block--deliverables"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.9 14 5 8 8.1 2 5 8 1.9Z"/><path d="M2 8 8 11.1 14 8"/><path d="M2 11 8 14.1 14 11"/></svg><span>Deliverables</span></div><div class="block-body"><ul><li><strong>Radio Browser</strong> integration: search ~50k stations by country/genre/tag, favourites, user-added stream URLs, ICY now-playing (proxied to avoid CORS).</li><li>Radio as a first-class source in playlists and the queue.</li><li><strong>Butterchurn/Milkdrop</strong> visualizer re-enabled in the new UI (reuse from the fork).</li><li>Optional custom visualizer (the SoundJam rainbow-circles memory).</li></ul></div></div><div class="block block--exit"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6 6.4 12 13 4.3"/></svg><span>Exit criteria</span></div><div class="block-body"><ul><li>You find and play a world radio station the way SoundTouch used to let you.</li><li>Visualizers work in the modern UI.</li></ul></div></div><div class="block block--risk"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1 14.5 13H1.5L8 2.1Z"/><path d="M8 6.4v3.1"/><circle cx="8" cy="11.3" r=".6" class="f"/></svg><span>Risk</span></div><div class="block-body"><p>Essentially none — this is the "have fun" phase.</p></div></div>
+      
+    </section><section class="section" id="phase-5">
+      <div class="phase-label">Phase 5</div>
+      <h2>Gapless, crossfade, DJ mode</h2>
+      <div class="block block--goal"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" class="f"/></svg><span>Goal</span></div><div class="block-body"><p>Seamless listening; party-grade transitions.</p></div></div><div class="block block--deliverables"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.9 14 5 8 8.1 2 5 8 1.9Z"/><path d="M2 8 8 11.1 14 8"/><path d="M2 11 8 14.1 14 11"/></svg><span>Deliverables</span></div><div class="block-body"><ul><li>Gapless playback (dual-element / MSE).</li><li>Crossfade with configurable duration and curve.</li><li><strong>DJ mode</strong>: BPM + key harmonic matching (Camelot), pitch-preserving tempo alignment, energy-aware ordering.</li><li><strong>Interruptible transitions</strong>: skipping mid-song crossfades smoothly instead of cutting.</li></ul></div></div><div class="block block--exit"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6 6.4 12 13 4.3"/></svg><span>Exit criteria</span></div><div class="block-body"><ul><li>A DJ-mode set with no audible gaps at track boundaries.</li><li>Mid-song skip blends rather than jumps.</li></ul></div></div><div class="block block--risk"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1 14.5 13H1.5L8 2.1Z"/><path d="M8 6.4v3.1"/><circle cx="8" cy="11.3" r=".6" class="f"/></svg><span>Risk</span></div><div class="block-body"><p>Browser beat-matching quality is the risk; optional server-side ffmpeg mix rendering is the quality fallback.</p></div></div>
+      
+    </section><section class="section" id="phase-6">
+      <div class="phase-label">Phase 6</div>
+      <h2>Party tools</h2>
+      <div class="block block--goal"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" class="f"/></svg><span>Goal</span></div><div class="block-body"><p>Host a party where guests request songs from their phones.</p></div></div><div class="block block--deliverables"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.9 14 5 8 8.1 2 5 8 1.9Z"/><path d="M2 8 8 11.1 14 8"/><path d="M2 11 8 14.1 14 11"/></svg><span>Deliverables</span></div><div class="block-body"><ul><li><strong>Server-owned session</strong> (this must already exist from Phase 2 — verify).</li><li><strong>Guest request</strong> page at <code>/party/&lt;token&gt;</code>, reached by a printed QR code; LAN- or token-scoped; search + request (+ upvote).</li><li><strong>DJ display</strong> at <code>/display</code>: big-screen now-playing, up-next, reorder, transport; host lock/unlock.</li><li>Optional: guest app (iOS/Android) with search history and favourites.</li></ul></div></div><div class="block block--exit"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6 6.4 12 13 4.3"/></svg><span>Exit criteria</span></div><div class="block-body"><ul><li>A guest scans the wall QR, requests a song, and it appears in the host queue.</li><li>An old iPad on <code>/display</code> can reorder and skip.</li></ul></div></div><div class="block block--risk"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1 14.5 13H1.5L8 2.1Z"/><path d="M8 6.4v3.1"/><circle cx="8" cy="11.3" r=".6" class="f"/></svg><span>Risk</span></div><div class="block-body"><p>Scope creep magnet. Ship the thin version, watch what people actually use.</p></div></div>
+      
+    </section><section class="section" id="phase-7">
+      <div class="phase-label">Phase 7</div>
+      <h2>Native clients &amp; distribution</h2>
+      <div class="block block--goal"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4"/><circle cx="8" cy="8" r="1.5" class="f"/></svg><span>Goal</span></div><div class="block-body"><p>Menu-bar player; own mobile app; maybe a Synology package for others.</p></div></div><div class="block block--deliverables"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.9 14 5 8 8.1 2 5 8 1.9Z"/><path d="M2 8 8 11.1 14 8"/><path d="M2 11 8 14.1 14 11"/></svg><span>Deliverables</span></div><div class="block-body"><ul><li><strong>Tauri desktop app</strong>: tray/menu-bar mini-player (the brain.fm pattern), global media keys, launch-at-login.</li><li><strong>Mobile app</strong> (React Native/Expo or Tauri Mobile) — only if the existing Subsonic apps leave a real gap.</li><li><strong>Synology package</strong>: publishable Compose stack + installer wizard.</li></ul></div></div><div class="block block--exit"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.6 6.4 12 13 4.3"/></svg><span>Exit criteria</span></div><div class="block-body"><ul><li>A SynAmp icon in your Mac menu bar that starts music in one click.</li><li>(Optional) someone else installs SynAmp on their Synology without your help.</li></ul></div></div><div class="block block--risk"><div class="block-label"><svg class="gl" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.1 14.5 13H1.5L8 2.1Z"/><path d="M8 6.4v3.1"/><circle cx="8" cy="11.3" r=".6" class="f"/></svg><span>Risk</span></div><div class="block-body"><p>Distribution drags licensing (GPL/AGPL) to the front — that's why Phase 0 decides it.</p></div></div>
+      
+    </section><section class="section" id="extra-0">
+      <div class="phase-label">Cross-cutting</div>
+      <h2>Cross-cutting, must-not-be-deferred</h2>
+      <p>These are the things that are cheap now and painful if retrofitted:</p>
+      
+    </section></main>
+  </div>
+  <footer class="colophon">
+    <span>Generated from <b>docs/synamp/ROADMAP.md</b> · 2026-09-23</span>
+    <span>SynAmp · self-hosted music system</span>
+  </footer>
+</div>
+</body>
+</html>
