@@ -1,0 +1,73 @@
+{
+  "method": "dp_predictive_contrast_v1",
+  "evidence": "unannotated diagnostic run; not an accuracy benchmark",
+  "python": "3.12.13",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "dependencies": {
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "soundfile": "0.14.0"
+  },
+  "parameters": {
+    "dp_tightness": 6.0,
+    "min_tempo_confidence": 0.25,
+    "min_predictive_strength": 0.5,
+    "max_reference_rms_ms": 15.0,
+    "min_timing_concentration": 0.3
+  },
+  "tracks": [
+    {
+      "path": "/Volumes/music/library/Ani DiFranco/Ani DiFranco/02 Talk To Me Now.mp3",
+      "size_bytes": 4404275,
+      "mtime_ns": 1251430917000000000,
+      "result": {
+        "beat_diagnostics": {
+          "candidate_bpm": 123.78368263473054,
+          "tempo_confidence": 0.5668777718612313,
+          "frame_resolution_ms": 2.9024943310657596,
+          "onset_count": 6565,
+          "predictive_strength": 0.22071437226782598
+        },
+        "beat_status": "insufficient_pulse_evidence",
+        "timing_status": "no_reliable_grid",
+        "beat_method": "dp_predictive_contrast_v1",
+        "beat_count": null,
+        "beat_grid_strength": null,
+        "beat_interval_cv": null,
+        "tempo_drift": null,
+        "microtiming_tightness": null,
+        "microtiming_signed": null,
+        "swing_ratio": null
+      },
+      "elapsed_seconds": 1.255212
+    },
+    {
+      "path": "/Volumes/music/library/Fleetwood Mac/Rumours (35th Anniversary Super Deluxe Edition) (Disc 1)/02 Dreams.mp3",
+      "size_bytes": 8715081,
+      "mtime_ns": 1364672777000000000,
+      "result": {
+        "beat_diagnostics": {
+          "candidate_bpm": 120.88815789473684,
+          "tempo_confidence": 0.777493831737907,
+          "frame_resolution_ms": 2.9024943310657596,
+          "onset_count": 7351,
+          "predictive_strength": 0.5285360533744097,
+          "reference_rms_ms": 100.02959470817439,
+          "tracking_resolution_ms": 2.9024943310657596,
+          "timing_concentration": 0.033869369451171694
+        },
+        "beat_status": "tracked",
+        "timing_status": "unstable_reference",
+        "beat_method": "dp_predictive_contrast_v1",
+        "beat_count": 514,
+        "beat_grid_strength": 0.5285360533744097,
+        "beat_interval_cv": 0.01920555776085317,
+        "tempo_drift": 1.4210854715202004e-14,
+        "microtiming_tightness": null,
+        "microtiming_signed": null,
+        "swing_ratio": null
+      },
+      "elapsed_seconds": 0.991446
+    }
+  ]
+}

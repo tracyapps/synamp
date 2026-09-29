@@ -127,9 +127,44 @@ def test_extract_returns_the_production_era_cue(tmp_path: Path) -> None:
     assert "clipping_density" in production
 
 
+def test_decode_falls_back_when_the_primary_decoder_fails(tmp_path: Path, monkeypatch) -> None:
+    """AAC/M4A is invisible to libsndfile, and on a real library that was one
+    file in seven — all of them reported as failures. The fallback path is what
+    stops a format gap from looking like corruption."""
+    import synamp_analyzer.metrics as metrics
+
+    path = tmp_path / "tone.wav"
+    sine(path, seconds=1.0, sample_rate=22050, amplitude=0.5)
+
+    def unreadable(*_args, **_kwargs):
+        raise RuntimeError("this decoder cannot read the file")
+
+    monkeypatch.setattr(metrics.sf, "read", unreadable)
+    mono, sample_rate = metrics.decode_mono(path)
+
+    assert sample_rate == 22050
+    assert mono.size > 0
+    assert float(np.max(np.abs(mono))) > 0.1, "the fallback must return real audio"
+
+
 def test_corrupt_file_raises_rather_than_returning_junk(tmp_path: Path) -> None:
     """A failed decode must be an error the queue can record, not a row of
     nulls that looks like a legitimate measurement."""
     path = corrupt(tmp_path / "broken.mp3")
     with pytest.raises(Exception):
         decode_mono(path)
+
+
+def test_fft_tempo_matches_direct_correlation(monkeypatch):
+    import synamp_analyzer.metrics as metrics
+
+    rng = np.random.default_rng(18)
+    envelope = rng.uniform(0, 0.2, 5000)
+    envelope[::100] += 1
+    monkeypatch.setattr(metrics, "onset_envelope", lambda *_: (envelope, 200.0))
+    audio = np.zeros(20000)
+    fft_result = metrics.tempo_estimate(audio, 44100)
+    monkeypatch.setattr(metrics.signal, "correlate",
+                        lambda a, b, **_: np.correlate(a, b, mode="full"))
+    direct_result = metrics.tempo_estimate(audio, 44100)
+    assert fft_result == pytest.approx(direct_result, abs=1e-10)

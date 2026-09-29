@@ -55,6 +55,14 @@ class AnalyzerConfig:
     workers: int = 4
     """Parallel decode/analyse processes. Keep below the CPU core count."""
 
+    walk_workers: int = 8
+    """Concurrent directory listings while scanning.
+
+    The walk is latency-bound, not CPU-bound: over a network share every listing
+    is a round trip, so listing several directories at once is the difference
+    between minutes and hours. Set below the share's connection limit.
+    """
+
     max_attempts: int = 3
     """Failures before a track is left failed rather than retried. An unreadable
     file should be visible, not spin."""
@@ -83,5 +91,6 @@ class AnalyzerConfig:
             db_path=Path(_env("ANALYZER_DB_PATH", str(cache_dir / "analyzer.sqlite3"))),
             sample_seconds=float(_env("ANALYZER_SAMPLE_SECONDS", "60")),
             workers=int(_env("ANALYZER_WORKERS", "4")),
+            walk_workers=int(_env("ANALYZER_WALK_WORKERS", "8")),
             max_attempts=int(_env("ANALYZER_MAX_ATTEMPTS", "3")),
         )

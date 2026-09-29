@@ -77,3 +77,19 @@ def test_layered_and_swing_fields_are_present_after_the_beat_stage(tmp_path: Pat
         setattr(result, key, value)
     assert result.microtiming_signed is not None
     assert result.beat_grid_strength is not None
+
+
+def test_beat_abstention_diagnostics_survive_storage(tmp_path):
+    from synth import drifting
+    from synamp_analyzer.store import Database, load_result, save_result
+
+    path = tmp_path / "ramp.flac"
+    drifting(path)
+    result = AnalysisResult(track_path=path, **extract_beat(path))
+    with Database(tmp_path / "beat.sqlite3") as db:
+        save_result(db, result, "test")
+        loaded = load_result(db, path)
+    assert loaded.beat_method == "dp_predictive_contrast_v1"
+    assert loaded.timing_status == "unstable_reference"
+    assert loaded.beat_diagnostics["reference_rms_ms"] > 15
+    assert loaded.microtiming_signed is None

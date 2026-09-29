@@ -98,32 +98,53 @@ BPM. You cannot measure deviation without a grid to deviate from.
 
 | Field | Meaning |
 |---|---|
-| `beat_count` | beats found, not inferred from an onset rate |
-| `beat_grid_strength` | how much better the best grid explains the onsets than a random phase. Near 0 = the grid is fiction |
-| `microtiming_tightness` | mean absolute deviation from the grid, ms — tight/programmed vs loose/human |
-| `microtiming_signed` | mean signed deviation, ms. **Positive = pushing ahead, negative = laid back** |
-| `swing_ratio` | offbeat position within the beat: 0.5 straight eighths, ~0.667 triplet swing |
+| `beat_count` | Tracked beats, only usable when `beat_status` is `tracked` |
+| `beat_grid_strength` | Local predicted-pulse contrast × supported fraction; heuristic, not a probability |
+| `beat_interval_cv` | Tracked interval standard deviation / mean |
+| `tempo_drift` | Fractional BPM change between the first and second halves |
+| `microtiming_tightness` | Mean absolute eligible-onset residual from a stable fitted grid, ms |
+| `microtiming_signed` | Mean signed residual, ms; **positive = early, negative = late** |
+| `swing_ratio` | Offbeat position, 0.5 straight eighths, about 0.667 triplet swing |
+| `beat_status`, `timing_status` | Distinguish accepted pulse evidence from eligibility for timing measurements |
+| `beat_method`, `beat_diagnostics` | Algorithm identity, candidate tempo, contrast and reference-fit diagnostics |
 
-Verified against signals whose answer is known from construction: a metronome
-reads tight and centred; a swung pattern reads 0.669; straight eighths read 0.500;
-a second layer played 30 ms late reads **−14.9 ms**, and 30 ms early reads
-**+15.1 ms**. Onset timing carries a measured bias under 4 ms.
+The tracker uses dynamic programming. Pulse validation compares onset energy at
+neighbour-predicted beats with shifted local control windows, rather than counting
+all detected peaks equally. This lets a strong pulse survive dense accompaniment.
+It remains a heuristic with tempo/phase ambiguity, not a validated real-music
+beat detector. See the [findings](../../docs/research/beat-timing-findings-2026-09-29.md).
 
-**When it declines.** The stage returns nothing when there is no grid to find —
-no usable tempo, or a grid indistinguishable from chance. That is a deliberate
-answer, not a failure, and `beat_grid_strength` is the field that says so. It is
-also what happened on the first real test set (119 live acoustic recordings): the
-best achievable onset alignment across *every* tempo from 60 to 200 BPM was
-0.51–0.54 against a chance level of 0.50, so the material genuinely has no steady
-grid — live performance with drift, speech and applause. A tempo-varying beat
-tracker is the next increment; a fixed-tempo grid cannot represent that material
-and should not pretend to.
+**Timing has a separate gate.** A whole-track line is used only when its RMS fit
+error and tracker resolution are ≤15 ms and the onset population is concentrated. Otherwise timing and
+swing remain null with a reason. These thresholds are engineering heuristics,
+not perceptual calibration. Mixed-onset residuals do not identify a particular
+instrument's displacement and do not establish perceived energy.
+
+Synthetic checks cover steady clicks, ±30 ms secondary layers, straight/swung
+eighths, accelerating tempo, dense accompaniment at three tempi, random controls
+and decimation. The real-library smoke test accepted a grid on “Dreams” but
+abstained from its timing; it rejected the candidate pulse on “Talk To Me Now.”
+Neither outcome has independent beat annotations. The previous claim that 119
+rejected live recordings “genuinely have no steady grid” was not established:
+rejection by the earlier statistic is evidence about the method, not the music.
+
+For a read-only JSON diagnostic report (no catalog or queue writes):
+
+```sh
+uv run python -m synamp_analyzer.evaluate_beat /path/to/track.flac > beat-report.json
+```
+
+Exit 1 means at least one extraction error; musical abstention is a successful
+analysis with nullable values. Reports include method, parameters, dependency
+versions, file size/mtime and per-track runtime; they contain no audio. File
+size/mtime is change detection, not a content hash. Choose bounded inputs; the
+command processes whole recordings and has no per-track timeout.
 
 Fields the *query layer* will need but no stage fills yet — `mode`,
 `chord_change_rate`, `dissonance`, `vocal_fraction`, `instruments`, `arousal`,
 `valence`, `embedding`, `structure_*` — are declared in `models.py` and left
-`None`, with the stage that will fill them named in a comment. `None` always
-means "not computed yet", never "computed as zero". A test enforces that every
+`None`, with the stage that will fill them named in a comment. `None` means not computed or insufficient evidence, never "computed as zero";
+beat status fields distinguish those cases. A test enforces that every
 field an extractor computes is actually declared, because a computed-but-
 undeclared field is silently dropped on save.
 
@@ -136,11 +157,11 @@ operational overhead; the schema mirrors the Postgres shape so the move is a
 port, not a redesign. Edit a file and re-scan and it is re-analysed; delete a file
 and it is marked missing, not removed, so history survives.
 
-When an extractor changes, the numbers already stored came from the old code and
-nothing about them reveals it. Recompute that stage explicitly:
+New beat results record their method; old rows may not. Algorithm changes do not
+yet invalidate completed stages automatically. Recompute that stage explicitly:
 
 ```bash
-uv run synamp-analyze analyze --redo-stage dsp_core
+uv run synamp-analyze analyze --redo-stage beat
 ```
 
 ## Licensing note
@@ -158,6 +179,13 @@ ever exist as a private, non-distributed accuracy option. See
 ## Next stages
 
 Model-backed stages slot into the same machinery, behind the same licence
-triage: a tempo-varying beat tracker, tonal analysis, instrument and vocal
+triage: a validated local timing reference, tonal analysis, instrument and vocal
 detection, audio embeddings, lyric retrieval. Each one back-fills the fields
 already declared in `models.py`.
+
+## Agent handoff
+
+Start with the [execution roadmap](../../docs/synamp/plans/AGENT-ROADMAP.md) and
+[detailed beat-timing plan](../../docs/synamp/plans/BEAT-TIMING.md). Stored old
+beat results require explicit recomputation; automatic stage revision invalidation
+is planned, not implemented.

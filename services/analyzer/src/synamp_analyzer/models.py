@@ -5,7 +5,7 @@ playlist. See docs/synamp/ARCHITECTURE.md §6.2 — no single signal is enough.
 
 Two rules govern this file:
 
-1. **Every measurement is nullable, and null means "not computed yet"** — never
+1. **Every measurement is nullable: not computed or insufficient evidence** — never
    "computed as zero". A partially-analysed library must stay usable, and a
    missing signal must never be silently read as a negative one.
 2. **Nothing here is a verdict.** `pulse_clarity` is a number, not a claim that
@@ -56,20 +56,28 @@ class AnalysisResult:
     vibe queries. This is the signal behind the Ani DiFranco example."""
 
     # --- rhythm / timing --------------------------------------------------
-    # Filled by: dsp_core (provisional tempo/pulse), a future `beat` stage
-    # (the grid-based measures).
+    # Filled by: dsp_core (provisional tempo/pulse) and beat (grid measures).
     tempo_confidence: float | None = None
     """0..1 — how strongly periodic the onset envelope is at the estimated
     tempo. A tempo without its confidence is not usable: octave errors
     (60/120/240 BPM) are common and the confidence is what exposes them."""
+    beat_status: str | None = None
+    timing_status: str | None = None
+    beat_method: str | None = None
+    beat_diagnostics: dict[str, float | int | None] = field(default_factory=dict)
     beat_count: int | None = None
-    """Beats found by the beat stage. Before that stage runs it holds an onset
-    count derived from the onset rate, which is why it is not called a beat
-    count on its own."""
+    """Tracked beats. Before the beat stage, dsp_core still supplies a legacy
+    onset-count estimate; consumers must require beat_status == "tracked"."""
     beat_grid_strength: float | None = None
-    """0..1 — fraction of onset energy landing on the beat grid. Low values mean
-    the grid is fiction, and `microtiming_*` must be ignored rather than
-    reported."""
+    """0..1 local predictive contrast × support fraction (beat_method versions
+    the definition). A heuristic, not the probability that a beat exists."""
+    beat_interval_cv: float | None = None
+    """Inter-beat interval spread relative to the mean. Near 0 = metronomic;
+    a human performance is not."""
+    tempo_drift: float | None = None
+    """Fractional tempo change from the first half of the track to the second.
+    Positive = it ends faster than it began. This is why a fixed-tempo grid
+    cannot describe live material, so it is reported rather than hidden."""
     onset_rate: float | None = None
     """Onsets per second — 'busyness'."""
     pulse_clarity: float | None = None

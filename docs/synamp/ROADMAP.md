@@ -9,6 +9,12 @@ every one of those has a mature open-source answer. The differentiators (AI
 library intelligence, roll-up playlists, DJ mode, party tools) come after, and
 the architecture is designed so they slot in without rework.
 
+Execution update (2026-09-29): the analyzer and research work now have an
+[agent implementation roadmap](../synamp/plans/AGENT-ROADMAP.md), a detailed
+[beat-timing plan](../synamp/plans/BEAT-TIMING.md), and
+[measured findings](../research/beat-timing-findings-2026-09-29.md). These distinguish
+implemented work from candidate research without changing the product phases.
+
 Legend: 🎯 goal · 📦 deliverables · ✅ done-when · ⚠️ risk
 
 ---

@@ -80,6 +80,10 @@ for what each of these implies for the design.
 
 ## Read next
 
+- [Agent implementation roadmap](plans/AGENT-ROADMAP.md) — current research handoff, dependencies and acceptance tests
+- [Beat timing plan](plans/BEAT-TIMING.md) — dense-mix repair and remaining real-music timing work
+- [Latest findings](../research/beat-timing-findings-2026-09-29.md) — reproduction and fresh verification
+
 - [`DECISIONS.md`](./DECISIONS.md) — accepted Phase 0 decisions + hardware baseline
 - [`STORAGE-LAYOUT.md`](./STORAGE-LAYOUT.md) — proposed NAS share layout + migration steps
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — how the system fits together

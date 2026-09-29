@@ -70,11 +70,48 @@ def frame_to_time(frame: float, sample_rate: int) -> float:
 
 
 def decode_mono(path: Path) -> tuple[np.ndarray, int]:
-    """Read an audio file as mono float32. Raises on an unreadable file."""
-    data, sample_rate = sf.read(str(path), always_2d=True, dtype="float32")
-    if data.size == 0:
-        raise ValueError("empty audio stream")
-    return data.mean(axis=1), int(sample_rate)
+    """Read an audio file as mono float32. Raises on an unreadable file.
+
+    Two decoders, because one is not enough for a real library. libsndfile is
+    fast and covers WAV/FLAC/MP3/OGG, but it has no AAC support at all — and on
+    a random sample of a real library roughly one file in seven was an `.m4a`.
+    Those are not corrupt files; they were simply invisible to the first decoder,
+    and every one of them was being reported as a failure.
+
+    The fallback goes through the operating system's own audio stack, which
+    decodes AAC without shipping an external binary.
+    """
+    try:
+        data, sample_rate = sf.read(str(path), always_2d=True, dtype="float32")
+        if data.size == 0:
+            raise ValueError("empty audio stream")
+        return data.mean(axis=1), int(sample_rate)
+    except Exception as soundfile_error:
+        try:
+            return _decode_with_audioread(path)
+        except Exception:
+            # Report the decoder that a maintainer would expect to work first;
+            # the fallback failing too is not more informative on its own.
+            raise soundfile_error from None
+
+
+def _decode_with_audioread(path: Path) -> tuple[np.ndarray, int]:
+    """Decode via the OS audio stack, for formats libsndfile cannot read."""
+    import audioread
+
+    chunks: list[np.ndarray] = []
+    with audioread.audio_open(str(path)) as handle:
+        sample_rate = int(handle.samplerate)
+        channels = int(handle.channels)
+        for buffer in handle:
+            block = np.frombuffer(buffer, dtype="<i2").astype(np.float32) / 32768.0
+            if channels > 1:
+                block = block[: (block.size // channels) * channels].reshape(-1, channels)
+                block = block.mean(axis=1)
+            chunks.append(block)
+    if not chunks:
+        raise ValueError("decoder produced no audio")
+    return np.concatenate(chunks), sample_rate
 
 
 def _db(amplitude: float) -> float | None:
@@ -274,8 +311,10 @@ def tempo_estimate(mono: np.ndarray, sample_rate: int) -> dict[str, float | None
     if envelope.size < 16 or not np.any(envelope > 0):
         return out
 
-    envelope = envelope - envelope.mean()
-    correlation = np.correlate(envelope, envelope, mode="full")[envelope.size - 1 :]
+    envelope = envelope.astype(np.float64) - envelope.mean()
+    # Full recordings produce hundreds of thousands of frames. Direct
+    # correlation is quadratic; FFT correlation preserves the same lags.
+    correlation = signal.correlate(envelope, envelope, mode="full", method="fft")[envelope.size - 1 :]
     if correlation[0] <= 0:
         return out
     correlation = correlation / correlation[0]

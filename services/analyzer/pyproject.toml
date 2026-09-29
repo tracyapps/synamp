@@ -12,10 +12,13 @@ dependencies = [
     #   soundfile .. BSD-3-Clause (bundles libsndfile, LGPL — used as a library,
     #                not modified, which the LGPL permits)
     #   pyloudnorm . MIT
+    #   audioread . MIT (falls back to the OS audio stack for AAC/M4A, which
+    #                libsndfile cannot decode at all)
     "numpy>=1.26",
     "scipy>=1.11",
     "soundfile>=0.12",
     "pyloudnorm>=0.1.1",
+    "audioread>=3.0",
 ]
 
 # Deliberately NOT declared yet — model-backed stages land behind the same

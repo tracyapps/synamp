@@ -25,6 +25,23 @@ def quiet(*_args: object, **_kwargs: object) -> None:
     """Swallow progress output in tests."""
 
 
+def test_scan_follows_file_symlinks(tmp_path: Path) -> None:
+    """A sample is a tree of symlinks. If the scanner ignored file links, every
+    sampled run would silently analyse nothing and report success."""
+    library = tmp_path / "music"
+    library.mkdir()
+    sine(library / "one.flac")
+
+    sample = tmp_path / "sample"
+    sample.mkdir()
+    (sample / "one.flac").symlink_to(library / "one.flac")
+
+    config = config_for(sample, tmp_path)
+    scan = run_scan(config, progress=quiet)
+    assert scan["scanned"] == 1
+    assert scan["enqueued"] == 1
+
+
 def test_scan_then_analyze_produces_measured_values(tmp_path: Path) -> None:
     library = tmp_path / "music"
     library.mkdir()
