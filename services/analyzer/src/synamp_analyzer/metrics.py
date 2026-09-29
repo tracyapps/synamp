@@ -33,12 +33,40 @@ import pyloudnorm as pyln
 import soundfile as sf
 from scipy import signal
 
-# Analysis geometry. ~23 ms per frame at 44.1 kHz: fine enough for onset
-# counting, coarse enough to keep a long track's spectrogram in memory.
+# Analysis geometry for spectral *shape* features. ~23 ms per frame at 44.1 kHz:
+# fine enough for timbre, coarse enough to keep a long track in memory.
 N_FFT = 2048
 HOP = 1024
+
+# Onset detection gets its own, much finer geometry. Timing measurements need
+# time resolution comparable to the thing being measured: at 23 ms per frame a
+# 30 ms microtiming deviation is barely one frame, and the flux peak lands a
+# large fraction of a window away from the actual transient.
+ONSET_N_FFT = 512
+ONSET_HOP = 128
 ROLLOFF_FRACTION = 0.85
 CLIPPING_LEVEL = 0.9995
+
+
+def frame_to_time(frame: float, sample_rate: int) -> float:
+    """Time (seconds) of an onset-analysis frame.
+
+    A frame at index i covers samples [i*HOP, i*HOP + N_FFT). Two corrections
+    matter here, and both are the difference between a usable timing measurement
+    and a systematic lie:
+
+    1. The natural timestamp is the window *centre*, not its start. Using the
+       start biases every onset earlier by half a window.
+    2. Spectral flux only registers a transient in the frame where it enters the
+       window's trailing edge, so the reported time sits between zero and half a
+       window early. The expected value of that error is (N_FFT - HOP) / 2
+       samples, which is what the second term adds.
+
+    Together these turn a ~2-6 ms early bias into a sub-millisecond one at the
+    frame rate used here.
+    """
+    samples = frame * ONSET_HOP + (ONSET_N_FFT - ONSET_HOP / 2.0)
+    return samples / sample_rate
 
 
 def decode_mono(path: Path) -> tuple[np.ndarray, int]:
@@ -239,16 +267,10 @@ def tempo_estimate(mono: np.ndarray, sample_rate: int) -> dict[str, float | None
         "tempo_confidence": None,
         "pulse_clarity": None,
     }
-    if mono.size < N_FFT * 4:
+    if mono.size < ONSET_N_FFT * 4:
         return out
 
-    _, _, spectrum = signal.stft(
-        mono, fs=sample_rate, nperseg=N_FFT, noverlap=N_FFT - HOP, boundary=None
-    )
-    magnitude = np.abs(spectrum)
-    flux = np.diff(magnitude, axis=1)
-    flux[flux < 0] = 0.0
-    envelope = flux.sum(axis=0)
+    envelope, frame_rate = onset_envelope(mono, sample_rate)
     if envelope.size < 16 or not np.any(envelope > 0):
         return out
 
@@ -257,8 +279,6 @@ def tempo_estimate(mono: np.ndarray, sample_rate: int) -> dict[str, float | None
     if correlation[0] <= 0:
         return out
     correlation = correlation / correlation[0]
-
-    frame_rate = sample_rate / HOP
     min_lag = max(1, int(frame_rate * 60.0 / 240.0))  # 240 BPM ceiling
     max_lag = min(correlation.size - 1, int(frame_rate * 60.0 / 40.0))  # 40 BPM floor
     if max_lag <= min_lag:
@@ -286,6 +306,51 @@ def tempo_estimate(mono: np.ndarray, sample_rate: int) -> dict[str, float | None
     out["tempo_confidence"] = float(min(1.0, max(0.0, (peak - float(np.mean(window))) / spread / 4.0)))
     out["pulse_clarity"] = float(min(1.0, max(0.0, peak)))
     return out
+
+
+def onset_envelope(mono: np.ndarray, sample_rate: int) -> tuple[np.ndarray, float]:
+    """Spectral-flux onset envelope and its frame rate.
+
+    Shared by tempo estimation and beat tracking so that both see exactly the
+    same view of the signal — two onset detectors disagreeing with each other is
+    a bug that looks like bad data.
+    """
+    frame_rate = sample_rate / ONSET_HOP
+    if mono.size < ONSET_N_FFT * 2:
+        return np.zeros(0, dtype=np.float64), frame_rate
+    _, _, spectrum = signal.stft(
+        mono,
+        fs=sample_rate,
+        nperseg=ONSET_N_FFT,
+        noverlap=ONSET_N_FFT - ONSET_HOP,
+        boundary=None,
+    )
+    magnitude = np.abs(spectrum)
+    if magnitude.size == 0:
+        return np.zeros(0, dtype=np.float64), frame_rate
+    flux = np.diff(magnitude, axis=1)
+    flux[flux < 0] = 0.0
+    return flux.sum(axis=0), frame_rate
+
+
+def detect_onset_frames(envelope: np.ndarray, frame_rate: float) -> np.ndarray:
+    """Frame indices of detected onsets, from an adaptive-threshold peak pick."""
+    if envelope.size < 3:
+        return np.zeros(0, dtype=np.float64)
+    normalised = envelope / (np.max(envelope) + 1e-12)
+    window = max(3, int(0.2 * frame_rate))
+    kernel = np.ones(window) / window
+    local_mean = np.convolve(normalised, kernel, mode="same")
+    threshold = local_mean + 0.25 * float(np.std(normalised))
+    # Minimum separation is deliberately small (~20 ms). A generous gap looks
+    # tidier on a metronome, but it silently deletes the second of two closely
+    # spaced onsets — which is exactly the shape of a band playing slightly
+    # behind a drummer, i.e. the thing this stage exists to measure. In this
+    # pipeline a transient produces a single-frame flux spike, so a short
+    # separation carries no double-counting risk.
+    separation = max(1, int(0.02 * frame_rate))
+    peaks, _ = signal.find_peaks(normalised, height=threshold, distance=separation)
+    return peaks.astype(np.float64)
 
 
 def extract_dsp_core(path: Path) -> dict[str, object]:

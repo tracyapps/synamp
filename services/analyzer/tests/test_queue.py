@@ -113,6 +113,24 @@ def test_reset_requeues_changed_file(tmp_path: Path) -> None:
     db.close()
 
 
+def test_clear_stage_forces_recompute_without_touching_others(tmp_path: Path) -> None:
+    """Changing an extractor must invalidate its stored numbers and nothing else."""
+    db, queue = make_queue(tmp_path)
+    queue.enqueue_missing([Path("/a/1.flac")])
+    job = queue.claim()
+    assert job is not None
+    queue.record_stage(job, "dsp_core")
+    queue.record_stage(job, "beat")
+    queue.complete(job)
+
+    assert queue.clear_stage("beat") == 1
+    resumed = queue.claim()
+    assert resumed is not None
+    assert resumed.stages_done == {"dsp_core"}, "only the named stage is cleared"
+    assert queue.clear_stage("nonexistent") == 0
+    db.close()
+
+
 def test_stats_counts_every_state(tmp_path: Path) -> None:
     db, queue = make_queue(tmp_path)
     queue.enqueue_missing([Path(f"/a/{i}.flac") for i in range(3)])

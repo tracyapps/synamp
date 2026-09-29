@@ -49,7 +49,7 @@ def test_scan_then_analyze_produces_measured_values(tmp_path: Path) -> None:
 
     assert first is not None and second is not None
     assert first.lufs_integrated is not None
-    assert first.stages_done == {"dsp_core"}
+    assert first.stages_done == {"dsp_core", "beat"}
     # The louder file must measure louder — the whole point of the stage.
     assert first.lufs_integrated > second.lufs_integrated
 

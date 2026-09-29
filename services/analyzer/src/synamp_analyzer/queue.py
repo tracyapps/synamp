@@ -181,6 +181,35 @@ class JobQueue:
         self.db.conn.commit()
         return rows
 
+    def clear_stage(self, stage: str) -> int:
+        """Mark one stage as not-done for every track, so it is recomputed.
+
+        Needed when an extractor changes rather than when a stage is added: the
+        stored numbers came from the old code and nothing about them reveals
+        that, so they would otherwise be served forever. The other stages' values
+        are left alone.
+        """
+        rows = self.db.conn.execute(
+            "SELECT track_path, stages_done FROM jobs"
+        ).fetchall()
+        cleared = 0
+        now = time.time()
+        for row in rows:
+            done = set(json.loads(row["stages_done"] or "[]"))
+            if stage not in done:
+                continue
+            done.discard(stage)
+            self.db.conn.execute(
+                """
+                UPDATE jobs SET stages_done = ?, state = ?, updated_at = ?
+                 WHERE track_path = ?
+                """,
+                (json.dumps(sorted(done)), JobState.PENDING.value, now, row["track_path"]),
+            )
+            cleared += 1
+        self.db.conn.commit()
+        return cleared
+
     def requeue_failed(self, max_attempts: int | None = None) -> int:
         """Put failed jobs with attempts left back in the queue. Returns count."""
         limit = self.max_attempts if max_attempts is None else max_attempts

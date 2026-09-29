@@ -13,11 +13,13 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from . import __version__
 from .config import AnalyzerConfig
-from .store import load_rows
 from .pipeline import catalog_and_queue, run_analyze, run_scan
+from .sampling import materialise, plan_sample
+from .store import load_rows
 
 
 def _cmd_scan(cfg: AnalyzerConfig) -> int:
@@ -36,9 +38,15 @@ def _cmd_scan(cfg: AnalyzerConfig) -> int:
     return 0
 
 
-def _cmd_analyze(cfg: AnalyzerConfig, limit: int | None, requeue_failed: bool) -> int:
+def _cmd_analyze(
+    cfg: AnalyzerConfig, limit: int | None, requeue_failed: bool, redo_stage: str | None
+) -> int:
     print(f"analyze: db={cfg.db_path}")
-    summary = run_analyze(cfg, limit=limit, requeue_failed=requeue_failed)
+    summary = run_analyze(
+        cfg, limit=limit, requeue_failed=requeue_failed, redo_stage=redo_stage
+    )
+    if summary["stage_cleared"]:
+        print(f"analyze: cleared stage from {summary['stage_cleared']} tracks")
     print(
         f"analyze: completed {summary['completed']}, failed {summary['failed']} "
         f"(claimed {summary['claimed']}, "
@@ -46,6 +54,42 @@ def _cmd_analyze(cfg: AnalyzerConfig, limit: int | None, requeue_failed: bool) -
         f"re-queued {summary['requeued_failed']} failed)"
     )
     return 1 if summary["failed"] else 0
+
+
+def _cmd_sample(
+    cfg: AnalyzerConfig,
+    count: int,
+    seed: int | None,
+    mode: str,
+    out: str | None,
+    dry_run: bool,
+) -> int:
+    plan = plan_sample(
+        cfg.library_path, cfg.audio_extensions, count, seed=seed, mode=mode
+    )
+    print(
+        f"sample: chose {len(plan.tracks)} of the library "
+        f"(mode {plan.mode}, seed {plan.seed})"
+    )
+    top = sorted(plan.groups.items(), key=lambda item: (-item[1], item[0]))
+    print(f"sample: spread across {len(top)} top-level folders")
+    for name, n in top[:10]:
+        print(f"  {n:4d}  {name}")
+    if len(top) > 10:
+        print(f"  ... and {len(top) - 10} more")
+
+    if dry_run:
+        print("sample: dry run, nothing written")
+        return 0
+
+    out_dir = Path(out) if out else cfg.cache_dir / "sample"
+    written = materialise(plan, out_dir)
+    print(f"sample: {written} symlinks written to {out_dir}")
+    print(f"sample: manifest {out_dir / 'sample-manifest.json'}")
+    print("sample: to analyse it")
+    print(f"  LIBRARY_PATH={out_dir} ANALYZER_DB_PATH={out_dir}/analyzer.sqlite3 \\")
+    print("    synamp-analyze scan && synamp-analyze analyze")
+    return 0
 
 
 def _cmd_stats(cfg: AnalyzerConfig) -> int:
@@ -113,8 +157,37 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="retry failed jobs that still have attempts left",
     )
+    analyze.add_argument(
+        "--redo-stage",
+        default=None,
+        metavar="STAGE",
+        help="recompute one stage for every track (after changing an extractor)",
+    )
 
     sub.add_parser("stats", help="show catalog and queue state")
+
+    sample = sub.add_parser(
+        "sample",
+        help="pick a random subset of the library into a symlink folder",
+    )
+    sample.add_argument("--count", type=int, default=200, help="how many tracks")
+    sample.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="fix the selection for reproducibility (default: random, recorded)",
+    )
+    sample.add_argument(
+        "--mode",
+        choices=("uniform", "stratified"),
+        default="uniform",
+        help="uniform = representative of the library as it is; "
+        "stratified = round-robin across top-level folders for breadth",
+    )
+    sample.add_argument("--out", default=None, help="destination folder")
+    sample.add_argument(
+        "--dry-run", action="store_true", help="report the selection without writing"
+    )
 
     inspect = sub.add_parser("inspect", help="dump stored metrics for analysed tracks")
     inspect.add_argument("--limit", type=int, default=3, help="how many tracks to show")
@@ -128,9 +201,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "scan":
         return _cmd_scan(cfg)
     if args.command == "analyze":
-        return _cmd_analyze(cfg, args.limit, args.requeue_failed)
+        return _cmd_analyze(cfg, args.limit, args.requeue_failed, args.redo_stage)
     if args.command == "stats":
         return _cmd_stats(cfg)
+    if args.command == "sample":
+        return _cmd_sample(cfg, args.count, args.seed, args.mode, args.out, args.dry_run)
     if args.command == "inspect":
         return _cmd_inspect(cfg, args.limit)
     return 2

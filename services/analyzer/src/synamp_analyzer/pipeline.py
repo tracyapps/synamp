@@ -75,6 +75,12 @@ def run_stages(
             fields = extract_dsp_core(result.track_path)
             for key, value in fields.items():
                 setattr(result, key, value)
+        elif stage == "beat":
+            from .beat import extract_beat
+
+            fields = extract_beat(result.track_path)
+            for key, value in fields.items():
+                setattr(result, key, value)
         else:  # pragma: no cover - guards against a stage being added without a runner
             raise NotImplementedError(f"no runner for stage {stage!r}")
         result.stages_done.add(stage)
@@ -90,6 +96,7 @@ def run_analyze(
     cfg: AnalyzerConfig,
     limit: int | None = None,
     requeue_failed: bool = False,
+    redo_stage: str | None = None,
     progress=print,
 ) -> dict[str, int]:
     """Drain the queue. Returns a summary of what happened."""
@@ -101,7 +108,10 @@ def run_analyze(
         "failed": 0,
         "requeued_running": queue.requeue_running(),
         "requeued_failed": 0,
+        "stage_cleared": 0,
     }
+    if redo_stage:
+        summary["stage_cleared"] = queue.clear_stage(redo_stage)
     if requeue_failed:
         summary["requeued_failed"] = queue.requeue_failed()
 

@@ -21,7 +21,7 @@ from pathlib import Path
 
 # Stages run in this order. A track resumes at the first stage missing from
 # `stages_done`, so adding a stage is the only change needed to back-fill it.
-STAGES: tuple[str, ...] = ("dsp_core",)
+STAGES: tuple[str, ...] = ("dsp_core", "beat")
 
 
 @dataclass(frozen=True)
@@ -63,6 +63,13 @@ class AnalysisResult:
     tempo. A tempo without its confidence is not usable: octave errors
     (60/120/240 BPM) are common and the confidence is what exposes them."""
     beat_count: int | None = None
+    """Beats found by the beat stage. Before that stage runs it holds an onset
+    count derived from the onset rate, which is why it is not called a beat
+    count on its own."""
+    beat_grid_strength: float | None = None
+    """0..1 — fraction of onset energy landing on the beat grid. Low values mean
+    the grid is fiction, and `microtiming_*` must be ignored rather than
+    reported."""
     onset_rate: float | None = None
     """Onsets per second — 'busyness'."""
     pulse_clarity: float | None = None
@@ -71,14 +78,16 @@ class AnalysisResult:
     percussiveness: float | None = None
     """0..1 — percussive-to-harmonic energy ratio."""
     microtiming_tightness: float | None = None
-    """Mean absolute deviation of onsets from the metric grid. Requires a beat
-    grid; `None` until the `beat` stage exists."""
+    """Mean absolute deviation of onsets from the metric grid, in ms. Tight /
+    programmed versus loose / human."""
     microtiming_signed: float | None = None
-    """Signed lead/lag: positive = playing ahead of the grid (urgent), negative
-    = behind it (laid back). The user's own hypothesis about 'energy' lives
-    here, not in bpm."""
+    """Mean signed deviation in ms. **Positive = onsets land early (pushing
+    ahead of the grid); negative = late (laid back).** This is where the user's
+    own hypothesis about 'energy' lives, not in bpm."""
     swing_ratio: float | None = None
-    """0.5 = straight eighths, ~0.667 = triplet swing."""
+    """Position of the offbeat inside the beat, as a fraction: 0.5 is straight
+    eighths, ~0.667 is triplet swing. None when the track has no offbeats to
+    measure — an absent value, not a straight feel."""
 
     # --- tonality / harmony ----------------------------------------------
     # Filled by: a future `tonal` stage.
@@ -97,6 +106,9 @@ class AnalysisResult:
     spectral_flatness: float | None = None
     """Noise-like vs tone-like spectrum; feeds distortion detection."""
     spectral_flux: float | None = None
+    spectral_tilt: float | None = None
+    """Slope of the spectrum on log-log axes (dB per log-Hz). Negative values
+    mean energy concentrated low; a mastering/brightness cue."""
     zero_crossing_rate: float | None = None
     roughness: float | None = None
 
@@ -111,6 +123,9 @@ class AnalysisResult:
     """Peak minus RMS in dB — transient headroom."""
     dynamic_complexity: float | None = None
     """Variability of the short-term loudness curve."""
+    clipping_density: float | None = None
+    """Proportion of samples pinned at full scale. A mastering fingerprint:
+    brick-walled modern masters clip, older or audiophile masters do not."""
 
     # --- vocal / instrumental --------------------------------------------
     instrumental: float | None = None

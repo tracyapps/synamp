@@ -1,6 +1,6 @@
 [project]
 name = "synamp-analyzer"
-version = "0.1.0"
+version = "0.2.0"
 description = "SynAmp offline analysis worker — runs on the brain machine, never on the NAS."
 readme = "README.md"
 requires-python = ">=3.11"
