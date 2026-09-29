@@ -1,0 +1,1354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SynAmp Brain — Research Dossier &amp; Design Specification</title>
+<style>
+  :root{
+    --paper:#f7f6f3;
+    --paper-2:#f1efeb;
+    --ink:#16181b;
+    --ink-2:#3b3e43;
+    --muted:#615e58;
+    --rule:#d8d4cc;
+    --rule-strong:#b9b4aa;
+    --accent:#8f2d1f;
+    --accent-soft:#a8452f;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --nav:clamp(190px,17vw,248px);
+    --rail:clamp(150px,13vw,190px);
+    --canvas:clamp(880px,88vw,1060px);
+    --measure:64ch;
+    --gutter:clamp(18px,3.4vw,44px);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:16.5px;line-height:1.6;
+    font-kerning:normal;font-variant-ligatures:common-ligatures;
+    text-rendering:optimizeLegibility;
+  }
+  .page{display:grid;grid-template-columns:var(--nav) minmax(0,1fr);min-height:100vh}
+  @media (max-width:1000px){.page{grid-template-columns:1fr}}
+
+  /* ---------- sidebar ---------- */
+  .sidebar{
+    position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    border-right:1px solid var(--rule);background:var(--paper-2);
+    padding:26px 20px 40px;
+  }
+  @media (max-width:1000px){.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule)}}
+  .sidebar .mark{
+    font-family:var(--serif);font-size:19px;letter-spacing:-.01em;line-height:1.15;
+    margin:0 0 2px;font-weight:600;
+  }
+  .sidebar .mark-sub{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 20px;
+  }
+  .toc{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+  .toc li{border-bottom:1px solid var(--rule)}
+  .toc a{
+    display:block;padding:9px 2px;text-decoration:none;color:var(--ink-2);
+    font-size:13.5px;line-height:1.35;
+  }
+  .toc a .num{
+    font-family:var(--mono);font-size:10.5px;color:var(--muted);
+    display:block;letter-spacing:.08em;margin-bottom:2px;
+  }
+  .toc a:hover{color:var(--accent);}
+  .toc a:hover .num{color:var(--accent);}
+
+  /* ---------- main ---------- */
+  .main{padding:0 var(--gutter) 96px;min-width:0}
+  .canvas{max-width:var(--canvas);margin-inline:auto}
+
+  /* ---------- cover ---------- */
+  .cover{padding:clamp(46px,7vw,92px) 0 clamp(30px,4vw,52px);border-bottom:2px solid var(--ink)}
+  .cover .kicker{
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 18px;
+  }
+  .cover h1{
+    font-family:var(--serif);font-weight:600;letter-spacing:-.022em;line-height:1.02;
+    font-size:clamp(40px,6.4vw,68px);margin:0 0 18px;max-width:20ch;
+  }
+  .cover .standfirst{
+    font-family:var(--serif);font-size:clamp(17px,1.9vw,21px);line-height:1.45;
+    color:var(--ink-2);max-width:52ch;margin:0 0 34px;
+  }
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px 0;
+    border-top:1px solid var(--rule);margin:0}
+  .meta div{padding:12px 18px 12px 0}
+  .meta dt{
+    font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 5px;
+  }
+  .meta dd{margin:0;font-size:14px;line-height:1.4;font-family:var(--sans)}
+
+  /* ---------- chapters ---------- */
+  .chapter{padding:clamp(40px,5.4vw,74px) 0 0;border-top:1px solid var(--rule-strong)}
+  .chapter:first-of-type{border-top:0}
+  .chapter > .kicker{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px;
+  }
+  h2{
+    font-family:var(--serif);font-weight:600;letter-spacing:-.019em;line-height:1.08;
+    font-size:clamp(27px,3.2vw,37px);margin:0 0 20px;max-width:30ch;
+  }
+  h3{
+    font-family:var(--serif);font-weight:600;letter-spacing:-.01em;line-height:1.2;
+    font-size:clamp(19px,2vw,23px);margin:38px 0 12px;max-width:34ch;
+  }
+  h4{
+    font-family:var(--sans);font-weight:600;font-size:15px;letter-spacing:.005em;
+    margin:26px 0 8px;
+  }
+  p{margin:0 0 1.05em;max-width:var(--measure)}
+  .lede{
+    font-family:var(--serif);font-size:clamp(17px,1.75vw,19.5px);line-height:1.5;
+    color:var(--ink-2);max-width:60ch;margin-bottom:1.5em;
+  }
+  .note{font-size:13.5px;line-height:1.5;color:var(--muted);max-width:var(--measure)}
+  .kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  strong{font-weight:600}
+  em{font-style:italic}
+  ul,ol{max-width:var(--measure);padding-left:1.15em;margin:0 0 1.1em}
+  li{margin:0 0 .42em}
+  ul.plain{list-style:none;padding-left:0}
+  ul.plain li{padding-left:0;font-size:14px;line-height:1.5;color:var(--ink-2);
+    border-top:1px solid var(--rule);padding-top:.42em}
+  ul.plain li:first-child{border-top:0}
+  a{color:var(--accent);text-underline-offset:2px;text-decoration-thickness:.5px}
+  a:hover{color:var(--accent-soft)}
+  code{font-family:var(--mono);font-size:.88em;background:var(--paper-2);
+    border:1px solid var(--rule);padding:.06em .32em}
+  pre{
+    background:var(--paper-2);border:1px solid var(--rule);border-left:2px solid var(--accent);
+    padding:14px 16px;overflow-x:auto;margin:0 0 1.2em;max-width:var(--canvas);
+    white-space:pre-wrap;overflow-wrap:anywhere;
+  }
+  pre code{background:none;border:0;padding:0;font-size:12.8px;line-height:1.55}
+  blockquote{
+    margin:0 0 1.2em;padding:2px 0 2px 18px;border-left:2px solid var(--rule-strong);
+    font-family:var(--serif);font-size:17px;color:var(--ink-2);max-width:58ch;
+  }
+  dl{max-width:var(--measure);margin:0 0 1.2em}
+  dt{font-weight:600;margin-top:.75em}
+  dd{margin:.15em 0 0}
+
+  /* ---------- evidence chips ---------- */
+  .state{
+    font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid var(--rule-strong);color:var(--muted);
+    padding:.16em .45em;white-space:nowrap;
+  }
+  .state[data-state="candidate"]{border-color:var(--accent);color:var(--accent)}
+  .state[data-state="unverified"]{border-style:dashed}
+  .state[data-state="confirmed"]{border-color:var(--ink);color:var(--ink)}
+  .state[data-state="observed"]{border-color:var(--rule-strong);color:var(--ink-2)}
+
+  /* ---------- callout (hairline, never a rounded card) ---------- */
+  .callout{
+    border-top:1px solid var(--rule-strong);border-bottom:1px solid var(--rule-strong);
+    padding:14px 0;margin:1.6em 0;max-width:var(--measure);
+  }
+  .callout p{max-width:none;margin:0}
+  .callout p + p{margin-top:.6em}
+
+  /* ---------- tables ---------- */
+  figure{margin:1.7em 0;max-width:var(--canvas)}
+  figure.bleed{max-width:var(--canvas)}
+  figcaption{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--muted);
+    margin-top:9px;line-height:1.5;
+  }
+  table{border-collapse:collapse;width:100%;font-size:13.4px;line-height:1.42;
+    font-variant-numeric:tabular-nums}
+  caption{
+    caption-side:top;text-align:left;font-family:var(--mono);font-size:10.5px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    padding:0 0 9px;border-bottom:1px solid var(--rule);
+  }
+  thead th{
+    text-align:left;font-family:var(--mono);font-weight:400;font-size:10.5px;
+    letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);
+    border-bottom:1px solid var(--rule-strong);padding:8px 12px 8px 0;vertical-align:bottom;
+  }
+  tbody td{
+    border-bottom:1px solid var(--rule);padding:9px 12px 9px 0;vertical-align:top;
+    color:var(--ink-2);
+  }
+  tbody tr:last-child td{border-bottom:1px solid var(--rule-strong)}
+  tbody td:first-child{color:var(--ink)}
+  th:last-child,td:last-child{padding-right:0}
+
+  /* ---------- colophon ---------- */
+  .colophon{
+    margin-top:70px;border-top:2px solid var(--ink);padding-top:20px;
+  }
+  .colophon h3{margin-top:0}
+  .colophon p{font-size:13.4px;color:var(--muted);max-width:var(--measure)}
+  hr{border:0;border-top:1px solid var(--rule);margin:34px 0;max-width:var(--canvas)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="sidebar" aria-label="Contents">
+    <p class="mark">SynAmp&nbsp;Brain</p>
+    <p class="mark-sub">Research Dossier</p>
+    <ul class="toc">
+      <li><a href="#c1"><span class="num">01</span>The shape of the problem</a></li>
+      <li><a href="#c2"><span class="num">02</span>What the science actually supports</a></li>
+      <li><a href="#c3"><span class="num">03</span>The scanable metric taxonomy: what a library can actually yield</a></li>
+      <li><a href="#c4"><span class="num">04</span>The recording, not the artist: the Ani DiFranco problem</a></li>
+      <li><a href="#c5"><span class="num">05</span>The toolchain and the licence fork: what can ship, what cannot</a></li>
+      <li><a href="#c6"><span class="num">06</span>The pipeline, reconciled: from a sentence to a playlist</a></li>
+      <li><a href="#c7"><span class="num">07</span>Learning from feedback, for an audience of one</a></li>
+      <li><a href="#c8"><span class="num">08</span>What the review found, and what remains unverifiable</a></li>
+      <li><a href="#c9"><span class="num">09</span>Build plan and open decisions</a></li>
+    </ul>
+  </nav>
+
+  <main class="main">
+    <div class="canvas">
+
+      <header class="cover">
+        <p class="kicker">Design Dossier &middot; Candidate Specification</p>
+        <h1>Building the Brain Behind SynAmp</h1>
+        <p class="standfirst">What the research actually supports about music, mood and attention &mdash;
+        and which signals a personal audio library can really surrender, so that a sentence typed by one
+        listener becomes a playlist that is accurate, explainable, and gets better with use.</p>
+        <dl class="meta">
+          <div><dt>Prepared for</dt><dd>tapps &mdash; SynAmp, self-hosted</dd></div>
+          <div><dt>Prepared by</dt><dd>AutoCoder</dd></div>
+          <div><dt>Date</dt><dd>27 September 2026</dd></div>
+          <div><dt>Status</dt><dd>Candidate design &middot; unproven on this library</dd></div>
+          <div><dt>Evidence base</dt><dd>9 research passes, 2 independent reviews</dd></div>
+        </dl>
+      </header>
+
+<section class="chapter" id="c1">
+<p class="kicker">Chapter 01</p>
+<h2>The shape of the problem</h2>
+
+<p class="lede">This dossier compiles what the research literature actually supports about music in relation to mood, focus, memory, clarity, and emotion — and then converts that into a concrete design for SynAmp's brain: the layer that scans your own library and turns a natural-language prompt into an accurate, adaptive playlist. Its conclusion is narrow and deliberate. A system that works does not classify artists or songs; it models the <em>recording</em>, stores a wide multi-signal vector per track, compiles language into a typed query object, and treats learning as an explainable re-ranker long before it treats it as statistics. That design is a <span class="state" data-state="candidate">candidate</span>; the methods underneath it are <span class="state" data-state="observed">observed</span>.</p>
+
+<h3>The request, restated</h3>
+<p>Two requests arrived together. The first is a research compilation: what music does to mood, focus, memory, clarity, and emotion. The second matters more. You want to know which metrics can actually be <em>scanned from a personal digital audio library</em>, so that a listener can write an ordinary sentence and receive a playlist that is accurate and that adapts over time. You supplied the failure cases yourself, and they are the specification: every one of them is a case where the tags on a file are silent about the thing you actually mean. The eight are below, unchanged in spirit.</p>
+
+<figure class="bleed">
+<table class="data">
+<caption>The eight hard cases the system must survive.</caption>
+<thead>
+<tr><th>#</th><th>Hard case</th><th>Why ordinary metadata fails</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Artist-era: one Ani DiFranco song is not a substitute for another from a few albums earlier or later.</td><td><code>artist</code> and <code>album</code> are labels, not sounds; nothing in the tags says which records share a sonic period (Flexer &amp; Schnitzer 2010, <a href="https://direct.mit.edu/comj/article/34/3/20/94322/Effects-of-Album-and-Artist-Filters-in-Audio">Computer Music Journal</a>).</td></tr>
+<tr><td>2</td><td>Subject or theme that is not in the song title.</td><td>Tags carry title, artist, album — never the subject the lyric is about.</td></tr>
+<tr><td>3</td><td>Mood carried by the chord progression rather than the key.</td><td>At most you get a key tag; the progression that carries the feeling has nowhere to live.</td></tr>
+<tr><td>4</td><td>Energy carried by microtiming, not BPM.</td><td>A BPM number cannot separate laid-back from driving when both play at the same tempo.</td></tr>
+<tr><td>5</td><td>Era that spans eras and includes covers and originals from other eras.</td><td><code>year</code> is the release date of <em>this</em> recording, not its sonic era; a cover imports another era's material wholesale.</td></tr>
+<tr><td>6</td><td>Hard exclusions such as "exclude punk or country".</td><td>Genre tags are sparse and inconsistent, and no tag is a reliable proxy for either category.</td></tr>
+<tr><td>7</td><td>The literal prompt: "I need to focus. no words, no piano, nothing too slow/relaxing."</td><td>Three simultaneous hard constraints, in a library where the obvious fix — widen the filters — is exactly what would break them.</td></tr>
+<tr><td>8</td><td>Learning from thumbs up/down, love, and remove.</td><td>No tag records a skip or a favourite; these are behavioural events, not metadata.</td></tr>
+</tbody>
+</table>
+<figcaption>Each row is a case the design must pass, not an aspiration. Cases 1, 3, 4, 5 and 6 are unimplementable on tags alone.</figcaption>
+</figure>
+
+<h3>The design thesis, in one page</h3>
+<dl>
+<dt>Model the recording, not the artist.</dt>
+<dd>The unit of similarity is the track's sound, not the name attached to it. Everything else follows from this.</dd>
+<dt>Store a wide multi-signal vector per track.</dt>
+<dd>Objective DSP features, learned embeddings, production and era features, instrument and vocal detectors, and lyric or topic embeddings — held side by side, because no single signal spans all eight cases. This extends the existing <code>AnalysisResult</code> rather than replacing it.</dd>
+<dt>Compile natural language into a typed query object.</dt>
+<dd>Hard filters are separated from soft boosts. Negation becomes an explicit per-track exclusion, never negated text handed to an embedding — that rule is the one part of this design with direct experimental backing.</dd>
+<dt>Playlists are saved queries, re-resolved live.</dt>
+<dd>A playlist is not a frozen list of tracks; it is a query over a versioned store. Add a track, re-scan a model, and the playlist updates itself.</dd>
+<dt>Learning starts as an explainable re-ranker.</dt>
+<dd>Before anything statistical is trained, feedback becomes boosts and penalties you can read back in plain language. Trust first; fitting later.</dd>
+</dl>
+
+<h3>How to read this document</h3>
+<ul class="plain">
+<li><strong>Chapter 2</strong> — what the science actually supports, with effect sizes kept honest.</li>
+<li><strong>Chapter 3</strong> — the scanable metric taxonomy: what a library can and cannot yield.</li>
+<li><strong>Chapter 4</strong> — the recording, not the artist: the Ani DiFranco problem, sonic periods, era, covers.</li>
+<li><strong>Chapter 5</strong> — the toolchain and the licence fork, and the decision it forces.</li>
+<li><strong>Chapter 6</strong> — the pipeline, reconciled: prompt to query object to playlist. The central chapter.</li>
+<li><strong>Chapter 7</strong> — learning from feedback: thumbs, love, remove, skip.</li>
+<li><strong>Chapter 8</strong> — adversarial review, and what remains unverifiable.</li>
+<li><strong>Chapter 9</strong> — build plan and the decisions only you can make.</li>
+</ul>
+
+<h3>Evidence legend</h3>
+<ul class="plain">
+<li><span class="state" data-state="observed">observed</span> — seen directly in the repository or a primary source during this pass. The strongest state most of this dossier can claim.</li>
+<li><span class="state" data-state="candidate">candidate</span> — a design proposal made here and not yet tested against your library.</li>
+<li><span class="state" data-state="reproduced">reproduced</span> — an external result independently re-derived or re-run during this pass.</li>
+<li><span class="state" data-state="confirmed">confirmed</span> — backed by an independent source <em>and</em> survived adversarial review; used sparingly, or not at all.</li>
+<li><span class="state" data-state="unverified">unverified</span> — asserted but unchecked. A lead, not a fact.</li>
+</ul>
+<p class="note">This dossier is a <span class="state" data-state="candidate">candidate</span> design resting on <span class="state" data-state="observed">observed</span> methods. Nothing here is upgraded to <span class="state" data-state="confirmed">confirmed</span> unless Chapter 8's red-team let it through, and much of it did not.</p>
+
+<aside class="callout">
+<p><strong>The one caveat to carry throughout.</strong> The strongest version of every mechanism in this document is unproven on <em>this</em> library — 45,739 files, 274 GB, scanned in sampled windows on a four-core NAS and an M4 Pro. Where the literature is thin, where a metric has no confirmed producer, or where the ground truth is circular, Chapter 8 says so by name.</p>
+</aside>
+</section>
+
+<section class="chapter" id="c2">
+<p class="kicker">Chapter 02</p>
+<h2>What the science actually supports</h2>
+
+<p class="lede">SynAmp promises to turn one typed sentence &mdash; &ldquo;something to write to, nothing too slow, no words&rdquo; &mdash; into fitting music. That promise rests on psychology holding real findings, real disagreements, and several well-marketed non-findings. This chapter condenses what a designer can build on, and where the honest answer is &ldquo;choose the mechanism, not the slogan&rdquo;; evidence states are carried at the strength the research pass gave them.</p>
+
+<h3>Music triggers emotion; it does not carry it</h3>
+
+<p>The organising account is Juslin&rsquo;s multi-mechanism framework, <strong>BRECVEMA</strong>: music evokes emotion through eight partly independent routes &mdash; brainstem reflex, rhythmic entrainment, evaluative conditioning, contagion, visual imagery, episodic memory, musical expectancy, and aesthetic judgement (Juslin 2013, <a href="https://pubmed.ncbi.nlm.nih.gov/23769678">PubMed 23769678</a>). <span class="state" data-state="reproduced">reproduced</span> Emotion is a property of a <em>musical event</em> &mdash; music plus this listener plus this context, not a single &ldquo;mood dial&rdquo;.</p>
+
+<p>The <strong>Geneva Emotional Music Scale</strong> gives nine music-specific dimensions in three second-order factors (Zentner, Grandjean &amp; Scherer 2008; source unresolved in this pass). <span class="state" data-state="reproduced">reproduced</span></p>
+
+<figure class="bleed">
+<table class="data">
+<caption>GEMS-9 dimensions and their second-order factors</caption>
+<thead><tr><th>Second-order factor</th><th>Dimension members</th><th>Design consequence</th></tr></thead>
+<tbody>
+<tr><td>Vitality</td><td>joyful activation, power</td><td>Energised end of a preset.</td></tr>
+<tr><td>Unease</td><td>tension, sadness</td><td>The pole a focus preset avoids.</td></tr>
+<tr><td>Sublimity</td><td>transcendence, nostalgia, tenderness, peacefulness, wonder</td><td>Not representable in valence&ndash;arousal; argues for a richer prompt vocabulary.</td></tr>
+</tbody>
+</table>
+<figcaption>A compact proxy would keep vitality&ndash;unease plus a sublimity residual.</figcaption>
+</figure>
+
+<p>Most Music Emotion Recognition instead uses two-dimensional <strong>valence &times; arousal</strong>, which cannot express the sublimity region (Music Emotion Recognition meta-analysis 2014&ndash;2024, <a href="https://durham-repository.worktribe.com/OutputFile/5081808">Durham repository</a>). <span class="state" data-state="reproduced">reproduced</span></p>
+
+<aside class="callout">
+<p><strong>Perceived &ne; felt.</strong> Listeners perceive an expression (&ldquo;this sounds sad&rdquo;) without feeling it (Gabrielsson 2002, <em>Musicae Scientiae</em>; source unresolved in this pass). <span class="state" data-state="reproduced">reproduced</span> Mood-tag classifiers measure <em>perceived expression</em>, while &ldquo;focus&rdquo; is a <em>felt</em> goal &mdash; any direct tag&rarr;goal mapping is <span class="state" data-state="candidate">candidate</span>, learned from feedback.</p>
+</aside>
+
+<p>Expectation theory adds that emotion depends on surprise relative to expectation (Huron&rsquo;s ITPRA). <span class="state" data-state="candidate">candidate</span> A track&rsquo;s value is thus partly a function of familiarity and surprise, not a fixed label. Together: <strong>a static per-track mood tag is a lossy projection of a listener-relative phenomenon</strong> &mdash; usable as a prior, but the felt goal must be closed by feedback.</p>
+
+<h3>Tempo, entrainment, and the perceptual centre</h3>
+
+<p>Adults&rsquo; preferred beat rate is roughly 500&nbsp;ms &mdash; about <strong>120&nbsp;BPM</strong> &mdash; close to the modal beat rate of music and to spontaneous tapping (Fraisse 1982; Moelants 2002; source unresolved in this pass). <span class="state" data-state="reproduced">reproduced</span> 120&nbsp;BPM is the perceptual centre: far below reads as slow and relaxing &mdash; the failure your prompt excludes &mdash; far above can read as agitated. Tempo is also a <strong>pacing</strong> lever: the tempo of background music influences the tempo of the activity performed while listening (K&auml;mpfe, Sedlmeier &amp; Renkewitz 2011, <a href="https://eric.ed.gov/?id=EJ944201">ERIC EJ944201</a>). <span class="state" data-state="reproduced">reproduced</span></p>
+
+<p>Rhythmic entrainment follows an <strong>inverted-U</strong>: moderate syncopation maximises the urge to move (&ldquo;groove&rdquo;), while too little or too much both reduce it (Witek et al. 2014, &ldquo;Syncopation, Body-Movement and Pleasure in Groove Music&rdquo;, <em>PLOS ONE</em>; source unresolved in this pass). <span class="state" data-state="observed">observed</span> A focus preset belongs in a moderate pulse-clarity, mild-syncopation band &mdash; not at either extreme.</p>
+
+<h3>Music while you work: the focus case</h3>
+
+<p>Under the <strong>arousal&ndash;mood hypothesis</strong>, music affects task performance mainly by shifting arousal and mood, not through musical-cognitive content (Thompson, Schellenberg &amp; Husain 2001, <em>Psychological Science</em> 12(3):248&ndash;251; source unresolved in this pass). <span class="state" data-state="reproduced">reproduced</span> If the right music depends on your <em>current</em> arousal, no fixed playlist is optimal &mdash; which is the direct motivation for the feedback loop.</p>
+
+<p>A meta-analysis finds a <strong>near-null global effect</strong> of background music on adult cognition, but real task-specific effects: it disturbs reading, slightly harms memory, and helps emotional reactions and sports achievement (K&auml;mpfe et al. 2011, <a href="https://eric.ed.gov/?id=EJ944201">ERIC EJ944201</a>). <span class="state" data-state="reproduced">reproduced</span> There is no single &ldquo;focus music&rdquo;; route by task type.</p>
+
+<aside class="callout">
+<p><strong>The meta-analyses disagree in sign &mdash; and that is the point.</strong> A separate meta-analysis of background music and learning (47 studies) reports a <em>small positive</em> mean effect, <strong>around 0.3</strong>, rising to medium when music is played <em>before</em> the assessment (de la Mora Velasco et al. 2023, <a href="https://journals.sagepub.com/doi/10.1177/03057356231153070">Psychology of Music</a>). <span class="state" data-state="reproduced">reproduced</span> The coefficient is published to three decimals (<code>d&nbsp;=&nbsp;0.314</code>), but that precision was <strong>not verifiable from the accessible abstract</strong>, so &ldquo;around 0.3&rdquo; is the honest figure.</p>
+<p>This positive result sits opposite the near-null/negative one above &mdash; exactly what the heterogeneity of tasks and stimuli predicts. <strong>No sign may be hard-coded.</strong> SynAmp must not ship a rule that background music helps &mdash; or harms.</p>
+</aside>
+
+<p>During sustained attention, the cleanest study found that <strong>preferred</strong> background music raised task-focus by cutting mind-wandering, without significantly reducing reaction time versus silence (Kiss &amp; Linnell 2020/21, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8357712/">Psychological Research 85</a>). <span class="state" data-state="observed">observed</span> (n&nbsp;=&nbsp;40.) The defensible benefit is anti-boredom on low-demand work, not speed.</p>
+
+<p>The best-supported lever is <strong>lyrics</strong>. Vocal music impairs verbal work where instrumental music does not (Alley &amp; Greene 2008), while high lyrical or rhythmic complexity interferes with serial recall (Perham &amp; Currie 2014, <em>Applied Cognitive Psychology</em> 28(2):279&ndash;284; source unresolved in this pass). The mechanism is the <strong>irrelevant-speech / changing-state effect</strong>: task-irrelevant, speech-like sound competes with verbal short-term memory (Colle &amp; Welsh 1976; Salam&eacute; &amp; Baddeley 1982). <span class="state" data-state="reproduced">reproduced</span> &ldquo;No words&rdquo; is the most actionable rule available.</p>
+
+<p>The arousal curve completes the picture. Lapses split into mind-wandering (arousal too low) and external distraction (too high); a direct comparison found <em>more felt cognitive effort</em> under high-arousing music on a demanding attentional task (Gigliotti et al. 2025, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12627320/">Cognitive Research 2025</a>). <span class="state" data-state="observed">observed</span> A focus preset should sit at <strong>mid-arousal, not maximal</strong>, and the optimum should shift <em>down</em> as task demand rises.</p>
+
+<p class="note">The claim that &ldquo;video-game music helps you focus&rdquo; has no strong direct experimental support here; treat it as a popular claim resting only on separately supported properties &mdash; instrumental, high pulse clarity, moderately predictable.</p>
+
+<h3>&ldquo;Clarity&rdquo; is colloquial, not a construct</h3>
+
+<p>Mental clarity has <strong>no validated audio measurement</strong>. <span class="state" data-state="unverified">unverified</span> It is shorthand for a bundle that <em>is</em> definable: arousal optimisation (the inverted-U above), low distraction (absence of changing-state or speech-like audio), predictability (low surprise, stable pulse, slow harmonic change), low lyrical presence, and low personal salience. The &ldquo;attention drainage&rdquo; framing rests on single-study evidence (Chou 2010, <a href="https://files.eric.ed.gov/fulltext/EJ882124.pdf">ERIC EJ882124</a>). <span class="state" data-state="observed">observed</span> Clarity is measurable only through proxies, validated only through feedback.</p>
+
+<h3>Memory: a capture risk for focus, a deliberate aid for encoding</h3>
+
+<p>Familiar music is not neutral during work: music-evoked autobiographical memories are vivid, emotional and often involuntary, and one well-known study found roughly <strong>30% of songs</strong> evoked one (Janata 2009, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2758676/">Cerebral Cortex</a>). <span class="state" data-state="reproduced">reproduced</span></p>
+
+<p class="note">Caveat: the &ldquo;~30%&rdquo; figure risks conflation &mdash; the same headline number appears in a later replication (Jakubowski 2021), so attribution is not clean. The direction is nonetheless a focus risk, not a benefit: familiar, salient music recruits autobiographical retrieval and can capture attention.</p>
+
+<p><strong>Earworms</strong> (involuntary musical imagery) are near-universal by lifetime prevalence &mdash; reported by more than 90% of people surveyed (Dodds et al. 2025, <em>Consciousness and Cognition</em> 130:103834, <a href="https://www.sciencedirect.com/science/article/pii/S1053810025000273">ScienceDirect</a>). <span class="state" data-state="reproduced">reproduced</span></p>
+
+<p class="note">But the same literature reports 29.2% of a 2025 sample experienced earworms <em>never</em>. &ldquo;&gt;90%&rdquo; and &ldquo;29.2% never&rdquo; cannot both describe one lifetime quantity: prevalence is reproduced in direction, unresolved in magnitude. That earworms impair concurrent verbal work is a <span class="state" data-state="candidate">candidate</span> argument, not established.</p>
+
+<p>Separately, music can serve as a <strong>mnemonic</strong>: sung material can be better remembered than spoken, partly through slower articulation (Kilgour, Jakobson &amp; Cuddy 2000; source unresolved in this pass). <span class="state" data-state="observed">observed</span> But this is a <em>deliberate encoding</em> technique, not a background-listening benefit, and must not be conflated with &ldquo;music helps me focus&rdquo;.</p>
+
+<h3>What not to implement</h3>
+
+<ul>
+<li><strong>Mozart-specific presets.</strong> A meta-analysis found little evidence of a specific performance-enhancing Mozart effect (Pietschnig, Voracek &amp; Formann 2010, <a href="https://www.sciencedirect.com/science/article/abs/pii/S0160289610000267">Intelligence 38(3)</a>); a later review found no Mozart-specific mechanism, with any small effects indistinguishable from &ldquo;any other music&rdquo; (Oberleiter et al. 2023, <a href="https://www.nature.com/articles/s41598-023-30206-w">Scientific Reports</a>). <span class="state" data-state="observed">observed</span></li>
+<li><strong>Binaural beats.</strong> Evidence is inconsistent: a review of 14 studies found 5 supportive and 8 contradictory for the entrainment hypothesis (Ingendoh et al. 2023, <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10198548/">PLOS ONE</a>), conflicting with an earlier favourable meta-analysis (Garcia-Argibay et al. 2019, <a href="https://pubmed.ncbi.nlm.nih.gov/30073406">PubMed 30073406</a>). <span class="state" data-state="candidate">candidate</span> at best.</li>
+<li><strong>Isochronic tones.</strong> Marketed as entrainment; no adequate replicated evidence located. <span class="state" data-state="unverified">unverified</span></li>
+<li><strong>432&nbsp;Hz tuning</strong> as a quality or healing claim. No credible peer-reviewed support located in this pass. <span class="state" data-state="unverified">unverified</span> At most a preference tag.</li>
+<li><strong>&ldquo;Music raises IQ.&rdquo;</strong> Disproven as stated: mere listening does not raise general intelligence. <span class="state" data-state="reproduced">reproduced</span> (as a non-finding).</li>
+</ul>
+
+<h3>From construct to computable metric</h3>
+
+<p>Every construct SynAmp cares about is under-determined by audio, so the system must carry an explicit <em>proxy</em> for each, plus the assumption that the proxy stands in for the construct. This is the bridge into Chapter 3. <strong>Every proxy below is <span class="state" data-state="candidate">candidate</span> until feedback confirms it.</strong></p>
+
+<figure class="bleed">
+<table class="data">
+<caption>Construct &rarr; proxy audio metric &rarr; computation</caption>
+<thead><tr><th>Construct</th><th>Proxy metric(s)</th><th>How computed</th></tr></thead>
+<tbody>
+<tr><td>Arousal (calm &harr; energetic)</td><td>BPM; loudness (LUFS); onset rate; spectral flux; centroid</td><td>Beat tracking; EBU&nbsp;R128 loudness; onset count; STFT flux/centroid</td></tr>
+<tr><td>Valence (negative &harr; positive)</td><td>mode / key; chord tension; roughness; attack rate</td><td>Key-profile estimate; chroma&rarr;chord; sensory-dissonance model; onset envelopes</td></tr>
+<tr><td>Emotional category (GEMS-like)</td><td>classifier over valence &times; arousal plus a sublimity residual</td><td>Music Emotion Recognition model on V&ndash;A labels; V&ndash;A retained as backbone</td></tr>
+<tr><td>Instrumentalness / lyric interference</td><td>vocal-stem energy ratio; <code>has_lyrics</code>; lyric language</td><td>Separation &rarr; vocal-stem / mixture RMS; voice-activity classifier; language detect</td></tr>
+<tr><td>Distraction / cognitive load</td><td>event rate; timbral-change variance; layer count</td><td>Onsets per second; spectral-flux variance; stem count</td></tr>
+<tr><td>Predictability / low surprise</td><td>pulse clarity; chord-change rate; novelty</td><td>Pulse clarity; chord changes per minute; SSM novelty</td></tr>
+<tr><td>Entrainment &amp; groove</td><td>pulse clarity; beat strength; syncopation index; tempo distance to 120&nbsp;BPM</td><td>Pulse clarity and beat strength; metrical-weight syncopation; |tempo &minus; 120|</td></tr>
+<tr><td>Familiarity / personal salience</td><td>play count; embedding distance to heavy rotation</td><td>Listening history; centroid distance in embedding space</td></tr>
+<tr><td>Earworm risk</td><td>lyric salience &times; melodic repetition &times; recency</td><td>Vocal presence &times; repeat/hookiness score &times; days since last play</td></tr>
+<tr><td>Microtiming &ldquo;feel&rdquo;</td><td>onset deviation from metric grid; swing ratio</td><td>Signed onset deviation from the quantised grid; long&ndash;short subdivision ratio</td></tr>
+</tbody>
+</table>
+<figcaption>Each row is a hypothesis, not a measurement of the construct. Chapter 3 audits which a self-hosted library can actually compute; the feedback loop of Chapter 7 is the only arbiter of whether a proxy works.</figcaption>
+</figure>
+
+<p class="note">Nothing here has been run against your library; effect sizes are reported only at the precision the sources supported.</p>
+
+</section>
+
+<section class="chapter" id="c3">
+<p class="kicker">Chapter 03</p>
+<h2>The scanable metric taxonomy: what a library can actually yield</h2>
+
+<p class="lede">Your complaint is not that <code>bpm</code>, <code>key</code>, <code>energy</code>, <code>danceability</code>, <code>mood</code>, <code>instrumental</code> and <code>instruments{}</code> are wrong. It is that they are too coarse to compile a sentence into. Key is not mood. BPM is not energy. Year is not era. And nothing in the current <code>AnalysisResult</code> can exclude a track by the way it <em>sounds</em>.</p>
+
+<p>What follows is a taxonomy of metrics computable automatically from your ~45,700 local files, organised so each one maps onto a phrase you would actually type. Read the evidence states precisely: the methods are <span class="state" data-state="observed">observed</span> — a documented library or paper does what is described — but nothing is <span class="state" data-state="confirmed">confirmed</span> on your library, because the analyzer has no models wired yet. Every per-library accuracy claim is <span class="state" data-state="candidate">candidate</span>.</p>
+
+<h3>The ten families</h3>
+
+<h4>Rhythm and timing</h4>
+<p>BPM is the weakest signal here. Tempo is a tempogram peak over the onset-strength envelope, but octave errors near 60/120/240 need beat strength and event density to disambiguate. Pulse clarity and microtiming are the load-bearing members, treated below.</p>
+
+<h4>Tonality and harmony</h4>
+<p>Absolute key is a weak mood signal; mode, chord-change behaviour and dissonance carry the affect. Key is chroma matched to a profile (Krumhansl–Schmuckler, Temperley, EDMA); chord progression comes from a deep-chroma chord network. Mainstream chord models are major/minor only, and degrade on dense mixes.</p>
+
+<h4>Timbre and spectrum</h4>
+<p>Mostly internal proxies rather than labels. MFCCs carry the timbral envelope; flatness separates noise-like from tone-like. No open "acousticness" metric exists — the commercial one is undisclosed — so use a flatness/MFCC/centroid/percussiveness proxy.</p>
+
+<h4>Loudness and dynamics</h4>
+<p>Mastering practice is a cheap fingerprint of when a record was made. Integrated loudness and loudness range come per ITU-R BS.1770 / EBU R128; crest factor is peak minus RMS; clipping density counts near-0 dBFS samples. Together they are the compression cue behind the era story.</p>
+
+<h4>Vocal and instrumental</h4>
+<p>There is no open equivalent of the proprietary instrumentalness catch-all; the honest substitute is a singing-voice detector. A frame-level classifier collapses to a track-level vocal fraction. Soft, rapped and chopped-sample vocals confuse it, so thresholds are mandatory.</p>
+
+<h4>Instrumentation</h4>
+<p>Multi-label instrument detection is what makes "no piano" excludable: a pretrained CNN over log-mel yields per-instrument confidences. Stem energies give mix balance; the harmonic/percussive ratio separates a tonal bed from a rhythmic one. Note: <code>sax</code> has no confirmed producer among the named instrument models.</p>
+
+<h4>Structure</h4>
+<p>Structure tells you where a track changes, not what the sections mean: boundaries from a self-similarity matrix plus novelty-curve peak-picking, repetition from SSM coverage. This family feeds "has a build-up", not a filter.</p>
+
+<h4>High-level semantic</h4>
+<p>The closest thing to mood, and learned and approximate — never ground truth. Multi-label classifiers yield relaxing, dark, epic, party; valence/arousal regression gives the axes behind "nothing too relaxing". Composite energy should fuse loudness, flux, tempo, roughness and onset rate. Meditativeness has no standard descriptor.</p>
+
+<h4>Style-texture proxies</h4>
+<p>To exclude punk or country <em>by sound</em> you need texture, not tags. A distortion index combines flatness, high-order harmonics and low crest; a country proxy adds acoustic share, nasal formants and diatonic harmony; a punk proxy adds fast tempo and a compressed master. Expect false negatives.</p>
+
+<h4>Learned embeddings</h4>
+<p>An audio embedding is a metric in its own right: a dense vector where distance means "how alike do these sound". It underpins "more like this" and the whole adaptive-learning loop. A joint text–audio space ranks free text against audio. The embedder choice is a licence decision — Chapter 5 owns it.</p>
+
+<figure class="bleed">
+<table class="data">
+<caption>The ten families, their computation, and licence status</caption>
+<thead>
+<tr><th>Family</th><th>Representative metrics</th><th>Computation</th><th>Tool and licence</th></tr>
+</thead>
+<tbody>
+<tr><td>Rhythm / timing</td><td>tempo, beat grid, downbeat, onset rate, beat strength, pulse clarity, swing, microtiming, regularity</td><td>onset-envelope autocorrelation or tempogram peak; RNN + DBN beat tracking; fluctuation-spectrum entropy; subdivision ratios and signed onset deviation</td><td>librosa (BSD); madmom code (BSD), models (<strong>NC</strong>); Essentia <code>PulseClarity</code> (<strong>NC</strong>). Swing must be built — no one-call extractor.</td></tr>
+<tr><td>Tonality / harmony</td><td>key, mode, chroma/HPCP, chord progression, chord-change rate, harmonic complexity, dissonance</td><td>chroma versus key profile; deep-chroma to chord network or HMM; partial-pair roughness; chroma entropy</td><td>Essentia <code>KeyExtractor</code>/<code>Dissonance</code> (<strong>NC</strong>); madmom chords (<strong>NC</strong>); Chordino; librosa chroma (BSD)</td></tr>
+<tr><td>Timbre / spectrum</td><td>MFCC, centroid, rolloff, flux, flatness, zero-crossing rate, roughness, inharmonicity</td><td>mel-spectrogram to DCT; magnitude-weighted mean frequency; geometric/arithmetic mean ratio; close-partial modulation</td><td>librosa (BSD); Essentia <code>Inharmonicity</code> (<strong>NC</strong>)</td></tr>
+<tr><td>Loudness / dynamics</td><td>integrated LUFS, loudness range, crest factor, dynamic complexity, clipping density</td><td>K-weighting plus gated mean per BS.1770 / R128; peak minus RMS; loudness-curve variability; near-0 dBFS count</td><td>ffmpeg <code>ebur128</code>, pyloudnorm (MIT); Essentia <code>dynamic_complexity</code> (<strong>NC</strong>)</td></tr>
+<tr><td>Vocal / instrumental</td><td>instrumentalness, vocal fraction, vocal segments, register, vocal gender</td><td>frame-level singing-voice detection to track fraction and timeline; F0 range plus formants</td><td>Essentia <code>VoiceInstrumental</code> (<strong>NC</strong>), Jamendo SVD CNN; gender research-grade</td></tr>
+<tr><td>Instrumentation</td><td>instrument confidences, stem energies, harmonic/percussive texture</td><td>pretrained multi-label CNN on log-mel; separation to per-stem RMS; HPSS ratio</td><td>MTG EffNet heads (<strong>NC</strong>); Demucs (MIT); librosa HPSS (BSD)</td></tr>
+<tr><td>Structure</td><td>boundaries, repetition, novelty, intro/outro, tempo change</td><td>self-similarity matrix plus novelty-curve peak-picking; SSM coverage; RMS gates</td><td>librosa <code>segment</code> (BSD); FMP recipes</td></tr>
+<tr><td>High-level semantic</td><td>mood tags, valence, arousal, composite energy, danceability, meditativeness</td><td>pretrained multi-label CNN; regression head on embeddings; detrended-fluctuation descriptor; feature fusion</td><td>MTG-Jamendo mood heads (<strong>NC</strong>); valence/arousal needs a non-commercial backbone</td></tr>
+<tr><td>Style-texture proxies</td><td>distortion index, guitar tone, country proxy, punk proxy, backbeat emphasis</td><td>flatness plus high-order harmonics plus crest; acoustic share plus nasal formants plus diatonic harmony; tempo plus distortion plus dynamic range</td><td>custom over librosa and Essentia; no validated extractor</td></tr>
+<tr><td>Learned embeddings</td><td>audio embedding, text–audio alignment, embedding era identity</td><td>encoder forward pass; joint text/audio cosine; distance to era anchors</td><td>OpenL3 (MIT), MS-CLAP (permissive) ship; MERT and MuQ are <strong>NC</strong> — private, non-distributed only</td></tr>
+</tbody>
+</table>
+<figcaption>Every descriptor and pretrained head from the Essentia/MTG stack is tagged <strong>NC</strong> (non-commercial; MTG weights are CC BY-NC-SA), and Essentia's own code is AGPLv3. No <strong>NC</strong> row may be presented as freely usable — Chapter 5 resolves the licence fork.</figcaption>
+</figure>
+
+<h3>Metrics that beat metadata</h3>
+
+<p>Five items do work no tag in <code>AnalysisResult</code> can do. They are the point of this chapter.</p>
+
+<dl>
+<dt>Pulse clarity</dt>
+<dd>Shannon entropy of the fluctuation spectrum — the autocorrelation of the onset-strength envelope across metrical lags; low entropy means an unambiguous pulse. The definition traces to Lartillot et al. 2008; the second attribution in the source material could not be verified and is not relied on <span class="state" data-state="candidate">candidate</span>. This separates groovable from floating, which BPM cannot do: a 90 BPM ambient drift and a 90 BPM funk groove share their tempo.</dd>
+
+<dt>Swing and microtiming deviation, with a signed lead/lag trend</dt>
+<dd>Three quantities over a beat grid: swing (the ratio of the two eighth-note subdivisions in a beat — 0.5 straight, about 0.667 triplet), tightness (mean absolute onset deviation from the grid), and a <em>signed</em> trend in that deviation — ahead of the grid reads urgent, behind reads laid-back. The method is published, but no one-call audio swing detector exists, so it must be built on a beat tracker <span class="state" data-state="candidate">candidate</span>. It is your energy hypothesis, and the highest-value <em>unbuilt</em> metric here.</dd>
+
+<dt>Mode, chord-change behaviour and dissonance</dt>
+<dd>These, not the tonic, are the real mood carriers: mode is the most reliable tonal affect cue, chord-change rate and harmonic complexity describe how the harmony moves, and dissonance measures roughness between neighbouring partials. The schema consequence is a demotion — keep <code>key</code>, but let a chord-progression embedding, mode, change rate and dissonance drive the affect score <span class="state" data-state="observed">observed</span>.</dd>
+
+<dt>Production and mastering characteristics</dt>
+<dd>Integrated loudness, loudness range, crest factor and clipping density form a cheap era fingerprint: high LUFS with a narrow range, a low crest factor and heavy clipping reads as a modern hyper-compressed master; low LUFS with a wide range reads as older or audiophile. The <em>direction</em> is <span class="state" data-state="observed">observed</span> as an aggregate trend across recordings. No validated per-track decade classifier exists, though, so per-track era discrimination stays <span class="state" data-state="candidate">candidate</span> and must not be sold as a classifier.</dd>
+
+<dt>Audio embeddings</dt>
+<dd>The whole-similarity substrate: a dense vector where cosine distance answers "how alike do these sound", independent of tag, artist or year. Every "more like this" request and the whole adaptive-learning loop run on it. Its weakness is the black box: pair it with the explainable features above.</dd>
+</dl>
+
+<aside class="callout">
+<p><strong>On cost.</strong> Every cost figure in the research corpus is an <em>unmeasured estimate</em> on a single core, and the source's own cost model is internally inconsistent — its per-tool rows sum far above its headline total. Do not budget from any figure here; Chapter 8 recomputes it. One structural point survives: loudness, tempo and spectral features may be computed on a short sample window, but loudness range, crest factor, the era cue, segmentation and microtiming may <em>not</em> be, because truncation removes exactly what they measure.</p>
+</aside>
+
+<h3>Prompts to predicates</h3>
+
+<p>The compilation target is a predicate set over the fields above. Thresholds are starting guesses to be tuned, not calibrated values.</p>
+
+<figure class="bleed">
+<table class="data">
+<caption>Your phrases compiled into predicates over the metric fields</caption>
+<thead>
+<tr><th>Your prompt</th><th>Compiled predicate</th><th>Metrics</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td>"focus, no words, no piano, nothing too slow or relaxing"</td><td><code>instrumental &gt; 0.7 &and; pulse_clarity &gt; 0.45 &and; 90 &lt; bpm &lt; 130 &and; dynamic_complexity &lt; mid &and; arousal &isin; [0.3, 0.6] &and; &not;(vocal_fraction &gt; 0.1) &and; piano_confidence &lt; 0.3 &and; &not;(mood &isin; {relaxing, sleepy, meditative})</code></td><td>V1, R6, R1, L4, M2, M1, I1</td><td>"Focus" is not itself computable; the bundle is a proxy. The three explicit negatives are hard guards, not knobs — Chapter 6 owns the relaxation rule.</td></tr>
+<tr><td>"exclude punk or country"</td><td><code>&not;(punk_proxy &gt; t1) &and; &not;(country_proxy &gt; t2) &and; &not;(genre_tag &isin; {punk, country})</code></td><td>G4, G3</td><td>Treat as an explicit user exclusion, not a soft preference: audio texture proxies lead, genre tags only corroborate. The proxies are weak &mdash; expect false negatives; on under-fill return a strict tier plus a labelled near-miss tier, never relax the exclusion. Untagged tracks are not &ldquo;verified not-punk&rdquo;.</td></tr>
+<tr><td>"energy is microtiming, not BPM"</td><td><code>energy = f(beat_deviation_trend, microtiming_variance, loudness, roughness)</code>, with <code>bpm</code> excluded from the fusion</td><td>R7, L1, S7</td><td>The signed lead/lag trend is your hypothesis and the highest-value unbuilt feature.</td></tr>
+<tr><td>"mood by chord progression, not key"</td><td><code>mood = g(chord_emb, mode, chord_change_rate, harmonic_complexity, dissonance)</code>, with <code>key</code> de-weighted</td><td>T4, T5, T6, T7, T2</td><td>Progression plus mode plus tension — not the tonic.</td></tr>
+<tr><td>"era spans eras / covers and originals"</td><td><code>era = h(production_vec, lufs, lra, crest, distortion, instrument_mix)</code> — explicitly not <code>year</code></td><td>E3, L1, L2, L3, G1, I1</td><td>Aggregate direction is observed; per-track decade discrimination is not validated.</td></tr>
+<tr><td>"sounds like these two tracks"</td><td><code>cos(embedding, anchor_a) &gt; t1 &or; cos(embedding, anchor_b) &gt; t2</code></td><td>E1, E2</td><td>Embedding distance is the whole-similarity substrate.</td></tr>
+</tbody>
+</table>
+</figure>
+
+<h3>Not reliably computable</h3>
+
+<p>Stated plainly:</p>
+
+<ul>
+<li><strong>Subject, theme or topic.</strong> Needs lyrics plus topic modelling or captioning; not an audio-DSP property, and structurally absent from the instrumental subset.</li>
+<li><strong>Vocal gender.</strong> Ranges overlap heavily and falsetto, androgynous and processed voices break the cue. At most a soft, low-weight preference with a disclaimer — never a hard filter.</li>
+<li><strong>Crisp "punkiness" or "countryness".</strong> Only weak composite proxies exist; expect imperfect exclusion.</li>
+<li><strong>Modality beyond major/minor</strong> (Dorian, Aeolian, modulation counting). Research-grade and unreliable.</li>
+<li><strong>"Focus", "meditative", "emotional" as first-class labels.</strong> No standard descriptor — only proxy bundles of tempo, pulse clarity, vocal fraction, dynamics and arousal.</li>
+<li><strong>Genre tags.</strong> Noisy, culture-dependent, and exactly what you distrust. At best one weak hint.</li>
+<li><strong>Exact instrument presence in dense mixes.</strong> Classifiers and separation both bleed; per-instrument claims stay probabilistic and thresholded.</li>
+<li><strong>Absolute era from the <code>year</code> tag.</strong> The failure you named; it must be replaced by the sound-based cue bundle, itself only <span class="state" data-state="candidate">candidate</span>.</li>
+</ul>
+
+<p class="note">One boundary to carry forward: this taxonomy specifies the fields, but the runtime query object in the source material was built independently and shares almost none of them. Reconciling the two is the central work of Chapter 6.</p>
+</section>
+
+<section class="chapter" id="c4">
+
+<p class="kicker">Chapter 04</p>
+<h2>The recording, not the artist: the Ani DiFranco problem</h2>
+
+<p class="lede">You asked for more tracks that sound like <em>these two Ani DiFranco recordings</em>; what came back was, in effect, more Ani DiFranco. Not the same request, and the gap between them is this chapter: the failure stated precisely, why file, artist, genre and year data cannot close it, and the mechanism that can &mdash; a model of the <em>recording</em> plus an explicit sonic-period label, with artist demoted to a guard and never the ranking signal.</p>
+
+<h3>The failure, stated precisely</h3>
+<p>The perceptual unit is the recording &mdash; not the artist, not the album, not the genre, not the year. Artist, album, genre and year are properties of a release and its marketing category; &ldquo;sounds like&rdquo; is a property of a signal. Every aggregation over tags answers a question about the release, not the sound. <span class="state" data-state="candidate">candidate</span> Your premise &mdash; that adjacent Ani DiFranco albums differ drastically &mdash; is treated here as a requirement, not a verified musicological claim; no citable source for her specific sonic periods was located in this pass. <span class="state" data-state="unverified">unverified</span></p>
+
+<h3>Why metadata fails, and why raw audio similarity only half-works</h3>
+<p>The measured reason is stronger than &ldquo;tags are coarse&rdquo;: audio similarity carries a strong album-and-artist bias. Flexer &amp; Schnitzer found that album and artist filters materially change similarity behaviour: same-session, same-production material forms dense clumps in feature space (Flexer &amp; Schnitzer 2010, <a href="https://direct.mit.edu/comj/article/34/3/20/94322/Effects-of-Album-and-Artist-Filters-in-Audio">Computer Music Journal</a>). <span class="state" data-state="observed">observed</span> That one effect cuts both ways.</p>
+
+<figure class="bleed"><table class="data">
+<caption>The double edge of album/artist bias</caption>
+<thead><tr><th>Naive method</th><th>Why it is wrong for your query</th></tr></thead>
+<tbody>
+<tr><td>artist = Ani DiFranco</td><td>Assumes one sound per artist. An artist is a mixture of sonic periods, and the attribute contains several different sounds.</td></tr>
+<tr><td>genre / year tags</td><td>Release-level marketing categories; sparse on the long tail; poisoned by remasters, compilations and reissues.</td></tr>
+<tr><td>raw audio similarity</td><td>Dominated by production-session similarity, so it tends to return <em>the same album</em> &mdash; right signal, wrong granularity.</td></tr>
+</tbody></table>
+<figcaption>Consequence for SynAmp: the correct unit is the recording <em>plus</em> a detected sonic-period label, never the artist. <span class="state" data-state="candidate">candidate</span></figcaption></figure>
+
+<p>So an artist must be represented as a set of period centroids &mdash; never one vector or one tag. Two supporting observations: audio features carry enough style-and-time structure to date and segment popular-music history (Mauch et al. 2015, <a href="https://royalsocietypublishing.org/doi/10.1098/rsos.150081">Royal Society Open Science</a>); and content-based features are the only signals that generalise to a novel or unpopular item (McFee et al. 2011, <a href="https://arxiv.org/abs/1105.2344">arXiv:1105.2344</a>). Play counts and collaborative filtering do not exist in a self-hosted library. <span class="state" data-state="observed">observed</span></p>
+
+<h3>The proposed mechanism</h3>
+<p>An ordered recipe; every step is a SynAmp design proposal, none run on your library. <span class="state" data-state="candidate">candidate</span></p>
+<ol>
+<li><strong>Per-track record.</strong> Store an audio embedding, a production vector, a rhythm vector, a chroma/chord vector, a lyric vector, and identity and version flags (fingerprint, recording ID, album ID, catalogue year, sonic era; flags for live, cover, remaster, duplicate cluster).</li>
+<li><strong>Album aggregation.</strong> Reduce each album to centroids of the audio and production vectors plus a within-album spread &mdash; an album is a production-consistent recording session.</li>
+<li><strong>Period clustering.</strong> Cluster album centroids per artist (agglomerative over cosine distance, or a hidden Markov model over release order) into periods P1&hellip;Pn. A period break is a large centroid jump between consecutive releases.</li>
+<li><strong>Period as a first-class filter.</strong> A stored label makes <code>artist:Ani_DiFranco AND sonic_period:P1</code> expressible &mdash; &ldquo;this Ani, not that Ani&rdquo;, which is exactly what &ldquo;more by this artist&rdquo; cannot say.</li>
+<li><strong>Intentional era-spanning.</strong> Because periods are per-recording labels, &ldquo;span her whole arc&rdquo; becomes &ldquo;sample at least one track from each period, ordered by period distance&rdquo;, not &ldquo;return everything by the artist&rdquo; &mdash; and it needs a per-period coverage floor so thin periods are not silently skipped (see Chapter 6).</li>
+</ol>
+
+<h3>Multi-exemplar query design</h3>
+<p>&ldquo;Sounds like these N recordings&rdquo; is a centroid in a learned metric space, and its accuracy depends on the metric being learned rather than on raw features (McFee et al. 2011). Classical relevance feedback supports the shape: a Rocchio-style query combines the original query, the mean of relevant items, and a negatively-weighted mean of non-relevant items (Manning, Raghavan &amp; Sch&uuml;tze, ch. 9, <a href="https://nlp.stanford.edu/IR-book/pdf/09expand.pdf">PDF</a>, observed). SynAmp departs from textbook Rocchio in six ways. <span class="state" data-state="candidate">candidate</span></p>
+<dl>
+<dt>Multiple prototypes, not one centroid</dt><dd>Pin one early and one late song and a single average lands <em>between</em> periods, matching neither. Choose k by clustering the exemplars (silhouette over k &isin; {1,2,3}), issue k queries, round-robin the results. This is the most important guard for your case; low silhouette is the detection signal.</dd>
+<dt>Pinned versus inferred weighting</dt><dd>User-pinned exemplars default to 1.0; auto-added album-mates get decayed weights. Keep the <em>anchor</em> (never crossed) versus <em>soft seed</em> distinction explicit in the interface.</dd>
+<dt>Robust centroid estimation</dt><dd>A trimmed or medoid-style estimator, so one idiosyncratic exemplar cannot drag the query out of the period.</dd>
+<dt>Multi-view fusion</dt><dd>Score = w<sub>a</sub>&middot;cos(audio) + w<sub>p</sub>&middot;cos(production) + w<sub>t</sub>&middot;cos(text) + w<sub>c</sub>&middot;cos(chord), starting near (0.5, 0.3, 0.1, 0.1) and learned from feedback. The production weight w<sub>p</sub> does the era discrimination; the text weight stays capped, because vague text drifts to hubs.</dd>
+<dt>Anti-exemplars are a filter, not a subtraction</dt><dd>Mean-centroid subtraction in high dimensions overshoots into directions that correspond to no real music. Prefer hard-negative rejection &mdash; drop candidates whose similarity to the anti-set exceeds sim(positive) &minus; margin &mdash; with a small subtracted term only as a tie-breaker.</dd>
+<dt>Same-artist era guard</dt><dd>If a candidate&rsquo;s artist equals the exemplar&rsquo;s artist, require its album centroid (or production distance) within &tau;, else downweight by exp(&minus;d). This stops &ldquo;more by Ani&rdquo; infection while admitting correct-period tracks.</dd>
+</dl>
+
+<h3>Version and era handling</h3>
+<p>Three independent identities must be tracked separately; conflating them is what makes era queries fail.</p>
+<figure class="bleed"><table class="data">
+<caption>Three identities, three mechanisms</caption>
+<thead><tr><th>Question</th><th>Identity</th><th>Mechanism</th><th>State</th></tr></thead>
+<tbody>
+<tr><td>Is this the same song?</td><td>Composition</td><td>Cover-song detection (chroma/CQT representations; Siamese or transformer models)</td><td>observed method</td></tr>
+<tr><td>Is this the same take?</td><td>Recording / master</td><td>Acoustic fingerprinting (Chromaprint/AcoustID) &mdash; transcode-robust, not cover-robust</td><td>observed method</td></tr>
+<tr><td>Does it sound similar?</td><td>Sonic character</td><td>Audio embeddings plus production features</td><td>candidate design</td></tr>
+</tbody></table>
+<figcaption>Cover identification is a distinct, harder task than fingerprinting: a Siamese CNN on cover pairs reached mean precision@1 of 65% over mini-batches, roughly 10&times; random (Stamenovic et al. 2020, <a href="https://arxiv.org/abs/2005.10294">arXiv:2005.10294</a>, observed); transformer approaches push further (Zeng et al., <a href="https://link.springer.com/article/10.1186/s13636-023-00297-4">EURASIP JASMP 2023</a>). Fingerprinting targets the same recording and cannot match a cover or a live take (Chromaprint/AcoustID docs, <a href="https://acoustid.org/chromaprint">acoustid.org/chromaprint</a>).</figcaption></figure>
+
+<p>The four-tier near-duplicate policy follows: (a) exact fingerprint match &rarr; duplicate; (b) fingerprint plus high embedding cosine &rarr; same master, different encode; (c) composition match, low embedding cosine &rarr; cover or version; (d) high embedding cosine, no fingerprint and no composition match &rarr; sonic near-duplicate, e.g. two takes from one session. This also gives playlists the collision-safe &ldquo;collapse duplicates to one representative&rdquo; behaviour they need.</p>
+
+<aside class="callout">
+<p><strong>A cover from another era is legitimate.</strong> A cover is a new sonic object: it belongs to the cover&rsquo;s own era and production while sharing composition with the original. So &ldquo;same song&rdquo; queries follow composition identity and &ldquo;sounds like&rdquo; queries follow sonic character; when the two disagree, SynAmp must link and warn. It must <em>explain</em> &ldquo;same song, different era&rdquo; rather than silently &ldquo;correct&rdquo; the result toward the year tag. <span class="state" data-state="candidate">candidate</span></p>
+</aside>
+
+<p>Store both era notions side by side: the catalogue year (the <code>year</code> tag &mdash; free, but a release date, poisoned by remasters, compilations and reissues) and a sonic-era estimate measured from the signal, the only one that survives a modern cover of an old song. Loudness and dynamics have measurably changed across decades of production (loudness-war literature; source unresolved in this pass). Flag the conflict: a track whose sonic era is decades later than its year tag is where the year tag lies.</p>
+
+<h3>Hubness</h3>
+<p>In high-dimensional space a few tracks become universal neighbours and every query drifts toward them; these hubs have <em>lower</em> perceptual similarity to their neighbours than non-hubs do (Flexer, Schnitzer &amp; Schl&uuml;ter, <a href="https://ismir2012.ismir.net/authors/event/papers/175_ISMIR_2012.pdf">ISMIR 2012</a>). <span class="state" data-state="observed">observed</span> Mutual-proximity or hub-scaling correction applied before ranking was measured to decisively improve hub-dominated audio similarity. Without it, every query returns the same handful of songs.</p>
+
+<h3>Failure modes</h3>
+<figure class="bleed"><table class="data">
+<caption>Failure modes of recording-level representation</caption>
+<thead><tr><th>Failure</th><th>Mechanism</th><th>Mitigation</th></tr></thead>
+<tbody>
+<tr><td>Thin periods</td><td>1&ndash;2 albums give an unstable centroid</td><td>Shrink toward the artist mean; report low confidence</td></tr>
+<tr><td>Sparse exemplars</td><td>&ldquo;Like this one track&rdquo; inherits its idiosyncrasies</td><td>Always allow album-mates as soft seeds</td></tr>
+<tr><td>Multimodal exemplar sets</td><td>Pinned from two periods &rarr; centroid matches neither</td><td>Detect via low silhouette; multi-prototype query</td></tr>
+<tr><td>Live recordings</td><td>Applause and room tone dominate embeddings, inflating reverb/dynamics</td><td>Segment (median over 20&ndash;30 s windows, skip intro/outro), or flag live and down-weight</td></tr>
+<tr><td>Remaster / reissue</td><td>Same performance, different master moves the production vector</td><td>Split by recording/master identity, or the model invents remaster-campaign periods</td></tr>
+<tr><td>Covers across eras</td><td>Composition similarity outranks sonic similarity</td><td>Explain &ldquo;same song, different era&rdquo;; never silently correct</td></tr>
+<tr><td>Hubness</td><td>Distance concentration makes a few tracks universal neighbours</td><td>Mutual-proximity correction before ranking</td></tr>
+<tr><td>Dataset bias on the long tail</td><td>Training corpora skew Western pop; permissive text&ndash;audio pairs skew to sound events</td><td>Push weight to production, chroma, the period model; surface confidence</td></tr>
+<tr><td>Taxonomy-predicting embedders</td><td>Tag-supervised vectors encode genre, so &ldquo;similar&rdquo; degrades into &ldquo;same style label&rdquo;</td><td>Explanations only; never the similarity kernel</td></tr>
+<tr><td>Similarity &ne; mood</td><td>Acoustic similarity is surface; mood draws on harmony, lyrics and listener culture</td><td>Learn mood as a separate feedback-trained head, never read it off embedding distance (Koh &amp; Dubnov 2021, <a href="https://arxiv.org/abs/2104.06517">arXiv:2104.06517</a>)</td></tr>
+</tbody></table>
+<figcaption>Each row is a design response, not a measured result. Similarity itself is culture-dependent &mdash; judgements vary across listeners from different musical traditions (Papaioannou et al., <a href="https://transactions.ismir.net/articles/10.5334/tismir.341">TISMIR</a>, observed) &mdash; so a personal library is the right scope for a personal model, the wrong one for a universal model. <span class="state" data-state="candidate">candidate</span></figcaption></figure>
+
+<h3>Three corrections applied to this chapter&rsquo;s source</h3>
+<aside class="callout">
+<p><strong>1. The embedder cannot ship as specified.</strong> The source recommends MERT or MuQ as the audio embedder. Their weights are non-commercial (MERT weights are CC-BY-NC-4.0; MuQ comparable), so they can be a private, non-distributed accuracy option only. <span class="state" data-state="observed">observed</span> The shippable backbone is a permissive general audio embedder &mdash; OpenL3 &mdash; paired with a text&ndash;audio model, MS-CLAP, for coarse user-worded steering. Chapter 5 costs that trade: the licence-clean path is the accuracy-weak path, and the accuracy-strong path cannot be distributed.</p>
+<p><strong>2. The acceptance test is circular as written.</strong> The source proposes holding out a track from period P<sub>k</sub> and requiring its period-mates to outrank the artist&rsquo;s other periods. But the periods are <em>defined by the same vectors</em> used to validate them, so the test is near-tautological. A non-circular test needs an independent era ground truth &mdash; and with a single user it may simply not exist. Until then this capability is <em>unverifiable</em>, not merely unproven. <span class="state" data-state="unverified">unverified</span></p>
+<p><strong>3. The era discriminator is half-specified.</strong> The production vector &mdash; the component that carries era &mdash; depends on stereo width, reverb decay and noise floor, none of which appear in Chapter 3&rsquo;s taxonomy. Those dimensions need a producer or must be deleted; otherwise the vector the whole mechanism leans on is incomplete. <span class="state" data-state="candidate">candidate</span></p>
+</aside>
+
+<p class="note">Evidence summary. Observed: the album/artist bias, hubness, cover-detection precision, the content-similarity motivation, era-from-audio segmentation, cross-cultural similarity variance. Candidate: the sonic-period model, the multi-exemplar query algebra, the four-tier duplicate policy, the same-artist era guard &mdash; designed, not run. Unverified: your premise about Ani DiFranco&rsquo;s adjacent albums as a musicological claim, and the period-label capability wherever no independent era ground truth exists. Nothing here is <span class="state" data-state="reproduced">reproduced</span> or <span class="state" data-state="confirmed">confirmed</span>.</p>
+
+</section>
+
+<section class="chapter" id="c5">
+
+<p class="kicker">Chapter 05</p>
+<h2>The toolchain and the licence fork: what can ship, what cannot</h2>
+
+<p class="lede">You set a second requirement alongside the music: this should eventually be something other people install &mdash; a Synology package, not only your private server. That sentence sorts the whole toolchain into two piles. This chapter fixes the rule already in the project, applies it signal by signal, names the components that cannot enter a distributed build, admits the signals with no permissive option, reads the data sources at their real terms, records what the platforms have closed &mdash; and ends on the fork this forces, which only you can decide.</p>
+
+<h3>The governing rule already in the project</h3>
+<p>The repo baseline already carries it as decision <strong>D6</strong>, and it is binding, not a preference: <strong>prefer permissively licensed components in anything that ships; keep AGPL and non-commercial components out of the serving path; treat heavy analysis as offline build-time tooling whose numeric outputs &mdash; never its code, never its weights &mdash; are what ship.</strong> <span class="state" data-state="observed">observed</span></p>
+<p>Two mechanisms force that shape. AGPL &sect;13 means a network-offered service that <em>is</em> or <em>links</em> an AGPL component must offer its source to users &mdash; which bites the moment SynAmp runs as someone else's service. And a non-commercial licence forbids the commercial distribution you are aiming at regardless of copyleft. Keeping heavy analysis <em>offline and private</em> &mdash; a batch job whose output is a table of numbers &mdash; is the one arrangement that lets you use the strongest tools while shipping none of them.</p>
+
+<h3>The distinction most surveys get wrong: the licence of the code is not the licence of the weights</h3>
+<p>This is the load-bearing correction of the chapter. A repository's <code>LICENSE</code> file governs the code; the checkpoints it downloads are a separate work with a separate licence, and the two routinely disagree. A permissive codebase can ship non-commercial weights; a permissive project can host a non-commercial model family. So &ldquo;the repo says MIT, we're fine&rdquo; is not a valid reading, and any audit that stops at the repo header is wrong. <span class="state" data-state="observed">observed</span></p>
+<figure class="bleed"><table class="data">
+<caption>Code is permissive; the weights are not</caption>
+<thead><tr><th>Project</th><th>Code licence</th><th>Weight / model licence</th></tr></thead>
+<tbody>
+<tr><td>Essentia (library)</td><td>AGPL-3.0</td><td>All MTG pre-trained models: CC BY-NC-SA 4.0 (non-commercial + ShareAlike)</td></tr>
+<tr><td>madmom</td><td>BSD</td><td>All bundled beat/key models and data: CC BY-NC-SA 4.0</td></tr>
+<tr><td>MERT</td><td>Apache-2.0</td><td>Weights CC-BY-NC-4.0</td></tr>
+</tbody></table>
+<figcaption>The Essentia family is <em>doubly</em> constrained: AGPL code <em>and</em> non-commercial, ShareAlike weights (<a href="https://github.com/MTG/essentia">MTG/essentia</a>; <a href="https://essentia.upf.edu/models.html">models page</a>, read via the 2024 Wayback snapshot). MERT's weight licence is stated on its model card (<a href="https://huggingface.co/m-a-p/MERT-v1-330M">huggingface.co/m-a-p/MERT-v1-330M</a>). None of these can enter a distributed build.</figcaption></figure>
+
+<h3>The shippable path, signal by signal</h3>
+<p>The permissive choices &mdash; MIT / BSD / ISC / Apache-2.0 / CC0 &mdash; that carry each signal SynAmp needs. Every licence was read at source; unverified residue is flagged below.</p>
+<figure class="bleed"><table class="data">
+<caption>Shippable components per signal</caption>
+<thead><tr><th>Signal</th><th>Recommended tool</th><th>Licence (exact)</th><th>Why this one</th></tr></thead>
+<tbody>
+<tr><td>Decode / resample</td><td><code>soundfile</code> + <code>ffmpeg</code> as a separate binary</td><td>BSD-3-Clause; ffmpeg LGPL-2.1-or-later / GPL</td><td>A separate process keeps ffmpeg's copyleft out of your code.</td></tr>
+<tr><td>DSP primitives</td><td>librosa</td><td>ISC</td><td>The safe glue for chroma, onsets, HPSS.</td></tr>
+<tr><td>Loudness / energy</td><td>pyloudnorm (EBU R128: LUFS, LRA, True Peak) + RMS/crest from librosa</td><td>MIT / ISC</td><td>Loudness <em>is</em> the defensible energy proxy and needs no ML.</td></tr>
+<tr><td>Tempo / beat / downbeat</td><td>beat_this (primary); librosa or madmom <em>code only</em> as fallback</td><td>MIT; ISC / BSD</td><td>Fast, and needs no non-commercial checkpoint.</td></tr>
+<tr><td>Key / mode</td><td>DIY: librosa CQT chroma + Krumhansl&ndash;Temperley profiles &rarr; key + Camelot label</td><td>ISC</td><td>No permissive pre-trained key model exists, so compute it.</td></tr>
+<tr><td>Instrumentation (incl. piano)</td><td>PANNs <code>Cnn14</code> &mdash; AudioSet classes (<code>Piano</code>, <code>Electric piano</code>, <code>Guitar</code>, <code>Drums</code>&hellip;)</td><td>MIT code; AudioSet labels CC BY 4.0</td><td>The permissive route to the &ldquo;no piano&rdquo; ask.</td></tr>
+<tr><td>Instrumental / vocal</td><td>PANNs voice classes (<code>Singing</code>, <code>Male/Female singing</code>, <code>Choir</code>)</td><td>MIT code</td><td>A singing-voice detector, not the proprietary instrumentalness catch-all.</td></tr>
+<tr><td>General embeddings</td><td>OpenL3 (512-d); MS-CLAP for the text-aligned space</td><td>MIT; MIT code</td><td>Permissive and CPU-friendly; powers similarity and artist-era retrieval.</td></tr>
+<tr><td>Mood / era / free-text tags</td><td>MS-CLAP (or LAION-CLAP) zero-shot with a curated prompt set</td><td>MIT code / CC0-1.0 repo</td><td>The only permissive route to mood and era &mdash; and the weak one.</td></tr>
+<tr><td>Source separation</td><td>Demucs <code>htdemucs</code> (fallback Spleeter)</td><td>MIT</td><td>Isolates vocals for ASR; drives per-stem mix cues.</td></tr>
+<tr><td>Lyrics</td><td>Whisper on the Demucs vocal stem; LRCLIB fetch as convenience</td><td>MIT (weights MIT); LRCLIB server MIT / content <span class="state" data-state="unverified">unverified</span></td><td>Transcription of audio you own is the licence-clean path.</td></tr>
+<tr><td>Lyric / topic embeddings</td><td>all-MiniLM-L6-v2</td><td>Apache-2.0</td><td>The text side of the brain.</td></tr>
+<tr><td>Structure / sections</td><td>all-in-one or MSAF</td><td>MIT</td><td>Section labels for structural reasoning.</td></tr>
+<tr><td>Fingerprint / dedupe</td><td>Chromaprint <code>fpcalc</code> as a separate process &rarr; AcoustID</td><td>MIT + bundled LGPL-2.1 &rarr; treat as LGPL-2.1</td><td>Process isolation keeps LGPL out of your binary.</td></tr>
+<tr><td>Metadata backbone</td><td>MusicBrainz core + Discogs dumps + Wikidata</td><td>CC0</td><td>Clean, redistributable; era and credit cues via year/label fields.</td></tr>
+</tbody></table>
+<figcaption>Recommended minimal stack, permissive-first. All of it runs on CPU; Demucs is the only slow stage, so analysis is batched offline. <span class="state" data-state="candidate">candidate</span></figcaption></figure>
+
+<h3>The doubly constrained components</h3>
+<p>Three families cannot be in a distributed build under any reading:</p>
+<ul>
+<li><strong>The all-in-one audio analysis library.</strong> Essentia is AGPL-3.0, and its whole house model zoo &mdash; Discogs-EffNet embeddings, the MTG-Jamendo mood/theme/instrument heads, Danceability, Voice/instrumental, TempoCNN &mdash; is CC BY-NC-SA 4.0: non-commercial <em>and</em> ShareAlike, with only a negotiated proprietary licence otherwise. Code and weights are both blocked. <span class="state" data-state="observed">observed</span></li>
+<li><strong>The beat-tracking toolkit.</strong> madmom's <em>code</em> is BSD, but its <em>models</em> are CC BY-NC-SA 4.0 &mdash; the models, not the code, disqualify it. Use its code paths only, or prefer beat_this. <span class="state" data-state="observed">observed</span></li>
+<li><strong>The two strongest music-representation models.</strong> MERT (weights CC-BY-NC-4.0) and MuQ (comparable) are the best available embedders, and both are private-only. <span class="state" data-state="observed">observed</span></li>
+</ul>
+<p class="note">Correction carried here: a sibling pass reported a mid-2026 commit for the Spleeter separator. That claim is <span class="state" data-state="unverified">unverified</span> and likely inaccurate; treat Spleeter's maintenance status as unknown.</p>
+
+<h3>The honest gap list: no permissively licensed option at all</h3>
+<p>Five signals have <em>no</em> permissive pre-trained producer. Each mitigation exists, and each is the accuracy-weak path.</p>
+<figure class="bleed"><table class="data">
+<caption>Signals with no permissive producer</caption>
+<thead><tr><th>Signal</th><th>Why none exists</th><th>Mitigation (weak path)</th></tr></thead>
+<tbody>
+<tr><td>Categorical mood (happy / sad / relaxed / party&hellip;)</td><td>Every good pre-trained mood head is non-commercial (Essentia MTG-Jamendo, MERT weights)</td><td>CLAP zero-shot text prompts, or a head trained on CC-licensed data</td></tr>
+<tr><td>Trained danceability predictor</td><td>Only Essentia ships one, and it is NC</td><td>DSP heuristic: tempo + beat regularity + LRA + onset density</td></tr>
+<tr><td>Era / production classification</td><td>No dedicated open model exists, NC or otherwise</td><td>CLAP/OpenL3 embeddings + MusicBrainz/Discogs year &amp; label metadata + a locally trained head</td></tr>
+<tr><td>Pre-trained key detection</td><td>No permissive pre-trained key model (Essentia NC, madmom models NC)</td><td>DIY chroma + Krumhansl&ndash;Temperley profiles, computed locally</td></tr>
+<tr><td>Clean lyrics data</td><td>LRCLIB content terms unverified; Genius and Musixmatch closed</td><td>Whisper transcription of audio you own</td></tr>
+</tbody></table>
+<figcaption>Fine-grained instrument presence is only approximated permissively too: AudioSet makes no &ldquo;Rhodes&rdquo; versus grand-piano distinction &mdash; acceptable for a no-piano filter, not for orchestration detail. <span class="state" data-state="candidate">candidate</span></figcaption></figure>
+<p>The gap lands on the hard cases the project exists to solve &mdash; mood, era, and the microtiming/danceability energy problem. The permissive path reaches them only with prompting and heuristics, never a trained model.</p>
+
+<h3>Data sources and their real terms</h3>
+<ul class="plain">
+<li><strong>MusicBrainz</strong> &mdash; the metadata backbone. Core data is CC0; supplementary fields are CC BY-NC-SA 3.0; server code is GPL-2.0 &mdash; use the core freely, treat supplementary as non-commercial (<a href="https://musicbrainz.org/doc/About/Data_License">data licence</a>).</li>
+<li><strong>AcoustID / Chromaprint</strong> &mdash; the fingerprint service. Chromaprint code is MIT but bundles an LGPL-2.1 FFmpeg portion, so treat the whole as LGPL-2.1. The AcoustID <em>database</em> licence is <span class="state" data-state="unverified">unverified</span>.</li>
+<li><strong>AcousticBrainz</strong> &mdash; the frozen CC0 archive. All data is CC0, but collection stopped in 2022 and the corpus is frozen at roughly 7.56 M unique / 29.5 M total recordings, matchable only by MusicBrainz ID &mdash; legally ideal, but frozen coverage rules it out as a sole source (<a href="https://musicbrainz.org/doc/AcousticBrainz">MusicBrainz AcousticBrainz doc</a>).</li>
+<li><strong>Lyrics services</strong> &mdash; LRCLIB's server code is MIT, but the contributed lyric <em>content</em> licensing is <span class="state" data-state="unverified">unverified</span> (<a href="https://github.com/tranxuanthang/lrclib/blob/main/LICENSE">lrclib licence</a>); Genius forbids commercial use without a licence (source resolvable only at domain level &mdash; unresolved in this pass); Musixmatch is partners-only.</li>
+<li><strong>Last.fm</strong> &mdash; community tags and similarity, non-commercial by terms with attribution and no sub-licensing (<a href="https://www.last.fm/api/tos">API ToS</a>). Good offline for you personally; unsafe to ship.</li>
+<li><strong>Discogs</strong> &mdash; genre/style and release metadata; monthly dumps are CC0, live API data is restricted, so prefer the dumps (<a href="https://www.discogs.com/developers">developer terms</a>). <strong>Wikidata</strong> structured data is CC0 (<a href="https://www.wikidata.org/wiki/Wikidata:Database_download">download</a>).</li>
+</ul>
+<p class="note">Flagged unverified rather than asserted: the AcoustID database licence, LRCLIB lyric content, PANNs checkpoint terms, and the MS-CLAP / LAION-CLAP checkpoint and training-data terms. Do not treat any of these as settled.</p>
+
+<h3>Closed APIs and deprecations</h3>
+<p>The industry's ready-made audio-features surface has closed. The big streaming platform's <strong>Audio Features and Audio Analysis endpoints were deprecated on 27 November 2024</strong>: new apps can no longer obtain them, and only pre-existing extended-mode apps retain access (<a href="https://developer.spotify.com/blog/2024-11-27-changes-to-the-web-api">deprecation blog</a>; the <a href="https://developer.spotify.com/documentation/web-api/reference/get-audio-features">endpoint reference</a> now carries a Deprecated badge). The whole Echo-Nest-style set &mdash; tempo, key, energy, danceability, valence, acousticness, instrumentalness &mdash; is therefore unavailable to a new app and must be built locally. <span class="state" data-state="observed">observed</span></p>
+<p>And the closest commercial analogue to what you are building is a paid third-party service. <strong>Cyanite</strong> offers genre, mood, instruments, lyric theme, tempo, natural-language descriptions and &ldquo;match by sound, vibe, era&rdquo; &mdash; era plus natural-language query, the SynAmp brain's shape. It is proprietary and paid (cost <span class="state" data-state="unverified">unverified</span> in this pass), and using it means uploading your catalogue to a third party &mdash; a direct conflict with the self-hosted, private goal. <span class="state" data-state="observed">observed</span></p>
+
+<h3>The fork &mdash; a decision only you can make</h3>
+<p>Everything above converges on one choice the research cannot make for you: it trades legality against accuracy, and neither side is free. The licence-clean path is the accuracy-weak path; the accuracy-strong path cannot be distributed.</p>
+<figure class="bleed"><table class="data">
+<caption>The licence &harr; accuracy fork</caption>
+<thead><tr><th>Branch</th><th>What you get</th><th>What it costs</th><th>What remains legally unexamined</th></tr></thead>
+<tbody>
+<tr><td>(a) Permissive-only &mdash; everything ships</td><td>A distributable package; accurate tempo, beat, loudness, instrumentation and embeddings</td><td>Mood, era, key and danceability come from CLAP zero-shot prompting plus DSP heuristics &mdash; the weak path. The text tower is the known weak link (Chapters 4 and 6), so the signals you most want are the least reliable</td><td>Little code-path risk; the residue is redistributing derived data whose upstream terms are unverified (AcoustID, LRCLIB) &mdash; a data issue, not a code one</td></tr>
+<tr><td>(b) Use the non-commercial models privately, ship only numeric outputs</td><td>Better accuracy on mood, era and embeddings from the strongest models (Essentia MTG heads, MERT/MuQ)</td><td>The build stays private and non-distributed, so the package cannot carry those models; every model or threshold change re-runs the heavy block, costing days per iteration</td><td>Whether outputs <em>derived</em> from non-commercial weights are themselves ShareAlike derivative works &mdash; a grey area the auditor flagged, and unexamined. No counsel taken</td></tr>
+</tbody></table>
+<figcaption>No branch is free. Branch (a) buys legality with accuracy; branch (b) buys accuracy with an unexamined legal position and a permanently private build. Chapter 9 asks you for this decision.</figcaption></figure>
+
+<aside class="callout">
+<p><strong>A load-bearing correction.</strong> Two independent research passes recommended the strongest music-representation model &mdash; MERT, with MuQ as its peer &mdash; as the <em>shippable</em> audio embedder for SynAmp. The audit found its weights are CC-BY-NC-4.0 (MuQ comparable), so that recommendation does not survive for any distributed build. <span class="state" data-state="observed">observed</span> The shippable backbone is instead OpenL3 with MS-CLAP for coarse text steering; MERT and MuQ drop to a private, non-distributed option. The code was Apache-2.0, the weights were not &mdash; and reading only the repo would have shipped a non-commercial model inside someone else's package.</p>
+</aside>
+
+<p class="note">Evidence summary. Observed: every licence and term above, read at source; the Essentia AGPL-plus-NC double constraint; the madmom and MERT code-versus-weights split; the 27 Nov 2024 deprecation. Candidate: the permissive stack as a coherent build. Unverified: the Spleeter maintenance claim, the AcoustID database licence, LRCLIB lyric content, PANNs checkpoint terms, MS-CLAP / LAION-CLAP checkpoint and training-data terms, the Cyanite cost. The fork is an <em>unmade decision</em>, not a finding. Nothing here is <span class="state" data-state="reproduced">reproduced</span> or <span class="state" data-state="confirmed">confirmed</span>.</p>
+
+</section>
+
+<section class="chapter" id="c6">
+<p class="kicker">Chapter 06</p>
+<h2>The pipeline, reconciled: from a sentence to a playlist</h2>
+
+<p class="lede">This chapter presents the corrected, whole pipeline from a free-text sentence to an ordered, explainable, self-refreshing playlist. Three documents were written independently and disagreed — the pipeline design, the metric taxonomy and the learning data model each defined a <em>query object</em>, and the shapes did not match. They are merged here: the taxonomy supplies field names, the learning model the persistence shape, the pipeline the mechanics. The mechanics are <span class="state" data-state="observed">observed</span>; the assembly is <span class="state" data-state="candidate">candidate</span>.</p>
+
+<h3>The pipeline as ordered stages</h3>
+<ol>
+<li><strong>Intake and session context.</strong> Prompt, library state, recent plays, saved exemplars, locale.</li>
+<li><strong>Parse.</strong> A local LLM under constrained decoding emits a typed plan; it cannot emit an invalid plan.</li>
+<li><strong>Compile.</strong> Deterministic and LLM-free: plan in, predicate AST, normalized score terms, structured exclusions and affirmative-only text out.</li>
+<li><strong>Candidate generation, two channels.</strong> An indexed filter pass (set A); an approximate-nearest-neighbour pass over audio embeddings (set B).</li>
+<li><strong>Relaxation check.</strong> Under-fill walks a declared ladder over permitted mutations only, each one recorded.</li>
+<li><strong>Multi-objective scoring.</strong> Normalize each signal, weight it, multiply by a query-type-modulated personalisation term.</li>
+<li><strong>Diversity-aware selection.</strong> Greedy Maximal Marginal Relevance with hard caps.</li>
+<li><strong>Sequencing.</strong> Shortest Hamiltonian path through tempo, key and timbre, weighted by an arc template.</li>
+<li><strong>Explanation.</strong> Per-track reasons mined from the plan's predicates and the track's measured values.</li>
+<li><strong>Persistence.</strong> Store the plan, not the track list: a saved query with store and index versions attached.</li>
+<li><strong>Live refresh.</strong> On a new file, re-run candidate generation through sequencing; membership and order are a recomputed view.</li>
+<li><strong>Feedback capture.</strong> Love, remove, skip and replay keyed to plan, track and position, handed to Chapter 7.</li>
+</ol>
+
+<h3>Two stages, and the anti-pattern</h3>
+<p>Candidate generation followed by a learned re-ranker is the industrial shape, and why this pipeline is staged rather than scored in one pass. The supporting study builds candidates with an LLM embedder, re-ranks with a collaborative model, and fuses the two multiplicatively with a query-type classifier driving the exponent (<a href="https://aclanthology.org/2026.nlp4musa-1.8.pdf">NLP4MusA 2026</a>). That is <em>one</em> paper on a 5,000-query streaming corpus with a collaborative backend, so call the pattern <span class="state" data-state="candidate">candidate</span>.</p>
+<p>The anti-pattern that source documents matters more: never let the LLM emit track titles or identifiers. Generative retrieval over titles needs a word tokenizer, an entity-resolution layer and decode cost linear in title length (<a href="https://arxiv.org/abs/2503.24193">Text2Tracks</a>). The model emits a <em>query</em>; retrieval happens in the store — which keeps the plan auditable and makes negation exact.</p>
+<h3>The query object, reconciled</h3>
+<p>The legacy plan enum — <code>bpm, energy, danceability, instrumental_score, vocal_presence, mood_tag, genre, subgenre, year, decade, artist, album, duration_s, listens, last_played_days, instrument.*, lyric_lang, has_lyrics, embedding_id</code> — is <strong>replaced</strong> by the schema below. The two lists were built independently and their intersection was nearly empty: of every field the taxonomy calls load-bearing, only <code>danceability</code> survived, so hard cases 1, 3, 4, 5 and 6 existed in the taxonomy and vanished at runtime. <code>subgenre</code>, <code>plays</code> and <code>last_played_days</code> have no producer and are defined or deleted here.</p>
+
+<pre><code>{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://synamp.local/schemas/query-plan.json",
+  "title": "SynAmpQueryPlan", "type": "object", "additionalProperties": false,
+  "required": ["version","intent","target_size","constraints","ranking",
+               "relaxation","sequencing","invalidation","explain"],
+  "properties": {
+    "version": { "const": "2.0" },
+    "intent": { "required": ["query_type"], "properties": {
+      "summary": {}, "personalization": { "minimum": 0, "maximum": 1 },
+      "confidence": { "minimum": 0, "maximum": 1 },
+      "query_type": { "enum": ["catalog","attribute","mood","activity",
+                               "exemplar","era","exclusion","mixed"] } } },
+    "target_size": { "minimum": 1, "maximum": 500 },
+    "constraints": { "items": { "required": ["field","op","value","hard",
+        "confidence","unknown_policy","source_phrase"], "properties": {
+      "field": { "enum": [
+        "bpm","pulse_clarity","onset_rate","percussiveness",
+        "microtiming_deviation.tightness","microtiming_deviation.signed",
+        "mode","chord_change_rate","harmonic_complexity","dissonance","chord_emb",
+        "spectral_centroid","spectral_flatness","roughness",
+        "production_vec.loudness_range","production_vec.crest_factor",
+        "production_vec.clipping_density","production_vec.stereo_width",
+        "production_vec.reverb_decay","production_vec.noise_floor",
+        "structure.boundaries","structure.repetition","structure.novelty",
+        "vocal_fraction","instrumental_score","instrument.*","stem_energies.*",
+        "arousal","valence","danceability","distortion_index","punk_proxy",
+        "country_proxy","audio_embedding","production_era",
+        "genre","artist","album","year","decade","duration_s",
+        "has_lyrics","lyric_lang","lyric_embedding","plays","last_played_days" ] },
+      "op": { "enum": ["lt","lte","gt","gte","between","in","nin","exists","is_null"] },
+      "value": {}, "hard": {}, "weight": {},
+      "quota": { "description": "minimum ratio of the final set satisfying this" },
+      "confidence": {},
+      "proxy": { "description": "which measurable a polysemous word compiled to, e.g. energy to arousal or microtiming_deviation.signed" },
+      "unknown_policy": { "enum": ["exclude","include","neutral"],
+                          "description": "null is not zero" },
+      "source_phrase": {} } } },
+    "ranking": { "required": ["mode","signals"], "properties": {
+      "mode": { "enum": ["weighted_sum","mmr","arc"] }, "mmr_lambda": {},
+      "signals": { "items": { "required": ["name","weight"], "properties": {
+        "name": { "enum": ["clap_text","exemplar_pos","exemplar_neg",
+                           "feature_soft","mood","production","chord",
+                           "novelty","taste"] }, "weight": {} } } },
+      "diversity": { "properties": {
+        "max_per_artist": {}, "max_per_album": {}, "max_per_genre": {},
+        "max_per_decade": {}, "min_embedding_spread": {},
+        "period_coverage": { "description": "a floor, not only a cap",
+          "properties": { "period_def": { "enum": ["decade","production_era"] },
+                          "floor_pct": {}, "min_per_period": {} } } } },
+      "novelty_vs_history": {}, "overfetch": {} } },
+    "relaxation": { "required": ["min_results","ladder"], "properties": {
+      "min_results": {}, "tiers": { "enum": ["strict","strict_plus_near_miss"] },
+      "ladder": { "items": { "required": ["step","action"], "properties": {
+        "step": {}, "target": {}, "note": {},
+        "action": { "enum": ["drop_boost","drop_penalty","widen_numeric",
+                             "loosen_soft_to_hard","swap_field_proxy",
+                             "ignore_never_relax"] } } } },
+      "never_relax": { "items": {} },
+      "require_confirmation_for": { "items": {},
+        "description": "every explicit user exclusion lands here" },
+      "near_miss": { "properties": { "enabled": {}, "max_ratio_violation": {},
+                                     "label": {}, "show_reason": {} } } } },
+    "sequencing": { "required": ["arc"], "properties": {
+      "arc": { "enum": ["flat","build","cooldown","peak","wave"] },
+      "energy_variance_target": {}, "tempo_smoothness": {},
+      "key_blend": {}, "timbre_smoothness": {} } },
+    "invalidation": { "required": ["store_version","index_version"], "properties": {
+      "store_version": {}, "index_version": {}, "plan_hash": {},
+      "embedding_model": { "description": "shippable backbone OpenL3 + MS-CLAP; MERT and MuQ are private, non-distributed only" } } },
+    "query_state": { "properties": {
+      "base_embedding": {}, "expanded_embedding": {},
+      "exemplar_pos_centroid": {}, "exemplar_neg_centroid": {},
+      "rocchio": { "properties": { "alpha": {}, "beta": {}, "gamma": {} } } } },
+    "explain": { "properties": { "level": { "enum": ["off","short","detailed"] },
+      "show_excluded_count": {}, "show_assumptions": {},
+      "show_relaxations": {}, "show_position_rationale": {} } },
+    "clarification": { "properties": { "needed": {}, "question": {},
+      "options": {}, "default_if_no_answer": {} } },
+    "assumptions": { "items": {} },
+    "unsupported": { "items": { "required": ["ask","reason"],
+      "properties": { "ask": {}, "reason": {}, "nearest_supported": {} } } }
+  }
+}</code></pre>
+
+<p>Three moves in that schema reconcile the two documents. <code>production_vec</code> becomes first-class so sonic era is scored from sound, with <code>year</code> demoted to a low-weight hint; when they disagree the production view wins and the disagreement is logged. A <code>chord</code> view joins text, exemplar, feature, mood, novelty and taste. And <code>period_coverage</code> adds a <em>floor</em> beside <code>max_per_decade</code>, so "span the whole arc" is a constraint rather than an accident.</p>
+
+<h3>Negation and exclusion</h3>
+<p>This doctrine survives adversarial review intact: never encode negation inside an embedding. Text–audio models carry a documented affirmation bias — "P, with no Y" sits as close to "P, with Y" as a paraphrase sits to its original, and the negated query still <em>prefers</em> audio containing the forbidden sound (<a href="https://arxiv.org/html/2607.12290v1">NegEval-Audio, arXiv 2607.12290</a>) <span class="state" data-state="observed">observed</span>. Negated multiple-choice accuracy is reported at 0.2–1.1% against a 25% chance baseline. So "no piano" handed to a text encoder risks <em>raising</em> piano retrieval.</p>
+<p>Every negation compiles to an explicit, per-track, testable predicate; negated spans are stripped before any text encoding; the compiler is unit-tested against these pairs.</p>
+
+<figure class="bleed">
+<table class="data">
+<caption>Negation compiles out of the embedding and into the store. Thresholds illustrative.</caption>
+<thead>
+<tr><th>Surface form</th><th>Compiles to</th><th>Signal actually used</th><th><code>unknown_policy</code></th></tr>
+</thead>
+<tbody>
+<tr><td>"no piano"</td><td><code>instrument.piano &lt; 0.20</code></td><td>instrument-classifier confidence, not text similarity</td><td>exclude</td></tr>
+<tr><td>"no words"</td><td><code>vocal_fraction &lt;= 0.10</code> OR <code>instrumental_score &gt;= 0.80</code></td><td>singing-voice detector plus instrumental score</td><td>exclude</td></tr>
+<tr><td>"exclude punk or country"</td><td><code>punk_proxy &lt; t1</code> AND <code>country_proxy &lt; t2</code> AND <code>genre nin [punk,country]</code></td><td>texture proxies lead; genre tags corroborate only</td><td>exclude (proxy); neutral (tag)</td></tr>
+<tr><td>"not too slow"</td><td><code>bpm &gt;= 90</code></td><td>beat tracker, guarded against 60/120/240 octave errors</td><td>exclude</td></tr>
+<tr><td>"not too relaxing"</td><td><code>arousal &gt;= 0.35</code> AND <code>pulse_clarity &gt;= 0.40</code> AND NOT <code>mood_tag</code> relaxing or meditative</td><td>arousal composite leads; mood tags corroborate</td><td>exclude; neutral (mood)</td></tr>
+</tbody>
+</table>
+<figcaption>De Morgan applies: "exclude punk or country" is a <em>conjunction of two exclusions</em>, never one negative embedding. Exclusion is audio-first, tag-second: the texture proxies lead, and tags can only corroborate.</figcaption>
+</figure>
+
+<p>One gap is now closed: <code>unknown_policy</code> must distinguish "verified not-punk" from "no genre tag at all". An untagged track is not evidence of anything, and treating a missing tag as a pass silently dropped tracks you never excluded. Untagged tracks are counted, surfaced and queued.</p>
+
+<h3>Hard, soft, quota</h3>
+<p>Three categories, not two. <strong>Hard</strong> is a filter, applied at candidate generation. <strong>Soft</strong> is a score term with a weight. <strong>Quota</strong> is a minimum-satisfaction <em>ratio over the final set</em> — where "mostly female artists" belongs, since it is neither a filter (which would zero out collaborations) nor a pure boost (which guarantees nothing); unmet, it re-ranks, then discloses the achieved ratio.</p>
+<p>Thresholds are two-sided: every numeric hard predicate records its value <em>and</em> the planner's confidence that it encodes the phrase. Because "energy" is not one number, the plan also records which proxy was used — arousal composite, microtiming deviation, or loudness-and-flux — so a wrong answer can be diagnosed instead of argued about.</p>
+
+<h3>Ranking, diversity and sequencing</h3>
+<p>The score is a normalised weighted sum of the ranking signals, multiplied by a personalisation term raised to a query-type-modulated exponent: semantic first, then personalised, with the exponent near zero for catalogue and exclusion queries. That modulation is <span class="state" data-state="candidate">candidate</span> here.</p>
+<p>Selection is MMR-greedy with the audio embedding as the similarity kernel, plus hard caps on artist, album and period and a floor on embedding spread; a novelty-versus-history term stops "focus" replaying the same twelve tracks. Sequencing is a shortest Hamiltonian path over log-tempo, circle-of-fifths key and timbre; curators preferred sequenced playlists and marked materially fewer abrupt consecutive pairs than random ordering (Bittner et al., <a href="https://archives.ismir.net/ismir2017/paper/000086.pdf">ISMIR 2017</a>). "Focus" asks for the <em>flat</em> arc — low variance, not a build.</p>
+
+<h3>Explainability</h3>
+<p>A reason is derived from the plan's predicates and the track's measured values — <code>(source_phrase, field, value, threshold, margin)</code> — rendered by deterministic templates. The LLM may only paraphrase those facts and may never introduce a reason. Every hard rule shows its excluded count, the one thing embedding negation cannot offer, and detailed mode adds position rationale.</p>
+
+<h3>The worked example, corrected</h3>
+<p>The literal prompt: <em>"I need to focus. no words, no piano, nothing too slow/relaxing."</em> Compile turns it into the predicate set below; thresholds are illustrative <span class="state" data-state="candidate">candidate</span> starting guesses.</p>
+
+<figure class="bleed">
+<table class="data">
+<caption>The flagship prompt, compiled.</caption>
+<thead>
+<tr><th>Source phrase</th><th>Compiled predicate</th><th>Type</th></tr>
+</thead>
+<tbody>
+<tr><td>"I need to focus"</td><td><code>arousal in [0.40,0.60]</code>; <code>pulse_clarity &gt;= 0.45</code>; <code>microtiming_deviation.signed ~ 0</code>; low dynamic complexity; low energy variance</td><td>soft boosts and flat arc</td></tr>
+<tr><td>"no words"</td><td><code>vocal_fraction &lt;= 0.10</code> OR <code>instrumental_score &gt;= 0.80</code></td><td><strong>hard</strong></td></tr>
+<tr><td>"no piano"</td><td><code>instrument.piano &lt; 0.20</code></td><td><strong>hard</strong></td></tr>
+<tr><td>"nothing too slow"</td><td><code>bpm &gt;= 90</code></td><td><strong>hard</strong></td></tr>
+<tr><td>"nothing too relaxing"</td><td><code>arousal &gt;= 0.35</code> AND <code>pulse_clarity &gt;= 0.40</code> AND NOT <code>mood_tag</code> relaxing or meditative</td><td><strong>hard</strong></td></tr>
+<tr><td>(whole prompt)</td><td><code>max_per_artist 3</code>; <code>max_per_album 1</code>; <code>mmr_lambda 0.65</code>; <code>arc flat</code>; <code>clap_text weight 0.15</code></td><td>selection and ordering</td></tr>
+</tbody>
+</table>
+<figcaption>Focus is not a measurable but a proxy bundle, recorded in <code>assumptions[]</code>; the low text-tower weight reflects that this tower is the weak link for musical attributes, so explicit features carry the load.</figcaption>
+</figure>
+
+<p>Candidate generation then yields, illustratively, 18 tracks; MMR needs more spread, so under-fill triggers. This is the correction this chapter carries. The original trace relaxed <code>bpm 90 to 84</code>, <code>energy 0.35 to 0.30</code> and <code>instrumental_score 0.80 to 0.65</code> — and by its own equivalence that last step <em>admits vocals</em>, breaching the exclusion you stated plainly. All three explicit exclusions now sit in <code>require_confirmation_for</code>, so under-fill returns a strict tier plus a labelled near-miss tier instead of widening them.</p>
+
+<figure class="bleed">
+<table class="data">
+<caption>Under-fill returns two tiers, not a silently widened filter. Counts illustrative.</caption>
+<thead>
+<tr><th>Tier</th><th>Reason shown to you</th><th>Count</th></tr>
+</thead>
+<tbody>
+<tr><td>Strict</td><td>satisfies every hard predicate above</td><td>18</td></tr>
+<tr><td>Near-miss</td><td>excluded by your "no piano" rule: confidence 0.20–0.40</td><td>+11</td></tr>
+<tr><td>Near-miss</td><td>excluded by your "no words" rule: vocal fraction 0.10–0.18</td><td>+9</td></tr>
+<tr><td>Near-miss</td><td>below your "nothing too slow" floor: bpm 84–89</td><td>+6</td></tr>
+</tbody>
+</table>
+<figcaption>The near-miss tier takes one tap to opt into and is never merged into the strict list; <code>require_confirmation_for</code> guarantees an explicit rule is never overridden without a yes.</figcaption>
+</figure>
+
+<p>From there: score the strict set; select with MMR and the artist cap; sequence on the flat arc; explain each track; persist the plan with its versions; hand the session to feedback capture.</p>
+
+<h3>Failure modes</h3>
+
+<figure class="bleed">
+<table class="data">
+<caption>Named failure modes and the policy for each.</caption>
+<thead>
+<tr><th>Situation</th><th>Policy</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Zero results</strong></td><td>Walk the ladder without crossing <code>require_confirmation_for</code>; if still zero, offer a counterfactual ("allow piano: 240; drop the tempo floor: 61") as a one-tap choice. Never pad.</td></tr>
+<tr><td><strong>Two results</strong></td><td>Return the two plus a labelled near-miss tier; offer exemplar expansion and a micro-playlist. Padding with near-duplicates is the redundancy MMR prevents.</td></tr>
+<tr><td><strong>Conflicting constraints</strong></td><td>A cheap pre-flight solvability check: empty numeric ranges, mutually exclusive tags, semantic clashes such as "no piano" plus "piano-driven jazz". Surface the conflict; never silently drop a side.</td></tr>
+<tr><td><strong>Unsupported asks</strong></td><td>Never fabricate a signal. Map to the nearest supported mechanism — lyric-embedding similarity, named exemplars, mood or attribute proxies — emit <code>unsupported[]</code> at low confidence, and say so.</td></tr>
+<tr><td><strong>Negation leakage</strong></td><td>A deterministic pre-pass strips negated spans before encoding; a unit test asserts "instrumental, no piano" encodes without "piano".</td></tr>
+<tr><td><strong>Analysis gaps</strong></td><td><code>null</code> is not zero: missing signals are counted, surfaced and queued, and hard passes respect <code>unknown_policy</code>.</td></tr>
+<tr><td><strong>Metadata as instructions</strong></td><td>Tags, lyrics and artist names are untrusted data — matched against the plan, never instructions to the model or to a tool.</td></tr>
+<tr><td><strong>Ambiguity that changes the answer</strong></td><td>Ask one question, and only when two readings give disjoint candidate sets — "high energy" as fast tempo versus driving microtiming. Otherwise default, disclose, render.</td></tr>
+<tr><td><strong>Era spanning and covers</strong></td><td>Era is both a soft production-vector predicate and an embedding-similarity term, since a cover may sit in a different era from its sound; absent cover data is flagged <code>unsupported</code>.</td></tr>
+<tr><td><strong>Over-personalisation</strong></td><td>The personalisation exponent collapses toward zero for catalogue, attribute and exclusion queries, and stays user-visible.</td></tr>
+</tbody>
+</table>
+</figure>
+
+<aside class="callout">
+<p><strong>What this chapter changed.</strong> The query schema was regenerated from the metric taxonomy, promoting <code>production_vec</code> and a chord view and adding a period-coverage floor. Every explicit exclusion moved into <code>require_confirmation_for</code>. Exclusion became audio-first and tag-second, with <code>unknown_policy</code> separating a verified not-punk from an untagged blank.</p></aside>
+
+<p class="note">Every number in the example — 18, 11, 9, 6, 240, 61 — is illustrative and unmeasured on your library; the thresholds, proxy bundles and assembly are <span class="state" data-state="candidate">candidate</span> until your own feedback tunes them.</p>
+</section>
+
+<section class="chapter" id="c7">
+<p class="kicker">Chapter 07</p>
+<h2>Learning from feedback, for an audience of one</h2>
+
+<p class="lede">Almost every recommender result comes from multi-user industrial systems &mdash; Spotify, YouTube, Yahoo!, WeChat, Netflix &mdash; learned from millions to billions of events (Covington et al., <a href="https://research.google.com/pubs/archive/45530.pdf">YouTube DNN</a>). You are one listener. The <em>methods</em> transfer; the <em>statistical leverage</em> does not: feedback arrives slowly, and every choice below follows from that. <span class="state" data-state="observed">observed</span></p>
+
+<p>Instead you have a server-owned playhead &mdash; a skip is a real event &mdash; and, for the crowd's missing scale, <em>content features</em>. Tracks share features; users do not.</p>
+
+<h3>The feedback taxonomy</h3>
+
+<p>Each event is a signed reward with a confidence weight: implicit-feedback factorisation treats data as an &ldquo;indication of positive and negative preference associated with vastly varying confidence levels&rdquo; (Hu, Koren &amp; Volinsky, <a href="https://chrisvolinsky.com/files/publications/Collaborative_Filtering_for_Implicit_Feedback_Datasets.pdf">CF for Implicit Feedback</a>). It yields <code>(sign, magnitude, confidence)</code> &rarr; <code>r = sign &times; magnitude</code>, plus a <em>scope</em>. Magnitudes below are <span class="state" data-state="candidate">candidate</span>.</p>
+
+<figure class="bleed">
+<table class="data">
+<caption>Signal &rarr; kind &rarr; reward. Magnitudes and scopes are candidate.</caption>
+<thead>
+<tr><th>Signal</th><th>Kind (explicit/implicit; intention)</th><th>Sign</th><th>Magnitude</th><th>Confidence</th><th>Default scope</th></tr>
+</thead>
+<tbody>
+<tr><td><code>love</code> / heart</td><td>explicit, intentional</td><td>+</td><td>2.0</td><td>high</td><td>global + current scope</td></tr>
+<tr><td><code>save</code> / add to library</td><td>implicit retention, intentional</td><td>+</td><td>1.2</td><td>med-high</td><td>global</td></tr>
+<tr><td><code>thumbs_up</code></td><td>explicit, intentional</td><td>+</td><td>1.0</td><td>med-high</td><td>current scope + weak global</td></tr>
+<tr><td>repeat / replay</td><td>implicit, intentional-ish</td><td>+</td><td>1.0</td><td>med</td><td>current scope</td></tr>
+<tr><td>queue reorder <em>upward</em></td><td>implicit, intentional</td><td>+</td><td>0.8</td><td>med</td><td>current scope</td></tr>
+<tr><td>full play / play-through</td><td>implicit, unintentional</td><td>+</td><td>0.5</td><td>low-med</td><td>current scope only</td></tr>
+<tr><td>partial play (30&ndash;80%)</td><td>implicit, unintentional</td><td>~0</td><td>0.1</td><td>low</td><td>current scope</td></tr>
+<tr><td>seek / scrub into middle</td><td>implicit, unintentional</td><td>~0</td><td>0.2</td><td>low</td><td>volatile &mdash; mostly ignore</td></tr>
+<tr><td>early skip</td><td>implicit, unintentional</td><td>&minus;</td><td>0.6</td><td>med</td><td>session</td></tr>
+<tr><td>queue removal before play</td><td>implicit, intentional</td><td>&minus;</td><td>0.8</td><td>med</td><td>current scope</td></tr>
+<tr><td><code>thumbs_down</code></td><td>explicit, intentional</td><td>&minus;</td><td>1.0</td><td>med-high</td><td>current scope + weak global</td></tr>
+<tr><td><code>remove completely</code></td><td>explicit, intentional, destructive</td><td>&minus;</td><td>3.0</td><td>high</td><td>playlist-instance hard negative</td></tr>
+</tbody>
+</table>
+<figcaption>Uniform weighting of unary events is explicitly warned against (Jannach et al.).</figcaption>
+</figure>
+
+<p>The third axis is <strong>intention</strong>, and it is the one most systems omit. A CHI'25 study separates <em>unintentional implicit</em> feedback (consumption) from <em>intentional implicit</em> feedback &mdash; acts taken to refine recommendations &mdash; finding the latter drives diversity and relevance (Kuo et al., CHI'25, <a href="https://arxiv.org/html/2502.09869v1">arXiv:2502.09869</a>). <span class="state" data-state="observed">observed</span> So <em>remove</em> is intentional and aimed at this playlist; a <em>skip</em> is usually unintentional and context-dependent &mdash; Jannach's warning that it &ldquo;can be context dependent&rdquo; and misreads as a general negative assessment (Jannach et al., <a href="https://web-ainf.aau.at/pub/jannach/files/BookChapter_Social_Information_Access_2018.pdf">Implicit Feedback</a>).</p>
+
+<p class="note"><strong>Early skip is a guess, not a finding.</strong> Use an absolute floor (roughly 20&ndash;30&nbsp;s) and a relative one (roughly 25% of duration) so short tracks are not punished. The &ldquo;first 30 seconds decide everything&rdquo; framing is commercial-blog lore, source unresolved in this pass: treat it as a <strong>tunable starting guess</strong> (<span class="state" data-state="unverified">unverified</span> as a finding). WeChat's dwell reweighting (Xie et al., WWW'23, <a href="https://arxiv.org/pdf/2209.09000">arXiv:2209.09000</a>) is better supported; SynAmp's dwell is <em>play fraction of duration</em>.</p>
+
+<h3>The asymmetry of negatives</h3>
+
+<p><strong>Remove is not thumbs-down is not skip.</strong> Remove is hard, high-confidence and destructive; it reads best as <strong>&ldquo;never in <em>this</em> playlist again&rdquo;</strong> &mdash; a playlist-instance hard negative &mdash; not automatically a global dislike. Thumbs-down is weaker but explicit; a skip is neither. <strong>Promotion rule:</strong> a track-level negative goes global only on corroboration across &ge;&nbsp;2&ndash;3 scopes, or &ge;&nbsp;M occurrences. <span class="state" data-state="candidate">candidate</span></p>
+
+<p><strong>Negative weights stay small.</strong> In Rocchio feedback, &ldquo;positive feedback ... turns out to be much more valuable than negative feedback, and so most IR systems set &gamma; &lt; &beta;&rdquo; (Manning et al., ch.&nbsp;9, <a href="https://nlp.stanford.edu/IR-book/pdf/09expand.pdf">IR Book 09expand</a>). Prefer cheap hard-excludes for remove over large negative gradients; contrastive learning on skips (Seshadri et al., RecSys'23, <a href="https://arxiv.org/html/2309.11623v2">arXiv:2309.11623</a>) is a later-phase technique.</p>
+
+<aside class="callout">
+<p><strong>The identifiability problem.</strong> A negative is signal only if you can tell <em>which</em> feature it is about. In SynAmp's composite <code>energy</code> the inputs co-vary &mdash; <code>tempo</code>, <code>loudness</code>, <code>onset_rate</code>, <code>spectral_flux</code> rise in lockstep &mdash; so one thumbs-down cannot identify the offending proxy. Corroboration reduces <em>noise</em>, not confounding; separating collinear features needs designed exploration far beyond a 10&ndash;15% slot budget. Feature-level attribution here is <span class="state" data-state="unverified">unverified</span>; v1&ndash;v2 should learn <em>scope and entity</em> preferences and hold correlated weights provisional.</p>
+</aside>
+
+<h3>Cold start with no crowd</h3>
+
+<p>There is no collaborative cold start &mdash; no &ldquo;new user in a crowd&rdquo;. The cold-start state is simply <strong>&ldquo;no feedback yet&rdquo;</strong>:</p>
+<ol>
+<li><strong>Prompt intent</strong> &mdash; the query object (hard constraints, energy and mood targets, era, instrument weights) plus a seed embedding (Chapter 6).</li>
+<li><strong>Existing library evidence</strong> &mdash; play counts, star ratings and existing playlists: priors that exist <em>before</em> any learning.</li>
+<li><strong>Content similarity</strong> &mdash; embeddings retrieve neighbours of the seed set (Hansen et al., CoSeRNN, <a href="https://research.atspotify.com/contextual-and-sequential-user-embeddings-for-music-recommendation">Spotify Research</a>); the <em>architecture</em> is portable, the weights are not.</li>
+</ol>
+<p><strong>Popularity prior: sparingly.</strong> Implicit data is long-tailed; over-trusting popularity yields a &ldquo;blockbuster effect&rdquo; and &ldquo;starvation of the niche items&rdquo; (Jannach et al.). Prefer <em>within-library</em> co-occurrence.</p>
+
+<h3>Methods, from cheap to advanced</h3>
+
+<figure class="bleed">
+<table class="data">
+<caption>Learners by cost &mdash; and by the data one user cannot supply.</caption>
+<thead>
+<tr><th>Method</th><th>Data needed (1 user)</th><th>Explainability</th><th>Overfit risk</th><th>Failure modes</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Heuristic re-ranker</strong></td><td>~0</td><td><strong>High</strong> (rule = reason)</td><td><strong>Low</strong></td><td>Rigid; manual tuning; no feature interactions</td></tr>
+<tr><td><strong>Learning-to-rank</strong> (LambdaMART / pairwise)</td><td>100s&ndash;1000s labelled pairs</td><td>Medium (tree importances)</td><td><strong>High</strong></td><td>Trains on its own exposure (feedback loop); too few labels</td></tr>
+<tr><td><strong>Embedding preference model</strong> (Rocchio, taste vector)</td><td>10s</td><td>Medium (liked exemplars are showable)</td><td>Medium (shrunk toward the seed)</td><td>Centroid skewed by outliers; dislikes weakly represented</td></tr>
+<tr><td><strong>Contextual bandits</strong> (linear / Thompson on <em>content features</em>)</td><td>incremental from ~10s</td><td>Low&ndash;Medium</td><td>Low&ndash;Medium linear; <strong>High</strong> per-track arms</td><td>Single-user variance; reward noise; non-stationarity</td></tr>
+<tr><td><strong>Deep sequence model</strong> (self-attention / CoSeRNN-style)</td><td>10k+ events</td><td>Low</td><td>Very high</td><td>Data-hungry; overfits one taste trajectory; opaque</td></tr>
+<tr><td><strong>LLM preference summaries</strong> (not a ranker)</td><td>~0 inference</td><td><strong>High</strong> (natural-language rationale)</td><td>Low (no training)</td><td>Compute cost; over-interprets one event; can hallucinate</td></tr>
+</tbody>
+</table>
+<figcaption>All rows are multi-user sources: the <em>feature-sharing</em> idea transfers, the statistical certainty does not. Frontier for one user: rows 1&ndash;3, with bandits as a controlled exploration layer.</figcaption>
+</figure>
+
+<p>Deep sequence models are over-engineered here; LLM summaries serve only explanation and cold-start seeding, never the scorer. Bandits fit &ldquo;when the item set changes quickly ... or when the rate of traffic is low&rdquo; (Yan, <a href="https://eugeneyan.com/writing/bandits/">Bandits for Recommender Systems</a>) &mdash; but a <em>per-track</em> arm is wrong for one user: sample over <strong>shared content features</strong>, warm-started from the affinity table. LinUCB was validated on 33M Yahoo! events (Li et al.); feature-sharing transfers, certainty does not.</p>
+
+<h3>Scoping: global, query, playlist, session</h3>
+
+<p>One gesture, four readings. The UI affordance declares the scope: where the action happened and which control was used <em>is</em> the declaration. <span class="state" data-state="observed">observed</span></p>
+
+<figure class="bleed">
+<table class="data">
+<caption>One action, four scopes &mdash; the same gesture means different things at each level.</caption>
+<thead>
+<tr><th>Action</th><th>Global reading</th><th>Query reading</th><th>Playlist-instance reading</th><th>Session reading</th></tr>
+</thead>
+<tbody>
+<tr><td><code>love</code></td><td>&ldquo;I like this artist&rdquo;</td><td>&ldquo;this fits <em>this</em> intent&rdquo;</td><td>&ldquo;keep this high <em>here</em>&rdquo;</td><td>&ldquo;right for now&rdquo;</td></tr>
+<tr><td><code>thumbs_down</code></td><td>&ldquo;I don't like this track&rdquo;</td><td>&ldquo;wrong for this intent&rdquo;</td><td>&ldquo;demote here&rdquo;</td><td>&ldquo;wrong for now&rdquo;</td></tr>
+<tr><td><code>remove</code></td><td>often <strong>not</strong> global</td><td>&ldquo;the intent excludes this kind of thing&rdquo;</td><td>&ldquo;never in this playlist&rdquo;</td><td>weak</td></tr>
+<tr><td><code>skip</code></td><td>usually <strong>not</strong> global</td><td>&ldquo;wrong for now&rdquo;</td><td>weak / none</td><td>&ldquo;not this moment&rdquo;</td></tr>
+</tbody>
+</table>
+<figcaption>Rules: <code>love</code> in the player &rarr; strong global + weak query; <code>remove</code> &rarr; playlist hard negative, promoted only on corroboration; <code>skip</code> &rarr; session, weakly query, never global alone.</figcaption>
+</figure>
+
+<p>All scopes resolve to one structure: an affinity cell keyed by <code>(entity_type, entity_id, scope, scope_id)</code>; ranking aggregates all four levels in one pass. <span class="state" data-state="candidate">candidate</span></p>
+
+<p class="note"><strong>Era correction.</strong> The source implies era boundaries are refined by feedback. They are not: era lives in the production vector, and a thumb carries no era label, so no volume of thumbs will teach a period boundary. Period labels come from Chapter 4's clustering and stay <span class="state" data-state="unverified">unverified</span> without independent ground truth. Feedback re-ranks <em>within</em> a period; it cannot discover one.</p>
+
+<h3>Drift, exploration and filter bubbles</h3>
+
+<p><strong>Drift.</strong> Score each affinity cell as a decayed sum, <code>score = &Sigma; w&#8305; &middot; exp(&minus;&Delta;t / &tau;)</code>: a short half-life for session and query cells (days), a long one for global (months). Drift is expected; the model should forget. <span class="state" data-state="observed">observed</span></p>
+
+<p><strong>Exploration.</strong> A recommender that influences exposure and then learns from it &ldquo;perpetuat[es] the feedback loop&rdquo;, and lack of exploration causes &ldquo;satiation effect, i.e., reduced enjoyment&rdquo; (Chen et al., RecSys'21, <a href="https://dl.acm.org/doi/fullHtml/10.1145/3460231.3474236">ACM</a>). Exploration is a <em>designed budget</em>, not noise: reserve a slot share for tracks outside the exploited cluster, optimistic-initialise by feature uncertainty, and penalise near-duplicates. <strong>Guardrail:</strong> track library coverage as a <em>coverage alarm</em> and raise the budget when it collapses. Diversity, novelty and coverage are guardrails, never objectives &mdash; otherwise the system wins its own metrics while making the library worse.</p>
+
+<h3>The data model</h3>
+
+<p>Two principles: an append-only event log with derived tables, so every score is reproducible; and the explanation stored with the recommendation. The persisted query is the <em>same object</em> Chapter 6 defines as <code>SynAmpQueryPlan</code> &mdash; the merged schema, not a second one &mdash; so the tables below name its fields directly.</p>
+
+<pre><code>feedback_event(            -- append-only; never mutated
+  id PK, ts, track_id, session_id NULL, playlist_id NULL, query_id NULL,
+  source enum('player','playlist_view','search'),  -- how scope was inferred
+  signal_type enum('love','thumb_up','thumb_down','remove','skip_early',
+    'skip_late','full_play','repeat','queue_up','queue_remove','save'),
+  sign smallint, magnitude real, confidence real,  -- 0..1
+  scope enum('global','query','playlist','session'), scope_id NULL,
+  context jsonb,           -- time_of_day, device, rank_shown, play_ms,
+                           -- duration_ms, position_in_queue
+  policy_version FK )
+
+affinity(                  -- materialised; one row per entity x scope
+  entity_type enum('track','artist','genre','tag','instrument','cluster'),
+  entity_id, scope, scope_id NULL,
+  score real, confidence real, n_events int, half_life_days real,
+  last_updated, UNIQUE(entity_type, entity_id, scope, scope_id) )
+
+query_object(              -- == Chapter 6's SynAmpQueryPlan; one row per
+  query_id PK,             -- playlist concept, not a rival schema
+  playlist_id FK, base_text,
+  intent jsonb,            -- query_type, personalization, confidence
+  target_size int,
+  constraints jsonb,       -- typed array, replacing the must[]/must_not[] blob:
+                           -- [{field, op, value, hard, weight, unknown_policy,
+                           --   source_phrase}, ...]; field from Ch. 6's enum;
+                           -- null is not zero
+  boosts jsonb,            -- the positive-weight ranking signals (Ch. 6)
+  penalties jsonb,         -- the negative-weight ranking signals (Ch. 6)
+  ranking jsonb,           -- mode, signals[], diversity caps + period_coverage floor
+  relaxation jsonb,        -- min_results, ladder[], strict|strict_plus_near_miss,
+                           -- never_relax[], require_confirmation_for[]
+  sequencing jsonb,        -- arc, energy_variance_target, tempo_smoothness, key_blend
+  base_embedding vector,       -- query_state.base_embedding: seed / intent (q0)
+  expanded_embedding vector,   -- query_state.expanded_embedding: Rocchio-expanded
+  rocchio jsonb,               -- {alpha,beta,gamma}; a field of this same plan
+  store_version, index_version, plan_hash,   -- the invalidation keys Ch. 6 requires
+  version int, updated_at )
+
+exposure_log(              -- debiasing + off-policy eval; propensity from v1
+  ts, track_id, query_id, rank_shown, policy_version,
+  propensity real )        -- P(chosen | context)
+
+recommendation_explanation(  -- first-class, not recomputed
+  rec_id, track_id, query_id, ts, score_breakdown jsonb )
+  -- {"query_sim":0.41, "artist_affinity:AniDiFranco":0.22,
+  --  "instrument:piano":-0.18, "diversity_bonus":0.05}
+
+policy_registry(           -- rollback + provenance
+  policy_version PK, kind enum('heuristic','ltr','bandit','llm_summary'),
+  params jsonb, metrics_snapshot jsonb, created_at, active bool )</code></pre>
+
+<ul>
+<li>The <strong>explanation row is first-class</strong>: &ldquo;why this track&rdquo; is the top entries of <code>score_breakdown</code>.</li>
+<li><strong>Scopes are columns, not tables</strong>; one query aggregates all four levels.</li>
+<li><strong><code>propensity</code> exists from day one</strong> &mdash; the only route to off-policy evaluation or bandit warm-start.</li>
+</ul>
+
+<h3>Phased plan</h3>
+
+<h4>v1 &mdash; heuristic, content-first, explainable</h4>
+<p>Trigger: day 0 to roughly the first 50&ndash;200 events. Re-rank with a handful of rules: +artist affinity from a global <code>love</code>, hard-exclude tracks removed from <em>this</em> playlist, penalise tracks skipped twice here, a corroboration-gated global penalty for <code>thumbs_down</code>. <strong>Can learn:</strong> coarse high-signal preferences &mdash; favourite artists, hard bans, obvious exclusions. <strong>Cannot learn:</strong> feature interactions; the relative weight of more than three signals; drift &mdash; and it treats all skips alike.</p>
+
+<h4>v2 &mdash; embedding preference model with light exploration</h4>
+<p>Trigger: a few hundred events. Rocchio expansion per query (&alpha;&nbsp;=&nbsp;1, &beta;&nbsp;=&nbsp;0.75, &gamma;&nbsp;=&nbsp;0.15); a global taste vector: a decayed centroid of loved and saved exemplars; recency and confidence weighting; light learning-to-rank if enough time-split pairwise labels exist, debiased from the exposure log; an exploration layer over the affinity table. <strong>Can learn:</strong> multi-feature trade-offs; query-specific constraints; per-scope weights; recency drift. <strong>Cannot learn:</strong> deep nonlinear interactions reliably &mdash; it risks overfitting a few hundred labels.</p>
+
+<h4>v3 &mdash; learned re-ranker, drift-aware, optional introspection</h4>
+<p>Trigger: thousands of events, many months. A GBDT re-ranker over the full feature set, gated by counterfactual offline evaluation; a contextual bandit with drift-aware retraining; an optional LLM taste profile for introspection and cold-starting, never the ranker. <strong>Can learn:</strong> nonlinear interactions; context-dependent preference; budgeted exploration; long-term drift. <strong>Cannot learn:</strong> a genuinely new taste it never exposes you to &mdash; no volume of single-user data escapes the bubble without an explicit diversity objective; and still <span class="state" data-state="unverified">unverified</span>, attribution among collinear features.</p>
+
+<h3>Evaluation with one user</h3>
+
+<p><strong>Observational is not interventional.</strong> An offline metric answers &ldquo;how well do recommendations fit logged behaviour&rdquo;, not &ldquo;would listening improve if they changed&rdquo;: static offline evaluation &ldquo;ignores the interventional nature of recommendations&rdquo; (Yan, <a href="https://eugeneyan.com/writing/counterfactual-evaluation/">Counterfactual Evaluation</a>). <span class="state" data-state="observed">observed</span></p>
+
+<p><strong>Offline, distrusted.</strong> NDCG, Precision@k and Recall@k on <em>time-split</em> (not random) held-out feedback are sanity signals only; rank correlation between predicted score and realised reward is more honest. Counterfactual estimators &mdash; IPS, SNIPS, doubly-robust &mdash; use the <code>propensity</code> field (Gilotte et al., <a href="https://arxiv.org/abs/1801.07030">arXiv:1801.07030</a>).</p>
+
+<p><strong>Online, the ones that matter.</strong> Early-skip, completion, save, repeat, remove and love rates, plus <em>playlist survival</em> (reopened after the session); coverage, novelty and diversity are guardrails. A split A/B has almost no power at n&nbsp;=&nbsp;1: prefer interleaving (mix two rankers, attribute the win by whose tracks get engaged with) or a switchback by session or day. Guard exposure, keep the exploration budget, and auto-roll back if skip or remove rates spike. The stored explanation plus your own reaction is evidence no metric supplies. <span class="state" data-state="candidate">candidate</span></p>
+
+</section>
+
+<section class="chapter" id="c8">
+<p class="kicker">Chapter 08</p>
+<h2>What the review found, and what remains unverifiable</h2>
+
+<p class="lede">This chapter decides whether to believe the other seven. A red-team and a source, licence and fabrication audit read all six research files and attacked the design they <em>compose</em>, not the documents alone. Every pass was disciplined <em>within itself</em>: honest evidence tiers, explicit &ldquo;not reliably computable&rdquo; lists, hedges where owed. The design still fails &mdash; almost entirely at the <strong>seams</strong>, where one file&rsquo;s output became another&rsquo;s input and no one checked the join.</p>
+
+<p>The failure has one shape: the pipeline that runs was written against a coarse, legacy field set and never ingested the metric taxonomy, the identity-and-era machinery, or the licensing reality. So the design <em>names</em> a fix for every hard case while its runtime could <em>execute</em> only the metadata-plus-embedding subset you already rejected. <span class="state" data-state="observed">observed</span> Beneath that: a <code>candidate</code> grade repeatedly consumed as if settled &mdash; the error this chapter corrects.</p>
+
+<h3>The verdict table for the eight hard cases</h3>
+
+<figure class="bleed"><table class="data">
+<caption>How each hard case fares when the taxonomy meets the runtime.</caption>
+<thead><tr><th>#</th><th>Hard case</th><th>Verdict</th><th>The specific way it breaks</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Artist-era</td><td><strong>Appears to solve</strong> <span class="state" data-state="candidate">candidate</span></td><td>The discriminator is the <code>production_vec</code>, and it is <strong>absent from the runtime</strong>. What is left is the year tag plus embedding subtraction &mdash; the two things that fail.</td></tr>
+<tr><td>2</td><td>Theme not in the title</td><td><strong>Partly solves</strong> <span class="state" data-state="candidate">candidate</span></td><td>Honestly labelled, but the only real mechanism &mdash; lyric/topic embedding &mdash; is punted as &ldquo;a separate task&rdquo;, with no topic model named. The focus subset it must serve is instrumental, i.e. has no lyrics.</td></tr>
+<tr><td>3</td><td>Mood by chord progression</td><td><strong>Appears to solve</strong> <span class="state" data-state="candidate">candidate</span></td><td>Chord fields are <strong>absent from the query schema</strong> and the ranking signals. And no one demonstrated progression &rarr; mood; the only metric offered is progression <em>similarity</em>.</td></tr>
+<tr><td>4</td><td>Energy by microtiming</td><td><strong>Appears to solve</strong> <span class="state" data-state="unverified">unverified</span></td><td>Triple break: <strong>unbuilt</strong> (no off-the-shelf swing detector), <strong>unstorable</strong> (no field, though the prose demands the plan record the proxy), and <strong>unvalidated</strong> as a predictor of perceived energy.</td></tr>
+<tr><td>5</td><td>Era spans eras; covers across eras</td><td><strong>Breaks</strong> <span class="state" data-state="unverified">unverified</span></td><td>Composition identity is not expressible (no <code>is_cover</code>/<code>composition_id</code>) and period coverage is not expressible (a per-decade cap, no per-period floor). &ldquo;Span her whole arc&rdquo; has no representation.</td></tr>
+<tr><td>6</td><td>Exclude punk or country</td><td><strong>Appears to solve</strong> <span class="state" data-state="candidate">candidate</span></td><td>It falls back to <code>genre not-in</code> &mdash; the tag statistic you rejected &mdash; with only a weak, unwired audio backstop. Untagged tracks default to excluded, so &ldquo;not punk&rdquo; is indistinguishable from &ldquo;no tag&rdquo;.</td></tr>
+<tr><td>7</td><td>&ldquo;Focus; no words, no piano, nothing too slow&rdquo;</td><td><strong>Partly &mdash; and self-violating</strong> <span class="state" data-state="unverified">unverified</span></td><td>The flagship example under-fills (~18 for a target of 40), then loosens <code>bpm</code> 90&rarr;84, <code>energy</code> 0.35&rarr;0.30 and the instrumental score &mdash; which, by the doc&rsquo;s own equivalence, <strong>admits vocals</strong>, breaching &ldquo;no words&rdquo;. Only &ldquo;no piano&rdquo; was guarded.</td></tr>
+<tr><td>8</td><td>Learn from thumbs/love/remove</td><td><strong>Partly &rarr; solves</strong> <span class="state" data-state="candidate">candidate</span></td><td>The most honest section, and sound. Its one gap is <strong>identifiability</strong>: tempo, loudness, onset rate and spectral flux co-vary in the composite, and one thumbs-down cannot say which proxy was wrong.</td></tr></tbody></table>
+<figcaption>&ldquo;Appears to solve&rdquo; is the dangerous verdict: a mechanism is named and graded, and the runtime cannot apply it. <em>Unverifiable</em> is reserved for cases where even a correct implementation could not be shown to work.</figcaption></figure>
+
+<h3>The blocker fixes, explained</h3>
+<p><strong>B1, the schema seam.</strong> The taxonomy hands off fields the store &ldquo;must add&rdquo;; the query schema uses a far coarser set, and the intersection is nearly empty. This seam is why cases 1, 3, 4, 5 and 6 are unimplementable &mdash; the metrics exist in the taxonomy and vanish in the query object. <span class="state" data-state="observed">observed</span> Regenerated in Chapter 6, with <code>production_vec</code> and a chord view promoted to ranking signals.</p>
+<p><strong>B2, era collapsing back to the year tag.</strong> Two files locate era in production features; the runtime locates it in the year tag plus embedding subtraction. Fixed in Chapter 6: the production view wired in, <code>year</code> demoted to a hint, disagreement handled explicitly, silent fallback forbidden.</p>
+<p><strong>B3, the relaxation ladder breaching hard exclusions.</strong> A hard constraint was defined as &ldquo;must satisfy&rdquo; and then relaxed; by the doc&rsquo;s own mapping, loosening the instrumental score admits vocals. Fixed in Chapter 6: every exclusion enters the confirmation guard, and under-fill returns a strict tier plus a near-miss tier instead of quiet widening.</p>
+<p><strong>B4, the non-commercial embedder presented as shippable.</strong> One file recommends MERT/MuQ as the audio embedder; the licence audit finds the weights non-commercial, so the recommendation does not survive its sibling&rsquo;s finding. Fixed in Chapters 4 and 5: MERT/MuQ become private-only, the permissive pair the shippable backbone, and the fork your decision.</p>
+<p class="note">Remaining engineering work, not text: the missing producers and metrics (the microtiming extractor, the chord fields, the audio-first exclusion proxies), wiring the production vector into scoring, and defining or deleting producerless fields. Chapters 4&ndash;6 carry the fixes in <em>design</em>; none has been run on your library. <span class="state" data-state="candidate">candidate</span></p>
+<h3>Ground-truth circularity &mdash; the hardest honest problem</h3>
+<p>Three nested circuits validate a capability against a signal the capability itself produced. <strong>One:</strong> the period labels are validated against the vectors that defined them &mdash; near-tautological. <strong>Two:</strong> the sonic era is validated against the year tag it exists to replace, itself declared &ldquo;poisoned&rdquo; by remasters. <strong>Three:</strong> the audio&rarr;construct map is validated only by feedback the map elicited; propensity fixes <em>evaluation</em> bias, not the causal confound, and the excluded tail is never validated, so a wrong threshold can persist forever. <span class="state" data-state="unverified">unverified</span></p>
+<p>The consequence, carried: where no independent ground truth exists &mdash; and with a single user it may simply not &mdash; the capability must be labelled <strong>unverifiable</strong>, not merely unproven. That covers the sonic-period model, the sonic-era estimate, and every proxy in the audio&rarr;construct map, including the learned mood, focus and energy heads. It is a limit of the evidence, not a defect of design: surface it as confidence, never as fact. <span class="state" data-state="unverified">unverified</span></p>
+<h3>The cost model is wrong; this is the corrected arithmetic</h3>
+<figure class="bleed"><table class="data">
+<caption>Cost, as claimed and as it actually reads.</caption>
+<thead><tr><th>Claim</th><th>As written</th><th>Corrected reading</th></tr></thead>
+<tbody>
+<tr><td>Cheap block</td><td>&ldquo;A few seconds per track &rArr; ~1&ndash;3 min per 1,000.&rdquo;</td><td>A few seconds &times; 1,000 is 33&ndash;50 min per 1,000 &mdash; off by ~10&ndash;30&times;; its own per-metric rows sum far higher.</td></tr>
+<tr><td>Loudness (one descriptor)</td><td>&ldquo;~Real-time, &asymp;60 s per minute of audio.&rdquo;</td><td>LUFS via <code>ffmpeg ebur128</code>/<code>pyloudnorm</code> is far faster than real-time. Taken literally, 45,700 tracks &times; ~4 min &asymp; <strong>~127 days</strong> for loudness alone.</td></tr>
+<tr><td>Full stack</td><td>&ldquo;~1&ndash;3 CPU-min/track &rArr; ~1&ndash;2 days.&rdquo;</td><td>Its own per-tool rows (Demucs 20&ndash;60 s + Whisper 30&ndash;120 s + all-in-one 30&ndash;90 s + &hellip;) &asymp; 92&ndash;315 s/track &rArr; <strong>~47&ndash;160 CPU-days</strong> &rArr; ~5&ndash;16 days wall-clock at ~10 cores.</td></tr>
+<tr><td>Honest estimate (here)</td><td>&mdash;</td><td>Tens to low-hundreds of CPU-seconds per track &rArr; for ~45,700 tracks, <strong>several CPU-weeks to a couple of CPU-months</strong> &mdash; roughly a week or more of wall-clock at full parallelism. Still <strong>unmeasured estimates</strong>.</td></tr>
+<tr><td>Recurring cost</td><td>Unbudgeted</td><td>Every model or threshold change invalidates the store and re-runs the heavy block &mdash; days to weeks per iteration, on the clock, every time.</td></tr>
+</tbody></table>
+<figcaption>Illustrative of method, not measurement: figures are arithmetic on the sources&rsquo; own numbers, none timed on your NAS. <span class="state" data-state="candidate">candidate</span></figcaption></figure>
+
+<p>The <strong>sampling tension</strong> is the part the sources never name. The 30&ndash;60 s window that buys the compute back degrades exactly the metrics the hard cases need. Decide per metric. <strong>May</strong> be sampled: mean loudness, most timbral and spectral descriptors, coarse embeddings. <strong>May not</strong>: loudness range, crest factor, the production era cue, structure and segmentation, and microtiming over a grid &mdash; all need full tracks. Sampling them saves days and silently breaks the cases that motivate the system.</p>
+
+<h3>Citation and integrity findings</h3>
+<p>The audit&rsquo;s headline is a credit: <strong>no fabricated paper, identifier or model name</strong>, and the heavy numeric anchors &mdash; the separation SDR, the cover-song precision, the corpus sizes &mdash; verified <em>verbatim</em>; both &ldquo;future&rdquo; identifiers most likely to be invented were real. <span class="state" data-state="observed">observed</span> The problems are hygiene, not invention, and cluster in the two files whose design consequences lean hardest on their citations.</p>
+<p>Corrected attributions: the attention-drainage paper is at <a href="https://files.eric.ed.gov/fulltext/EJ882124.pdf">ERIC EJ882124</a>, not the repository given; the conference paper is an AES 129th Convention paper, not a conference-site or personal host; the earworm study is in <em>Consciousness and Cognition</em> 130:103834, not the journal named; the perception-versus-feeling citation is <em>Psychological Science</em> 12(3):248&ndash;251, not an author profile. One widely quoted figure carries an <strong>identification risk</strong> &mdash; the &ldquo;~30%&rdquo; memory result is attributed to one study but appears verbatim as another&rsquo;s headline. And one number should be <strong>gated on a full-text read</strong> before it anchors a design rule: the near-collapse negation accuracy figure, read from an abstract only. <span class="state" data-state="unverified">unverified</span></p>
+
+<h3>Cross-file contract contradictions</h3>
+<figure class="bleed"><table class="data">
+<caption>Where two files describe the same object differently.</caption>
+<thead><tr><th>Contradiction</th><th>What it is</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>Query schema vs metric taxonomy</td><td>The runtime&rsquo;s field enum and the taxonomy&rsquo;s required-field list share almost no entries.</td><td>Regenerated in Chapter 6</td></tr>
+<tr><td>Anti-exemplar doctrine inverted</td><td>One file says filter, do not subtract; the other uses a <em>dominant</em> subtractive penalty as its top relaxation target.</td><td>Restated in Chapter 6; re-wire is engineering work</td></tr>
+<tr><td>Two incompatible query-object shapes</td><td>Two files define the query object twice; hard exclusions, era and per-instrument weights have no home in one.</td><td>Merged into one schema in Chapter 6</td></tr>
+<tr><td>Fields with no producer</td><td><code>instrument.sax</code>, <code>subgenre</code>, <code>listens</code>, <code>last_played_days</code> are queryable but produced by no document.</td><td>Defined or deleted in Chapter 6</td></tr>
+<tr><td>Half-specified production vector</td><td>The vector that carries era needs stereo width, reverb decay and noise floor &mdash; none in the taxonomy.</td><td>Promoted in Chapter 6; dimensions are engineering work</td></tr>
+</tbody></table>
+<figcaption>Each row is a place where a reader assembling the files by hand would have produced a broken system.</figcaption></figure>
+
+<h3>What survives untouched</h3>
+<p>Honesty requires the other half of the ledger. The review could not fault these; they carry forward unchanged.</p>
+<ul class="plain">
+<li><strong>Negation doctrine</strong> &mdash; per-track predicates, never a negated embedding.</li>
+<li><strong>unknown_policy / null &ne; 0</strong>, hard exclusions defaulting to exclude.</li>
+<li><strong>MMR + hard caps</strong>, and explanation-from-plan.</li>
+<li><strong>Sequencing</strong> by shortest-path over tempo, key, timbre.</li>
+<li><strong>The scope model and negative taxonomy.</strong></li>
+<li><strong>Evaluation honesty</strong> &mdash; non-interventional offline metrics, propensity from day one, interleaving at n=1.</li>
+<li><strong>The code-versus-weights licence distinction</strong>, and the refusal list.</li>
+<li><strong>The multi-prototype guard and hubness correction.</strong></li>
+<li><strong>The &ldquo;not reliably computable&rdquo; list.</strong></li>
+</ul>
+
+<h3>Severity-ranked fix list</h3>
+<ol>
+<li><strong>Reconcile the metric schema with the query schema</strong> &mdash; else cases 1, 3, 4, 5 and 6 stay unimplementable. <em>Ch. 6.</em></li>
+<li><strong>Make era a production feature, not a year predicate.</strong> <em>Ch. 6.</em></li>
+<li><strong>Fix the relaxation ladder</strong> &mdash; exclusions guarded; strict + near-miss tiers. <em>Ch. 6.</em></li>
+<li><strong>Resolve the licence-versus-accuracy fork</strong> as your decision. <em>Ch. 5, 9.</em></li>
+<li><strong>Break the three ground-truth circuits</strong>, or label them unverifiable. <em>Ch. 9.</em></li>
+<li><strong>Re-issue the cost model</strong>, sampling rules and recurring cost included. <em>Here; Ch. 9.</em></li>
+<li><strong>Finish the interface contracts</strong> &mdash; one query object, every field produced or deleted. <em>Ch. 6.</em></li>
+<li><strong>Make exclusions audio-first, tag-second.</strong> <em>Ch. 6.</em></li>
+<li><strong>Add a per-period coverage floor.</strong> <em>Ch. 6.</em></li>
+<li><strong>Downgrade over-claimed citations</strong> at point of use. <em>Here; Ch. 3.</em></li>
+</ol>
+
+<p class="note">Chapter 9 maps this list onto SynAmp&rsquo;s roadmap and separates what you can decide this week from what is genuinely open engineering. Until those fixes land, treat every capability marked <span class="state" data-state="unverified">unverified</span> here as a lead, not a fact &mdash; and the dossier&rsquo;s credibility as resting on this chapter having said so.</p>
+</section>
+
+<section class="chapter" id="c9">
+<p class="kicker">Chapter 09</p>
+<h2>Build plan and open decisions</h2>
+
+<p class="lede">The research phase is over. Chapters 2 to 8 argued what the science supports, where the design breaks, and what survives — almost none of it run on your 45,739 files. This is the commit point: what to build, in what order, and what only you decide. The sequence is <span class="state" data-state="candidate">candidate</span>; the mechanisms are <span class="state" data-state="observed">observed</span>.</p>
+
+<h3>The sequencing principle</h3>
+<p>SynAmp's roadmap sequences correctly already: get off streaming subscriptions first, then build what exists nowhere else. This brain work belongs in the differentiator tier — Phase 3 — behind the Phase 2 playlist system. Three foundations are cheap now, painful to retrofit, so land them early:</p>
+<ul>
+<li><strong>A server-owned session and queue model.</strong> Plays, position and skip events belong on the server, not the browser; retrofitting that later is a rewrite.</li>
+<li><strong>"A playlist is a saved live query."</strong> The store must re-resolve membership, not replay a frozen list. The skeleton exists: the <code>Folder | Playlist | Rollup</code> tree with merge, shuffle, interleave and weighted modes in <code>apps/brain</code>.</li>
+<li><strong>A resumable, incremental analysis queue.</strong> Also sketched: the analyzer's <code>enqueue_missing / claim / complete / fail</code> interface and <code>stages_done</code> resume. Never let the first pass be a one-shot script.</li>
+</ul>
+<p>Get these right and later phases are additive; get them wrong and Phase 3 is a migration.</p>
+
+<h3>The phased build plan</h3>
+
+<figure class="bleed">
+<table class="data">
+<caption>What to build, in order. Each row names its dependency where one exists.</caption>
+<thead>
+<tr><th>Phase</th><th>What to build</th><th>Why now</th><th>Exit criterion</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>1. Foundations</strong></td><td>Reconciled query-object schema; a versioned store with invalidation keys; the exposure log from day one; virtualised rendering.</td><td>Changing a schema later invalidates computed data, and no log can be back-filled.</td><td>Schema validates; log has rows; 100k rows scroll smoothly.</td></tr>
+<tr><td><strong>2. Cheap metrics</strong></td><td>Model-free DSP over the whole library: loudness, dynamics, spectral and timbral features, onset and pulse, the starting <code>production_vec</code>.</td><td>Fast and permissive, no sampling compromise; these unlock the era and energy cases. No dependency; before any model.</td><td>Every track has the objective feature vector; nulls counted, never zeroed.</td></tr>
+<tr><td><strong>3. Expensive block</strong></td><td>Embeddings (OpenL3 + MS-CLAP shippable; MERT/MuQ private), separation, lyric transcription; decide per metric what may be sampled; order by plays.</td><td>The compute cliff of Chapter 8; fixing the sampling rule here keeps the pass honest. Depends on 1.</td><td>Embeddings cover the library; <code>LRA</code>, crest, structure and microtiming full-track, the rest sampled.</td></tr>
+<tr><td><strong>4. Detectors</strong></td><td>Instrument and vocal detection: piano, drums, bass, guitar, strings, synth; singing-voice fraction.</td><td>Turns "no words, no piano" from a request into a filter. Depends on 3.</td><td>The flagship prompt's exclusions return counts, not guesses.</td></tr>
+<tr><td><strong>5. Compiler and runtime</strong></td><td>Constrained-decoding plan compiler, deterministic compile, two-channel retrieval, MMR, sequencing, explanation — strict and near-miss tiers from release one.</td><td>The whole surface; a compiler that cannot express an exclusion cannot honour one. Depends on 1 and 3.</td><td>"focus. no words, no piano, nothing too slow" returns a strict tier with excluded counts.</td></tr>
+<tr><td><strong>6. Re-ranker v1</strong></td><td>Thumbs, love, remove, skip; four scopes; the corroboration rule.</td><td>v1 is rules, not statistics; it needs only phase 1's log. Depends on 5.</td><td>A thumbs-down changes the next result and the explanation says why.</td></tr>
+<tr><td><strong>7. Period model</strong></td><td>The Ani DiFranco machinery: sonic periods, era, covers, the multi-exemplar query.</td><td>Deliberately last: it needs the embedder and a populated production vector to calibrate. Depends on 2 and 3.</td><td>An arc across one artist ranks the same period above that artist's other periods.</td></tr>
+</tbody>
+</table>
+<figcaption>Be impatient about phases 1 and 2; not phase 7.</figcaption>
+</figure>
+
+<h3>The decisions only you can make</h3>
+
+<figure class="bleed">
+<table class="data">
+<caption>Five forks. Each is a choice about what to give up, not a bug to fix.</caption>
+<thead>
+<tr><th>Decision</th><th>The branches</th><th>What you give up</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>(a) The licence fork</strong> (Chapter 5)</td><td>Permissive-only (OpenL3 + MS-CLAP + DSP + a local head), or private non-commercial weights shipping only numeric outputs.</td><td>Permissive: shippable and AGPL/NC-free, but weak-accuracy, with no permissive mood, era or key model. Private: stronger locally, not distributable, and the ShareAlike grey area stays grey.</td></tr>
+<tr><td><strong>(b) Soft quotas</strong> ("mostly female artists")</td><td>Ship as a disclosed minimum ratio over the final set, or drop them.</td><td>Shipped: serves a request tags cannot, on inference you cannot verify. Dropped: no confident-wrong answers, one fewer feature.</td></tr>
+<tr><td><strong>(c) Full pass or sampled</strong></td><td>Full library, sampled 30–60 s windows, or hybrid (full on the most-played fifth).</td><td>Full: correct era and structure at CPU-weeks to CPU-months. Sampled: days back, but breaks <code>LRA</code>, crest, era cue, structure and microtiming. Hybrid buys priority, not tail accuracy.</td></tr>
+<tr><td><strong>(d) Unverifiable capabilities</strong></td><td>Ship with explicit confidence labels, or pretend they are solid.</td><td>Labelled: honest, with permanent visible uncertainty. Pretended: clean until the first wrong answer discredits everything.</td></tr>
+<tr><td><strong>(e) Era falling back to <code>year</code></strong></td><td>None (the design's position), or fall back when production is missing.</td><td>None: some tracks read "era unknown", surfaced and counted. Fallback: exactly the failure you asked to avoid. Confirm: none — and log every disagreement.</td></tr>
+</tbody>
+</table>
+<figcaption>Five forks, each a trade.</figcaption>
+</figure>
+
+<h3>The first week</h3>
+<ol>
+<li>Extend the per-track record — <code>services/analyzer/models.py</code>: add the objective fields (production, structure, pulse, spectral) to <code>AnalysisResult</code>.</li>
+<li>Add invalidation keys — <code>services/analyzer/queue.py</code> and the store: <code>store_version</code>/<code>index_version</code> per job, bumped on a model change; <code>stages_done</code> is the resume point.</li>
+<li>Write the query-object schema — new <code>apps/brain/src/schema/query-plan.ts</code>: the Chapter 6 schema as a type, a validator, the plan hash.</li>
+<li>Save the plan, not the list — <code>apps/brain</code> persistence: each playlist keeps its plan and versions; <code>/resolve</code> recomputes.</li>
+<li>Create the exposure/feedback log — a brain DB migration: one row per (plan, track, position, event), written before anything reads it.</li>
+<li>Calibrate on a small subset — the cheap block over one album arc plus a few instrumental tracks, before the full run.</li>
+<li>Wire virtualised rendering — <code>apps/web</code>: point the playlist tree at a virtualised list before it grows past a few thousand rows.</li>
+<li>Unit-test the negation compiler — assert "instrumental, no piano" encodes without "piano".</li>
+</ol>
+
+<h3>How to know it is working</h3>
+<ul class="plain">
+<li>The strict focus prompt returns only instrumental, piano-free, above-tempo tracks and reports excluded counts.</li>
+<li>A project across one artist's arc ranks that period above the artist's others.</li>
+<li>Excluding a genre by sound removes tracks with no genre tag.</li>
+<li>A thumbs-down changes the next result, and the explanation says why.</li>
+<li>New files appear in a saved playlist without a refresh.</li>
+</ul>
+
+<aside class="callout">
+<p><strong>The bottom line.</strong> The research is solid, the mechanisms real, the pipeline coherent; the fix list is engineering, not rethinking. But the accuracy of the mood, era and energy signals is <em>unproven on this particular library</em>. Build the measurement in — confidence labels, excluded counts, the exposure log, calibrated thresholds — rather than assuming the signals are right. Assume nothing; instrument everything.</p>
+</aside>
+</section>
+
+      <footer class="colophon">
+        <h3>Colophon</h3>
+        <p>This dossier compiles nine independent research passes and two independent reviews
+        (an adversarial red-team and a source, citation and licence audit) over the SynAmp
+        repository at <code>/Users/tapps/_dev/web-apps/SynAmp</code>. Every claim carries an
+        evidence state; every unverified item is marked as such rather than smoothed over.
+        Compiled by AutoClaw.</p>
+        <p>Nothing in this document has been executed against the real library. The library size,
+        hardware baseline and repository facts quoted here were inspected directly; the models,
+        classifiers and pipelines described were not run.</p>
+      </footer>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>

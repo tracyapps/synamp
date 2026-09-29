@@ -16,6 +16,10 @@ def _env(name: str, default: str) -> str:
     return default if not value else value
 
 
+def _default_cache() -> Path:
+    return Path.home() / ".cache" / "synamp"
+
+
 @dataclass(frozen=True)
 class AnalyzerConfig:
     """Runtime settings for a scan/analyse pass."""
@@ -24,17 +28,36 @@ class AnalyzerConfig:
     """Root of the music share to walk."""
 
     database_url: str
-    """Where results are written (the brain database, Postgres + pgvector)."""
+    """Where results eventually go for the brain (Postgres + pgvector).
+
+    Not used by this worker yet: the local SQLite store below is authoritative
+    until the brain's Postgres schema is finalised.
+    """
 
     cache_dir: Path
     """Scratch space for decoded/derived audio; safe to delete at any time."""
 
+    db_path: Path
+    """Catalog, queue and results for this worker.
+
+    SQLite rather than Postgres because the worker is a single-machine,
+    single-writer offline tool that has to survive interruption with no
+    operational overhead. The schema mirrors the Postgres shape so the move is
+    a port, not a redesign.
+    """
+
     sample_seconds: float = 60.0
-    """Audio sampled per track for embedding. Full-track analysis is usually
-    unnecessary and multiplies the first-pass cost for no playlist benefit."""
+    """Audio sampled per track for *model* stages. Full-track analysis is usually
+    unnecessary there and multiplies the first-pass cost for no playlist
+    benefit. Note the model-free block deliberately ignores this: loudness
+    range, crest factor and clipping density are whole-recording properties."""
 
     workers: int = 4
     """Parallel decode/analyse processes. Keep below the CPU core count."""
+
+    max_attempts: int = 3
+    """Failures before a track is left failed rather than retried. An unreadable
+    file should be visible, not spin."""
 
     audio_extensions: tuple[str, ...] = (
         ".flac",
@@ -50,12 +73,15 @@ class AnalyzerConfig:
 
     @classmethod
     def from_env(cls) -> "AnalyzerConfig":
+        cache_dir = Path(_env("ANALYZER_CACHE", str(_default_cache())))
         return cls(
             library_path=Path(_env("LIBRARY_PATH", "/music")),
             database_url=_env(
-                "DATABASE_URL", "postgres://synamp:synamp@localhost:5432/synamp"
+                "DATABASE_URL", "postgres://synamp:***@localhost:5432/synamp"
             ),
-            cache_dir=Path(_env("ANALYZER_CACHE", str(Path.home() / ".cache" / "synamp"))),
+            cache_dir=cache_dir,
+            db_path=Path(_env("ANALYZER_DB_PATH", str(cache_dir / "analyzer.sqlite3"))),
             sample_seconds=float(_env("ANALYZER_SAMPLE_SECONDS", "60")),
             workers=int(_env("ANALYZER_WORKERS", "4")),
+            max_attempts=int(_env("ANALYZER_MAX_ATTEMPTS", "3")),
         )

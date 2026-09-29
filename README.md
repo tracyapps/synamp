@@ -59,6 +59,11 @@ pnpm brain:dev    # API on :3001
 pnpm web:dev      # UI on :5173 (Vite proxies /api and /health to the brain)
 ```
 
+The first playlist workshop is available at `http://localhost:5173`: create
+nested folders, manual lists, and live merge/shuffle/interleave roll-ups. See
+[`apps/brain/README.md`](apps/brain/README.md) for its current scope and local
+storage.
+
 The brain has no build step — Node strips the TypeScript types at runtime. The
 web app is type-checked and bundled with Vite.
 

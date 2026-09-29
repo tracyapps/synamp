@@ -31,6 +31,7 @@ The music share is mounted **read-only** into the containers. Everything the app
    mkdir -p /volume1/docker/synamp/data/postgres
    mkdir -p /volume1/docker/synamp/data/caddy
    mkdir -p /volume1/docker/synamp/data/caddy-config
+   mkdir -p /volume1/docker/synamp/data/brain
    ```
 
    **Synology's Docker does not auto-create bind-mount host directories.** If you
@@ -48,7 +49,8 @@ The music share is mounted **read-only** into the containers. Everything the app
    cp .env.example .env
    ```
 
-   At minimum: `MUSIC_PATH`, `DATA_DIR`, and a real `POSTGRES_PASSWORD`.
+   At minimum: `MUSIC_PATH`, `DATA_DIR`, a real `POSTGRES_PASSWORD`, and a
+   long random `PLAYLIST_API_TOKEN` if using the `app` profile.
 
    **Never put `.env` inside the music share**, and never commit it. It is
    already gitignored.
@@ -67,6 +69,27 @@ Then:
 - **SynAmp web app** → `http://<nas>:8080/`
 - **Navidrome** (library admin, Subsonic server) → `http://<nas>:4533/`
 - **Subsonic API** for native clients → `http://<nas>:8080/rest/`
+
+Create the first Navidrome admin account in its web UI and wait for its initial
+scan to finish. From the Mac, set `SUBSONIC_USER` and `SUBSONIC_PASSWORD` in the
+process environment, then check the same Subsonic route native clients will use:
+
+```bash
+node tools/nas/check-playback.mjs http://<nas>:8080
+```
+
+The check authenticates, finds one indexed track, and reads a short audio sample.
+Run its local regression checks with `node --test tools/nas/check-playback.test.mjs`.
+Use the Tailscale URL from a remote machine to verify that route too. The
+credentials should not be stored in `deploy/.env` or shell history; use your
+shell's private environment or a local secret manager.
+
+In each native client, use `http://<nas>:8080` (or its Tailscale address) as the
+server URL. Choose **original quality** on Wi-Fi/LAN and a **256 kbps** mobile
+profile in the client. Navidrome honors Subsonic `maxBitRate` requests; it cannot
+infer LAN versus cellular from a request arriving over Tailscale. Verify actual
+phone playback and lock-screen/CarPlay controls in the client before marking
+Phase 1 complete.
 
 The first Navidrome scan of a ~4,200-album library takes a few minutes; watch it
 at `http://<nas>:4533/`.

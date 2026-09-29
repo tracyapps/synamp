@@ -14,4 +14,4 @@ Design constraints this package must honour:
   so playlists can reflect them without a restart.
 """
 
-__version__ = "0.0.0"
+__version__ = "0.1.0"

@@ -110,3 +110,54 @@ h1 {
   color: #63636d;
   margin: 10px 0 0;
 }
+
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+.shell { max-width: 1440px; }
+.shell__head { justify-content: space-between; }
+.intro { padding: 48px 0 34px; max-width: 800px; }
+.intro p:last-child { color: var(--muted); max-width: 64ch; margin: 18px 0 0; }
+.eyebrow { color: var(--accent); font: 11px var(--font-mono); letter-spacing: .18em; text-transform: uppercase; margin: 0 0 10px; }
+.workspace { display: grid; grid-template-columns: minmax(275px, 340px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; min-height: 520px; }
+.sidebar { padding: 20px 0; }
+.detail { padding: 28px 32px; }
+.panel__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.sidebar .panel__head { padding: 0 20px 18px; }
+.panel__head h2, .panel__head h3, .create-form h3, .track-form h3 { margin: 0; font: 600 18px var(--font-display); }
+.panel__head span { color: var(--muted); font: 12px var(--font-mono); white-space: nowrap; }
+.detail .panel__head h2 { font-size: 29px; }
+.muted { color: var(--muted); font-size: 14px; }
+.sidebar > .muted { padding: 0 20px; }
+.tree { max-height: 340px; overflow: auto; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
+.tree__item { width: 100%; background: none; border: 0; color: var(--text); display: flex; gap: 11px; align-items: center; text-align: left; padding: 10px 14px; font-size: 14px; }
+.tree__item:hover, .tree__item.is-selected { background: rgba(224,163,62,.12); }
+.tree__item.is-selected { color: var(--accent); }
+.tree__icon { color: var(--accent); width: 15px; flex: none; }
+.create-form { border-top: 1px solid var(--hair); margin-top: 22px; padding: 20px 20px 0; display: grid; gap: 14px; }
+.create-form h3 { margin-bottom: 4px; }
+label { display: grid; gap: 5px; color: var(--muted); font: 12px var(--font-mono); }
+input, select { width: 100%; padding: 10px 11px; background: #101014; border: 1px solid #34343c; border-radius: 6px; color: var(--text); outline: none; }
+input:focus, select:focus { border-color: var(--accent); }
+.primary { background: var(--accent); color: #17130d; border: none; border-radius: 6px; padding: 11px 15px; font-weight: 700; }
+.primary:hover { filter: brightness(1.1); }
+.quiet { background: transparent; color: var(--muted); border: 1px solid var(--hair); border-radius: 5px; padding: 6px 9px; font-size: 12px; }
+.quiet:hover { color: var(--text); border-color: var(--muted); }
+.track-form { margin: 32px 0; padding: 22px; background: #111115; border: 1px solid var(--hair); border-radius: 8px; }
+.track-form .muted { margin: 8px 0 16px; }
+.track-fields { display: grid; grid-template-columns: 1fr 1.3fr 1fr auto; gap: 10px; align-items: end; }
+.results { margin-top: 28px; border-top: 1px solid var(--hair); padding-top: 23px; }
+.results ol { list-style: none; padding: 0; margin: 14px 0 0; }
+.results li { display: flex; gap: 16px; align-items: center; border-top: 1px solid var(--hair); padding: 9px 0; }
+.track-number { color: #62626c; font: 12px var(--font-mono); width: 25px; }
+.track-title { flex: 1; font-size: 14px; }
+.track-title small { display: block; color: var(--muted); font-size: 12px; }
+.empty { margin: 100px auto; text-align: center; max-width: 330px; color: var(--muted); }
+.empty > span { font-size: 48px; color: var(--accent); }
+.empty h2 { color: var(--text); margin-bottom: 8px; }
+.alert { color: #e9aea4; background: #3b2424; border: 1px solid #693333; padding: 12px 16px; border-radius: 6px; }
+.token-form { display: flex; align-items: end; gap: 10px; max-width: 480px; margin-bottom: 20px; }
+.token-form label { flex: 1; }
+.token-form button { background: var(--accent); border: none; border-radius: 6px; padding: 10px; }
+@media (max-width: 850px) { .workspace { grid-template-columns: 1fr; } .panel { min-height: 0; } .track-fields { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .shell { padding: 0 18px 60px; } .detail { padding: 20px; } .track-fields { grid-template-columns: 1fr; } .intro { padding-top: 32px; } }

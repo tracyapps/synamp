@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SynAmp Sound Booth — Test &amp; Training Plan</title>
+<style>
+  :root{
+    --paper:#f7f6f3;
+    --paper-2:#f1efeb;
+    --ink:#16181b;
+    --ink-2:#3b3e43;
+    --muted:#615e58;
+    --rule:#d8d4cc;
+    --rule-strong:#b9b4aa;
+    --accent:#8f2d1f;
+    --accent-soft:#a8452f;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --nav:clamp(190px,17vw,248px);
+    --rail:clamp(150px,13vw,190px);
+    --canvas:clamp(880px,88vw,1060px);
+    --measure:64ch;
+    --gutter:clamp(18px,3.4vw,44px);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--sans);font-size:16.5px;line-height:1.6;
+    font-kerning:normal;font-variant-ligatures:common-ligatures;
+    text-rendering:optimizeLegibility;
+  }
+  .page{display:grid;grid-template-columns:var(--nav) minmax(0,1fr);min-height:100vh}
+  @media (max-width:1000px){.page{grid-template-columns:1fr}}
+
+  /* ---------- sidebar ---------- */
+  .sidebar{
+    position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    border-right:1px solid var(--rule);background:var(--paper-2);
+    padding:26px 20px 40px;
+  }
+  @media (max-width:1000px){.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule)}}
+  .sidebar .mark{
+    font-family:var(--serif);font-size:19px;letter-spacing:-.01em;line-height:1.15;
+    margin:0 0 2px;font-weight:600;
+  }
+  .sidebar .mark-sub{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 20px;
+  }
+  .toc{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+  .toc li{border-bottom:1px solid var(--rule)}
+  .toc a{
+    display:block;padding:9px 2px;text-decoration:none;color:var(--ink-2);
+    font-size:13.5px;line-height:1.35;
+  }
+  .toc a .num{
+    font-family:var(--mono);font-size:10.5px;color:var(--muted);
+    display:block;letter-spacing:.08em;margin-bottom:2px;
+  }
+  .toc a:hover{color:var(--accent);}
+  .toc a:hover .num{color:var(--accent);}
+
+  /* ---------- main ---------- */
+  .main{padding:0 var(--gutter) 96px;min-width:0}
+  .canvas{max-width:var(--canvas);margin-inline:auto}
+
+  /* ---------- cover ---------- */
+  .cover{padding:clamp(46px,7vw,92px) 0 clamp(30px,4vw,52px);border-bottom:2px solid var(--ink)}
+  .cover .kicker{
+    font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 18px;
+  }
+  .cover h1{
+    font-family:var(--serif);font-weight:600;letter-spacing:-.022em;line-height:1.02;
+    font-size:clamp(40px,6.4vw,68px);margin:0 0 18px;max-width:20ch;
+  }
+  .cover .standfirst{
+    font-family:var(--serif);font-size:clamp(17px,1.9vw,21px);line-height:1.45;
+    color:var(--ink-2);max-width:52ch;margin:0 0 34px;
+  }
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px 0;
+    border-top:1px solid var(--rule);margin:0}
+  .meta div{padding:12px 18px 12px 0}
+  .meta dt{
+    font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 5px;
+  }
+  .meta dd{margin:0;font-size:14px;line-height:1.4;font-family:var(--sans)}
+
+  /* ---------- chapters ---------- */
+  .chapter{padding:clamp(40px,5.4vw,74px) 0 0;border-top:1px solid var(--rule-strong)}
+  .chapter:first-of-type{border-top:0}
+  .chapter > .kicker{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px;
+  }
+  h2{
+    font-family:var(--serif);font-weight:600;letter-spacing:-.019em;line-height:1.08;
+    font-size:clamp(27px,3.2vw,37px);margin:0 0 20px;max-width:30ch;
+  }
+  h3{
+    font-family:var(--serif);font-weight:600;letter-spacing:-.01em;line-height:1.2;
+    font-size:clamp(19px,2vw,23px);margin:38px 0 12px;max-width:34ch;
+  }
+  h4{
+    font-family:var(--sans);font-weight:600;font-size:15px;letter-spacing:.005em;
+    margin:26px 0 8px;
+  }
+  p{margin:0 0 1.05em;max-width:var(--measure)}
+  .lede{
+    font-family:var(--serif);font-size:clamp(17px,1.75vw,19.5px);line-height:1.5;
+    color:var(--ink-2);max-width:60ch;margin-bottom:1.5em;
+  }
+  .note{font-size:13.5px;line-height:1.5;color:var(--muted);max-width:var(--measure)}
+  .kicker{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+  strong{font-weight:600}
+  em{font-style:italic}
+  ul,ol{max-width:var(--measure);padding-left:1.15em;margin:0 0 1.1em}
+  li{margin:0 0 .42em}
+  ul.plain{list-style:none;padding-left:0}
+  ul.plain li{padding-left:0;font-size:14px;line-height:1.5;color:var(--ink-2);
+    border-top:1px solid var(--rule);padding-top:.42em}
+  ul.plain li:first-child{border-top:0}
+  a{color:var(--accent);text-underline-offset:2px;text-decoration-thickness:.5px}
+  a:hover{color:var(--accent-soft)}
+  code{font-family:var(--mono);font-size:.88em;background:var(--paper-2);
+    border:1px solid var(--rule);padding:.06em .32em}
+  pre{
+    background:var(--paper-2);border:1px solid var(--rule);border-left:2px solid var(--accent);
+    padding:14px 16px;overflow-x:auto;margin:0 0 1.2em;max-width:var(--canvas);
+    white-space:pre-wrap;overflow-wrap:anywhere;
+  }
+  pre code{background:none;border:0;padding:0;font-size:12.8px;line-height:1.55}
+  blockquote{
+    margin:0 0 1.2em;padding:2px 0 2px 18px;border-left:2px solid var(--rule-strong);
+    font-family:var(--serif);font-size:17px;color:var(--ink-2);max-width:58ch;
+  }
+  dl{max-width:var(--measure);margin:0 0 1.2em}
+  dt{font-weight:600;margin-top:.75em}
+  dd{margin:.15em 0 0}
+
+  /* ---------- evidence chips ---------- */
+  .state{
+    font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    border:1px solid var(--rule-strong);color:var(--muted);
+    padding:.16em .45em;white-space:nowrap;
+  }
+  .state[data-state="candidate"]{border-color:var(--accent);color:var(--accent)}
+  .state[data-state="unverified"]{border-style:dashed}
+  .state[data-state="confirmed"]{border-color:var(--ink);color:var(--ink)}
+  .state[data-state="observed"]{border-color:var(--rule-strong);color:var(--ink-2)}
+
+  /* ---------- callout (hairline, never a rounded card) ---------- */
+  .callout{
+    border-top:1px solid var(--rule-strong);border-bottom:1px solid var(--rule-strong);
+    padding:14px 0;margin:1.6em 0;max-width:var(--measure);
+  }
+  .callout p{max-width:none;margin:0}
+  .callout p + p{margin-top:.6em}
+
+  /* ---------- tables ---------- */
+  figure{margin:1.7em 0;max-width:var(--canvas)}
+  figure.bleed{max-width:var(--canvas)}
+  figcaption{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--muted);
+    margin-top:9px;line-height:1.5;
+  }
+  table{border-collapse:collapse;width:100%;font-size:13.4px;line-height:1.42;
+    font-variant-numeric:tabular-nums}
+  caption{
+    caption-side:top;text-align:left;font-family:var(--mono);font-size:10.5px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    padding:0 0 9px;border-bottom:1px solid var(--rule);
+  }
+  thead th{
+    text-align:left;font-family:var(--mono);font-weight:400;font-size:10.5px;
+    letter-spacing:.07em;text-transform:uppercase;color:var(--ink-2);
+    border-bottom:1px solid var(--rule-strong);padding:8px 12px 8px 0;vertical-align:bottom;
+  }
+  tbody td{
+    border-bottom:1px solid var(--rule);padding:9px 12px 9px 0;vertical-align:top;
+    color:var(--ink-2);
+  }
+  tbody tr:last-child td{border-bottom:1px solid var(--rule-strong)}
+  tbody td:first-child{color:var(--ink)}
+  th:last-child,td:last-child{padding-right:0}
+
+  /* ---------- colophon ---------- */
+  .colophon{
+    margin-top:70px;border-top:2px solid var(--ink);padding-top:20px;
+  }
+  .colophon h3{margin-top:0}
+  .colophon p{font-size:13.4px;color:var(--muted);max-width:var(--measure)}
+  hr{border:0;border-top:1px solid var(--rule);margin:34px 0;max-width:var(--canvas)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <nav class="sidebar" aria-label="Contents">
+    <p class="mark">SynAmp&nbsp;Booth</p>
+    <p class="mark-sub">Test &amp; Training Plan</p>
+    <ul class="toc">
+      <li><a href="#c1"><span class="num">01</span>The verdict, and the reframe</a></li>
+      <li><a href="#c2"><span class="num">02</span>Which constructs actually need other people</a></li>
+      <li><a href="#c3"><span class="num">03</span>Building it — in the right order</a></li>
+      <li><a href="#c4"><span class="num">04</span>Reading the data</a></li>
+      <li><a href="#c5"><span class="num">05</span>The licensing algebra</a></li>
+      <li><a href="#c6"><span class="num">06</span>The plan, and the decisions</a></li>
+    </ul>
+  </nav>
+
+  <main class="main">
+    <div class="canvas">
+
+      <header class="cover">
+        <p class="kicker">Experiment Plan &middot; Candidate</p>
+        <h1>The Sound Booth</h1>
+        <p class="standfirst">Can a public web test collect the perceptual labels SynAmp cannot buy &mdash;
+        and would doing it yourself make the product legally and technically reachable? What the plan is,
+        what it actually buys, and what it cannot fix.</p>
+        <dl class="meta">
+          <div><dt>Prepared for</dt><dd>tapps &mdash; SynAmp, self-hosted</dd></div>
+          <div><dt>Prepared by</dt><dd>AutoCoder</dd></div>
+          <div><dt>Date</dt><dd>28 September 2026</dd></div>
+          <div><dt>Status</dt><dd>Candidate plan &middot; nothing built or run yet</dd></div>
+          <div><dt>Companion to</dt><dd>SynAmp Brain &mdash; research dossier</dd></div>
+        </dl>
+      </header>
+
+<section class="chapter" id="c1">
+<p class="kicker">Chapter 01</p>
+<h2>The verdict, and the reframe</h2>
+
+<p class="lede">Yes — this is worth doing. But not as first imagined: the design pointed a population instrument at a single-user system and never stated whose parameter each experiment estimates, and that single unexamined assumption is the reason the original plan fails. Named honestly, the idea decomposes into three separately-judgeable projects — an owner-first local study to run first, a small screened validation panel, and a public dataset booth that must re-earn its launch on different grounds than the ones it was sold on. The strongest idea in the plan needs none of them: synthesize the audio yourself, and ground truth arrives by construction.</p>
+
+<h3>The question the plan never asked</h3>
+
+<p>Every calibration experiment estimates a parameter, and every parameter is defined by the distribution it is drawn from. The compiler parses your prompts and thresholds your library, so what it needs are <em>your</em> operating points — where "chill" starts for you, what your vocabulary means, what you keep and what you skip. A public booth samples strangers, whose operating points come from a different distribution. More of the wrong distribution does not converge on the right parameter; it converges faster on the wrong one.</p>
+
+<p>The field knew this before the plan was written. Music-emotion research introduced <a href="https://dl.acm.org/doi/10.1145/1571941.1572109">"bag-of-users" models in 2009</a> precisely to accommodate individual differences, and personalization <a href="https://link.springer.com/article/10.1007/s10844-022-00746-0">is still an active line</a>. The plan cites none of it and designs as if one aggregate were a valid target.</p>
+
+<p>The reverse also holds, and the plan missed that too. Some questions genuinely are population questions: whether an analyzer metric tracks a percept at all; how noisy the task is for humans in general; whether your renders sound synthetic to naive ears — where you are the worst rater available, because you cannot hear your own generator's tells. The failure was never "crowds are useless". It is that the plan never split its constructs by whose distribution answers them, and so priced every question as if the crowd answered all of them.</p>
+
+<figure class="bleed"><table class="data">
+<caption>The estimand table the plan never wrote</caption>
+<thead><tr><th>What consumes the data</th><th>What it needs</th><th>Whose distribution supplies it</th></tr></thead>
+<tbody>
+<tr><td>Compiler thresholds for your library</td><td>Your operating points on each metric</td><td>You only — strangers' operating points are a different parameter</td></tr>
+<tr><td>Analyzer validation: does metric X track percept Y at all</td><td>Community-level construct validity</td><td>External raters — a small screened panel; BS.1534-3 notes "no more than 20 assessors are often sufficient" <span class="state" data-state="observed">observed</span></td></tr>
+<tr><td>A head trained where no permissive model exists</td><td>Labels on the stimuli</td><td>Crowd, for shared percepts only; for objective constructs the generator's parameters are exact and no human is needed</td></tr>
+<tr><td>"Does my material sound synthetic or cheap to others"</td><td>Naive external ears</td><td>External raters — you cannot detect your own generator's tells</td></tr>
+<tr><td>The human reliability ceiling</td><td>How noisy the task is for people in general</td><td>A small population — needed to interpret your own labels honestly</td></tr>
+</tbody>
+</table><figcaption>Two rows are yours alone, two need a handful of screened strangers, one needs no humans at all. The original plan read all five as one experiment.</figcaption></figure>
+
+<h3>Three projects, not one</h3>
+
+<p>Once each estimand is named, "the sound booth" stops being one project and becomes three — different customers, different costs, different kill criteria. The ordering is the review's cheapest finding: the first project falsifies or confirms the whole premise for the price of two weekends, before any booth code exists.</p>
+
+<figure class="bleed"><table class="data">
+<caption>The decomposition into separately-judgeable projects</caption>
+<thead><tr><th>#</th><th>Project</th><th>What it buys</th><th>What it costs</th><th>When</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>Owner-first local study</strong> — 80–120 generator-known clips rated by you: hidden duplicates, anchors, a GM-vs-SFZ render-tier probe, a personal 2AFC staircase on your own playback chain</td><td>Test–retest reliability; whether your ratings track the manipulated parameters at all; the render-tier shift; your personal microtiming threshold — the cheapest possible falsification of the premise</td><td>~2 weekends; no humans; no licence questions</td><td><strong>First</strong>, before any booth code</td></tr>
+<tr><td>2</td><td><strong>Small screened validation panel</strong> — ~20–60 people on a curated set</td><td>Whether the metrics track percepts for anyone; the human reliability ceiling your own labels must be read against; honest ears on naturalness</td><td>Recruitment, screening, funnel instrumentation; a few part-time weeks</td><td><strong>Later</strong>, conditional on project 1 surviving</td></tr>
+<tr><td>3</td><td><strong>Public dataset booth</strong> — the original idea</td><td>A licence-clean public dataset; shared-percept heads on a frozen permissive encoder; a commons artifact with the ethics package behind it</td><td>2.5–4 solo working weeks before traffic (candidate estimate) plus an open-ended ops tail; launch conditions, not aspirations; ~400–500 visits for 120–200 usable sessions (illustrative)</td><td><strong>Conditional</strong> — only if 1 and 2 survive, argued on validation and dataset grounds, never on compiler calibration</td></tr>
+</tbody>
+</table><figcaption>Projects 1 and 2 share one stimulus corpus; project 3 reuses it only if they pass. <span class="state" data-state="candidate">candidate</span> marks effort and traffic arithmetic, not measurements.</figcaption></figure>
+
+<h3>Ground truth by construction</h3>
+
+<p>The best idea in the plan is not the booth. When you synthesize the audio, the labels you would otherwise beg strangers for arrive free and exact: key, mode, chords, tempo, swing ratio, microtiming offsets, instrumentation, dynamics, brightness — known by construction, because you set them before rendering. Stimuli are unlimited; no humans are needed to train the objective half; no copyright exception is needed, because nothing borrowed is copied. Published perception work reaches for the same trick: <a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0052508">PROMS</a> rendered its stimuli from MIDI precisely to escape the timing, timbre and intensity inconsistencies of human performers <span class="state" data-state="observed">observed</span>.</p>
+
+<p>Build this half whether or not any booth ever launches. It is the analyzer's validation substrate and the training corpus for the objective constructs the dossier flagged as lacking permissive models. Two honest limits: exact parameters are not percepts — whether a parameter maps to a percept is exactly what projects 1 and 2 exist to measure — and construction says nothing about render realism, which is the synthetic-to-real trade priced in the callout below and re-examined in c2.</p>
+
+<aside class="callout">
+<h4>What the original design got wrong</h4>
+<ul class="plain">
+<li><strong>The estimand.</strong> Never named. The plan's own value claim — "calibrates the metric→percept mappings that the compiler needs" — slides between your compiler's thresholds (yours alone) and community-level construct validity (a crowd question) without noticing they are different parameters, drawn from different distributions.</li>
+<li><strong>Three instruments at once.</strong> Forced choice, sliders and tags were imagined co-equally, with no construct→instrument map; the research's own first rule is one instrument per construct. Tags have no path into the compiler's predicate space, and the microtiming module as designed measures device-polluted detectability — an upper bound valid for nobody's compiler. Detail in c2.</li>
+<li><strong>The unpriced synthetic-to-real trade.</strong> Free copyright compliance was treated as free validity. The closest music analogue, <a href="https://arxiv.org/abs/1909.08494">Slakh2100</a>, overfits — models trained on it alone generalize poorly to real recordings — and <a href="https://arxiv.org/html/2408.10463v1">TTS-trained keyword spotters</a> learn generator artifacts and lose accuracy on real speech, both <span class="state" data-state="observed">observed</span>. Whether rendered clips evoke the same affective judgements as real records has no study behind it in this pass. The price was never measured; it was assumed cheap.</li>
+<li><strong>The funnel arithmetic.</strong> Plan on roughly 35–50% of started sessions being usable; one strong module needs ~100–150 finished sessions; three modules split the same traffic into three underpowered datasets; and 120–200 usable sessions implies ~400–500 visits — traffic the plan generates by hoping. Illustrative arithmetic from the research's own numbers, marked <span class="state" data-state="candidate">candidate</span>; worked out in c4.</li>
+<li><strong>The missing competitor.</strong> Your own skip/removal/repeat stream is free, in-distribution, and produced by the exact consumer the compiler serves. A three-option "why did you skip" logger is one day's work and out-produces the booth for personal calibration. The plan contains no implicit-feedback arm at all.</li>
+</ul>
+</aside>
+
+<h3>What the rest of this document does</h3>
+
+<ul class="plain">
+<li><strong>c2 — which constructs need other people.</strong> The per-construct verdict (<em>population prior needed / own ratings sufficient / neither</em>), and the honest limits: valence's miserable agreement, tags with no consumer, the 10-second-clip ↔ 4-minute-track gap, the timing-JND reality, and the loudness confound as a hard rule.</li>
+<li><strong>c3 — building it in the right order.</strong> Full specs for the owner-first weekend study with kill criteria, the five-friend pilot with funnel instrumentation, and the public booth only if both survive — stimuli pipeline, brand surface, hosting reality, and the ethics package as launch conditions.</li>
+<li><strong>c4 — reading the data.</strong> Instrument reliability, hidden references and anchors, agreement statistics with the sobering real numbers, the funnel arithmetic, and how fitted curves become compiler defaults <em>with uncertainty</em> rather than facts.</li>
+<li><strong>c5 — the licensing algebra.</strong> What a clean generation chain lets you own and publish, what it does not fix (the base encoder; ecological validity), and the requires-counsel list stated as such.</li>
+<li><strong>c6 — the sequenced plan and the decisions.</strong> Skip/removal logger first (one day), then the owner study, then the pilot, then the booth decision — with pre-registered acceptance criteria and the file-level choices only you can make.</li>
+</ul>
+
+<p>The short version, if you read nothing else: log your skips today; rate your own corpus this weekend; buy perceptual validity from twenty screened people before you buy it from four hundred strangers; and let the public booth re-earn its launch on what the first three produce.</p>
+
+</section>
+
+<section class="chapter" id="c2">
+<p class="kicker">Chapter 02</p>
+<h2>Which constructs actually need other people</h2>
+
+<p class="lede">The adversarial review found the plan&rsquo;s central flaw in one sentence: it never said <em>whose parameter</em> each experiment estimates &mdash; it proposed a population instrument to serve a single-user system. The rule that decides everything here: <strong>for each construct, name whose parameter you are estimating and from whose distribution &mdash; then the instrument follows.</strong> Stretching one instrument, or one crowd, across several kinds of question is the main way a public test produces unusable labels.</p>
+
+<aside class="callout">
+<p><strong>Why the rule is decisive.</strong> An instrument estimates a parameter. If the compiler needs <em>your</em> operating point on a metric, strangers&rsquo; ratings are not a noisy estimate of it &mdash; they estimate a different one. More of the wrong distribution does not converge on the right answer; it converges faster on the wrong one. <span class="state" data-state="candidate">candidate</span></p>
+</aside>
+
+<h3>The per-construct verdict</h3>
+
+<p>Run the rule across every construct SynAmp consumes and the verdicts split three ways: <strong>population prior needed</strong> (only a small, screened external panel produces the target), <strong>own ratings sufficient</strong> (you rating stimuli against generator-known parameters &mdash; licit, exact, cheap), and <strong>neither needed</strong> (measured or published, not judged). The table is the centrepiece; the two sharpest rows follow.</p>
+
+<figure class="bleed">
+<table class="data">
+<caption>Per-construct verdict &mdash; whose parameter, and what the crowd breaks</caption>
+<thead><tr><th>Construct</th><th>Verdict</th><th>Why</th><th>What breaks if the crowd supplies it anyway</th></tr></thead>
+<tbody>
+<tr>
+<td>Loudness / integrated level</td>
+<td><strong>Neither needed</strong></td>
+<td>Loudness is a standard measurement, not a judgement; the meter is the instrument (<a href="https://tech.ebu.ch/docs/r/r128.pdf">EBU R&nbsp;128</a>, built on ITU-R BS.1770). <span class="state" data-state="observed">observed</span></td>
+<td>A crowd vote is a worse meter. You still need the meter for the mandatory normalisation; the votes add noise to an exact quantity.</td>
+</tr>
+<tr>
+<td>Brightness / timbre</td>
+<td><strong>Own ratings sufficient</strong></td>
+<td>A semi-shared sensory property, directly manipulable stimulus-side: the generation recipe makes the parameter exact, so a small own test plus literature defaults beat any aggregate. <span class="state" data-state="candidate">candidate</span></td>
+<td>You would anchor a cheap, exactly controllable axis to a stranger-average, inheriting device and semantics drift for nothing.</td>
+</tr>
+<tr>
+<td>Energy / arousal direction</td>
+<td><strong>Own ratings sufficient; population prior as day-zero default only</strong></td>
+<td>The best-agreeing construct of the lot: &alpha;&nbsp;=&nbsp;0.505 (<a href="https://iris.uniroma1.it/retrieve/6ddf81d1-1ac1-4890-acda-eef03627da49/Gutierrez-Paez_preprint_Emotion_2021.pdf">P&aacute;ez et&nbsp;al. 2021</a>); percent agreement 0.839 (<a href="https://archives.ismir.net/ismir2017/paper/000217.pdf">ISMIR 2017</a>). <span class="state" data-state="observed">observed</span></td>
+<td>A crowd default is tolerable as a bootstrap, but the compiler filters on your operating point; pooling strangers blurs the boundary you actually use.</td>
+</tr>
+<tr>
+<td>Valence / pleasantness</td>
+<td><strong>Own ratings only &mdash; a crowd prior is actively misleading</strong></td>
+<td>Lowest agreement measured: &alpha; 0.222 (ISMIR 2017) to 0.364 (P&aacute;ez et&nbsp;al.). <span class="state" data-state="observed">observed</span></td>
+<td>The population mean is not your target estimated noisily &mdash; it is a different target. Spelled out below.</td>
+</tr>
+<tr>
+<td>Mood / emotion category words</td>
+<td><strong>Own ratings only while SynAmp is single-user</strong></td>
+<td>The vocabulary is idiolectal and sub-cultural; the compiler only ever parses your prompts.</td>
+<td>Strangers&rsquo; word&rarr;sound mappings train the wrong vocabulary &mdash; and tags have no route into predicate space unless derived from the compiler itself.</td>
+</tr>
+<tr>
+<td>Groove / danceability tendency</td>
+<td><strong>Neither needed for direction; own ratings for thresholds</strong></td>
+<td>Direction is published and counter-intuitive: syncopation can drive groove sensation (Sioros; source unresolved in this pass), and fully quantized patterns often rate highest (Fr&uuml;hauf, in <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5643849/">Senn et&nbsp;al. 2017</a>). Read it; don&rsquo;t re-derive it. <span class="state" data-state="observed">observed</span></td>
+<td>A booth re-derives, at full cost, findings you can read today.</td>
+</tr>
+<tr>
+<td>Microtiming detection threshold</td>
+<td><strong>Own-rig test sufficient; a pooled booth threshold is invalid</strong></td>
+<td>Published psychophysics already spans the territory: about 6&nbsp;ms in lab-ideal conditions to 15&ndash;60&nbsp;ms in realistic music. <span class="state" data-state="observed">observed</span></td>
+<td>The pooled &ldquo;threshold&rdquo; is an upper bound polluted by devices and naivety &mdash; valid for nobody&rsquo;s compiler. Spelled out below.</td>
+</tr>
+<tr>
+<td>Genre / era texture</td>
+<td><strong>Own ratings sufficient; the crowd is a wrong-population risk</strong></td>
+<td>Culture- and cohort-dependent; self-selected crowds are demographically skewed, and synthetic renders distort exactly these cues.</td>
+<td>You measure what a skewed web crowd hears in GM &ldquo;strings&rdquo; that read as MIDI &mdash; not what your library contains.</td>
+</tr>
+<tr>
+<td>&ldquo;Sounds synthetic / cheap&rdquo;</td>
+<td><strong>Population prior needed &mdash; small N, honest raters</strong></td>
+<td>The one row where external ears strictly beat yours: you are the worst detector of your own generator&rsquo;s tells. Five to ten friends suffice; no website required.</td>
+<td>Skip it, and every affective and genre calibration rides on unmeasured render realism.</td>
+</tr>
+<tr>
+<td>Preference / keep-or-skip</td>
+<td><strong>Own behaviour only</strong></td>
+<td>The compiler&rsquo;s actual objective function &mdash; observed in context, not in a booth.</td>
+<td>A crowd aggregate is a different product (mass taste); it cannot personalise n&nbsp;=&nbsp;1.</td>
+</tr>
+<tr>
+<td>Construct validity of analyzer metrics (X&harr;Y at all)</td>
+<td><strong>Population prior needed &mdash; small, screened</strong></td>
+<td>External raters break the dossier&rsquo;s circularity (R4); 20&ndash;60 screened people on a curated set answer it. <span class="state" data-state="candidate">candidate</span></td>
+<td>Nothing breaks at small N. The failure is paying public-booth prices for a question a screened panel answers in a week.</td>
+</tr>
+<tr>
+<td>Human reliability ceiling</td>
+<td><strong>Population needed (small N)</strong></td>
+<td>You need inter-rater agreement to interpret your own labels: a model cannot beat the disagreement between human raters (<a href="https://github.com/CSCPadova/wav2taste">the wav2taste precedent&rsquo;s human-ceiling framing</a>). <span class="state" data-state="observed">observed</span></td>
+<td>Without it, model error and intrinsic task noise are indistinguishable.</td>
+</tr>
+</tbody>
+</table>
+<figcaption>Verdicts from the adversarial review, applying the estimand rule. &ldquo;Own ratings&rdquo; = you rating against generator-known parameters. The numbers cited in the rows are linked or attributed in the sections below.</figcaption>
+</figure>
+
+<h3>The two sharpest verdicts</h3>
+
+<h4>Valence: not a noisy target &mdash; a different target</h4>
+<p>Valence is the least agreed construct in every dataset this research pass opened: &alpha;&nbsp;=&nbsp;0.222 in the screened-crowd ranking study, against 0.360 for arousal (ISMIR 2017), and 0.364 on the citizen-science platform, against 0.505 for arousal and 0.192 for tags (P&aacute;ez et&nbsp;al. 2021). <span class="state" data-state="observed">observed</span> By the field&rsquo;s own bands, &alpha; below 0.667 means <em>discard the layer</em> (<a href="https://en.wikipedia.org/wiki/Krippendorff%27s_alpha">Krippendorff&rsquo;s &alpha;</a> verdict bands). For SynAmp the consequence is stronger than noise: if the playlist logic needs <em>your</em> pleasantness operating point, a population mean is not a low-precision estimate of it &mdash; it is a precise estimate of a different quantity, mass-taste valence. More strangers buy precision on the wrong number. If SynAmp wants valence at all, the labels must come from you.</p>
+
+<h4>Microtiming: a threshold valid for nobody&rsquo;s compiler</h4>
+<p>A pooled public &ldquo;detection threshold&rdquo; is an upper bound, polluted twice: by devices and by naivety. The headphone gate alone may discard about a third of online arrivals (cumulative pass rate 64.7% in <a href="https://link.springer.com/article/10.3758/s13414-017-1361-2">Woods et&nbsp;al. 2017</a>), and untrained listeners in uncontrolled contexts need larger deviations before they notice anything. <span class="state" data-state="observed">observed</span> The number you would publish is not your threshold or even the crowd&rsquo;s &mdash; it is the weakest surviving detector&rsquo;s, on whatever hardware he happened to use. The compiler needs <em>your</em> threshold on <em>your</em> playback chain, and the only cheap route is a staircase you run yourself: a 60&ndash;80-trial 2AFC on your own rig. <span class="state" data-state="candidate">candidate</span> For scale (candidate arithmetic): the pooled-booth alternative needs roughly 430&ndash;880 finished trials for a &plusmn;10&nbsp;% psychometric curve &mdash; and still returns a number belonging to nobody. The review&rsquo;s estimate of the trade: a 60-trial local staircase beats 400 pooled stranger trials.</p>
+
+<h3>Instrument per construct</h3>
+<p>Once construct and estimand are named, the instrument mostly follows. The original design fixed three response formats first and never mapped them to constructs &mdash; the measurement pass&rsquo;s first rule, violated. Compressed:</p>
+
+<figure class="bleed">
+<table class="data">
+<caption>Instrument &rarr; what it actually measures &rarr; how it fails</caption>
+<thead><tr><th>Instrument</th><th>What it measures</th><th>Reliability</th><th>Mis-measurement risk</th></tr></thead>
+<tbody>
+<tr>
+<td>2AFC forced choice</td>
+<td>Discrimination thresholds (e.g. microtiming JND); criterion-free, chance at &frac12; (<a href="https://en.wikipedia.org/wiki/Two-alternative_forced_choice">2AFC</a>). <span class="state" data-state="observed">observed</span></td>
+<td>Good, with counterbalanced and plentiful trials</td>
+<td>Measures detectability <em>in uncontrolled conditions</em>; the pooled result is an upper bound for the sample&rsquo;s devices, not a threshold anyone can compile in.</td>
+</tr>
+<tr>
+<td>Banded slider (five labelled bands)</td>
+<td>Fine position on a defined continuum; interval-like within one user (<a href="https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1534-3-201510-I!!PDF-E.pdf">MUSHRA, BS.1534-3</a>). <span class="state" data-state="observed">observed</span></td>
+<td>Excellent when anchored and post-screened; fragile raw</td>
+<td>Anchoring &mdash; raters score against the previous rating (ISMIR 2017); naive scale compression &mdash; MUSHRA treats 80&ndash;100 clustering as invalid results; the loudness confound.</td>
+</tr>
+<tr>
+<td>Tags</td>
+<td>Nominal presence of vocabulary terms</td>
+<td>Worst of the set: &alpha;&nbsp;=&nbsp;0.192 on a public platform</td>
+<td>Vocabulary bias &mdash; common tags favoured, rare and verbose tags omitted (<a href="https://ismir2009.ismir.net/proceedings/OS5-5.pdf">Law et&nbsp;al. 2009</a>); no route into compiler predicates unless the vocabulary is derived from the compiler.</td>
+</tr>
+<tr>
+<td>Pairwise + probabilistic model</td>
+<td>Relative orderings converted to scale values (<a href="https://en.wikipedia.org/wiki/Bradley%E2%80%93Terry_model">Bradley&ndash;Terry</a>, Thurstone LCJ). <span class="state" data-state="observed">observed</span></td>
+<td>High, with &ge;3 independent comparisons per pair</td>
+<td>Yields ordering and scale, never thresholds; needs anchors to fix the scale; costs O(N&nbsp;log&nbsp;N) comparisons.</td>
+</tr>
+</tbody>
+</table>
+<figcaption>Reliability column follows the measurement pass; mis-measurement risks are the review&rsquo;s attacks on the plan&rsquo;s three imagined formats.</figcaption>
+</figure>
+
+<p>Two points must survive compression. First, <strong>tags scored the worst agreement in the closest precedent</strong> &mdash; &alpha;&nbsp;=&nbsp;0.192 on the citizen-science platform, below the 0.667 discard line &mdash; and the output-agreement games that built earlier tag datasets rewarded common tags and dropped rare, verbose ones by design (Law et&nbsp;al. 2009). <span class="state" data-state="observed">observed</span> Tags are retrieval-friendly side labels, not measurements. Second, and decisive: <strong>a stranger&rsquo;s tag vocabulary has no path into the compiler&rsquo;s predicate space.</strong> The compiler consumes predicates over analyzer metrics; a stranger&rsquo;s &ldquo;dreamy&rdquo; enters only if the vocabulary is derived from the compiler itself &mdash; your prompts and corrections. That is an owner-labelling job, not a booth.</p>
+
+<h3>The honest limits</h3>
+<p>Four constraints bound any version of this &mdash; cheap to accept now, expensive to discover later.</p>
+
+<h4>The loudness confound &mdash; a hard rule, not a calibration</h4>
+<p>Loudness is among the seven psychoacoustic features that carry most of second-by-second emotion reports (<a href="https://pubmed.ncbi.nlm.nih.gov/23057507">Coutinho &amp; Dibben 2013</a>). <span class="state" data-state="observed">observed</span> If clips play at native levels, part of every &ldquo;more energetic&rdquo;, &ldquo;more pleasant&rdquo; or &ldquo;better&rdquo; vote is simply a louder vote, and apparent agreement rises artificially. The fix is mechanical: normalise each clip to <strong>one fixed measured loudness target</strong> (&minus;23&nbsp;LUFS broadcast-style or &minus;16&nbsp;LUFS streaming-style; the number matters less than its being one number; <a href="https://tech.ebu.ch/docs/r/r128.pdf">EBU R&nbsp;128</a> practice), verify true peak &le;&nbsp;&minus;1&nbsp;dBTP, log the BS.1770 measurement per clip, and allow no per-item level adjustment on the page (the standard permits only a narrow user gain, &asymp;&plusmn;4&nbsp;dB; <a href="https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1534-3-201510-I!!PDF-E.pdf">BS.1534-3</a>). <span class="state" data-state="observed">observed</span> Without this rule, the booth ships a loudness experiment wearing an energy costume.</p>
+
+<h4>Ten seconds is not a track</h4>
+<p>The booth labels 8&ndash;12-second static renders; the compiler queries aggregates over 4-minute recordings. Two untested assumptions bridge that gap: (i) a judgement on a segment transfers to the whole track, and (ii) a judgement on a render transfers to a recording. Nothing in the research pass tests either. Worse, emotional annotation needs an initial orientation time &mdash; a median of about 8&nbsp;s for valence and 12&nbsp;s for arousal before continuous ratings stabilise (<a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0173392">Aljanaki et&nbsp;al. 2017</a>) <span class="state" data-state="observed">observed</span> &mdash; so a 10-second clip is mostly orientation window, with the affect barely begun. Real tracks also have arcs, intro through chorus, that a uniform 10-second loop cannot carry; where naturalistic emotion work cares, it runs excerpts up to 61&nbsp;seconds (<a href="https://online.ucpress.edu/mp/article/36/2/217/62861/Challenges-and-Opportunities-of-Predicting-Musical">Music Perception 2018</a>, snippet-level only). <span class="state" data-state="unverified">unverified</span> Short clips remain defensible for quality-style work; presenting their labels as whole-track truth is not.</p>
+
+<h4>The timing JND you will actually get</h4>
+<p>Lab-ideal timing discrimination is about <strong>6&nbsp;ms</strong> (and 2.5&nbsp;% of the inter-onset interval above 240&nbsp;ms) for a single perturbed tone in an isochronous sequence (<a href="https://www.diva-portal.org/smash/record.jsf?pid=diva2:1246561">Friberg &amp; Sundberg 1995</a>) <span class="state" data-state="observed">observed</span> &mdash; a figure quoted everywhere as if it applied to music. It does not. In realistic musical contexts the studies compiled in <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5643849/">Senn et&nbsp;al. 2017</a> needed roughly <strong>15&ndash;60&nbsp;ms</strong> of displacement before effects appeared: a &plusmn;25&nbsp;ms snare dose&ndash;response curve, bass-versus-drums shifts of 10&ndash;30&nbsp;ms that listeners barely noticed, and effects only at &plusmn;31&ndash;62&nbsp;ms in another. <span class="state" data-state="observed">observed</span> Unknown devices push it further: thresholds in a regular listening context are likely to differ from the JND. Never claim a personal threshold from a booth run; treat any pooled public figure as an upper bound and measure your own on your own chain.</p>
+
+<h4>Perceived or induced &mdash; decide before any slider is drawn</h4>
+<p>&ldquo;Relaxing&harr;energizing&rdquo; straddles two different measurement targets: <em>perceived</em> emotion (what the music expresses) and <em>induced</em> emotion (what it does to you). The annotation checklist demands an explicit flag for which one you measured; the original plan&rsquo;s wording &mdash; &ldquo;report what they perceive&rdquo; &mdash; leaves it undefined. <span class="state" data-state="observed">observed</span> For SynAmp the distinction is not academic: the compiler&rsquo;s goal is closer to induced-for-you (what should this track do to me right now), while a public booth can only collect perceived-from-strangers &mdash; a different parameter from a different distribution. Decide before drawing the slider, or you average two constructs into one that exists nowhere.</p>
+
+<h3>What is worth a first run &mdash; and what to strike</h3>
+<p>Run the verdicts together and the first-run list is short. Worth doing, in order:</p>
+<ol>
+<li><strong>Construct validity</strong> for the analyzer&rsquo;s flagship metrics, on a curated stimulus set, with 20&ndash;60 screened raters &mdash; the one irreplaceable use of other people, answered at a fraction of a public site&rsquo;s cost. <span class="state" data-state="candidate">candidate</span></li>
+<li><strong>&ldquo;Sounds synthetic / cheap&rdquo;</strong> with five to ten honest friends &mdash; the construct where other ears genuinely beat yours, needing no website. <span class="state" data-state="candidate">candidate</span></li>
+<li><strong>Human reliability ceiling</strong> from the same small panel &mdash; agreement per layer, so you can tell model error from task noise. <span class="state" data-state="candidate">candidate</span></li>
+<li><strong>Energy / arousal direction</strong> from your own ratings plus literature defaults &mdash; cheap, and it calibrates the one construct whose agreement is tolerable.</li>
+</ol>
+<p>Strike from any first version: loudness (meter it, never vote it); valence from the crowd (lowest agreement, wrong target); mood category words from strangers (idiolectal, no route into predicates); preference and keep-or-skip (your own usage answers it &mdash; the review&rsquo;s one-day skip logger out-produces the booth); groove direction (published; read it); genre texture (skewed crowd, synthetic cues); microtiming thresholds from a pooled booth (upper bound, valid for nobody); and the tag layer as primary measurement. Several of these are not worth measuring <em>at all</em> &mdash; and none of the survivors needs the public. The people SynAmp actually needs are a screened panel of twenty to sixty, or five friends with working ears.</p>
+
+</section>
+
+<section class="chapter" id="c3">
+  <p class="kicker">Chapter 03</p>
+  <h2>Building it — in the right order</h2>
+
+  <p class="lede">Three builds, escalating: a weekend you run on yourself, a pilot you run on five friends, and — only if both survive — a public booth. Each build buys the right to attempt the next, and each carries kill criteria written down before any data arrives.</p>
+
+  <p>The order is the argument. The review found this plan pointing a population instrument at a single-user system; the fastest test of whether the crowd is needed starts with the one rater the compiler actually serves: you. Build A can falsify the core premise in a private weekend; Build B is first contact with others and tests mechanics, not statistics; Build C is the product, written only for the future where both have returned their numbers.</p>
+
+  <h3>Build A — the owner-first weekend study (start here; no website required)</h3>
+
+  <p>Two weekends, nothing distributed, so no licences, no consent text, no hosting. Three parts: stimuli, ratings, staircase.</p>
+
+  <h4>Stimuli</h4>
+
+  <p>Generate 80–120 clips spanning the parameter grid for the four to six constructs the compiler consumes — energy, microtiming offset, brightness, density, swing ratio as the shortlist. Because you render them from your own templates, the parameters are exact by construction: the swing ratio and the millisecond displacement of a part are numbers you wrote, not estimates <span class="state" data-state="observed">observed</span>. Render about twenty clips twice — a permissive General-MIDI bank versus a higher-quality sampled path — the render-realism probe. MuseScore_General (MIT) serves one side; VSCO 2 CE (CC0) the other <span class="state" data-state="confirmed">confirmed</span>. How much a synthetic render biases affective judgements is unknown — no quantitative study surfaced in the research pass <span class="state" data-state="unverified">unverified</span> — which is exactly why the probe exists. Normalise every clip to one fixed, measured loudness target before anything is rated; uncontrolled loudness turns part of every "more energetic" slide into a loudness vote <span class="state" data-state="observed">observed</span>.</p>
+
+  <h4>Ratings</h4>
+
+  <p>Rate the full set in a local page — jsPsych is enough — with banded sliders (five labelled bands, not a bare line), one hidden duplicate per session, and anchors at unmistakable extremes. Two to three hours covers the set. The duplicates give you your own test–retest reliability; the anchors calibrate the scale and expose the compression that MUSHRA treats as grounds for invalidating a naive panel's results. One question per screen, randomised order, no previous scores shown.</p>
+
+  <h4>Staircase</h4>
+
+  <p>Then a 60–80-trial two-alternative forced-choice staircase on your own playback chain for the microtiming threshold: the same clip, one instrument displaced by d ∈ {0 (catch), ±15, ±30, ±45, ±60} ms, counterbalanced, verified on the render to move timing only — never level or phase. The published range: roughly 6 ms for sparse isochronous tones in the lab, 15–60 ms for deviations to matter in realistic music (<a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5643849/">Senn et al. 2017</a>) <span class="state" data-state="observed">observed</span>. Your threshold lives in the second band, and only your own chain can measure it; pooled stranger thresholds are an upper bound valid for nobody's compiler.</p>
+
+  <p>Four read-outs, four decisions:</p>
+
+  <figure class="bleed">
+    <table class="data">
+      <caption>Table 3.1 — Build A: read-outs and kill criteria</caption>
+      <thead>
+        <tr><th>Read-out</th><th>Passes when</th><th>Kill criteria / consequence</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Own test–retest reliability</td>
+          <td>Hidden duplicates land inside the pre-set slider tolerance <span class="state" data-state="candidate">candidate</span>: roughly ±25 points</td>
+          <td>Duplicates disagree beyond tolerance → the instrument or the corpus is broken, and no crowd fixes it; stop and repair before anyone else hears a clip</td>
+        </tr>
+        <tr>
+          <td>Parameter tracking, per construct</td>
+          <td>Rank correlation between your rating and the manipulated parameter at roughly |ρ| ≥ 0.3</td>
+          <td>|ρ| below about 0.3 on a construct → that instrument or corpus is broken; same stop, same rule</td>
+        </tr>
+        <tr>
+          <td>Render-tier shift (GM vs sampled)</td>
+          <td>Matched compositions rate within tolerance across the two tiers</td>
+          <td>Affective ratings shift materially by tier → the synthetic-first plan must be re-planned around a real-audio anchor set (Musopen, licence-filtered FMA/Jamendo, GMD/E-GMD)</td>
+        </tr>
+        <tr>
+          <td>Personal microtiming threshold</td>
+          <td>A detection curve that rises above chance within the tested range</td>
+          <td>A curve still flat at 60 ms → the parameter is inaudible on your chain; retire it rather than shipping it into playlist logic</td>
+        </tr>
+      </tbody>
+    </table>
+    <figcaption>Read the table as a decision tree: rows one and two ask whether the instrument can see anything at all; rows three and four decide strategy — whether synthetic-first survives, and what the compiler is allowed to assume about timing.</figcaption>
+  </figure>
+
+  <aside class="callout">
+    <p><strong>What a pass buys.</strong> A working instrument, a validated private corpus, and the first compiler defaults — before any stranger or licence is involved. A fail is worth nearly as much: two weekends spent discovering a broken instrument before it silently corrupted anything downstream.</p>
+    <p><strong>The parallel one-day job.</strong> Add a skip/removal logger with a three-option reason menu to the player. Skips and removals are free, in-distribution, and produced by the exact consumer the compiler serves — the calibration stream every later build has to be argued against, not around <span class="state" data-state="candidate">candidate</span>.</p>
+  </aside>
+
+  <h3>Build B — the five-friend pilot (invite-only; still no public launch)</h3>
+
+  <p>Build B is the first time anything meets a person who did not write it. Invite five to ten people through the full flow as a visitor would meet it: consent and licence-grant text, headphone gate, one module — the energy slider with anchors and gold items — funnel instrumented at every step. One module, eight to twelve clips, ten minutes: one interpretable signal, not three underpowered ones.</p>
+
+  <p><strong>Read-outs.</strong> The visit-to-usable conversion rate; inter-person agreement on the shared constructs; and whether anyone finishes unprompted, without a message from you halfway through. Agreement has a realistic ceiling: Krippendorff's α around 0.36–0.51 for arousal — valence lower still — found again and again from gold-gated academic crowds to public citizen-science platforms <span class="state" data-state="reproduced">reproduced</span>. Energy is the likeliest construct to show anything; if it shows nothing, the premise has nothing to stand on.</p>
+
+  <p><strong>Kill criteria.</strong> Usable-session conversion below about 30%, or energy agreement at noise, means the public-crowd premise is mis-sized. The response is to shrink to a small screened validation study with paid or curated participants — not to add more friends. And five to ten people cannot estimate reliability at all: an α from a friends panel has a confidence interval spanning "unusable" to "fine". This build is a mechanics test — do the texts parse, does the gate behave, does the funnel convert, does anyone care enough to finish.</p>
+
+  <p class="note">Nothing in Build B needs the CDN, the abuse budget, or the brand work. Those belong to Build C and should not be written until B has returned a number.</p>
+
+  <h3>Build C — the public booth (only if A and B survive)</h3>
+
+  <p>Everything below is written for the future where Build A's instrument tracks its parameters and Build B's funnel converts. If either failed, stop here; the rest of this chapter is engineering you do not need yet.</p>
+
+  <h4>The stimulus pipeline</h4>
+
+  <p>Three rules, each retiring a specific way the dataset breaks.</p>
+
+  <p><strong>Timing is baked into files.</strong> Online playback scheduling carries 5–10 ms of inter-trial jitter against sub-millisecond lab clocks <span class="state" data-state="observed">observed</span>; any gap, overlap, or displacement a construct depends on is rendered into the audio itself, never scheduled live.</p>
+
+  <p><strong>One loudness number.</strong> Every clip is normalised to a single measured target — −16 LUFS for streaming-style delivery or −23 LUFS broadcast-style, one of them and never a blend — with true peak ≤ −1 dBTP, a per-clip measurement log, and rejection of outliers beyond ±0.5 LU <span class="state" data-state="candidate">candidate</span>. The number is stated in the manifest and on the methods page (<a href="https://tech.ebu.ch/docs/r/r128.pdf">EBU R 128</a> is the reference).</p>
+
+  <p><strong>A hash-versioned manifest.</strong> Every stimulus carries a content hash (SHA-256); the manifest records the hashes; every response stores the hash of the exact audio it judged; stimulus sets are immutable inside a collection window <span class="state" data-state="candidate">candidate</span>. The review called the failure this prevents "the failure with no alarm": if a render changes mid-collection — a bank update, a normalisation tweak, a fixed bug — and the manifest does not, responses attach to the wrong audio. No validator flags it, no screen fails, and the corpus is quietly wrong. The hash turns silent corruption into a loud one.</p>
+
+  <h4>The public surface</h4>
+
+  <p>The booth is a product surface, not a document. This plan, like the dossier, wears a paper system; the booth must wear SynAmp's clothes instead. The brand spec (<code>design/brand-spec.md</code> in the repo, itself sourced from the product's tokens) is the design system: near-black surfaces (<code>#0e0e10</code> page, <code>#16161a</code> panels), a single accent — amber, <code>#e0a33e</code> — reserved for the live element (the clip that is playing, the armed control), hairline structure at 8% white, never pure black or white <span class="state" data-state="confirmed">confirmed</span>. The spec's own reading: restraint plus one warm LCD light. A booth styled as a research instrument recruits researchers; one styled as the product recruits listeners.</p>
+
+  <h4>Hosting: never the NAS</h4>
+
+  <p>Never serve a public audio site from the NAS. A home uplink melts at single-digit concurrent listeners, and the failure would arrive exactly when a share made the booth matter; worse, it puts a private stack's attack surface on the open internet <span class="state" data-state="candidate">candidate</span>. The shape that works: static clips and a thin submission endpoint on a CDN or free static tier, the NAS behind nothing public. The audience must not flow in; only the artifacts — manifest, labels, aggregate reports — flow back.</p>
+
+  <h4>The abuse baseline</h4>
+
+  <p>No rewards means low incentive to attack, but the realistic event — the booth shared on a forum — arrives as low-effort completion spam plus a minority of deliberate junk. Six cheap controls, all documented practice <span class="state" data-state="observed">observed</span>:</p>
+
+  <figure class="bleed">
+    <table class="data">
+      <caption>Table 3.2 — Abuse baseline for the public booth</caption>
+      <thead>
+        <tr><th>Control</th><th>What it stops</th><th>Note</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Rate limits on IP and session</td><td>Brute force, scraping, submission floods</td><td>Either dimension alone is trivially bypassed; combine both</td></tr>
+        <tr><td>Honeypot fields</td><td>Naive bots that auto-fill hidden inputs</td><td>Any value → quarantine the submission; reserve CAPTCHA-style escalation for genuinely suspicious sessions</td></tr>
+        <tr><td>Minimum durations; duplicate-payload detection</td><td>Slider spam; identical payloads replayed</td><td>Do not count on acoustic fingerprinting for 8–12 s clips; hash text and tag payloads instead</td></tr>
+        <tr><td>Free-text caps</td><td>Injection, unbounded input, abuse content</td><td>Store as inert data; no model ever treats it as instructions</td></tr>
+        <tr><td>VPN/VPS tagging at analysis</td><td>Coordinated junk that passes live checks</td><td>Tag, do not block; drop sessions at analysis under a published rule</td></tr>
+        <tr><td>Raw plus trust-flag storage</td><td>Losing data to over-aggressive filtering</td><td>Store everything; gate aggregation on trust tiers; never hard-delete</td></tr>
+      </tbody>
+    </table>
+    <figcaption>Trust tiers and gold-gated aggregation are the analysis chapter's subject; here they define only the storage contract.</figcaption>
+  </figure>
+
+  <h3>The ethics package — launch conditions, not aspirations</h3>
+
+  <p>The review tested this design against the critique that animates the whole idea — the reCAPTCHA analogy — and found it clears the core: nothing is gated behind the booth, so a visitor who declines loses nothing and nobody is coerced. What it does not clear is reciprocity: contributors currently receive nothing back. This list fixes that. These are conditions; the booth ships with all of them, or it does not ship.</p>
+
+  <ul class="plain">
+    <li><strong>Public release.</strong> Labels and stimuli are published as a public-domain (CC0) or CC-BY dataset: the act recasts from labour for a private tool into a donation to a commons.</li>
+    <li><strong>Plain-language honesty, before any audio plays.</strong> The page says, in words a non-researcher reads: this trains a private, single-user tool you will not receive; your responses may train model heads; the data will be published under this licence. Ambiguity here — a teaser implying a product for them — is exactly where the extraction critique should land.</li>
+    <li><strong>Feedback and credit.</strong> Every contributor gets a personal readout — their detection threshold, their slider profile — and the option of named credit in the dataset's contributor list.</li>
+    <li><strong>An age gate.</strong> A stated minimum age and a policy for handling it, under counsel review. Minors are unaddressed in the current plan and must not be at launch.</li>
+    <li><strong>Exclusion transparency.</strong> Headphone-gate and gold-item failure rates are published on the methods page, beside every screening rule. If a screen discards people, the discard rate belongs to the record.</li>
+    <li><strong>Anonymous by design, honest about irreversibility.</strong> No accounts, no identity, submissions not linkable back to a person — and therefore not withdrawn once published. That sentence sits on the same screen as the licence grant.</li>
+  </ul>
+
+  <p>One closing point is the ethics of a listening test, not of data. The test legitimately needs working ears — the gate is valid practice, and the numbers are the reality: about 35% of online arrivals fail the headphone check, and about 12% fail even the benign control (<a href="https://link.springer.com/article/10.3758/s13414-017-1361-2">Woods et al. 2017</a>) <span class="state" data-state="observed">observed</span>. What the site must not do is imply "anyone can do this" and then silently discard a third of everyone who tries. Failures get a neutral explanation — what the check was, why it matters, what to try instead — and the rates go on the public methods page. An honest gate filters; a half-open door that drops people mid-stride is what the critique warns about.</p>
+
+  <p>Adopt the list, and the ethics section stops being the plan's most aspirational part and becomes its strongest — the difference between a booth that reads as extraction on its worst day and one that is defensible on it. Engineering is iterable. Consent is not.</p>
+</section>
+
+<section class="chapter" id="c4">
+<p class="kicker">Chapter 04</p>
+<h2>Reading the data</h2>
+
+<p class="lede">Nothing has run yet, so this chapter is accounting for a booth that might: which standard to borrow, which raters to keep, how much agreement to expect, how to combine votes, and how many sessions the arithmetic actually costs. Source numbers carry <span class="state" data-state="observed">observed</span>; everything computed in this chapter is this plan's own <span class="state" data-state="candidate">candidate</span> arithmetic.</p>
+
+<h3>The standard to steal from</h3>
+<p>The reference point is <a href="https://www.itu.int/dms_pubrec/itu-r/rec/bs/R-REC-BS.1534-3-201510-I!!PDF-E.pdf">ITU-R BS.1534-3</a> — MUSHRA, the established recommendation for subjective audio assessment with a hidden reference and hidden anchors — with its stricter sibling BS.1116-3 for near-transparent differences. Their machinery exists because "this sounds better" is a noisy measurement, and they control the noise with structure rather than sample size: a hidden copy of the reference in every trial; hidden anchors at the extremes; banded scales; randomized order; and a post-screening rule that drops an assessor whose hidden reference is rated below a floor on too many items — below 90 on more than 15% of items disqualifies, and the inverted rule catches anyone who rates everything at the top. <span class="state" data-state="observed">observed</span></p>
+
+<p>What SynAmp should steal is the machinery, not the numbers. The 90 / 15% thresholds belong to a 0–100 quality scale with low-pass anchors; pasting them onto an emotion slider would be cargo cult. The translated tolerances below are this plan's own candidate values, to be recalibrated against your duplicates in the weekend study and pilot.</p>
+
+<figure class="bleed"><table class="data">
+<caption>MUSHRA's machinery, and SynAmp's candidate translation</caption>
+<thead><tr><th>Device</th><th>The standard's version</th><th>SynAmp's candidate translation</th></tr></thead>
+<tbody>
+<tr><td>Hidden reference</td><td>A hidden copy of the unimpaired reference is rated in every trial; systematically scoring it below the floor disqualifies the assessor.</td><td>One hidden duplicate per session: a clip replayed later in a different context; deviation between the two slide placements beyond tolerance flags the session (beyond 25 points on the 0–100 slider, candidate).</td></tr>
+<tr><td>Anchors</td><td>Fixed anchor items — in the standard, heavily low-passed versions — set the scale's extremes and catch "everything scores 70" behaviour.</td><td>Pre-calibrated unmistakable items, very calm and very intense, whose expected bands are fixed before collection; a session landing an anchor more than 30 points outside its band (candidate) is flagged.</td></tr>
+<tr><td>Banded scale</td><td>Five labelled bands over 0–100; one attribute graded per trial.</td><td>Banded, labelled energy slider; one question per screen; no naked unlabelled sliders.</td></tr>
+<tr><td>Order and level</td><td>Randomized presentation order; no within-item level adjustments.</td><td>Randomized item order per session; one loudness number per clip, measured and logged before upload.</td></tr>
+</tbody>
+</table>
+<figcaption>Standard column: <span class="state" data-state="observed">observed</span> in BS.1534-3. Translation column: <span class="state" data-state="candidate">candidate</span> design, not standards.</figcaption>
+</figure>
+
+<h3>Rater quality: gates before averages</h3>
+<p>Three instruments decide whether a rater's data counts. <strong>Gold items</strong> ask questions with known answers: the closest precedent, a screened crowd ranking study, gated participants with a five-comparison gold quiz at an 80% pass mark, and kept in-task golds that warn and demote rather than silently poison. <span class="state" data-state="observed">observed</span> <strong>Instructional-manipulation checks</strong> catch people who never read the instructions — a validated filter that removes satisficers and raises statistical power. <strong>Duplicate items</strong> measure consistency directly: same clip, different context, deviation versus tolerance.</p>
+<p>On failure, the default is <strong>weighting, not deletion</strong>: estimate per-rater accuracy from gold items and weight votes by it. Deletion discards signal, and the standard itself warns against over-aggressive exclusion — exclusion must be cautious, "bearing in mind the variability of assessors' sensitivities". <span class="state" data-state="observed">observed</span> Per-listener dossiers (agreement with others, repeatability, discriminability — the standard's own trio of listener metrics) belong in the booth as a reputation tier that modulates weight, not as a ban.</p>
+
+<h3>Agreement: the sobering baseline</h3>
+<p>Here is what music-emotion annotation actually produces, even under screening. A <a href="https://archives.ismir.net/ismir2017/paper/000217.pdf">crowd of 823 annotators</a> ranking clips for arousal and valence reached percent agreement of 0.839 and 0.801 — but chance-corrected agreement of only α = 0.360 and 0.222; the paper itself calls this "a fair level of agreement". A <a href="https://iris.uniroma1.it/retrieve/6ddf81d1-1ac1-4890-acda-eef03627da49/Gutierrez-Paez_preprint_Emotion_2021.pdf">public citizen-science platform</a> (189 users, 3,556 annotations) landed lower: α = 0.505 for arousal, 0.364 for valence, and 0.192 for discrete emotion tags. Percent agreement looks high; the chance-corrected coefficient — the number that matters — is low. <span class="state" data-state="observed">observed</span></p>
+
+<figure class="bleed"><table class="data">
+<caption>Published agreement for music-emotion annotation</caption>
+<thead><tr><th>Layer</th><th>Setting</th><th>Percent agreement</th><th>Krippendorff's alpha</th></tr></thead>
+<tbody>
+<tr><td>Arousal, pairwise ranking</td><td>Screened crowd, 823 annotators</td><td>0.839</td><td>0.360</td></tr>
+<tr><td>Valence, pairwise ranking</td><td>Same study</td><td>0.801</td><td>0.222</td></tr>
+<tr><td>Arousal, binary</td><td>Public platform, 189 users</td><td>—</td><td>0.505</td></tr>
+<tr><td>Valence, binary</td><td>Same platform</td><td>—</td><td>0.364</td></tr>
+<tr><td>Discrete emotion tags</td><td>Same platform</td><td>—</td><td>0.192</td></tr>
+</tbody>
+</table>
+<figcaption>All values <span class="state" data-state="observed">observed</span> at source: ISMIR 2017 ranking study; Páez et al. 2021.</figcaption>
+</figure>
+
+<p>The <a href="https://en.wikipedia.org/wiki/Krippendorff%27s_alpha">interpretability bands</a> are fixed: α at or above 0.800 is where reliable conclusions live; 0.667–0.800 is tentative; below 0.667 the convention is to discard the layer. For interval-valued slider data the parallel readout is ICC — poor below 0.40, good from 0.60 upward. State the consequence plainly: <strong>a layer below the tentative band must not be used to draw conclusions</strong> — not as a compiler default, not as a training target. On the published numbers, that disqualifies every valence and tag layer measured so far and puts even the screened arousal layer under 0.4. Chapter 2 draws exactly this line: valence and category words go to the owner, not the crowd.</p>
+
+<h3>Aggregation: votes, models, medians</h3>
+<p>Combining ratings is a decision per data type, not a default:</p>
+<ul>
+<li><strong>Majority vote</strong> only for categorical layers after triage — gates passed, at least three votes per item, errors roughly independent. It is what the screened crowd protocol used, and it is the weakest defensible option.</li>
+<li><strong>Model-based aggregation</strong> for noisy categorical labels: <a href="https://mc-stan.org/docs/2_18/stan-users-guide/data-coding-and-diagnostic-accuracy-models.html">Dawid–Skene</a>-style models give each rater an estimated confusion matrix and infer the true label jointly, so "right in general, biased toward intense" is modelled instead of flattened. Bayesian versions add per-label uncertainty and flag items that need more votes.</li>
+<li><strong>Sliders, model route:</strong> hierarchical models that absorb per-rater bias and scale-use — one rater's centre is another's 65 — once n permits.</li>
+<li><strong>Sliders, robust route:</strong> non-parametric summary as the workhorse — medians, IQR outlier examination, bootstrap confidence intervals — the reading the audio standard itself prescribes.</li>
+</ul>
+
+<h3>Power arithmetic</h3>
+<p>The following is <em>arithmetic, not evidence</em>: planning math under stated assumptions, for the pilot's own duplicates to check. Working assumption: σ ≈ 20 points between raters on a 0–100 slider; the heterogeneous public case (σ ≈ 25) doubles the raters needed for the same precision.</p>
+
+<figure class="bleed"><table class="data">
+<caption>Planning arithmetic — candidate, not evidence. SE = σ/√n for means; 1.96·√(p(1−p)/n) for proportions.</caption>
+<thead><tr><th>Question</th><th>Inputs</th><th>Arithmetic</th><th>Consequence</th></tr></thead>
+<tbody>
+<tr><td>Slider item mean</td><td>σ ≈ 20; 10 raters per clip</td><td>SE ≈ 6.3</td><td>95% CI ≈ ±12 points</td></tr>
+<tr><td>Slider item mean</td><td>16 raters per clip</td><td>SE = 5.0</td><td>±10 points</td></tr>
+<tr><td>Slider item mean</td><td>25 raters per clip</td><td>SE = 4.0</td><td>±8 points</td></tr>
+<tr><td>Slider item mean</td><td>44 raters per clip</td><td>SE = 3.0</td><td>±6 points</td></tr>
+<tr><td>Detection curve, per level</td><td>p ≈ 0.75; ±10 points of proportion</td><td>≈ 72 pooled trials per level</td><td>a six-level curve ≈ 430–880 trials ≈ 45–90 users at 10 trials each</td></tr>
+<tr><td>Detection curve, per level</td><td>±7 points of proportion</td><td>≈ 147 trials per level</td><td>tighter curve; roughly double the users</td></tr>
+<tr><td>Quoting an agreement coefficient</td><td>α or ICC for a layer</td><td>at least 3 raters per unit and 200–300 units</td><td>below this, treat the coefficient as provisional and bootstrap its interval</td></tr>
+</tbody>
+</table>
+<figcaption>All rows: <span class="state" data-state="candidate">candidate</span> arithmetic with assumptions stated so the pilot can falsify them.</figcaption>
+</figure>
+
+<h3>The funnel: what a run really costs</h3>
+<p>Every session passes a gauntlet before its data counts. The headphone gate alone removes about a third of online listeners — a cumulative pass rate of 64.7% across 5,154 participants <span class="state" data-state="observed">observed</span> — and it filters good listeners too: 12% fail even a benign control version. Attention and gold gates remove more; 3–28% misreport eligibility; completion and bot filtering skim again. Combined survival: roughly 35–50% of started sessions <span class="state" data-state="candidate">candidate</span>.</p>
+
+<figure class="bleed"><table class="data">
+<caption>The session funnel</caption>
+<thead><tr><th>Stage</th><th>Per 100 started sessions</th><th>Basis</th></tr></thead>
+<tbody>
+<tr><td>Pass the headphone gate</td><td>about 65</td><td>64.7% cumulative pass, Woods et al. 2017 <span class="state" data-state="observed">observed</span></td></tr>
+<tr><td>Pass attention and gold items, then finish</td><td>35–50 combined survival</td><td>component gates above, before bot removal <span class="state" data-state="candidate">candidate</span></td></tr>
+<tr><td>Reach 120–200 usable sessions</td><td>recruit roughly 400–500 visits</td><td>target divided by survival rate <span class="state" data-state="candidate">candidate</span></td></tr>
+</tbody>
+</table>
+<figcaption>Sources: <a href="https://link.springer.com/article/10.3758/s13414-017-1361-2">Woods et al. 2017</a> for the gate; the review synthesis for the combined rate.</figcaption>
+</figure>
+
+<p>Now run the friends-scale version, because it is the version that will actually happen first: 40–60 invites at 35–50% survival yields <strong>15–30 usable sessions</strong>. With σ ≈ 20–25 and single-digit raters per clip, item confidence intervals sit near ±20 points on a 0–100 scale, and an agreement estimate's interval spans from unusable to fine. A friends-scale run cannot decide anything — not because friends are bad raters, but because twenty sessions is twenty sessions.</p>
+
+<aside class="callout">
+<p><strong>Design for it; do not discover it.</strong> One strong module needs roughly 100–150 finished sessions, and three modules split the same traffic into three underpowered datasets. That is why Chapter 3's pilot carries funnel instrumentation: it exists to replace these estimates with a measured conversion rate before anyone builds a booth for traffic that does not exist.</p>
+</aside>
+
+<h3>Into the brain: defaults with uncertainty</h3>
+<p>Nothing above produces facts about your library. What the booth can produce is a set of <em>defaults with uncertainty</em> for the prompt compiler: a per-construct prior — a direction and slope for energy, a detection band for microtiming, a reliability coefficient per layer — each stored with its session count, dispersion, and agreement statistic, so every default carries its own error bar. Read them the way a published effect size is read at the start of a new experiment: a starting point, with a confidence, not a finding.</p>
+<p>Chapter 2 makes each compiler threshold ultimately the owner's operating point, so these numbers <strong>seed the thresholds; they do not govern them</strong>. Your own feedback — skips, removals, repeat plays, prompt corrections — comes from the right distribution and overrides the priors as it accumulates. Record a ceiling next to each prior: a model cannot beat the disagreement between human raters, so the measured α is the best target any analyzer can be validated against — the human-ceiling readout the <a href="https://github.com/CSCPadova/wav2taste">closest published precedent</a> ships for exactly this purpose. The booth's numbers, if they arrive, win the right to move a default. Nothing more, and nothing less.</p>
+</section>
+
+<section class="chapter" id="c5">
+<p class="kicker">Chapter 05</p>
+<h2>The licensing algebra</h2>
+
+<p class="lede">Does doing this training and testing yourself sidestep the licensing problems and make the product more attainable? Partly yes: the plan removes the two causes that forced a published team into a non-commercial release. Partly no: it cannot conjure a permissively licensed base encoder, and a clean licence does not make a model good.</p>
+
+<h3>What there is to escape</h3>
+<p>There is no permissively licensed pre-trained model for the constructs SynAmp needs most: categorical mood, trained danceability, production era, key detection. The strongest music-representation models carry non-commercial weights <span class="state" data-state="confirmed">confirmed</span>: MERT is CC BY-NC 4.0 (<a href="https://huggingface.co/m-a-p/MERT-v1-330M">model card</a>), the Essentia models are CC BY-NC-SA 4.0 (<a href="https://github.com/MTG/essentia-models">licence</a>), and MusicGen puts MIT on the code but NC on the weights. The shelf is real, and poisoned for anything you intend to ship. The plan's escape hatch is to stop buying detectors and start making them: generate your own stimuli, collect your own labels, train small heads on frozen features. This chapter asks how far that hatch actually opens.</p>
+
+<h3>Two cases, one rule</h3>
+<h4>The warning case</h4>
+<p>In 2026 a research team published <em>Taste-aware music retrieval from audio embeddings</em> (Spanio &amp; Rod&agrave;, CBMI) with exactly SynAmp's proposed architecture: small heads trained on frozen audio-encoder embeddings. Their repository's licence section reads, verbatim (<a href="https://github.com/CSCPadova/wav2taste">source</a>, read 28 September 2026):</p>
+<blockquote>&ldquo;Weights license: the trained heads are released under CC-BY-NC-4.0 (they derive from a non-commercial dataset and from MULE's CC-BY-NC weights). The code in this repository is Apache-2.0 (see License).&rdquo;</blockquote>
+<p>Two clean causes blocked their heads from shipping: someone else's non-commercial training corpus, and a non-commercial encoder.</p>
+
+<h4>The contrast case</h4>
+<p>SynAmp's plan deletes both causes. The stimuli are generated downstream of a permissive chain &mdash; your score, rendered through open synthesizers whose licences do not reach their output &mdash; so the audio is yours. The labels arrive through an explicit contributor dedication, so they are yours. The frozen encoder can be picked from the permissive set. When every input is owned or permissive, the combination &mdash; a head you actually own, to publish, serve and relicense &mdash; follows.</p>
+
+<aside class="callout">
+<p><span class="state" data-state="observed">observed</span> The rule the two cases display: fine-tuning on non-commercial weights yields a non-commercial derivative. This is a published team's practice, not a court ruling &mdash; the legal question itself remains one for counsel.</p>
+<p><span class="state" data-state="observed">observed</span> The converse, which the contrast case exhibits: ownership is achievable when all inputs are permissive or owned.</p>
+</aside>
+
+<p class="note">The algebra below is read from licence texts and published practice, not legal advice; contested joints are collected as questions for counsel, not defaults for an implementer.</p>
+
+<h3>The asset table</h3>
+<figure class="bleed">
+<table class="data">
+<caption>Asset &mdash; who holds rights &mdash; what may be done &mdash; obligations</caption>
+<thead>
+<tr><th>Asset</th><th>Who holds rights</th><th>What may be done</th><th>Obligations</th></tr>
+</thead>
+<tbody>
+<tr><td>Generated stimuli (audio)</td><td>You &mdash; composer and rendition author; no upstream if the chain is CC0/MIT-clean or pure synthesis</td><td>Use, publish, sell; include in a dataset</td><td>None on a clean chain; any CC BY sample adds credit, a licence link and an indication of changes; legacy-limited banks (e.g. CC Sampling Plus 1.0 orchestral libraries) stay out pending review</td></tr>
+<tr><td>Generation recipe (parameter manifest: seed, score, patch list, bank version and hash, renderer version)</td><td>You</td><td>Keep, licence or withhold; shipping it makes the corpus reproducible and the rights story concrete</td><td>Thin: facts and methods (doctrine-level, not licence-verified); no third-party claims expected</td></tr>
+<tr><td>Human labels</td><td>Contributors initially &mdash; transferred to you by an explicit dedication or grant</td><td>Publish as a dataset; train and evaluate models; ship in the product. The labels licence is a separate instrument from the audio licence</td><td>The grant must explicitly cover commercial training, redistribution and product use; privacy and database law apply regardless of the licence; CC0 waives copyright only &mdash; not publicity or privacy rights</td></tr>
+<tr><td>Model trained on them (the head)</td><td>You (the weights)</td><td>Publish weights; serve commercially; iterate &mdash; cache embeddings once, train heads many times</td><td>None from the data side if inputs are clean; whether weights are copyrightable subject matter at all is contested &mdash; pin rights by contract and licence; trained on NC embeddings, the NC/SA shadow follows (contested)</td></tr>
+<tr><td>Embeddings from a non-commercial encoder (MERT cc-by-nc-4.0; Essentia models CC BY-NC-SA 4.0)</td><td>Encoder licensor (m-a-p; UPF)</td><td>Non-commercial compute and R&amp;D only (safe reading); never in serving artifacts</td><td>NC excludes commercial advantage or monetary compensation; SA would bind adaptations; output and embedding scope contested &mdash; counsel; never cache them into a shipped path</td></tr>
+<tr><td>Base encoders themselves</td><td>Their licensors; permissive alternatives include PANNs (MIT) and wav2vec2/HuBERT base (Apache-2.0)</td><td>Per licence only &mdash; NC models stay non-commercial</td><td>Code and weight licences are separate documents; the music-specialised encoders are precisely the NC ones &mdash; the domain-fit-versus-clearance trade</td></tr>
+</tbody>
+</table>
+<figcaption>The audio licence and the label licence are two different instruments, and they can differ: audio under CC BY (credit obligations attach to the recordings) while labels are dedicated CC0 (opinions about them carry none).</figcaption>
+</figure>
+
+<h3>The soundfont provenance trap</h3>
+<p>Permissive software does not imply permissive sounds. FluidSynth (LGPL-2.1) and sfizz (BSD-2-Clause) place no conditions on the audio you render &mdash; a program's output is not covered by the code's licence unless it constitutes a work based on the code itself (<a href="https://www.gnu.org/licenses/gpl-faq.en.html">GNU GPL FAQ</a>) <span class="state" data-state="confirmed">confirmed</span> &mdash; but a soundfont is a bundle of recordings, each with its own rights, and two of the most respected free banks document their own provenance gaps in their own files.</p>
+<p>GeneralUser GS, from its own licence file: &ldquo;Because GeneralUser GS originated as a personal project with no intention for publication, I cannot be 100% sure where all of the samples originated&hellip; This uncertainty may concern you if you intend to use GeneralUser GS in a commercial software product.&rdquo; <span class="state" data-state="confirmed">confirmed</span></p>
+<p>Sonatina Symphonic Orchestra, from its README: &ldquo;In the case of a few very old soundfonts I have no idea who the original authors were or what licensing might apply&hellip; as it is impossible for me to know the exact origin of everything.&rdquo; <span class="state" data-state="confirmed">confirmed</span></p>
+<p>The safe pattern is binary: pure synthesis, where no samples exist at all (Surge XT, Vital, or your own code &mdash; every rendered byte unambiguously yours); or a bank whose licence you have read from its own file and which clears commercial use and distribution of renders. Confirmed in this pass: MuseScore_General.sf2 (MIT, from its own licence file), VSCO 2 CE (CC0), University of Iowa MIS (&ldquo;used for any projects, without restrictions&rdquo;) <span class="state" data-state="confirmed">confirmed</span>. Philharmonia allows commercial renders but not redistribution of the sample set itself &mdash; the render-versus-bank distinction; recording every bank's name, version and hash in the dataset manifest is what makes it auditable. Hardware-ROM-derived banks (the &ldquo;SC-55&rdquo; class) are presumed copyrighted and were not cleared in this pass <span class="state" data-state="unverified">unverified</span>. One bad sample poisons the whole chain: render, dataset and model card alike.</p>
+
+<h3>What this closes &mdash; and what it does not</h3>
+<p><strong>Closes.</strong></p>
+<ul>
+<li><strong>Ownable heads.</strong> A mood, energy, danceability or production-era head trained on your labels over permissive frozen features is a weights file you can ship without an NC or SA shadow.</li>
+<li><strong>A publishable corpus.</strong> Stimuli, labels and recipe released licence-clean &mdash; a small public dataset that needed nobody's permission.</li>
+<li><strong>Objective labels by construction.</strong> Key, tempo, swing ratio, microtiming offsets, arrangement parameters: exact from the generator, needing no humans, no rights, no copyright exception.</li>
+</ul>
+<p><strong>Does not close.</strong></p>
+<ul>
+<li><strong>The base encoder.</strong> You still need a permissive one, and none of them has the music-specialised fit of the NC models; you also cannot replace an NC detector whose training corpus you cannot reproduce.</li>
+<li><strong>Ecological validity.</strong> Labels on synthesized stimuli describe synthesized stimuli; transfer to real productions is unmeasured until the real-anchor comparison says otherwise.</li>
+<li><strong>Anything the synthetic-to-real gap taints.</strong> A licence-clean model can still be wrong: this work buys the right to ship, not quality.</li>
+</ul>
+<p class="note">Corollary: licence pollution is one-way. Keep any NC-encoder experiments in a separate, clearly marked internal corpus; a single NC source taints whatever release it enters.</p>
+
+<h3>Requires counsel</h3>
+<p class="note">Four questions an engineer must not answer by choosing a default:</p>
+<ul>
+<li>Whether shipping the numeric outputs of a non-commercial model &mdash; BPM, key, mood probabilities &mdash; is a derivative or commercial use of the model. CC's own FAQ: &ldquo;This is hard to know without having all of the facts&rdquo; (<a href="https://creativecommons.org/faq/">CC FAQ</a>).</li>
+<li>Whether a ShareAlike obligation attaches to model weights trained on ShareAlike-licensed embeddings or outputs &mdash; are weights &ldquo;Adapted Material&rdquo;? CC's guidance does not settle it.</li>
+<li>Whether a public site's consent flow and the contributor grant are adequate: contract formation, inalienable moral rights, privacy and data-protection review, irrevocable dedication versus deletion requests, sui generis database rights.</li>
+<li>Age and formation for young contributors: whether a minor can validly grant the licence at all, and what gate the flow requires if not.</li>
+</ul>
+
+<p>The algebra in one line: what you build end to end is yours; what you borrow from a non-commercial source stays under review; and the base encoder is the one part of this plan that self-generation cannot make yours.</p>
+</section>
+
+<section class="chapter" id="c6">
+<p class="kicker">Chapter 06</p>
+<h2>The plan, and the decisions</h2>
+<p class="lede">This is the commit point. Chapters 1–5 were evidence; what follows is what to do, in what order, with what kill criteria, and which calls no research file can make for you. The sequence is built so the cheapest honest test always runs first — and the expensive thing only runs if the cheap ones pass.</p>
+
+<h3>The first move is not the booth</h3>
+<p>Before any stimulus pipeline, consent text, or booth code: build the <strong>skip/removal/repeat logger</strong> in the player, wired into the feedback tables the brain dossier already specifies, with a short reason menu on every skip:</p>
+<ul class="plain">
+<li>wrong energy</li>
+<li>wrong genre / vibe</li>
+<li>not now — interrupted</li>
+</ul>
+<p>One day of work. Every skip, removal, and repeat-play is a label produced by the exact consumer the compiler serves — free, continuous, and in-distribution; the reason menu turns a skip from an ambiguous "wrong for this occasion" into a calibratable signal. It outranks everything else on the board because it is the compiler's <em>actual</em> calibration stream, the thing the booth can only proxy; because it costs nothing and cannot fail the way an instrument can; and because once it exists, the booth's case must be argued <em>against</em> it rather than around it. Every hour on the booth now has to justify itself over an hour of real usage data. That is the honest test, and it costs a day.</p>
+
+<h3>The sequence</h3>
+<figure class="bleed"><table class="data">
+<caption>Order of operations, with the exits marked in advance</caption>
+<thead><tr><th>Step</th><th>What</th><th>Cost</th><th>Kill criterion</th></tr></thead>
+<tbody>
+<tr><td>1. Usage logger</td><td>Skip/removal/repeat events plus the reason menu, feeding the brain dossier's feedback tables</td><td>1 day</td><td>None — built regardless. Near-zero event volume after a month of real use means fix the UX, not the plan.</td></tr>
+<tr><td>2. Analyzer's cheap metric block</td><td>Wire the first models on frozen permissive encoders; validate each metric against by-construction ground truth. The objective half needs no humans at all</td><td>≈1 week <span class="state" data-state="candidate">estimate</span></td><td>A metric that fails its by-construction check never becomes a compiler predicate — no crowd can rescue it.</td></tr>
+<tr><td>3. Owner-first weekend study</td><td>The local study of Ch. 3a: 80–120 clips, banded sliders, hidden duplicates, anchors, GM-vs-SFZ render-tier probe, personal 2AFC staircase</td><td>≈2 weekends</td><td>Rating-vs-parameter tracking |ρ| &lt; 0.3, unreliable test–retest, or a material GM-vs-SFZ shift on affective constructs → stop; fix instruments or re-plan around a real anchor set.</td></tr>
+<tr><td>4. Friends pilot</td><td>5–10 invitees through the full one-module v0 flow, funnel instrumented</td><td>An evening of setup, a week of wall-clock</td><td>Usable-session conversion below ~40%, or energy agreement indistinguishable from noise → shrink to a small screened validation study; do not go public.</td></tr>
+<tr><td>5. Booth decision gate</td><td>Judge steps 3–4 against the pre-registered criteria below</td><td>One evening</td><td>No pass on both, no booth — paused, not expanded.</td></tr>
+<tr><td>6. Booth build, if gated through</td><td>Stimuli pipeline, one-module v0, with the ethics package and abuse baseline shipping as launch conditions, not follow-ups</td><td>See below</td><td>Any unmet launch condition — hosting still on the NAS, counsel unresolved, ethics texts unfinished — and the booth does not ship.</td></tr>
+</tbody>
+</table><figcaption>Steps 1–2 run unconditionally; 3–4 are the falsification gates; 5 is a decision, not a default.</figcaption></figure>
+
+<h3>What the booth really costs</h3>
+<p>Priced honestly: stimulus design, build, and analysis for the public booth come to <span class="state" data-state="candidate">candidate</span> ≈2.5–4 working weeks solo, spread over 4–8 calendar weeks, with counsel hours on top and recruitment sized to Ch. 4's funnel — 400–500 visits to net 120–200 usable sessions. Then the part plans never cost: the open-ended maintenance tail of operating a public service — hosting, security patching, log and complaint handling, per-release dataset packaging, indefinitely. Beside it stands the comparable alternative: the same weeks spent on steps 1–2 and on prompt-compiler eval work, which produce owner-visible value whether or not anyone ever visits a website. That asymmetry is the whole comparison. The booth's expected value is concentrated in the dataset and public-artifact ambitions — a legitimate <em>second</em> project, not the compiler's infrastructure — and if you build it, say so plainly in its own README, or the messaging fails the ethics package's honesty condition before launch.</p>
+
+<h3>What "the booth told us something real" means — pre-registered</h3>
+<figure class="bleed"><table class="data">
+<caption>Written before any collection; they bind</caption>
+<thead><tr><th>Criterion</th><th>Threshold</th></tr></thead>
+<tbody>
+<tr><td>Coverage</td><td>≥25 raters per clip on ≥40 clips</td></tr>
+<tr><td>Agreement</td><td>Krippendorff α ≥ 0.4 on the energy layer — already a modest bar against Ch. 4's music-emotion numbers</td></tr>
+<tr><td>Duplicate consistency</td><td>Hidden-duplicate slide violations below 15%</td></tr>
+</tbody>
+</table><figcaption>Failing any line does not mean recruiting harder or loosening gates. It means the booth did not tell us something real, and it gets paused rather than expanded.</figcaption></figure>
+<p class="note">Moving a threshold after seeing the data — up or down — converts a measurement into a rationalisation. The whole point of writing these numbers first is that future-you does not get a vote.</p>
+
+<h3>Decisions only the owner can make</h3>
+<p>The review flagged genuine file-level disagreements. They are not blendable; each changes what the result may claim.</p>
+<figure class="bleed"><table class="data">
+<caption>Six calls, their branches, and the price of each</caption>
+<thead><tr><th>Decision</th><th>Branch</th><th>What it gives up</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">Label licence for released data</td><td>CC0 / public domain, Common Voice pattern</td><td>Enforced credit — nothing obliges downstream users to attribute.</td></tr>
+<tr><td>CC BY 4.0, consistent with any CC-BY audio</td><td>Frictionless reuse; adds credit bookkeeping to every release.</td></tr>
+<tr><td rowspan="2">Headphone gate</td><td>Hard gate (standard screen, ≥5/6 trials)</td><td>Roughly a third of arrivals — <span class="state" data-state="observed">observed</span> cumulative pass rate 64.7% — plus false failures of ~12% of compliant listeners; an accessibility and funnel cost landing disproportionately on speaker listeners.</td></tr>
+<tr><td>No gate / advisory only</td><td>The environmental control the instruments exist to enforce; device confounds enter the pooled curve permanently.</td></tr>
+<tr><td rowspan="2">Thresholds</td><td>Pooled only, per the standard-backed spec</td><td>The personal operating point — a curve valid for nobody's compiler in particular.</td></tr>
+<tr><td>Per-user threshold on your own rig</td><td>Nothing for you, but it cannot come from the crowd; the honest blend (pooled as prior, owner staircase as threshold) changes what the compiler may claim, so it is yours to choose.</td></tr>
+<tr><td rowspan="2">Contributors</td><td>Volunteers under the donation framing</td><td>Quality and demographic control; self-selection is skewed and junk rates are real.</td></tr>
+<tr><td>Paid screened panel</td><td>The commons-donation reciprocity story, plus real money — with fair-pay norms (minimum wage, pro-rata, no unfair rejection) as the cost of buying validity.</td></tr>
+<tr><td rowspan="2">Publish the dataset at all</td><td>Publish</td><td>Privacy margin: release is irreversible and anonymous-by-design must be stated up front; commits to the packaging tail.</td></tr>
+<tr><td>Keep private</td><td>The reciprocity story — without release, the exchange reads as strangers labouring for a private tool.</td></tr>
+<tr><td rowspan="2">What the booth is for</td><td>Validation and public data</td><td>The original pitch — replaced by a second project judged on its own artifact.</td></tr>
+<tr><td>Compiler calibration</td><td>The truth: Ch. 2's decomposition shows the crowd serves almost none of the compiler's actual failure modes. Choose the first framing, or do not build.</td></tr>
+</tbody>
+</table><figcaption>None of these six has a technically forced answer; each trades a real value against a real cost.</figcaption></figure>
+
+<aside class="callout">The honest bottom line: the research underneath this plan is sound, the licensing architecture genuinely works — verified against a real published team whose non-commercial inputs forced non-commercial heads, the exact failure SynAmp's chain avoids — and the instruments are standard-backed. None of that rescues the original economics. The value is smaller and later than the pitch suggested, and most of it was never behind the booth at all: it sits in the owner's own ratings, the usage stream, and the by-construction labels that need no strangers. The weekend study is the cheapest possible way to find out whether what remains is real — and if it is not, you will have spent two weekends and one day learning that, instead of a month of evenings building a website for a parameter nobody asked for.</aside>
+</section>
+
+      <footer class="colophon">
+        <h3>Colophon</h3>
+        <p>This plan compiles four research passes and one adversarial review on how SynAmp could
+        collect human perceptual labels from a public web test, what that data would and would not
+        buy, and how it interacts with the licence constraints established in the companion research
+        dossier. Every claim carries an evidence state; unverified items are marked as such.
+        Compiled by AutoClaw.</p>
+        <p>Nothing in this document has been built or run. No experiment has been executed, no
+        stimuli generated, and no participant data collected.</p>
+      </footer>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>
