@@ -73,6 +73,25 @@ LIBRARY_PATH=~/synamp-sample ANALYZER_DB_PATH=~/synamp-sample/analyzer.sqlite3 \
 
 ## What this worker currently produces
 
+### Stage `identity` — who a recording is, whatever its name
+
+Runs first, so later stages can be skipped when the audio is already known.
+
+| Field | Meaning |
+|---|---|
+| `audio_hash` | sha256 over the decoded samples (`pcm-mono-int16-sha256/1`). Editing tags or renaming does not change it; changing the audio does. |
+| `fingerprint` | Chromaprint fingerprint from `fpcalc`, which recognises the same recording across formats (MP3 vs FLAC) and feeds MusicBrainz/AcoustID matching. Optional: install with `brew install chromaprint`. Without it the field is null and `fingerprint_status` says `tool_missing`. |
+
+What it buys:
+
+- **Retagged file** (bytes changed, audio didn't): keeps its analysis instead of re-running every stage.
+- **Moved or renamed file** (a vanished path had the same audio): inherits that track's analysis *and its identity*, so the exported ID — and every play, love and playlist removal attached to it — follows the file.
+- **Duplicate copy** (another present file has the same audio): reuses the measurements but stays a separate track; duplicates are findable by `audio_hash`.
+- **Renames SynAmp makes itself** are listed in a rename journal (`RENAME_JOURNAL_PATH`, JSON Lines of library-relative `from`/`to`). `scan` applies it first, so those files are recognised without even being decoded.
+- Tracks analysed before this stage existed are re-opened for just this stage on the next `scan` (reported as "need a newly added stage").
+
+The hash is defined over this analyzer's decode, so it is a stable identity on one machine and decoder version — not a cross-application standard.
+
 ### Stage `dsp_core` — the model-free metric block
 
 No machine learning, no model downloads, no network. Per track, measuring the

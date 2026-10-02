@@ -23,6 +23,8 @@ export class LibrarySource {
   private stamp = "";
   /** Rows dropped because they lacked an id or title. */
   rejected = 0;
+  private byPath = new Map<string, string>();
+  private canonical = new Map<string, string>();
 
   constructor(path: string) { this.path = path; }
 
@@ -55,7 +57,15 @@ export class LibrarySource {
       tracks.push(track);
     }
     this.cached = { version: createHash("sha256").update(raw).digest("hex").slice(0, 12), tracks };
+    this.byPath = new Map(tracks.filter((track) => track.path).map((track) => [track.path!, track.id]));
+    this.canonical = new Map(tracks.flatMap((track) => (track.aliases ?? []).map((alias): [string, string] => [alias, track.id])));
     this.stamp = stamp;
     return this.cached;
   }
+
+  /** The track at a library-relative path, if indexed. IDs survive moves, so look up rather than hash. */
+  idForPath(relative: string): string | undefined { this.get(); return this.byPath.get(relative); }
+
+  /** Maps an old ID (from before a move) to the track's current one. */
+  canonicalId(id: string): string { this.get(); return this.canonical.get(id) ?? id; }
 }

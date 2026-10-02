@@ -292,3 +292,11 @@ test("stream links are signed, expire, and stay inside the library", async () =>
     } finally { server.close(); }
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("feedback recorded under a track's old ID still counts after it moves", () => {
+  const base = { source: "player" as const, policy_version: "heuristic-v1", scope: "global" as const };
+  const view = deriveFeedback([{ ...base, id: "l1", ts: Date.now(), signal: "love", track_id: "p:old" }], Date.now(),
+    (id) => (id === "p:old" ? "p:new" : id));
+  assert.ok(view.adjust("p:new").value > 0);
+  assert.equal(view.adjust("p:old").value, 0);
+});

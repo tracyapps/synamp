@@ -56,6 +56,8 @@ CREATE TABLE IF NOT EXISTS tag_cache (
 EXPORT_FORMAT = "synamp.library-signals/1"
 
 EXPORTED_SIGNALS: dict[str, tuple[str, ...]] = {
+    # identity produces no signals; its hash is exported at the top level (see build_export).
+    "identity": (),
     # stage -> fields it owns. Keep in step with apps/brain/src/query/signals.ts;
     # a brain test reads this mapping and fails if a name is not registered there.
     "dsp_core": (
@@ -165,10 +167,11 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True) 
         db.conn.executescript(TAG_CACHE_SCHEMA)
     rows = db.conn.execute(
         """
-        SELECT t.path, t.missing, t.size_bytes, t.mtime, j.state, j.stages_done, r.payload, r.analyzer_version, r.computed_at
+        SELECT t.path, t.missing, t.size_bytes, t.mtime, l.origin, j.state, j.stages_done, r.payload, r.analyzer_version, r.computed_at
           FROM tracks t
           LEFT JOIN jobs j    ON j.track_path = t.path
           LEFT JOIN results r ON r.track_path = t.path
+          LEFT JOIN identity_links l ON l.path = t.path
          ORDER BY t.path
         """
     ).fetchall()
@@ -216,7 +219,16 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True) 
         if names["metadata_source"] == "tags":
             counts["tagged"] += 1
 
+        # Stable identity: an ID is minted from the first path a track had, and a
+        # moved or renamed track keeps it. The current path's hash becomes an alias.
         identifier = track_id(relative)
+        aliases: list[str] = []
+        if row["origin"]:
+            try:
+                identifier = track_id(PurePosixPath(Path(row["origin"]).relative_to(root).as_posix()))
+                aliases.append(track_id(relative))
+            except ValueError:
+                pass  # origin outside this root (e.g. a sample): fall back to the current path
         if identifier in seen_ids:  # astronomically unlikely; never merge two files
             raise RuntimeError(f"track id collision: {seen_ids[identifier]} vs {relative}")
         seen_ids[identifier] = str(relative)
@@ -226,6 +238,8 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True) 
             **names,
             **({"duration_s": tags["duration_s"]} if "duration_s" in tags else {}),
             **status,
+            **({"aliases": aliases} if aliases else {}),
+            **({"audio_hash": payload["audio_hash"]} if "identity" in current & stored and payload.get("audio_hash") else {}),
             "stages_done": sorted(current & stored),
             "signals": signals,
         }

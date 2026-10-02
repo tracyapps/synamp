@@ -35,8 +35,11 @@ def _cmd_scan(cfg: AnalyzerConfig) -> int:
     )
     print(
         f"scan: queued {counts['enqueued']} new, "
-        f"re-queued {counts['requeued']} changed"
+        f"re-queued {counts['requeued']} changed, "
+        f"{counts.get('backfilled', 0)} need a newly added stage"
     )
+    if counts.get("renamed"):
+        print(f"scan: carried {counts['renamed']} renamed tracks over from the rename journal")
     return 0
 
 
@@ -49,6 +52,13 @@ def _cmd_analyze(
     )
     if summary["stage_cleared"]:
         print(f"analyze: cleared stage from {summary['stage_cleared']} tracks")
+    reused = summary.get("kept_after_retag", 0) + summary.get("moved", 0) + summary.get("duplicate_reused", 0)
+    if reused:
+        print(
+            f"analyze: recognised {reused} by their audio and kept the existing analysis "
+            f"({summary.get('kept_after_retag', 0)} retagged, {summary.get('moved', 0)} moved, "
+            f"{summary.get('duplicate_reused', 0)} duplicate copies)"
+        )
     print(
         f"analyze: completed {summary['completed']}, failed {summary['failed']} "
         f"(claimed {summary['claimed']}, "

@@ -22,7 +22,17 @@ from .config import AnalyzerConfig
 from .metrics import extract_dsp_core
 from .models import STAGES, AnalysisResult, Track
 from .queue import Job, JobQueue
-from .store import Database, load_result, record_scan, save_result
+import json
+from dataclasses import fields as dataclass_fields
+
+from .identity import extract_identity
+from .store import (
+    Database, apply_rename, find_donor, link_identity, load_result, record_audio, record_scan, save_result,
+)
+
+# Fields that describe the file itself, never copied from another path's analysis.
+_NOT_COPIED = {"track_path", "stages_done", "analyzer_version", "computed_at",
+               "audio_hash", "audio_hash_method", "audio_duration_s", "fingerprint", "fingerprint_status"}
 
 # Walking a network share is latency-bound, not CPU-bound: every directory
 # listing is a round trip, so listing several at once is worth far more than any
@@ -109,6 +119,29 @@ def iter_audio_files(
     return tracks
 
 
+def apply_rename_journal(db: Database, cfg: AnalyzerConfig) -> int:
+    """Carry tracks SynAmp itself renamed to their new paths, without decoding.
+
+    The journal is JSON Lines written by the librarian, one rename per line:
+    {"from": "<library-relative>", "to": "<library-relative>", "reason": "..."}.
+    Re-reading it is harmless: an entry already applied finds nothing to move.
+    """
+    journal = cfg.rename_journal
+    if journal is None or not journal.exists():
+        return 0
+    applied = 0
+    for line in journal.read_text(encoding="utf-8").splitlines():
+        try:
+            entry = json.loads(line)
+            old = cfg.library_path / entry["from"]
+            new = cfg.library_path / entry["to"]
+        except (ValueError, KeyError, TypeError):
+            continue  # a torn or foreign line is skipped, not fatal
+        if apply_rename(db, old, new, str(entry.get("reason") or "renamed by SynAmp")):
+            applied += 1
+    return applied
+
+
 def run_scan(cfg: AnalyzerConfig, progress=print) -> dict[str, int]:
     """Walk the library and queue what is new or changed."""
     last_reported = [0.0]
@@ -127,20 +160,25 @@ def run_scan(cfg: AnalyzerConfig, progress=print) -> dict[str, int]:
     )
     db = Database(cfg.db_path)
     try:
+        # Renames SynAmp made go first, so those files are recognised, not re-analysed.
+        renamed = apply_rename_journal(db, cfg)
         counts, stale = record_scan(db, tracks)
+        counts["renamed"] = renamed
         queue = JobQueue(db, cfg.max_attempts)
         counts["scanned"] = len(tracks)
         counts["enqueued"] = queue.enqueue_missing([track.path for track in tracks])
         # Files whose size or mtime moved are re-analysed, because their old
         # measurements describe audio that is no longer on disk.
         counts["requeued"] = queue.reset([Path(p) for p in stale])
+        # Tracks finished before a new stage existed get just that stage.
+        counts["backfilled"] = queue.requeue_incomplete(STAGES)
         return counts
     finally:
         db.close()
 
 
 def run_stages(
-    result: AnalysisResult, persist, progress=print
+    result: AnalysisResult, persist, progress=print, after_stage=None
 ) -> AnalysisResult:
     """Run every outstanding stage for one track, persisting after each one.
 
@@ -153,7 +191,10 @@ def run_stages(
         if stage in result.stages_done:
             continue
         started = time.time()
-        if stage == "dsp_core":
+        if stage == "identity":
+            for key, value in extract_identity(result.track_path).items():
+                setattr(result, key, value)
+        elif stage == "dsp_core":
             fields = extract_dsp_core(result.track_path)
             for key, value in fields.items():
                 setattr(result, key, value)
@@ -167,6 +208,8 @@ def run_stages(
             raise NotImplementedError(f"no runner for stage {stage!r}")
         result.stages_done.add(stage)
         persist(stage)
+        if after_stage is not None:
+            after_stage(stage)
         progress(
             f"    {stage} in {time.time() - started:.1f}s "
             f"({len(result.stages_done)}/{len(STAGES)} stages)"
@@ -191,6 +234,9 @@ def run_analyze(
         "requeued_running": queue.requeue_running(),
         "requeued_failed": 0,
         "stage_cleared": 0,
+        "kept_after_retag": 0,
+        "moved": 0,
+        "duplicate_reused": 0,
     }
     if redo_stage:
         summary["stage_cleared"] = queue.clear_stage(redo_stage)
@@ -206,6 +252,8 @@ def run_analyze(
             progress(f"  {job.track_path.name}")
             try:
                 existing = load_result(db, job.track_path)
+                previous_hash = existing.audio_hash if existing else None
+                previous_stages = set(existing.stages_done) if existing else set()
                 result = existing or AnalysisResult(track_path=job.track_path)
                 # The queue is authoritative about which stages are finished,
                 # and it is *replaced* rather than merged: a job that was reset
@@ -218,7 +266,18 @@ def run_analyze(
                     save_result(db, result, __version__)
                     queue.record_stage(job, stage)
 
-                run_stages(result, persist, progress=progress)
+                def after_stage(stage: str, result=result, persist=persist) -> None:
+                    if stage != "identity" or not result.audio_hash:
+                        return
+                    record_audio(db, result.track_path, result.audio_hash)
+                    reused = reuse_analysis(db, result, previous_hash, previous_stages)
+                    if reused:
+                        summary[reused] += 1
+                        for done in sorted(result.stages_done - {"identity"}):
+                            persist(done)
+                        progress(f"    same audio as before ({reused.replace('_', ' ')}): kept existing analysis")
+
+                run_stages(result, persist, progress=progress, after_stage=after_stage)
                 save_result(db, result, __version__)
                 queue.complete(job)
                 summary["completed"] += 1
@@ -229,6 +288,38 @@ def run_analyze(
     finally:
         db.close()
     return summary
+
+
+def reuse_analysis(db: Database, result: AnalysisResult, previous_hash: str | None, previous_stages: set[str]) -> str | None:
+    """After `identity`, reuse earlier analysis of the same audio. Returns what happened.
+
+    - kept_after_retag: this path's own earlier results describe the same audio
+      (only tags or bytes outside the audio changed), so they still hold.
+    - moved: a vanished path held this audio; this is that track, moved. It
+      inherits the track's identity (and so its plays and feedback).
+    - duplicate_reused: another present path holds identical audio. Its
+      measurements are valid here too, but this is a separate track.
+    """
+    if previous_hash and previous_hash == result.audio_hash and previous_stages - {"identity"}:
+        result.stages_done |= previous_stages
+        return "kept_after_retag"
+    if result.stages_done - {"identity"}:
+        return None  # already analysed here (e.g. identity back-filled onto a finished track)
+    donor = find_donor(db, result.audio_hash or "", result.track_path)
+    if donor is None:
+        return None
+    donor_path, missing = donor
+    source = load_result(db, donor_path)
+    if source is None or not (source.stages_done - {"identity"}):
+        return None
+    for field in dataclass_fields(AnalysisResult):
+        if field.name not in _NOT_COPIED:
+            setattr(result, field.name, getattr(source, field.name))
+    result.stages_done |= source.stages_done
+    if missing:
+        link_identity(db, result.track_path, donor_path, "moved (same audio)")
+        return "moved"
+    return "duplicate_reused"
 
 
 def catalog_and_queue(cfg: AnalyzerConfig) -> tuple[dict[str, int], dict[str, int]]:

@@ -273,7 +273,9 @@ test("every signal the analyzer exports is registered here", () => {
   const exporter = readFileSync(new URL("../../../../services/analyzer/src/synamp_analyzer/export.py", import.meta.url), "utf8");
   const start = exporter.indexOf("EXPORTED_SIGNALS: dict");
   const block = exporter.slice(start, exporter.indexOf("STATUS_FIELDS: dict", start));
-  const names = [...block.matchAll(/"([a-z_]+)"/g)].map((match) => match[1]!).filter((name) => !["dsp_core", "beat"].includes(name));
+  const stages = new Set([...block.matchAll(/"([a-z_]+)":\s*\(/g)].map((match) => match[1]!));
+  const names = [...block.matchAll(/"([a-z_]+)"/g)].map((match) => match[1]!).filter((name) => !stages.has(name));
+  assert.ok(stages.has("identity") && stages.has("dsp_core") && stages.has("beat"), "parsed the stage keys");
   assert.ok(names.length > 10, "parsed the exporter's field list");
   for (const name of names) {
     assert.ok(SIGNALS.has(name), `${name} is exported by the analyzer but not in the registry`);
@@ -295,5 +297,19 @@ test("the library reader accepts analyzer exports and refuses unknown formats", 
     assert.deepEqual(ids(evaluatePlan(plan, lib).strict), ["p:abc"]);
     writeFileSync(path, JSON.stringify({ format: "synamp.library-signals/9", tracks: [] }));
     assert.throws(() => new LibrarySource(path).get(), /unsupported format/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("a moved track keeps its ID: path lookups and old IDs resolve to it", () => {
+  const dir = mkdtempSync(join(tmpdir(), "synamp-moved-"));
+  try {
+    const path = join(dir, "library.json");
+    writeFileSync(path, JSON.stringify({ format: "synamp.library-signals/1", tracks: [
+      { id: "p:original", path: "Ani DiFranco/Album/01 - Song.flac", aliases: ["p:newpathhash"], title: "Song", signals: {} },
+    ] }));
+    const source = new LibrarySource(path);
+    assert.equal(source.idForPath("Ani DiFranco/Album/01 - Song.flac"), "p:original");
+    assert.equal(source.canonicalId("p:newpathhash"), "p:original");
+    assert.equal(source.canonicalId("p:other"), "p:other");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

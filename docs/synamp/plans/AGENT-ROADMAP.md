@@ -322,3 +322,18 @@ retryable errors, pause on invalid session, tag-sourced names only.
   watch it arrive.
 - **Not done:** ListenBrainz; inferring skips from other apps (they don't report
   them — left unknown on purpose); historical import of Navidrome play counts.
+
+### 2026-10-02 — Library care step 1: track identity + rename journal
+
+New plan: [LIBRARY-CARE.md](LIBRARY-CARE.md) (identity → health view → missing
+tracks → organise → import → discography gaps), added to ROADMAP before Phase 2.
+Step 1 landed: analyzer stage `identity` (audio hash over decoded samples,
+optional Chromaprint via `fpcalc`) runs first; retags keep analysis; moves
+inherit analysis and the exported ID (minted from the first path; `aliases`
+list later ones); copies reuse measurements as separate tracks; the librarian's
+rename journal is applied on `scan` without decoding; finished jobs are now
+re-opened for newly added stages. Brain maps paths via the library index and
+counts feedback under old IDs. Analyzer 72/72, brain 55/55. Unverified: real
+Chromaprint output; decode determinism across macOS decoder updates for `.m4a`
+(a changed decoder would change hashes and look like new audio — the cost is
+re-analysis, not data loss).

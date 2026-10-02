@@ -96,7 +96,7 @@ const bump = (map: Map<string, Cell>, key: string, label: string, value: number)
   map.set(key, cell);
 };
 
-export function deriveFeedback(events: readonly ListeningEvent[], now = Date.now()): FeedbackView {
+export function deriveFeedback(events: readonly ListeningEvent[], now = Date.now(), canonical: (id: string) => string = (id) => id): FeedbackView {
   const removed = new Map<string, Map<string, boolean>>();
   const global = new Map<string, Cell>();
   const playlist = new Map<string, Cell>();
@@ -105,7 +105,8 @@ export function deriveFeedback(events: readonly ListeningEvent[], now = Date.now
   let count = 0;
 
   for (const event of [...events].sort((a, b) => a.ts - b.ts)) {
-    const t = event.track_id;
+    // A track that moved keeps its feedback: events under an old ID count for the current one.
+    const t = canonical(event.track_id);
     const g = decay(event.ts, now, HALF_LIFE_DAYS.global);
     const p = decay(event.ts, now, HALF_LIFE_DAYS.playlist);
     const pid = event.scope === "playlist" ? event.scope_id : undefined;

@@ -102,6 +102,12 @@ dossier's candidate values, not tuned.
 
 ## Plays from other apps, and Last.fm
 
+**IDs survive moves.** The analyzer mints a track's ID from the first path it
+had and keeps it when the file is moved or renamed (export `aliases` lists later
+path IDs). The brain therefore maps a path to a track by looking it up in the
+library index, falling back to hashing only for paths it hasn't indexed, and
+counts feedback recorded under an old ID for the track's current one.
+
 **Capture (`src/subsonic/`).** The edge sends Subsonic traffic (`/rest/*`) to the
 brain, which forwards every call to Navidrome unchanged — audio is piped, not
 buffered. When Navidrome accepts an app's `scrobble` call, the brain looks the

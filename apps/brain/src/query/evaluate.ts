@@ -37,6 +37,10 @@ export type LibraryTrack = {
   /** "tags" when names were read from the file; "path" when guessed from folders. */
   metadata_source?: "tags" | "path";
   album_artist?: string;
+  /** Earlier IDs this track had (it was moved or renamed); events under them count for it. */
+  aliases?: string[];
+  /** sha256 of the decoded audio (analyzer stage "identity"); equal for duplicate copies. */
+  audio_hash?: string;
   /** Audio embedding for similarity (optional). */
   embedding?: number[];
 };

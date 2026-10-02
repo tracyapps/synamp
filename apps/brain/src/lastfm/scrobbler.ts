@@ -167,7 +167,7 @@ export class Scrobbler {
   }
 
   candidates(events: readonly ListeningEvent[], library: Library): Candidate[] {
-    const tracks = new Map(library.tracks.map((track) => [track.id, track]));
+    const tracks = new Map(library.tracks.flatMap((track) => [track.id, ...(track.aliases ?? [])].map((id): [string, LibraryTrack] => [id, track])));
     const sent = new Set(this.state.sent);
     const out: Candidate[] = [];
     for (const event of events) {

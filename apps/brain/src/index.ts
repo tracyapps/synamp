@@ -70,7 +70,8 @@ function recordCaptured(plays: CapturedPlay[]): void {
   const added: ListeningEvent[] = [];
   for (const play of plays) {
     const relative = relativeFromReported(play.song?.path, config.coreMusicPath);
-    const trackId = relative ? trackIdForPath(relative) : `subsonic:${play.songId}`;
+    // Look the path up first: a moved track keeps its original ID, which hashing the new path would miss.
+    const trackId = relative ? (library.idForPath(relative) ?? trackIdForPath(relative)) : `subsonic:${play.songId}`;
     const when = play.time ?? Date.now();
     const key = `${play.user ?? ""}|${play.client ?? ""}|${play.songId}|${play.submission}|${play.time ?? Math.floor(when / 60_000)}`;
     const id = `${play.submission ? "ext" : "np"}:${createHash("sha256").update(key).digest("hex").slice(0, 24)}`;
@@ -107,10 +108,13 @@ function sendPage(res: ServerResponse, status: number, title: string, message: s
 }
 
 /** Derived feedback, recomputed only when the log grows. */
-let feedbackCache: { size: number; view: FeedbackView } | undefined;
+let feedbackCache: { size: number; version: string; view: FeedbackView } | undefined;
 function feedback(): FeedbackView {
   const size = events.all().length;
-  if (!feedbackCache || feedbackCache.size !== size) feedbackCache = { size, view: deriveFeedback(events.all()) };
+  const version = library.get().version;
+  if (!feedbackCache || feedbackCache.size !== size || feedbackCache.version !== version) {
+    feedbackCache = { size, version, view: deriveFeedback(events.all(), Date.now(), (id) => library.canonicalId(id)) };
+  }
   return feedbackCache.view;
 }
 /**

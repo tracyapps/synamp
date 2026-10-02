@@ -63,6 +63,10 @@ class AnalyzerConfig:
     between minutes and hours. Set below the share's connection limit.
     """
 
+    rename_journal: Path | None = None
+    """JSON Lines of renames SynAmp's librarian made (library-relative from/to).
+    Read on every scan so renamed files keep their identity without decoding."""
+
     max_attempts: int = 3
     """Failures before a track is left failed rather than retried. An unreadable
     file should be visible, not spin."""
@@ -93,4 +97,5 @@ class AnalyzerConfig:
             workers=int(_env("ANALYZER_WORKERS", "4")),
             walk_workers=int(_env("ANALYZER_WALK_WORKERS", "8")),
             max_attempts=int(_env("ANALYZER_MAX_ATTEMPTS", "3")),
+            rename_journal=Path(os.environ["RENAME_JOURNAL_PATH"]) if os.environ.get("RENAME_JOURNAL_PATH") else None,
         )
