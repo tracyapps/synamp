@@ -22,6 +22,8 @@ export type Signal =
   | "love" | "thumb_up" | "thumb_down" | "remove" | "restore"
   // implicit, derived by the server from playback transitions
   | "full_play" | "skip_early" | "skip_late" | "repeat"
+  // reported by another Subsonic app through the proxy: a play it counted, or what it is playing now
+  | "external_play" | "now_playing"
   // recorded, but never treated as preference
   | "interrupted" | "playback_error" | "seek" | "started"
   // bookkeeping: proves a player report was applied, so a retry is recognised
@@ -52,7 +54,7 @@ export type ListeningEvent = {
   play_ms?: number;
   duration_ms?: number;
   reason?: Reason;
-  source: "player" | "playlist_view" | "server";
+  source: "player" | "playlist_view" | "server" | "subsonic";
   policy_version: string;
   /** Free-form extras (error text, seek positions). Never used for scoring. */
   detail?: Record<string, string | number | boolean>;

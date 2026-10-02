@@ -14,11 +14,13 @@ dependencies = [
     #   pyloudnorm . MIT
     #   audioread . MIT (falls back to the OS audio stack for AAC/M4A, which
     #                libsndfile cannot decode at all)
+    #   tinytag .... MIT (reads title/artist/album tags for the export; pure Python)
     "numpy>=1.26",
     "scipy>=1.11",
     "soundfile>=0.12",
     "pyloudnorm>=0.1.1",
     "audioread>=3.0",
+    "tinytag>=2.0",
 ]
 
 # Deliberately NOT declared yet — model-backed stages land behind the same

@@ -100,6 +100,36 @@ and shown per track as `score_breakdown` plus a “your listening: …” reason
 it re-orders but can never get a track past a hard rule. Magnitudes are the
 dossier's candidate values, not tuned.
 
+## Plays from other apps, and Last.fm
+
+**Capture (`src/subsonic/`).** The edge sends Subsonic traffic (`/rest/*`) to the
+brain, which forwards every call to Navidrome unchanged — audio is piped, not
+buffered. When Navidrome accepts an app's `scrobble` call, the brain looks the
+song up with the app's own credentials and appends `external_play` (or
+`now_playing`) to the event log. A call Navidrome rejects records nothing, so
+auth stays Navidrome's job. Navidrome's real file path (with
+`ND_SUBSONIC_DEFAULTREPORTREALPATH`) maps to the same ID the analyzer uses —
+`p:` + sha256(library-relative path) — so the same song is the same track
+whichever app played it. Apps report plays but never skips, so these count as a
+small global positive (`played in your other apps`, +0.25, decaying) and never
+as a negative.
+
+**Last.fm (`src/lastfm/`, optional).** Set `LASTFM_API_KEY` and
+`LASTFM_API_SECRET` to offer it; connect from the web app (Last.fm web auth,
+protected by a one-time state value). Then:
+
+- Only plays that start while scrobbling is **on** are sent; off means off.
+- Last.fm's rule: longer than 30 s, played for half its length or 4 minutes.
+  (Other apps apply that rule themselves before reporting a play.)
+- Names come from tags only — the file's (analyzer export,
+  `metadata_source: "tags"`) or Navidrome's. Folder-guessed names are held and
+  shown, never sent.
+- The outbox is derived from the event log, so nothing is lost across restarts
+  or outages. Batches of 50, oldest first. Retries only Last.fm's retryable
+  errors (11, 16, 29, network) with backoff up to an hour; an invalid session
+  pauses until you reconnect; other refusals are recorded once and shown.
+- “Now playing” is sent best-effort when a track starts.
+
 ## Endpoints
 
 | Method | Path | Purpose |
@@ -111,6 +141,12 @@ dossier's candidate values, not tuned.
 | POST | `/api/v1/feedback` | `{event_id, signal: love/thumb_up/thumb_down/remove/restore, track_id, scope, playlist_id?, reason?}` |
 | GET | `/api/v1/events?limit=` | recent listening events, newest first |
 | GET/HEAD | `/api/v1/tracks/:id/stream?exp&sig` | audio with range support (signed link; no bearer token) |
+| any | `/rest/*` | Subsonic pass-through to the library core (Navidrome auth); captures scrobbles |
+| GET | `/api/v1/listening` | plays captured from other apps + Last.fm status |
+| POST | `/api/v1/lastfm/connect` | → `{url}` to sign in on Last.fm |
+| GET | `/api/v1/lastfm/callback?state&token` | Last.fm returns here (state-protected, no bearer) |
+| POST | `/api/v1/lastfm/settings` | `{enabled}` turn scrobbling on/off |
+| POST | `/api/v1/lastfm/flush` / `disconnect` | send now / forget the session |
 | GET | `/api/v1/playlists` | all nodes in creation order |
 | POST | `/api/v1/playlists` | create a folder, playlist, or roll-up |
 | GET | `/api/v1/playlists/:id/resolve` | live track list |
@@ -128,9 +164,10 @@ dossier's candidate values, not tuned.
 
 All via environment (see `src/config.ts`): `BRAIN_PORT`, `BRAIN_HOST`,
 `DATABASE_URL`, `LIBRARY_PATH`, `CORE_URL`, `PLAYLIST_DATA_PATH`,
-`PLAYLIST_API_TOKEN`, `LIBRARY_SIGNALS_PATH`, `EVENTS_PATH`, `SESSION_PATH`
-(the last two default to `events.jsonl` / `session.json` beside the playlist
-store). The token protects every `/api/v1` route except streams, which use
+`PLAYLIST_API_TOKEN`, `LIBRARY_SIGNALS_PATH`, `EVENTS_PATH`, `SESSION_PATH`,
+`CORE_MUSIC_PATH` (default `/music`), `LASTFM_API_KEY`, `LASTFM_API_SECRET`,
+`LASTFM_STATE_PATH`, `PUBLIC_URL`. Events, session and Last.fm state default to
+`events.jsonl` / `session.json` / `lastfm.json` beside the playlist store. The token protects every `/api/v1` route except streams, which use
 signed links derived from it.
 
 ## Next (Phase 1–2)
@@ -141,4 +178,4 @@ signed links derived from it.
 - Analyzer → brain signal export (replaces the JSON library file).
 - A local LLM behind the same `validatePlan()` gate as the draft parser.
 - WebSocket/SSE channel for session state (clients currently poll/refresh).
-- Scrobble/now-playing bridge so Subsonic apps' plays reach the event log too.
+- ListenBrainz as a second scrobble target (same outbox design).

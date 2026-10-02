@@ -1,7 +1,7 @@
 /* Smart playlist ("Describe") panel. Reuses tokens.css; one accent, no new colours
    except the existing alert family for the "not enforced" warning. */
 
-.describe { min-height: 0; padding: 28px 32px; margin-bottom: 18px; }
+.panel.describe { min-height: 0; padding: 28px 32px; margin-bottom: 18px; }
 .describe .panel__head h2 { font-size: 24px; margin: 0; }
 .describe__form { display: grid; gap: 8px; margin-top: 18px; }
 .describe__form label { font: 12px var(--font-mono); color: var(--muted); }

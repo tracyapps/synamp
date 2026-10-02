@@ -32,6 +32,15 @@ export const config = {
   eventsPath: env("EVENTS_PATH", ""),
   /** The server-owned playback session. Defaults beside the playlist store. */
   sessionPath: env("SESSION_PATH", ""),
+  /** Where the library core sees the music (its real-path prefix), to map its paths to ours. */
+  coreMusicPath: env("CORE_MUSIC_PATH", "/music"),
+  /** Optional Last.fm scrobbling. Both empty = the feature is hidden. */
+  lastfmApiKey: env("LASTFM_API_KEY", ""),
+  lastfmApiSecret: env("LASTFM_API_SECRET", ""),
+  /** Session key and delivery state. Defaults beside the playlist store; keep it private. */
+  lastfmStatePath: env("LASTFM_STATE_PATH", ""),
+  /** Public base URL (e.g. https://music.example.net) for the Last.fm sign-in callback. Derived from the request if empty. */
+  publicUrl: env("PUBLIC_URL", ""),
   /** Required by the deployed app profile; optional for localhost development. */
   playlistApiToken: env("PLAYLIST_API_TOKEN", ""),
 } as const;

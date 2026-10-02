@@ -295,3 +295,30 @@ Leave the exact inputs, changed contract/version, fresh commands and exit codes,
 benchmark denominator and exclusions, unresolved failures, and next smallest
 experiment. Label results as confirmed, partial, unverified or failed. Preserve
 research evidence states; do not promote a candidate because code now exists.
+
+### 2026-10-01 — Plays from other apps + optional Last.fm scrobbling (P3 continued)
+
+The edge now routes Subsonic (`/rest/*`) through the brain, which forwards every
+call to Navidrome unchanged (streams piped) and records `external_play` /
+`now_playing` only for scrobbles Navidrome accepted. Real paths
+(`ND_SUBSONIC_DEFAULTREPORTREALPATH`) map onto the analyzer's IDs. The analyzer
+export now reads tags (tinytag, MIT, cached per file). Optional Last.fm
+scrobbling: web-auth connect with a one-time state, on/off periods, Last.fm's
+play rule, outbox derived from the event log, 50-per-batch, retry only
+retryable errors, pause on invalid session, tag-sourced names only.
+
+- **Confirmed:** brain 53/53 (14 new: pass-through incl. a 300 KB stream,
+  accepted vs rejected scrobble, form POST with several ids, path → ID matches
+  the Python value, signing, play rule, state-protected connect, on/off
+  periods, no resend after restart, batching 120 → 50/50/20, backoff on 11,
+  pause on 9, refusals not retried, folder names held). Analyzer 65/65 (tags
+  read, folder fallback, cache). Live check: a scrobble through the running
+  brain against a stand-in core was captured as `external_play`, matched to the
+  exported track's ID, and appeared as waiting in the Last.fm panel; a rejected
+  scrobble recorded nothing; a forged callback was refused.
+- **Not verified against the real services:** no real Navidrome and no real
+  Last.fm account were used. First real run: connect one app through the edge,
+  play a track past half, check `/api/v1/listening`, then connect Last.fm and
+  watch it arrive.
+- **Not done:** ListenBrainz; inferring skips from other apps (they don't report
+  them — left unknown on purpose); historical import of Navidrome play counts.

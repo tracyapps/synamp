@@ -181,9 +181,12 @@ between the two services; the SQLite queue stays private to the worker.
   in its signal registry.
 - **Stable IDs.** `id` is a hash of the path relative to `LIBRARY_PATH`, so a
   sample (a symlink mirror of the library) and the full library agree.
-- **Titles come from paths for now** (`Artist/Album/NN Title.ext`, marked
-  `metadata_source: "path"`). No tag reader is installed; the planned join with
-  Navidrome's tags is by the same relative path.
+- **Names come from tags** (`tinytag`, MIT; title/artist/album/album artist and
+  duration), marked `metadata_source: "tags"`. Files without a title and artist
+  fall back to the folder layout (`Artist/Album/NN Title.ext`,
+  `metadata_source: "path"`). Tags are cached per file size and modification
+  time, so re-exports don't re-read the share; `--no-tags` skips them entirely.
+  Only tag-sourced names are ever sent to Last.fm.
 - Written atomically (temp file + rename), so a running brain never reads half a file.
 
 ```bash

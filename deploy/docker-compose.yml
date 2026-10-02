@@ -42,6 +42,9 @@ services:
       ND_SCANSCHEDULE: ${ND_SCANSCHEDULE:-1h}
       ND_LOGLEVEL: ${ND_LOGLEVEL:-info}
       ND_SESSIONTIMEOUT: 24h
+      # Report real file paths to Subsonic apps (new players), so the brain can match
+      # plays from other apps to analysed tracks. Existing players: see README.
+      ND_SUBSONIC_DEFAULTREPORTREALPATH: "true"
       # Clients choose original on LAN or request maxBitRate on cellular.
       ND_DEFAULTDOWNSAMPLINGFORMAT: opus
       ND_TRANSCODINGCACHESIZE: ${TRANSCODE_CACHE:-1GiB}
@@ -74,6 +77,12 @@ services:
       CORE_URL: http://core:4533
       PLAYLIST_DATA_PATH: /data/playlists.json
       PLAYLIST_API_TOKEN: ${PLAYLIST_API_TOKEN:?set PLAYLIST_API_TOKEN in deploy/.env for the app profile}
+      # Where Navidrome sees the library (its real-path prefix) — same mount as ours.
+      CORE_MUSIC_PATH: /music
+      # Optional Last.fm scrobbling. Leave empty to hide the feature.
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
+      LASTFM_API_SECRET: ${LASTFM_API_SECRET:-}
+      PUBLIC_URL: ${PUBLIC_URL:-}
     volumes:
       - ${MUSIC_PATH:?set MUSIC_PATH in deploy/.env}:/music:ro
       - ${DATA_DIR:?set DATA_DIR in deploy/.env}/brain:/data

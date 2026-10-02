@@ -9,6 +9,7 @@
  * clients of this state, not owners of it.
  */
 
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -26,6 +27,13 @@ import type { FeedbackInput, FeedbackView } from "./session/feedback.ts";
 import { SessionError, SessionStore } from "./session/session.ts";
 import type { Session } from "./session/session.ts";
 import { resolveInside, sendFile, StreamSigner } from "./session/stream.ts";
+import { POLICY_VERSION } from "./session/events.ts";
+import type { ListeningEvent } from "./session/events.ts";
+import { relativeFromReported, trackIdForPath } from "./subsonic/identity.ts";
+import { createSubsonicProxy } from "./subsonic/proxy.ts";
+import type { CapturedPlay } from "./subsonic/proxy.ts";
+import { LastfmClient, LastfmError } from "./lastfm/client.ts";
+import { Scrobbler } from "./lastfm/scrobbler.ts";
 
 const STARTED_AT = Date.now();
 const library = new LibrarySource(config.librarySignalsPath);
@@ -33,6 +41,70 @@ const dataDir = dirname(config.playlistDataPath);
 const events = new EventLog(config.eventsPath || join(dataDir, "events.jsonl"));
 const sessions = new SessionStore(config.sessionPath || join(dataDir, "session.json"), events);
 const signer = new StreamSigner(config.playlistApiToken || undefined);
+const scrobbler = new Scrobbler(config.lastfmStatePath || join(dataDir, "lastfm.json"),
+  config.lastfmApiKey && config.lastfmApiSecret ? new LastfmClient({ apiKey: config.lastfmApiKey, secret: config.lastfmApiSecret }) : undefined);
+
+/** After new events: tell Last.fm what's playing now, and send finished plays soon. */
+let flushTimer: NodeJS.Timeout | undefined;
+function afterEvents(added: readonly ListeningEvent[]): void {
+  if (!scrobbler.configured) return;
+  const lib = library.get();
+  for (const event of added) {
+    if (event.signal === "started") {
+      const track = lib.tracks.find((item) => item.id === event.track_id);
+      if (track?.metadata_source === "tags" && track.artist) {
+        void scrobbler.nowPlaying({ artist: track.artist, track: track.title, ...(track.album ? { album: track.album } : {}) });
+      }
+    }
+    if (event.signal === "now_playing" && typeof event.detail?.title === "string" && typeof event.detail?.artist === "string") {
+      void scrobbler.nowPlaying({ artist: event.detail.artist, track: event.detail.title, ...(typeof event.detail.album === "string" ? { album: event.detail.album } : {}) });
+    }
+  }
+  clearTimeout(flushTimer);
+  flushTimer = setTimeout(() => { void scrobbler.flush(events.all(), library.get()); }, 5_000);
+}
+setInterval(() => { void scrobbler.flush(events.all(), library.get()).catch((error) => console.error("Last.fm flush failed", error)); }, 60_000).unref();
+
+/** Plays reported by other Subsonic apps, mapped onto library IDs by real path. */
+function recordCaptured(plays: CapturedPlay[]): void {
+  const added: ListeningEvent[] = [];
+  for (const play of plays) {
+    const relative = relativeFromReported(play.song?.path, config.coreMusicPath);
+    const trackId = relative ? trackIdForPath(relative) : `subsonic:${play.songId}`;
+    const when = play.time ?? Date.now();
+    const key = `${play.user ?? ""}|${play.client ?? ""}|${play.songId}|${play.submission}|${play.time ?? Math.floor(when / 60_000)}`;
+    const id = `${play.submission ? "ext" : "np"}:${createHash("sha256").update(key).digest("hex").slice(0, 24)}`;
+    const detail: Record<string, string | number | boolean> = { mapped: !!relative, subsonic_id: play.songId, played_at: when };
+    if (play.client) detail.client = play.client;
+    if (play.song?.title) detail.title = play.song.title;
+    if (play.song?.artist) detail.artist = play.song.artist;
+    if (play.song?.album) detail.album = play.song.album;
+    if (play.song?.duration) detail.duration_s = play.song.duration;
+    const result = events.append({
+      id, ts: when, signal: play.submission ? "external_play" : "now_playing", track_id: trackId,
+      scope: play.submission ? "global" : "none", source: "subsonic", policy_version: POLICY_VERSION, detail,
+    });
+    if (!result.duplicate) added.push(result.event);
+  }
+  afterEvents(added);
+}
+const subsonic = createSubsonicProxy({ coreUrl: config.coreUrl, onPlays: recordCaptured });
+
+function callbackBase(req: IncomingMessage): string {
+  if (config.publicUrl) return config.publicUrl;
+  const proto = String(req.headers["x-forwarded-proto"] ?? "http").split(",")[0]!.trim();
+  const host = String(req.headers["x-forwarded-host"] ?? req.headers.host ?? "localhost").split(",")[0]!.trim();
+  return `${proto}://${host}`;
+}
+
+const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+function sendPage(res: ServerResponse, status: number, title: string, message: string): void {
+  const html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(title)} · SynAmp</title><body style="font:16px/1.6 system-ui;background:#0e0e10;color:#ececec;max-width:36rem;margin:15vh auto;padding:0 20px">
+<h1 style="font-size:22px">${escapeHtml(title)}</h1><p>${escapeHtml(message)}</p><p><a style="color:#e0a33e" href="/">Back to SynAmp</a></p></body></html>`;
+  res.writeHead(status, { "content-type": "text/html; charset=utf-8", "content-length": Buffer.byteLength(html), "x-content-type-options": "nosniff" });
+  res.end(html);
+}
 
 /** Derived feedback, recomputed only when the log grows. */
 let feedbackCache: { size: number; view: FeedbackView } | undefined;
@@ -96,8 +168,23 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
+  // Subsonic apps: forwarded to the library core as-is; Navidrome does the auth.
+  if (url.pathname.startsWith("/rest/")) return subsonic(req, res);
+
+  // The Last.fm sign-in callback is a browser navigation, so it carries no bearer token.
+  // The one-time state nonce issued by /lastfm/connect is what authorises it.
+  if (path === "/api/v1/lastfm/callback" && req.method === "GET") {
+    try {
+      const name = await scrobbler.completeConnect(url.searchParams.get("state"), url.searchParams.get("token"));
+      return sendPage(res, 200, "Last.fm connected", `Scrobbling is on for ${name}. You can close this tab — plays from now on will be sent.`);
+    } catch (error) {
+      return sendPage(res, 400, "Last.fm was not connected", (error as Error).message);
+    }
+  }
+
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
-  const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events"]
+  const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
+    "/api/v1/lastfm", "/api/v1/listening"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -135,6 +222,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/session/report" && req.method === "POST") {
     const input = await body(req);
     const result = sessions.report(String(input.event_id ?? ""), input.report);
+    afterEvents(result.derived);
     return send(res, 200, { session: sessionView(result.session), derived: result.derived.map((event) => event.signal), duplicate: result.duplicate });
   }
   if (path === "/api/v1/feedback" && req.method === "POST") {
@@ -149,6 +237,39 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       }
     }
     return send(res, result.duplicate ? 200 : 201, { event: result.event, duplicate: result.duplicate });
+  }
+  if (path === "/api/v1/listening" && req.method === "GET") {
+    const external = events.all().filter((event) => event.source === "subsonic");
+    const byClient: Record<string, number> = {};
+    for (const event of external) if (event.signal === "external_play") {
+      const client = String(event.detail?.client ?? "unknown app");
+      byClient[client] = (byClient[client] ?? 0) + 1;
+    }
+    return send(res, 200, {
+      other_apps: {
+        plays: external.filter((event) => event.signal === "external_play").length,
+        unmatched: external.filter((event) => event.signal === "external_play" && event.detail?.mapped === false).length,
+        by_client: byClient,
+        last_at: external.at(-1)?.ts ?? null,
+      },
+      lastfm: scrobbler.status(events.all(), library.get()),
+    });
+  }
+  if (path === "/api/v1/lastfm/connect" && req.method === "POST") return send(res, 200, { url: scrobbler.connectUrl(callbackBase(req)) });
+  if (path === "/api/v1/lastfm/settings" && req.method === "POST") {
+    const input = await body(req);
+    if (typeof input.enabled !== "boolean") throw new PlaylistError("enabled must be true or false");
+    scrobbler.setEnabled(input.enabled);
+    if (input.enabled) afterEvents([]);
+    return send(res, 200, { lastfm: scrobbler.status(events.all(), library.get()) });
+  }
+  if (path === "/api/v1/lastfm/disconnect" && req.method === "POST") {
+    scrobbler.disconnect();
+    return send(res, 200, { lastfm: scrobbler.status(events.all(), library.get()) });
+  }
+  if (path === "/api/v1/lastfm/flush" && req.method === "POST") {
+    const result = await scrobbler.flush(events.all(), library.get());
+    return send(res, 200, { result, lastfm: scrobbler.status(events.all(), library.get()) });
   }
   if (path === "/api/v1/events" && req.method === "GET") {
     const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") ?? 50) || 50));
@@ -230,6 +351,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
+    if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
     send(res, 500, { error: "internal_error" });
   });

@@ -12,6 +12,7 @@
  *   remove .............. hidden from THAT playlist only (undo = restore)
  *   early skip .......... session only; twice in one playlist → small penalty there
  *   global negative ..... only when explicit, or corroborated across ≥ 2 playlists
+ *   played in another app  small global boost (Subsonic apps report plays, never skips)
  *
  * Interruptions, errors and seeks never count. Everything decays: playlist
  * signals with a 30-day half-life, global ones with 180 days.
@@ -132,6 +133,9 @@ export function deriveFeedback(events: readonly ListeningEvent[], now = Date.now
         }
         count++;
         break;
+      case "external_play":
+        // Another app counted a play. Weak and library-wide: those apps never report skips.
+        bump(global, t, "played in your other apps", 0.25 * g); count++; break;
       case "full_play": if (pid) bump(playlist, `${pid}\u0000${t}`, "heard it through here", 0.5 * p); count++; break;
       case "repeat": if (pid) bump(playlist, `${pid}\u0000${t}`, "replayed here", 1 * p); count++; break;
       case "skip_early":
@@ -144,7 +148,7 @@ export function deriveFeedback(events: readonly ListeningEvent[], now = Date.now
         }
         count++;
         break;
-      default: break; // interrupted, playback_error, seek, started, exposure, receipt: never preference
+      default: break; // interrupted, playback_error, seek, started, now_playing, exposure, receipt: never preference
     }
   }
 

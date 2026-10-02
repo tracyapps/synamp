@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Describe, { ResultView } from "./Describe";
 import type { Evaluation } from "./Describe";
 import Player from "./Player";
+import Listening from "./Listening";
 import type { SessionView } from "./Player";
 
 type Track = { id: string; title: string; artist?: string };
@@ -196,6 +197,7 @@ export default function App() {
               {resolved.length > 200 && <p className="muted">Showing the first 200 tracks.</p>}</div>}
           </> : <div className="empty"><span>♫</span><h2>Select a playlist</h2><p>Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole branch into one live list.</p></div>}</section>
         </div>
+        <Listening request={call} />
         <Player request={call} session={session} onSession={setSession}
           playlistName={(id) => nodes.find((node) => node.id === id)?.name}
           onChanged={() => { if (selectedId) onSelect(selectedId).catch(() => undefined); }} />

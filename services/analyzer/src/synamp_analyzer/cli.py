@@ -142,7 +142,7 @@ def _cmd_inspect(cfg: AnalyzerConfig, limit: int) -> int:
     return 0
 
 
-def _cmd_export(cfg: AnalyzerConfig, out: str | None) -> int:
+def _cmd_export(cfg: AnalyzerConfig, out: str | None, read_tags: bool = True) -> int:
     from .store import Database
 
     destination = Path(out) if out else cfg.cache_dir / "library-signals.json"
@@ -150,9 +150,9 @@ def _cmd_export(cfg: AnalyzerConfig, out: str | None) -> int:
         print(f"export: no analyzer database at {cfg.db_path}")
         return 1
     with Database(cfg.db_path) as db:
-        counts = write_export(db, cfg.library_path, destination)
+        counts = write_export(db, cfg.library_path, destination, read_tags)
     print(f"export: library={cfg.library_path}")
-    print(f"export: wrote {counts['exported']} tracks to {destination}")
+    print(f"export: wrote {counts['exported']} tracks to {destination} ({counts['tagged']} named from tags, the rest from folders)")
     print(
         f"export: skipped {counts['missing_on_disk']} missing, {counts['outside_root']} outside the library root; "
         f"{counts['no_results']} not analysed yet, {counts['withheld_stale']} with stale values withheld, "
@@ -216,6 +216,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     export = sub.add_parser("export", help="write analysed signals as JSON for the brain")
     export.add_argument("--out", default=None, help="destination file (default: cache dir)")
+    export.add_argument("--no-tags", action="store_true", help="skip reading file tags (names come from folders)")
 
     return parser
 
@@ -234,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "inspect":
         return _cmd_inspect(cfg, args.limit)
     if args.command == "export":
-        return _cmd_export(cfg, args.out)
+        return _cmd_export(cfg, args.out, not args.no_tags)
     return 2
 
 

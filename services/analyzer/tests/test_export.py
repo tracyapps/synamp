@@ -143,3 +143,32 @@ def test_path_metadata_and_ids() -> None:
     assert describe_from_path(PurePosixPath("A/B/1999.flac"))["title"] == "1999"
     assert track_id(PurePosixPath("A/b.flac")) != track_id(PurePosixPath("a/b.flac"))
     assert track_id(PurePosixPath("A/b.flac")).startswith("p:")
+
+
+def test_names_come_from_tags_and_fall_back_to_folders(tmp_path: Path) -> None:
+    import numpy as np
+    import soundfile as sf
+
+    library = tmp_path / "music"
+    folder = library / "Folder Artist" / "Folder Album"
+    folder.mkdir(parents=True)
+    with sf.SoundFile(str(folder / "01 - tagged.flac"), "w", 44100, 1) as handle:
+        handle.title, handle.artist, handle.album = "Real Title", "Real Artist", "Real Album"
+        handle.write(np.zeros(44100 * 2))
+    sine(folder / "02 - untagged.flac")
+    config = config_for(library, tmp_path)
+    run_scan(config, progress=quiet)
+    with Database(config.db_path) as db:
+        document = build_export(db, config.library_path)
+        tagged = by_path(document)["Folder Artist/Folder Album/01 - tagged.flac"]
+        assert tagged["title"] == "Real Title" and tagged["artist"] == "Real Artist" and tagged["album"] == "Real Album"
+        assert tagged["metadata_source"] == "tags"
+        assert abs(tagged["duration_s"] - 2.0) < 0.05
+        plain = by_path(document)["Folder Artist/Folder Album/02 - untagged.flac"]
+        assert plain["metadata_source"] == "path" and plain["title"] == "untagged"
+        assert document["counts"]["tagged"] == 1
+        # Cached: a second export does not need the file.
+        cached = db.conn.execute("SELECT COUNT(*) FROM tag_cache").fetchone()[0]
+        assert cached == 2
+        assert by_path(build_export(db, config.library_path, read_file_tags=False))[
+            "Folder Artist/Folder Album/01 - tagged.flac"]["metadata_source"] == "path"

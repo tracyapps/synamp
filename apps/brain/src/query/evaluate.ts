@@ -34,6 +34,9 @@ export type LibraryTrack = {
   signals?: Record<string, number | string | null | undefined>;
   /** Library-relative file path (from the analyzer export); needed to stream audio. */
   path?: string;
+  /** "tags" when names were read from the file; "path" when guessed from folders. */
+  metadata_source?: "tags" | "path";
+  album_artist?: string;
   /** Audio embedding for similarity (optional). */
   embedding?: number[];
 };

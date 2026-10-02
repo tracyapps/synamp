@@ -271,7 +271,8 @@ test("a saved plan picks up a newly analysed track from the library file", () =>
 
 test("every signal the analyzer exports is registered here", () => {
   const exporter = readFileSync(new URL("../../../../services/analyzer/src/synamp_analyzer/export.py", import.meta.url), "utf8");
-  const block = exporter.slice(exporter.indexOf("EXPORTED_SIGNALS"), exporter.indexOf("STATUS_FIELDS"));
+  const start = exporter.indexOf("EXPORTED_SIGNALS: dict");
+  const block = exporter.slice(start, exporter.indexOf("STATUS_FIELDS: dict", start));
   const names = [...block.matchAll(/"([a-z_]+)"/g)].map((match) => match[1]!).filter((name) => !["dsp_core", "beat"].includes(name));
   assert.ok(names.length > 10, "parsed the exporter's field list");
   for (const name of names) {

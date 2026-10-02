@@ -94,6 +94,29 @@ Phase 1 complete.
 The first Navidrome scan of a ~4,200-album library takes a few minutes; watch it
 at `http://<nas>:4533/`.
 
+## Plays from other apps, and Last.fm
+
+Native apps reach Navidrome **through the brain** (`/rest/*` → brain → core).
+The brain passes every call through untouched and, when Navidrome accepts an
+app's `scrobble`, records the play. For that to work:
+
+- **Point apps at the edge** (`http://<nas>:8080`), never at `:4533` directly —
+  plays sent straight to Navidrome bypass SynAmp.
+- **Real paths.** Compose sets `ND_SUBSONIC_DEFAULTREPORTREALPATH=true`, which
+  applies to players Navidrome sees for the first time. For apps you already
+  connected, open Navidrome → your profile → **Players**, pick each app and turn
+  on **Report Real Path**. Without it, plays are still recorded but show as
+  “could not be matched” in SynAmp.
+- Apps report plays, not skips, so they only ever count as a mild positive.
+
+**Last.fm (optional).** Put `LASTFM_API_KEY` / `LASTFM_API_SECRET` in `.env`,
+restart the app profile, then in SynAmp open **Listening history & Last.fm →
+Connect Last.fm**. It scrobbles plays from the SynAmp player and from your
+other apps, only while switched on, using names from tags (never folder
+guesses). **Do not also link Last.fm inside Navidrome** (Settings → Personal →
+Last.fm), or plays from other apps are sent twice. The session key is stored in
+`DATA_DIR/brain/lastfm.json` — keep that directory private.
+
 ## 3. Remote access
 
 Put **Tailscale** in front rather than port-forwarding: install the Synology
