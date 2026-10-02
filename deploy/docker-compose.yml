@@ -83,6 +83,8 @@ services:
       LASTFM_API_KEY: ${LASTFM_API_KEY:-}
       LASTFM_API_SECRET: ${LASTFM_API_SECRET:-}
       PUBLIC_URL: ${PUBLIC_URL:-}
+      # Contact (email or URL) for MusicBrainz's User-Agent; needed for the missing-tracks list.
+      MUSICBRAINZ_CONTACT: ${MUSICBRAINZ_CONTACT:-}
     volumes:
       - ${MUSIC_PATH:?set MUSIC_PATH in deploy/.env}:/music:ro
       - ${DATA_DIR:?set DATA_DIR in deploy/.env}/brain:/data

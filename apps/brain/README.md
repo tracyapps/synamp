@@ -136,6 +136,17 @@ protected by a one-time state value). Then:
   pauses until you reconnect; other refusals are recorded once and shown.
 - “Now playing” is sent best-effort when a track starts.
 
+## Missing tracks (`src/library/`)
+
+`albums.ts` groups the library index into album folders and compares a folder
+with a MusicBrainz release; `musicbrainz.ts` is a polite client (one shared
+queue, ~1 request/s, User-Agent with `MUSICBRAINZ_CONTACT` — required to
+start matching); `missing.ts` holds the background matcher, the per-folder
+results (`albums.json`), your notes (`missing-notes.json`) and the list itself,
+which is recomputed from the current library so re-ripped tracks drop off on
+their own. Nothing here touches the music files. Details and decisions:
+`docs/synamp/plans/LIBRARY-CARE.md` step 3.
+
 ## Endpoints
 
 | Method | Path | Purpose |
@@ -151,6 +162,13 @@ protected by a one-time state value). Then:
 | GET | `/api/v1/listening` | plays captured from other apps + Last.fm status |
 | POST | `/api/v1/analysis/progress` | the analyzer's progress report (`synamp.analysis-progress/1`) |
 | GET | `/api/v1/library/health` | latest analyzer progress (with `stale`) + library index stats |
+| GET | `/api/v1/missing` | summary, missing rows, review queue, found-again, matcher state |
+| GET | `/api/v1/missing.csv` | the missing list as CSV |
+| POST | `/api/v1/missing/:id` | `{status?, tags?, note?}` for one missing track |
+| POST | `/api/v1/missing/match` | `{action: "start" \| "pause"}` the MusicBrainz matcher |
+| GET | `/api/v1/albums/record?key=` | a folder's match and alternative editions |
+| POST | `/api/v1/albums/search` | `{key, title?, artist?}` search MusicBrainz by hand |
+| POST | `/api/v1/albums/choose` | `{key, release_id \| null}` pick an edition, or skip the folder |
 | POST | `/api/v1/lastfm/connect` | → `{url}` to sign in on Last.fm |
 | GET | `/api/v1/lastfm/callback?state&token` | Last.fm returns here (state-protected, no bearer) |
 | POST | `/api/v1/lastfm/settings` | `{enabled}` turn scrobbling on/off |
@@ -174,7 +192,7 @@ All via environment (see `src/config.ts`): `BRAIN_PORT`, `BRAIN_HOST`,
 `DATABASE_URL`, `LIBRARY_PATH`, `CORE_URL`, `PLAYLIST_DATA_PATH`,
 `PLAYLIST_API_TOKEN`, `LIBRARY_SIGNALS_PATH`, `EVENTS_PATH`, `SESSION_PATH`,
 `CORE_MUSIC_PATH` (default `/music`), `LASTFM_API_KEY`, `LASTFM_API_SECRET`,
-`LASTFM_STATE_PATH`, `PUBLIC_URL`. Events, session and Last.fm state default to
+`LASTFM_STATE_PATH`, `PUBLIC_URL`, `MUSICBRAINZ_CONTACT`. Events, session and Last.fm state default to
 `events.jsonl` / `session.json` / `lastfm.json` beside the playlist store. The token protects every `/api/v1` route except streams, which use
 signed links derived from it.
 

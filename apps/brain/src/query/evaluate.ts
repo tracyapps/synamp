@@ -41,6 +41,13 @@ export type LibraryTrack = {
   aliases?: string[];
   /** sha256 of the decoded audio (analyzer stage "identity"); equal for duplicate copies. */
   audio_hash?: string;
+  /** From tags (or a leading number in the filename): used to find missing tracks. */
+  track_no?: number;
+  track_total?: number;
+  disc_no?: number;
+  disc_total?: number;
+  /** MusicBrainz release ID, when the file was tagged with one (e.g. by Picard). */
+  mb_albumid?: string;
   /** Audio embedding for similarity (optional). */
   embedding?: number[];
 };

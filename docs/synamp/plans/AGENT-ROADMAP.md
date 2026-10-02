@@ -349,3 +349,15 @@ disc prefixes). Analyzer 77/77, brain 58/58; live check: a real analyzer run on
 38 synthetic files reported to a running brain (37 done, 1 unreadable, 1
 duplicate recognised); the panel was checked in a browser with a simulated
 45k-track mid-run report. Next: step 3, missing tracks (MusicBrainz matching).
+
+### 2026-10-02 — Library care step 3: missing-tracks list
+
+Brain `library/albums.ts` (folder grouping, loose title matching, release diff),
+`library/musicbrainz.ts` (rate-limited client, contact UA), `library/missing.ts`
+(background matcher with edition preference and review queue, notes store,
+recomputed list, CSV). Analyzer export adds track/disc numbers, year and
+`mb_albumid`. Web `MissingTracks.tsx`: matcher controls, filters, sorting, tags
+and notes, edition chooser, found-again, CSV download. beets deliberately not
+used for this read-only step (see LIBRARY-CARE.md). Brain 70/70, analyzer 78/78,
+plus a live run against MusicBrainz. Next: step 4, organise (propose → review →
+apply), the first step that writes to the library.

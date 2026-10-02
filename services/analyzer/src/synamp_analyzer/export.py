@@ -127,14 +127,51 @@ def read_tags(path: Path) -> dict:
             out[key] = cleaned
     if isinstance(tag.duration, (int, float)) and tag.duration > 0:
         out["duration_s"] = round(float(tag.duration), 3)
+    # Numbers and release identity, used to find missing tracks.
+    for key, value in (("track_no", tag.track), ("track_total", tag.track_total), ("disc_no", tag.disc), ("disc_total", tag.disc_total)):
+        if isinstance(value, int) and 0 < value < 1000:
+            out[key] = value
+    year = _year(tag.year)
+    if year:
+        out["year"] = year
+    other = getattr(tag, "other", None) or {}
+    for key, values in other.items():
+        normal = key.lower().replace(" ", "_")
+        if normal in ("musicbrainz_albumid", "musicbrainz_album_id"):
+            value = values[0] if isinstance(values, list) and values else values
+            if isinstance(value, str) and _MBID.match(value.strip().lower()):
+                out["mb_albumid"] = value.strip().lower()
     return out
+
+
+_MBID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+TAG_CACHE_VERSION = 2
+
+
+def _year(value: object) -> int | None:
+    match = re.match(r"^\s*(\d{4})", str(value or ""))
+    year = int(match.group(1)) if match else None
+    return year if year and 1877 <= year <= 2100 else None
+
+
+def number_from_filename(relative: PurePosixPath) -> dict:
+    """'1-07 Name' → disc 1, track 7; '07 - Name' → track 7. {} when there is no leading number."""
+    match = re.match(r"^\s*(?:(\d{1,2})[-.])?(\d{1,3})(?=\s*(?:[-._]\s*|\s+)\S)", relative.stem)
+    if not match:
+        return {}
+    out = {"track_no": int(match.group(2))}
+    if match.group(1):
+        out["disc_no"] = int(match.group(1))
+    return out if 0 < out["track_no"] < 1000 else {}
 
 
 def _cached_tags(db: Database, path: Path, size: int, mtime: float) -> dict:
     row = db.conn.execute("SELECT size_bytes, mtime, payload FROM tag_cache WHERE path = ?", (str(path),)).fetchone()
     if row is not None and row["size_bytes"] == size and row["mtime"] == mtime:
-        return json.loads(row["payload"])
-    tags = read_tags(path)
+        cached = json.loads(row["payload"])
+        if cached.get("_v") == TAG_CACHE_VERSION:
+            return cached
+    tags = {**read_tags(path), "_v": TAG_CACHE_VERSION}
     db.conn.execute(
         "INSERT INTO tag_cache (path, size_bytes, mtime, payload) VALUES (?, ?, ?, ?) "
         "ON CONFLICT(path) DO UPDATE SET size_bytes = excluded.size_bytes, mtime = excluded.mtime, payload = excluded.payload",
@@ -237,6 +274,9 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True) 
             "path": str(relative),
             **names,
             **({"duration_s": tags["duration_s"]} if "duration_s" in tags else {}),
+            # Track/disc numbers: from tags, else from a leading number in the filename.
+            **{key: value for key, value in {**number_from_filename(relative), **{k: tags[k] for k in ("track_no", "disc_no") if k in tags}}.items()},
+            **{key: tags[key] for key in ("track_total", "disc_total", "year", "mb_albumid") if key in tags},
             **status,
             **({"aliases": aliases} if aliases else {}),
             **({"audio_hash": payload["audio_hash"]} if "identity" in current & stored and payload.get("audio_hash") else {}),

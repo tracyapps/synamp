@@ -223,6 +223,9 @@ between the two services; the SQLite queue stays private to the worker.
   `metadata_source: "path"`). Tags are cached per file size and modification
   time, so re-exports don't re-read the share; `--no-tags` skips them entirely.
   Only tag-sourced names are ever sent to Last.fm.
+- **Album facts for the missing-tracks list:** `track_no`/`disc_no` (from tags,
+  else a leading `07 -` / `1-07` in the filename), `track_total`, `disc_total`,
+  `year`, and `mb_albumid` when the file carries a MusicBrainz release ID.
 - Written atomically (temp file + rename), so a running brain never reads half a file.
 
 ```bash

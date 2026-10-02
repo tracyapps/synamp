@@ -175,3 +175,29 @@ def test_names_come_from_tags_and_fall_back_to_folders(tmp_path: Path) -> None:
         assert cached == 2
         assert by_path(build_export(db, config.library_path, read_file_tags=False))[
             "Folder Artist/Folder Album/01 - tagged.flac"]["metadata_source"] == "path"
+
+
+def test_numbers_and_year_for_finding_missing_tracks(tmp_path: Path) -> None:
+    from synamp_analyzer.export import number_from_filename
+
+    assert number_from_filename(PurePosixPath("A/B/07 - Song.flac")) == {"track_no": 7}
+    assert number_from_filename(PurePosixPath("A/B/1-07 Song.flac")) == {"track_no": 7, "disc_no": 1}
+    assert number_from_filename(PurePosixPath("A/B/1999.flac")) == {}
+    assert number_from_filename(PurePosixPath("A/B/Song.flac")) == {}
+
+    import numpy as np
+    import soundfile as sf
+
+    library = tmp_path / "music"
+    folder = library / "Artist" / "Album"
+    folder.mkdir(parents=True)
+    with sf.SoundFile(str(folder / "03 - tagged.flac"), "w", 44100, 1) as handle:
+        handle.title, handle.artist, handle.album = "Song", "Artist", "Album"
+        handle.tracknumber, handle.date = "5", "1997-03-01"
+        handle.write(np.zeros(44100))
+    config = config_for(library, tmp_path)
+    run_scan(config, progress=quiet)
+    with Database(config.db_path) as db:
+        track = by_path(build_export(db, config.library_path))["Artist/Album/03 - tagged.flac"]
+    assert track["track_no"] == 5, "the tag wins over the filename"
+    assert track["year"] == 1997

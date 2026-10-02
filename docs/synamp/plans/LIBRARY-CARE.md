@@ -1,6 +1,6 @@
 # Library care — leave the library better than we found it
 
-Status: planned 2026-10-02; steps 1–2 done, step 3 (missing tracks) next. Owner request, shaped against
+Status: planned 2026-10-02; steps 1–3 done, step 4 (organise) next. Owner request, shaped against
 the existing plan: ROADMAP Phase 1 already expects a metadata cleanup pass, and
 ARCHITECTURE §16 says to clean metadata *before* the semantic layer. The Brain
 dossier already chose the tools: MusicBrainz (CC0 core) for release data and
@@ -112,7 +112,49 @@ copies). Also: `synamp-analyze stats` now prints per-stage progress
 (`--json` too). Tests: analyzer 77/77 (snapshot, ETA, delivery with token,
 unreachable/failing brain, throttling), brain 58/58.
 
-### 3 — Missing tracks: extra sources worth importing
+### 3 — Missing tracks (done 2026-10-02)
+
+**Engine decision.** beets' `missing` plugin only works on albums already
+imported into beets' own database with MusicBrainz IDs, which means running
+its importer over the library first. For a read-only report that is the wrong
+way round, so step 3 talks to MusicBrainz directly (brain `library/`). beets is
+still the candidate engine for step 4/5, where it would actually write.
+
+How it works:
+
+- **Album folders** are the unit (disc sub-folders like `CD2/` fold in; loose
+  files at the root are skipped). Names come from tags, else the folder; the
+  year from tags or `Album (1998)`.
+- **Matching** runs in the brain as a background job at MusicBrainz's pace
+  (one request per ~1.1 s, User-Agent with `MUSICBRAINZ_CONTACT`). A
+  MusicBrainz release ID in the tags (Picard) is used directly. Otherwise:
+  search, then compare up to three candidate tracklists with the files (titles
+  compared loosely — remaster suffixes, accents, punctuation, `&`; disc/track
+  number plus length as a fallback). The plain official CD edition wins ties
+  over deluxe/bonus editions; the others stay as "Wrong edition?" choices.
+  Uncertain folders and ones search couldn't find go to **Needs your choice**.
+- **The list** is recomputed from the current library every time, so a
+  re-ripped track disappears by itself after the next export. Your status
+  (Missing / Want / Ordered / Have the CD / Don't need), tags and notes are
+  kept separately and survive re-matching; noted tracks that turn up move to
+  **Found again**. CSV download for spreadsheets.
+- Matching is resumable (results saved per folder), pausable, retries
+  MusicBrainz's busy responses with backoff up to 15 min, and never loops on a
+  folder within a run.
+
+The analyzer export now carries `track_no`/`disc_no` (tags, else a leading
+number in the filename), `track_total`, `disc_total`, `year` and `mb_albumid`.
+
+Confirmed: brain 70/70 (12 new: grouping, title matching, one-track album lists
+nine missing, number+length fallback, polite client spacing and escaping,
+tag-ID lookup with one request, edition choice, review/no-match, auto-clearing
+with notes kept, choosing/skipping editions, matcher resume/backoff/errors, CSV
+quoting); analyzer 78/78. **Live against real MusicBrainz:** a folder holding
+only "03 - Gravel" from *Little Plastic Castle* matched the 1998 US CD edition
+and listed the other 11 tracks with lengths; a made-up album went to review;
+status/tags saved and appeared in the CSV.
+
+### Missing tracks: extra sources worth importing
 
 - An old **iTunes Library XML** / `.itl` backup lists every track iTunes ever
   knew, with play counts — the most exact record of what was lost.

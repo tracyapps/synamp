@@ -35,6 +35,9 @@ import type { CapturedPlay } from "./subsonic/proxy.ts";
 import { LastfmClient, LastfmError } from "./lastfm/client.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
 import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
+import { groupAlbums } from "./library/albums.ts";
+import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
+import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
 
 const STARTED_AT = Date.now();
 const library = new LibrarySource(config.librarySignalsPath);
@@ -43,6 +46,18 @@ const events = new EventLog(config.eventsPath || join(dataDir, "events.jsonl"));
 const sessions = new SessionStore(config.sessionPath || join(dataDir, "session.json"), events);
 const signer = new StreamSigner(config.playlistApiToken || undefined);
 const analysisStatus = new AnalysisStatus(join(dataDir, "analysis-status.json"));
+const albumMatches = new AlbumMatches(join(dataDir, "albums.json"));
+const missingNotes = new MissingNotes(join(dataDir, "missing-notes.json"));
+/** One client for the whole process, so every MusicBrainz request shares one rate limit. */
+let musicbrainz: MusicBrainz | undefined;
+const mbClient = () => (musicbrainz ??= new MusicBrainz({ contact: config.musicbrainzContact }));
+const matcher = new Matcher(albumMatches, mbClient, () => library.get());
+function matcherView() {
+  return {
+    state: matcher.state, current: matcher.current, done_this_run: matcher.done, last_error: matcher.lastError,
+    waiting: albumMatches.due(groupAlbums(library.get())).length, contact_set: !!config.musicbrainzContact,
+  };
+}
 const scrobbler = new Scrobbler(config.lastfmStatePath || join(dataDir, "lastfm.json"),
   config.lastfmApiKey && config.lastfmApiSecret ? new LastfmClient({ apiKey: config.lastfmApiKey, secret: config.lastfmApiSecret }) : undefined);
 
@@ -190,7 +205,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
 
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
-    "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis"]
+    "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -252,6 +267,51 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/library/health" && req.method === "GET") {
     return send(res, 200, { analysis: analysisStatus.view(), library: libraryStats(library.get()) });
   }
+  // --- missing tracks (read-only toward the music) ----------------------------
+  if (path === "/api/v1/missing" && req.method === "GET") {
+    return send(res, 200, { ...missingList(library.get(), albumMatches, missingNotes), matcher: matcherView() });
+  }
+  if (path === "/api/v1/missing.csv" && req.method === "GET") {
+    const csv = missingCsv(missingList(library.get(), albumMatches, missingNotes).rows);
+    res.writeHead(200, { "content-type": "text/csv; charset=utf-8", "content-disposition": 'attachment; filename="synamp-missing-tracks.csv"',
+      "content-length": Buffer.byteLength(csv) });
+    return void res.end(csv);
+  }
+  const missingItem = path.match(/^\/api\/v1\/missing\/([0-9a-f-]{36}:\d{1,2}-\d{1,3})$/);
+  if (missingItem && req.method === "POST") {
+    return send(res, 200, { note: missingNotes.update(missingItem[1]!, await body(req)) });
+  }
+  if (path === "/api/v1/missing/match" && req.method === "POST") {
+    const input = await body(req);
+    if (input.action === "start") {
+      const run = matcher.start();
+      run?.catch((error) => console.error("Album matching stopped", error));
+    } else if (input.action === "pause") matcher.pause();
+    else throw new MissingError('action must be "start" or "pause"');
+    return send(res, 200, { matcher: matcherView() });
+  }
+  const unitFor = (key: unknown) => {
+    const unit = groupAlbums(library.get()).find((item) => item.key === key);
+    if (!unit) throw new MissingError("No album folder with that key", 404);
+    return unit;
+  };
+  if (path === "/api/v1/albums/record" && req.method === "GET") {
+    const unit = unitFor(url.searchParams.get("key"));
+    return send(res, 200, { album: { key: unit.key, title: unit.title, artist: unit.artist, tracks: unit.tracks.length }, record: albumMatches.records[unit.key] ?? null });
+  }
+  if (path === "/api/v1/albums/search" && req.method === "POST") {
+    const input = await body(req);
+    const unit = unitFor(input.key);
+    const title = typeof input.title === "string" && input.title.trim() ? input.title.trim().slice(0, 200) : unit.title;
+    const artist = typeof input.artist === "string" ? input.artist.trim().slice(0, 200) : unit.artist;
+    return send(res, 200, { candidates: await mbClient().searchReleases(title, artist || undefined) });
+  }
+  if (path === "/api/v1/albums/choose" && req.method === "POST") {
+    const input = await body(req);
+    const releaseId = input.release_id === null ? null : String(input.release_id ?? "");
+    return send(res, 200, { record: await chooseRelease(albumMatches, unitFor(input.key), releaseId, mbClient()) });
+  }
+
   if (path === "/api/v1/listening" && req.method === "GET") {
     const external = events.all().filter((event) => event.source === "subsonic");
     const byClient: Record<string, number> = {};
@@ -365,7 +425,8 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError) return send(res, error.status, { error: error.message });
+    if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
     send(res, 500, { error: "internal_error" });

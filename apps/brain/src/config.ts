@@ -41,6 +41,11 @@ export const config = {
   lastfmStatePath: env("LASTFM_STATE_PATH", ""),
   /** Public base URL (e.g. https://music.example.net) for the Last.fm sign-in callback. Derived from the request if empty. */
   publicUrl: env("PUBLIC_URL", ""),
+  /**
+   * Contact (email or URL) sent to MusicBrainz in the User-Agent, as its API
+   * terms ask. Needed to match albums for the missing-tracks list.
+   */
+  musicbrainzContact: env("MUSICBRAINZ_CONTACT", ""),
   /** Required by the deployed app profile; optional for localhost development. */
   playlistApiToken: env("PLAYLIST_API_TOKEN", ""),
 } as const;

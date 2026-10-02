@@ -4,6 +4,7 @@ import type { Evaluation } from "./Describe";
 import Player from "./Player";
 import Listening from "./Listening";
 import LibraryHealth from "./LibraryHealth";
+import MissingTracks from "./MissingTracks";
 import type { SessionView } from "./Player";
 
 type Track = { id: string; title: string; artist?: string };
@@ -105,6 +106,18 @@ export default function App() {
     } catch (cause) { setError((cause as Error).message); }
   }
 
+  /** Fetch with the access token, then hand the browser a file (an <a href> can't send the token). */
+  async function download(path: string, filename: string) {
+    const response = await fetch(`/api/v1${path}`, { headers: token ? { authorization: `Bearer ${token}` } : {} });
+    if (!response.ok) throw new Error(`Download failed (HTTP ${response.status})`);
+    const url = URL.createObjectURL(await response.blob());
+    const link = Object.assign(document.createElement("a"), { href: url, download: filename });
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   async function onSmartSaved(id: string) {
     const result = await api<{ nodes: Node[] }>("");
     setNodes(result.nodes);
@@ -199,6 +212,7 @@ export default function App() {
               {resolved.length > 200 && <p className="muted">Showing the first 200 tracks.</p>}</div>}
           </> : <div className="empty"><span>♫</span><h2>Select a playlist</h2><p>Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole branch into one live list.</p></div>}</section>
         </div>
+        <MissingTracks request={call} download={download} />
         <Listening request={call} />
         <Player request={call} session={session} onSession={setSession}
           playlistName={(id) => nodes.find((node) => node.id === id)?.name}
