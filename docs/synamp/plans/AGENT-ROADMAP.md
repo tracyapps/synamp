@@ -69,6 +69,41 @@ unknown formats.
   try tempo/pulse prompts on it. In code: P3 — real playback events — so the
   feedback loop has a source of truth.
 
+### 2026-10-01 — P3 first slice: real playback events and scoped feedback (partial)
+
+`apps/brain/src/session/`: append-only JSONL event log with client-id dedupe;
+server-owned session with queue snapshots and exposure records (no invented
+propensities — `policy: deterministic_rank`); player reports classified
+server-side (early/late skip, heard-through, repeat; errors, seeks, interruptions
+and previous are never dislikes); explicit love / thumbs / remove / restore with
+declared scope; `heuristic-v1` re-ranker derived by replaying the log, bounded
+and applied only inside the strict tier, with per-track `score_breakdown`.
+Signed-URL streaming from `LIBRARY_PATH` lets the SynAmp web player be a real
+event source. Web: player bar, feedback controls, “Removed by you” with restore.
+
+- **Confirmed:** 14 new brain tests (39/39 total; `pnpm --filter @synamp/brain
+  test` now also runs the query and session suites, which it previously
+  skipped): play→skip persists session-scoped; remove→resolve hides only in
+  that playlist and restore undoes it; report/queue/feedback retries are
+  idempotent; interruption, error and seek produce no preference; restart
+  restores session and dedupe; torn log line recovery; loving a piano track
+  does not get it past “no piano”; corroborated global negatives; decay; stream
+  signing, expiry, traversal/symlink escape and range requests. In a real
+  browser on synthetic click-track audio: play → skip logged `skip_late` at
+  3.3 s of a 12 s track (relative floor 3 s); a played-out track logged
+  `full_play` at 12000 ms and auto-advanced; love and remove recorded and the
+  smart playlist recomputed without the removed track.
+- **Not done:** Subsonic/Navidrome scrobble bridge (third-party app plays are
+  not captured); WebSocket/SSE push; `queue_up`/`queue_remove` signals;
+  exploration budget; Rocchio/taste vector (v2); offline evaluation. Events
+  live in a local file, not Postgres.
+- **Unverified:** every magnitude, threshold and half-life is the dossier's
+  candidate value; nothing is tuned on real listening yet.
+- **Next smallest experiment:** listen for a week on the 200-track sample with
+  the web player, then read `/api/v1/events` and check whether skips and
+  removals match what you meant. In code: the Navidrome scrobble bridge, or the
+  first P4 producer (voice/instrument) so “no words”/“no piano” work on real music.
+
 ## Dependency order and ownership
 
 | Priority | Work package | Depends on | Write owner / main surfaces |

@@ -11,7 +11,8 @@ type Ask = { ask: string; reason: string; nearest_supported?: string; unenforced
 export type Evaluation = {
   plan_hash: string; library_version: string;
   strict: ResultTrack[]; near_miss: ResultTrack[];
-  counts: { library: number; strict_total: number; excluded_by: Record<string, number>; unknown_by: Record<string, number>; unverified_by: Record<string, number>; capped: number };
+  counts: { library: number; strict_total: number; excluded_by: Record<string, number>; unknown_by: Record<string, number>; unverified_by: Record<string, number>; capped: number; hidden_by_you: number };
+  hidden: Array<{ id: string; title: string; artist?: string }>;
   relaxations_applied: Array<{ detail: string }>;
   underfilled: boolean; unenforced: Ask[]; unsupported: Ask[]; warnings: string[]; missing_exemplars: string[];
 };
@@ -58,7 +59,7 @@ function TrackList({ tracks, nearMiss = false }: { tracks: ResultTrack[]; nearMi
 }
 
 /** Renders an evaluation: strict tier, honest counts, then the separate near-miss tier. */
-export function ResultView({ result, labels }: { result: Evaluation; labels?: Record<string, string> }) {
+export function ResultView({ result, labels, onRestore }: { result: Evaluation; labels?: Record<string, string>; onRestore?: (trackId: string) => void }) {
   const [showNear, setShowNear] = useState(false);
   const nearId = useId();
   const name = (id: string) => labels?.[id] ? `“${labels[id]}”` : id;
@@ -85,10 +86,20 @@ export function ResultView({ result, labels }: { result: Evaluation; labels?: Re
             </div>
           ))}
           {result.counts.capped > 0 && <div><dt>Variety caps</dt><dd>{result.counts.capped} skipped</dd></div>}
+          {result.counts.hidden_by_you > 0 && <div><dt>Removed by you</dt><dd>{result.counts.hidden_by_you} hidden</dd></div>}
         </dl>
       )}
       {result.relaxations_applied.length > 0 && <p className="muted">Loosened as the plan allowed: {result.relaxations_applied.map((step) => step.detail).join("; ")}.</p>}
       {result.strict.length > 0 ? <TrackList tracks={result.strict} /> : <p className="muted">No track satisfies every rule yet.</p>}
+      {onRestore && result.hidden.length > 0 && (
+        <details className="hidden-by-you">
+          <summary>Removed by you ({result.hidden.length})</summary>
+          <ul>{result.hidden.map((track) => (
+            <li key={track.id}>{track.title}{track.artist ? <small> · {track.artist}</small> : null}
+              <button type="button" className="quiet" onClick={() => onRestore(track.id)}>Restore</button></li>
+          ))}</ul>
+        </details>
+      )}
       {result.near_miss.length > 0 && (
         <section className="near-miss" aria-labelledby={`${nearId}-h`}>
           <h4 id={`${nearId}-h`}>Near misses <span>({result.near_miss.length})</span></h4>

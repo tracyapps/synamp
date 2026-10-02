@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import Describe, { ResultView } from "./Describe";
 import type { Evaluation } from "./Describe";
+import Player from "./Player";
+import type { SessionView } from "./Player";
 
 type Track = { id: string; title: string; artist?: string };
 type Node = {
@@ -42,6 +44,7 @@ export default function App() {
   const selected = nodes.find((node) => node.id === selectedId);
 
   const [explain, setExplain] = useState<Evaluation | null>(null);
+  const [session, setSession] = useState<SessionView | null>(null);
 
   async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
     return call<T>(`/playlists${path}`, options);
@@ -63,6 +66,7 @@ export default function App() {
   async function refresh(selectId = selectedId) {
     const result = await api<{ nodes: Node[] }>("");
     setNodes(result.nodes);
+    call<{ session: SessionView }>("/session").then((data) => setSession(data.session)).catch(() => undefined);
     if (selectId) {
       const detail = await api<{ tracks: Track[] }>(`/${selectId}/resolve`);
       setResolved(detail.tracks);
@@ -88,6 +92,14 @@ export default function App() {
         const result = await api<{ tracks: Track[] }>(`/${id}/resolve`);
         setResolved(result.tracks);
       }
+    } catch (cause) { setError((cause as Error).message); }
+  }
+
+  async function play(id: string) {
+    setError("");
+    try {
+      const result = await call<{ session: SessionView }>("/session/queue", { method: "POST", body: JSON.stringify({ event_id: crypto.randomUUID(), playlist_id: id }) });
+      setSession(result.session);
     } catch (cause) { setError((cause as Error).message); }
   }
 
@@ -166,20 +178,27 @@ export default function App() {
                 <label>Mode<select value={mode} onChange={(event) => setMode(event.target.value as typeof mode)}><option value="merge">Merge in order</option><option value="shuffle">Shuffle</option><option value="interleave">Interleave playlists</option></select></label></>}
               <button className="primary">Create {kind}</button></form>
           </aside>
-          <section className="panel detail" id="playlist-detail" tabIndex={-1} aria-label="Playlist detail">{selected ? <><div className="panel__head"><div><p className="eyebrow">{selected.type}</p><h2>{selected.name}</h2></div><button className="quiet" onClick={removeNode}>Delete</button></div>
+          <section className="panel detail" id="playlist-detail" tabIndex={-1} aria-label="Playlist detail">{selected ? <><div className="panel__head"><div><p className="eyebrow">{selected.type}</p><h2>{selected.name}</h2></div><div className="detail-actions"><button className="primary" onClick={() => play(selected.id)}>▶ Play</button><button className="quiet" onClick={removeNode}>Delete</button></div></div>
             {selected.type === "rollup" && <p className="muted">{selected.mode} · source: {nodes.find((node) => node.id === selected.sourceId)?.name ?? "Unknown"}</p>}
             {selected.type === "playlist" && <form className="track-form" onSubmit={addTrack}><h3>Add a track</h3><p className="muted">Use any unique ID to test playlist logic. Real playback will need a Subsonic song ID; library search is coming next.</p>
               <div className="track-fields"><label>Track ID<input value={trackId} onChange={(event) => setTrackId(event.target.value)} required /></label><label>Title<input value={title} onChange={(event) => setTitle(event.target.value)} required /></label><label>Artist<input value={artist} onChange={(event) => setArtist(event.target.value)} /></label><button className="primary">Add</button></div></form>}
             {selected.type === "folder" && <p className="muted">Create lists inside this folder, or use it as a roll-up source.</p>}
             {selected.type === "smart" && <>
               {selected.prompt && <p className="muted">From “{selected.prompt}” — membership is recomputed every time you open it.</p>}
-              {explain ? <ResultView result={explain} labels={Object.fromEntries((selected.plan?.constraints ?? []).map((item) => [item.id, item.source_phrase]))} /> : <p className="muted">Loading…</p>}
+              {explain ? <ResultView result={explain} labels={Object.fromEntries((selected.plan?.constraints ?? []).map((item) => [item.id, item.source_phrase]))}
+                onRestore={(trackId) => {
+                  call("/feedback", { method: "POST", body: JSON.stringify({ event_id: crypto.randomUUID(), signal: "restore", track_id: trackId, scope: "playlist", playlist_id: selected.id }) })
+                    .then(() => onSelect(selected.id)).catch((cause) => setError((cause as Error).message));
+                }} /> : <p className="muted">Loading…</p>}
             </>}
             {selected.type !== "smart" && <div className="results"><div className="panel__head"><h3>Resolved tracks</h3><span>{resolved.length} tracks</span></div>
               {resolved.length === 0 ? <p className="muted">Nothing here yet.</p> : <ol>{resolved.slice(0, 200).map((track, index) => <li key={`${index}-${track.id}`}><span className="track-number">{index + 1}</span><span className="track-title">{track.title}<small>{track.artist || track.id}</small></span>{selected.type === "playlist" && <button className="quiet" onClick={() => removeTrack(index)}>Remove</button>}</li>)}</ol>}
               {resolved.length > 200 && <p className="muted">Showing the first 200 tracks.</p>}</div>}
           </> : <div className="empty"><span>♫</span><h2>Select a playlist</h2><p>Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole branch into one live list.</p></div>}</section>
         </div>
+        <Player request={call} session={session} onSession={setSession}
+          playlistName={(id) => nodes.find((node) => node.id === id)?.name}
+          onChanged={() => { if (selectedId) onSelect(selectedId).catch(() => undefined); }} />
       </main>
     </div>
   );

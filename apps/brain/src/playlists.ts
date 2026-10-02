@@ -18,7 +18,7 @@ export type CreateNode =
   | { type: "smart"; name: string; parentId?: string | null; plan: unknown; prompt?: string };
 
 /** Resolves a smart playlist's plan to its current strict-tier tracks. */
-export type SmartResolver = (plan: QueryPlan, planHash: string) => TrackRef[];
+export type SmartResolver = (plan: QueryPlan, planHash: string, playlistId: string) => TrackRef[];
 
 export class PlaylistError extends Error {
   status: number;
@@ -142,7 +142,7 @@ export class PlaylistStore {
       if (node.type === "playlist") return [...node.tracks];
       if (node.type === "smart") {
         if (!this.resolveSmart) throw new PlaylistError("Smart playlists need a library source", 503);
-        return this.resolveSmart(node.plan, node.planHash);
+        return this.resolveSmart(node.plan, node.planHash, node.id);
       }
       const source = node.type === "rollup" ? this.get(node.sourceId) : node;
       const children = source.type === "folder"

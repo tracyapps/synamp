@@ -72,12 +72,45 @@ flagship prompt needs (voice, instruments, arousal, mood) are `declared` with no
 producer yet: on a real library every track is *unknown* for them until P4
 lands, and strict exclusions will honestly return nothing.
 
+## Listening, feedback and learning (AGENT-ROADMAP P3)
+
+`src/session/` makes the brain the source of truth for what you actually hear:
+
+| Module | Job |
+|---|---|
+| `events.ts` | **Append-only event log** (`EVENTS_PATH`, JSON Lines, fsynced). Retries dedupe on a client-supplied `event_id`; an undo is a new event, never an edit; a torn last line from a crash is skipped. |
+| `session.ts` | **Server-owned session.** Starting a playlist copies it into a queue *snapshot* (membership changes don't reshuffle what's playing) and logs exposure. Players report physical facts — start, progress, seek, pause, ended, skip, previous, jump, error, stop — and the server classifies them. |
+| `feedback.ts` | **Explicit feedback + v1 re-ranker.** Love / not-for-this / remove / restore with explicit scope, and a replayable derivation of preferences from the log. |
+| `stream.ts` | **Audio for the web player** from `LIBRARY_PATH`, by library-relative path from the analyzer export, via signed expiring URLs with range support. |
+
+**How a stop is read.** Ended, or left after 80% → *heard through* (that
+playlist). Left before min(30 s, 25% of the track) → *early skip*; otherwise
+*late skip* — both scoped to the session only. Errors, seeks, interruptions
+(starting something else) and “previous” are recorded but never count as
+dislikes.
+
+**How feedback re-ranks (policy `heuristic-v1`).** Love is a strong global
+boost; thumbs up/down apply in the scope you chose; heard-through and replays
+boost within that playlist; *remove* hides the track from that playlist only
+(undo with *restore*); two early skips in the same playlist become a small
+penalty there; a negative goes global only when explicit or seen in ≥ 2
+playlists. Playlist signals decay with a 30-day half-life, global ones 180
+days. The adjustment is bounded (±0.15), applied only inside the strict tier,
+and shown per track as `score_breakdown` plus a “your listening: …” reason — so
+it re-orders but can never get a track past a hard rule. Magnitudes are the
+dossier's candidate values, not tuned.
+
 ## Endpoints
 
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/health` | liveness |
-| GET | `/api/v1/session` | current playback session (queue, history, participants) |
+| GET | `/api/v1/session` | the playback session; each queue entry says if it is `playable` and carries a signed `stream_url` |
+| POST | `/api/v1/session/queue` | `{event_id, playlist_id, start_index?}` → snapshot a playlist into the queue |
+| POST | `/api/v1/session/report` | `{event_id, report:{type, entry_id, …}}` → apply a player report (idempotent) |
+| POST | `/api/v1/feedback` | `{event_id, signal: love/thumb_up/thumb_down/remove/restore, track_id, scope, playlist_id?, reason?}` |
+| GET | `/api/v1/events?limit=` | recent listening events, newest first |
+| GET/HEAD | `/api/v1/tracks/:id/stream?exp&sig` | audio with range support (signed link; no bearer token) |
 | GET | `/api/v1/playlists` | all nodes in creation order |
 | POST | `/api/v1/playlists` | create a folder, playlist, or roll-up |
 | GET | `/api/v1/playlists/:id/resolve` | live track list |
@@ -95,8 +128,10 @@ lands, and strict exclusions will honestly return nothing.
 
 All via environment (see `src/config.ts`): `BRAIN_PORT`, `BRAIN_HOST`,
 `DATABASE_URL`, `LIBRARY_PATH`, `CORE_URL`, `PLAYLIST_DATA_PATH`,
-`PLAYLIST_API_TOKEN`, `LIBRARY_SIGNALS_PATH`. The token also protects
-`/api/v1/plans` and `/api/v1/library`.
+`PLAYLIST_API_TOKEN`, `LIBRARY_SIGNALS_PATH`, `EVENTS_PATH`, `SESSION_PATH`
+(the last two default to `events.jsonl` / `session.json` beside the playlist
+store). The token protects every `/api/v1` route except streams, which use
+signed links derived from it.
 
 ## Next (Phase 1–2)
 
@@ -105,4 +140,5 @@ All via environment (see `src/config.ts`): `BRAIN_PORT`, `BRAIN_HOST`,
 - Weighted roll-ups and playlist export.
 - Analyzer → brain signal export (replaces the JSON library file).
 - A local LLM behind the same `validatePlan()` gate as the draft parser.
-- WebSocket/SSE channel for session state.
+- WebSocket/SSE channel for session state (clients currently poll/refresh).
+- Scrobble/now-playing bridge so Subsonic apps' plays reach the event log too.

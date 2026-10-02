@@ -37,6 +37,18 @@ re-evaluates against the current library. Parsing is a rule-based stand-in for
 the planned local LLM and the bundled library is synthetic — see
 `apps/brain/README.md`. Styles live in `src/styles/describe.css`.
 
+## Player
+
+Select any playlist and press **▶ Play**. The brain copies it into a queue
+(a snapshot) and the player bar appears at the bottom: previous / play-pause /
+skip, a seek slider, **♥ Love**, **Not for this** (optional reason: wrong
+energy, wrong vibe, just not this) and **Remove from <playlist>** with an Undo.
+Removed tracks can also be restored later from the smart playlist's “Removed by
+you” list. The player only reports what happened; the brain decides whether it
+was a skip, a full play or nothing at all. Tracks need a file path (from an
+analyzer export) to play — the synthetic sample has none, and says so. Styles
+live in `src/styles/player.css`.
+
 ## Design tokens
 
 `src/styles/tokens.css` holds the shared palette and type stack (one accent —

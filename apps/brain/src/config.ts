@@ -28,6 +28,10 @@ export const config = {
    * analyzer → brain export exists). Defaults to the synthetic sample.
    */
   librarySignalsPath: env("LIBRARY_SIGNALS_PATH", "./fixtures/library.sample.json"),
+  /** Append-only listening events (JSON Lines). Defaults beside the playlist store. */
+  eventsPath: env("EVENTS_PATH", ""),
+  /** The server-owned playback session. Defaults beside the playlist store. */
+  sessionPath: env("SESSION_PATH", ""),
   /** Required by the deployed app profile; optional for localhost development. */
   playlistApiToken: env("PLAYLIST_API_TOKEN", ""),
 } as const;

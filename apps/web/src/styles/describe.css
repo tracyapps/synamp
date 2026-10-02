@@ -63,3 +63,8 @@ textarea:focus { border-color: var(--accent); outline: none; }
 
 @media (max-width: 850px) { .describe__out { grid-template-columns: 1fr; } }
 @media (max-width: 520px) { .describe { padding: 20px; } }
+
+.hidden-by-you { margin-top: 18px; font-size: 14px; color: var(--muted); }
+.hidden-by-you ul { list-style: none; padding: 0; margin: 8px 0 0; }
+.hidden-by-you li { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--hair); color: var(--text); }
+.hidden-by-you li button { margin-left: auto; }

@@ -10,6 +10,7 @@
  */
 
 import { createServer } from "node:http";
+import { dirname, join } from "node:path";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { config } from "./config.ts";
 import { PlaylistError, PlaylistStore } from "./playlists.ts";
@@ -19,23 +20,55 @@ import { evaluatePlan } from "./query/evaluate.ts";
 import { LibrarySource } from "./query/library.ts";
 import { validatePlan } from "./query/plan.ts";
 import { REGISTRY_VERSION, SIGNALS } from "./query/signals.ts";
+import { EventLog } from "./session/events.ts";
+import { deriveFeedback, FeedbackError, recordFeedback } from "./session/feedback.ts";
+import type { FeedbackInput, FeedbackView } from "./session/feedback.ts";
+import { SessionError, SessionStore } from "./session/session.ts";
+import type { Session } from "./session/session.ts";
+import { resolveInside, sendFile, StreamSigner } from "./session/stream.ts";
 
 const STARTED_AT = Date.now();
 const library = new LibrarySource(config.librarySignalsPath);
+const dataDir = dirname(config.playlistDataPath);
+const events = new EventLog(config.eventsPath || join(dataDir, "events.jsonl"));
+const sessions = new SessionStore(config.sessionPath || join(dataDir, "session.json"), events);
+const signer = new StreamSigner(config.playlistApiToken || undefined);
+
+/** Derived feedback, recomputed only when the log grows. */
+let feedbackCache: { size: number; view: FeedbackView } | undefined;
+function feedback(): FeedbackView {
+  const size = events.all().length;
+  if (!feedbackCache || feedbackCache.size !== size) feedbackCache = { size, view: deriveFeedback(events.all()) };
+  return feedbackCache.view;
+}
 /**
  * Saved plans are re-validated on use, so a registry change that retires a field
  * surfaces as an error instead of a silently different playlist.
  */
-function evaluateSaved(plan: unknown) {
+function evaluateSaved(plan: unknown, playlistId: string) {
   const checked = validatePlan(plan);
   if (!checked.ok) throw new PlaylistError("This smart playlist's saved plan is no longer valid; re-create it", 409);
-  return evaluatePlan(checked, library.get());
+  return evaluatePlan(checked, library.get(), { feedback: feedback(), playlistId });
 }
 const playlists = new PlaylistStore(config.playlistDataPath, {
   // Re-evaluated on every read: a newly analysed track joins without a restart.
-  resolveSmart: (plan) => evaluateSaved(plan).strict
+  resolveSmart: (plan, _hash, playlistId) => evaluateSaved(plan, playlistId).strict
     .map((track) => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) })),
 });
+
+/** The session as clients see it: each entry says whether it can be streamed, and from where. */
+function sessionView(session: Session) {
+  const lib = library.get();
+  const byId = new Map(lib.tracks.map((track) => [track.id, track]));
+  return {
+    ...session,
+    queue: session.queue.map((entry) => {
+      const track = byId.get(entry.track_id);
+      const playable = !!(track?.path && resolveInside(config.libraryPath, track.path));
+      return { ...entry, playable, ...(playable ? { stream_url: signer.url(entry.track_id) } : {}) };
+    }),
+  };
+}
 
 function send(res: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body, null, 2) + "\n";
@@ -63,7 +96,9 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
-  const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library"].some((prefix) => path.startsWith(prefix));
+  // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
+  const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events"]
+    .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
     return send(res, 401, { error: "unauthorized" });
@@ -74,6 +109,52 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const tracksPath = path.match(/^\/api\/v1\/playlists\/([^/]+)\/tracks$/);
   const trackPath = path.match(/^\/api\/v1\/playlists\/([^/]+)\/tracks\/(\d+)$/);
   const explainPath = path.match(/^\/api\/v1\/playlists\/([^/]+)\/explain$/);
+
+  // --- listening: session, reports, feedback, streaming ----------------------
+  const streamPath = path.match(/^\/api\/v1\/tracks\/([^/]+)\/stream$/);
+  if (streamPath && (req.method === "GET" || req.method === "HEAD")) {
+    const trackId = decodeURIComponent(streamPath[1]!);
+    if (!signer.verify(trackId, url.searchParams.get("exp"), url.searchParams.get("sig"))) return send(res, 403, { error: "invalid or expired stream link" });
+    const track = library.get().tracks.find((item) => item.id === trackId);
+    const file = track?.path ? resolveInside(config.libraryPath, track.path) : null;
+    if (!file) return send(res, 404, { error: "no audio file for this track" });
+    return sendFile(req, res, file);
+  }
+  if (path === "/api/v1/session" && req.method === "GET") return send(res, 200, { session: sessionView(sessions.get()) });
+  if (path === "/api/v1/session/queue" && req.method === "POST") {
+    const input = await body(req);
+    if (typeof input.playlist_id !== "string") throw new SessionError("playlist_id is required");
+    const node = playlists.list().find((item) => item.id === input.playlist_id);
+    if (!node) throw new PlaylistError("Playlist node not found", 404);
+    // A snapshot: later membership changes do not touch what is queued.
+    const tracks = playlists.resolve(node.id);
+    const session = sessions.replaceQueue(String(input.event_id ?? ""), tracks,
+      { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, Number(input.start_index ?? 0));
+    return send(res, 200, { session: sessionView(session) });
+  }
+  if (path === "/api/v1/session/report" && req.method === "POST") {
+    const input = await body(req);
+    const result = sessions.report(String(input.event_id ?? ""), input.report);
+    return send(res, 200, { session: sessionView(result.session), derived: result.derived.map((event) => event.signal), duplicate: result.duplicate });
+  }
+  if (path === "/api/v1/feedback" && req.method === "POST") {
+    const input = (await body(req)) as unknown as FeedbackInput;
+    const result = recordFeedback(events, { ...input, session_id: input.session_id ?? sessions.get().id });
+    // In a hand-made playlist, "remove" also takes the track out of the list itself.
+    if (!result.duplicate && input.signal === "remove" && input.playlist_id) {
+      const node = playlists.list().find((item) => item.id === input.playlist_id);
+      if (node?.type === "playlist") {
+        const index = node.tracks.findIndex((track) => track.id === input.track_id);
+        if (index >= 0) playlists.removeTrack(node.id, index);
+      }
+    }
+    return send(res, result.duplicate ? 200 : 201, { event: result.event, duplicate: result.duplicate });
+  }
+  if (path === "/api/v1/events" && req.method === "GET") {
+    const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") ?? 50) || 50));
+    const visible = events.all().filter((event) => event.signal !== "receipt" && event.signal !== "exposure");
+    return send(res, 200, { policy_version: feedback().policy_version, total: visible.length, events: visible.slice(-limit).reverse() });
+  }
 
   // --- natural-language plans ---------------------------------------------
   if (path === "/api/v1/plans/draft" && req.method === "POST") {
@@ -90,13 +171,13 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       unparsed: draft.unparsed,
       encoder_text: draft.encoder_text,
       validation: checked,
-      preview: checked.ok ? evaluatePlan(checked, lib) : null,
+      preview: checked.ok ? evaluatePlan(checked, lib, { feedback: feedback() }) : null,
     });
   }
   if (path === "/api/v1/plans/evaluate" && req.method === "POST") {
     const checked = validatePlan((await body(req)).plan);
     if (!checked.ok) return send(res, 422, { validation: checked });
-    return send(res, 200, { validation: checked, result: evaluatePlan(checked, library.get()) });
+    return send(res, 200, { validation: checked, result: evaluatePlan(checked, library.get(), { feedback: feedback() }) });
   }
   if (path === "/api/v1/library" && req.method === "GET") {
     const lib = library.get();
@@ -109,7 +190,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const node = playlists.list().find((item) => item.id === explainPath[1]);
     if (!node) throw new PlaylistError("Playlist node not found", 404);
     if (node.type !== "smart") throw new PlaylistError("Only smart playlists have an explanation");
-    return send(res, 200, { result: evaluateSaved(node.plan) });
+    return send(res, 200, { result: evaluateSaved(node.plan, node.id) });
   }
   if (path === "/api/v1/playlists" && req.method === "GET") {
     return send(res, 200, { nodes: playlists.list() });
@@ -139,15 +220,6 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
         uptimeMs: Date.now() - STARTED_AT,
       });
 
-    // Phase 2/6: the authoritative playback session (queue, history, participants).
-    case "/api/v1/session":
-      return send(res, 200, {
-        nowPlaying: null,
-        queue: [],
-        history: [],
-        participants: [],
-      });
-
     default:
       return send(res, 404, { error: "not_found", path });
   }
@@ -155,7 +227,9 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
 
 const server = createServer((req, res) => {
   route(req, res).catch((error: unknown) => {
-    if (error instanceof PlaylistError) return send(res, error.status, { error: error.message });
+    if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
+      return send(res, error.status, { error: error.message });
+    }
     console.error("Brain request failed", error);
     send(res, 500, { error: "internal_error" });
   });

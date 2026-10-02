@@ -17,6 +17,8 @@
 import { SIGNALS } from "./signals.ts";
 import type { SignalSpec } from "./signals.ts";
 import type { Constraint, Expr, Predicate, QueryPlan, UnknownPolicy, UnsupportedAsk, ValidatedPlan } from "./plan.ts";
+import { feedbackBonus } from "../session/feedback.ts";
+import type { FeedbackView } from "../session/feedback.ts";
 
 export type LibraryTrack = {
   id: string;
@@ -30,6 +32,8 @@ export type LibraryTrack = {
   timing_status?: string | null;
   /** Canonical audio fields (see signals.ts), e.g. "bpm", "instruments.piano", "mood". */
   signals?: Record<string, number | string | null | undefined>;
+  /** Library-relative file path (from the analyzer export); needed to stream audio. */
+  path?: string;
   /** Audio embedding for similarity (optional). */
   embedding?: number[];
 };
@@ -65,6 +69,8 @@ export type ResultTrack = {
   /** Rules this track passed only because data was missing (neutral / include). */
   unverified: string[];
   near_miss?: { constraint: string; phrase: string; label: string };
+  /** Present when listening feedback moved this track. Base is the request's own score. */
+  score_breakdown?: { base: number; feedback: number };
 };
 
 export type Evaluation = {
@@ -81,6 +87,8 @@ export type Evaluation = {
     unknown_by: Record<string, number>;
     unverified_by: Record<string, number>;
     capped: number;
+    /** Tracks you removed from this playlist (hidden, restorable). */
+    hidden_by_you: number;
   };
   relaxations_applied: Array<{ step: number; action: string; target: string; detail: string }>;
   underfilled: boolean;
@@ -89,6 +97,9 @@ export type Evaluation = {
   unsupported: UnsupportedAsk[];
   warnings: string[];
   missing_exemplars: string[];
+  /** Feedback policy applied, if any (see session/feedback.ts). */
+  feedback_policy?: string;
+  hidden: Array<{ id: string; title: string; artist?: string }>;
 };
 
 // --- values -------------------------------------------------------------------
@@ -249,7 +260,14 @@ function widen(plan: QueryPlan, target: string, by: number): { plan: QueryPlan; 
   return { plan: next, detail: `${pred.field} ${OP_WORDS[pred.op]} ${before} → ${fmt(pred.value)}` };
 }
 
-export function evaluatePlan(validated: ValidatedPlan, library: Library): Evaluation {
+export type EvaluateOptions = {
+  /** Listening feedback. Re-ranks within the strict tier and hides removed tracks; never adds a track. */
+  feedback?: FeedbackView;
+  /** The saved playlist being evaluated, for playlist-scoped feedback. */
+  playlistId?: string;
+};
+
+export function evaluatePlan(validated: ValidatedPlan, library: Library, options: EvaluateOptions = {}): Evaluation {
   let plan = validated.plan;
   const tracks = library.tracks;
   const byId = new Map(tracks.map((track) => [track.id, track]));
@@ -297,6 +315,11 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library): Evalua
     }
   }
 
+  // Removed-from-this-playlist is a hard, playlist-only exclusion applied after the rules.
+  const hiddenIds = options.feedback && options.playlistId ? options.feedback.removed(options.playlistId) : new Set<string>();
+  const hidden = pass.strict.filter((row) => hiddenIds.has(row.track.id)).map((row) => row.track);
+  if (hiddenIds.size) pass = { ...pass, strict: pass.strict.filter((row) => !hiddenIds.has(row.track.id)) };
+
   // --- scoring ---
   const soft = plan.constraints.filter((item) => !item.hard);
   const signals = plan.ranking.signals.length ? plan.ranking.signals : [{ name: "feature_soft" as const, weight: 1 }];
@@ -337,7 +360,16 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library): Evalua
   };
 
   const scored = pass.strict.map((row) => {
-    const s = score(row.track);
+    const s: ReturnType<typeof score> & { breakdown?: { base: number; feedback: number } } = score(row.track);
+    if (options.feedback) {
+      const adj = options.feedback.adjust(row.track.id, options.playlistId);
+      if (adj.parts.length) {
+        const bonus = feedbackBonus(adj.value);
+        s.breakdown = { base: Math.round(s.score * 1000) / 1000, feedback: Math.round(bonus * 1000) / 1000 };
+        s.score += bonus;
+        s.reasons.push(`your listening: ${adj.parts.map((part) => `${part.label} (${part.value > 0 ? "+" : ""}${part.value.toFixed(1)})`).join(", ")}`);
+      }
+    }
     for (const result of row.results) {
       if (result.verdict === "pass") s.reasons.unshift(reasonFor(result));
       if (result.unverified) s.unverified.push(`“${result.constraint.source_phrase}”: ${result.facts.filter((f) => f.outcome === "unknown").map((f) => `${f.field} unknown`).join(", ")}`);
@@ -375,19 +407,20 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library): Evalua
     chosen.push(item!);
   }
 
-  const toResult = (track: LibraryTrack, s: { score: number; reasons: string[]; unverified: string[] }): ResultTrack => ({
+  const toResult = (track: LibraryTrack, s: { score: number; reasons: string[]; unverified: string[]; breakdown?: { base: number; feedback: number } }): ResultTrack => ({
     id: track.id, title: track.title,
     ...(track.artist ? { artist: track.artist } : {}), ...(track.album ? { album: track.album } : {}),
     score: Math.round(s.score * 1000) / 1000,
     channels: [...(pass.filterPass.has(track.id) ? ["filter" as const] : []), ...(similar.has(track.id) ? ["similar" as const] : [])],
     reasons: [...new Set(s.reasons)], unverified: s.unverified,
+    ...(s.breakdown ? { score_breakdown: s.breakdown } : {}),
   });
 
   // --- near misses: fail exactly one hard rule, and only narrowly or for lack of data ---
   const nearMiss: ResultTrack[] = [];
   if (plan.relaxation.tiers === "strict_plus_near_miss") {
     for (const row of pass.rows) {
-      if (row.failed.length !== 1) continue;
+      if (row.failed.length !== 1 || hiddenIds.has(row.track.id)) continue;
       const label = nearMissLabel(row.failed[0]!);
       if (!label) continue;
       const s = score(row.track);
@@ -419,6 +452,7 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library): Evalua
       candidates: { filter: pass.filterPass.size, similar: similar.size, union: pass.union.length },
       strict_total: pass.strict.length,
       excluded_by: excludedBy, unknown_by: unknownBy, unverified_by: unverifiedBy, capped,
+      hidden_by_you: hidden.length,
     },
     relaxations_applied: relaxations,
     underfilled: chosen.length < plan.relaxation.min_results,
@@ -426,5 +460,7 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library): Evalua
     unsupported,
     warnings: validated.warnings,
     missing_exemplars: missing,
+    ...(options.feedback ? { feedback_policy: options.feedback.policy_version } : {}),
+    hidden: hidden.map((track) => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) })),
   };
 }
