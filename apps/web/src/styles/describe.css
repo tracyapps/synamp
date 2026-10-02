@@ -1,0 +1,65 @@
+/* Smart playlist ("Describe") panel. Reuses tokens.css; one accent, no new colours
+   except the existing alert family for the "not enforced" warning. */
+
+.describe { min-height: 0; padding: 28px 32px; margin-bottom: 18px; }
+.describe .panel__head h2 { font-size: 24px; margin: 0; }
+.describe__form { display: grid; gap: 8px; margin-top: 18px; }
+.describe__form label { font: 12px var(--font-mono); color: var(--muted); }
+textarea {
+  font: inherit; width: 100%; resize: vertical; min-height: 64px; padding: 12px 13px;
+  background: #101014; border: 1px solid #34343c; border-radius: 6px; color: var(--text);
+}
+textarea:focus { border-color: var(--accent); outline: none; }
+.describe__form > .muted { margin: 0; }
+.describe__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; }
+.primary:disabled { opacity: .55; cursor: not-allowed; filter: none; }
+.chip {
+  background: transparent; color: var(--text); border: 1px solid var(--hair); border-radius: 999px;
+  padding: 5px 11px; font-size: 13px; text-align: left;
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+
+:where(button, a, summary, textarea, input, select):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.describe__out { display: grid; grid-template-columns: minmax(240px, 340px) minmax(0, 1fr); gap: 28px; margin-top: 26px; border-top: 1px solid var(--hair); padding-top: 22px; }
+.describe__understood h3 { margin: 0 0 10px; font: 600 16px var(--font-display); }
+.rules { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; font-size: 14px; }
+.rules q { color: var(--text); }
+.rules code { display: block; margin-top: 2px; font: 12px/1.5 var(--font-mono); color: var(--accent); }
+.describe__warnings { font-size: 13px; color: var(--muted); margin-top: 10px; }
+.describe__warnings ul { padding-left: 18px; }
+.describe__parser { font: 11px var(--font-mono); letter-spacing: .06em; margin-top: 16px; }
+
+.notice { border: 1px solid var(--hair); border-radius: 6px; padding: 10px 14px; font-size: 14px; margin-bottom: 12px; }
+.notice--warn { color: #e9aea4; background: #3b2424; border-color: #693333; }
+.notice ul { margin: 6px 0 0; padding-left: 18px; }
+
+.smart-result__summary { margin: 0 0 12px; font-size: 15px; }
+.smart-result__summary strong { color: var(--accent); font-family: var(--font-mono); }
+.smart-counts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 0 0 14px; font-size: 13px; }
+.smart-counts div { display: flex; gap: 6px; }
+.smart-counts dt { color: var(--text); }
+.smart-counts dd { margin: 0; color: var(--muted); }
+
+.smart-list { list-style: none; padding: 0; margin: 8px 0 0; }
+.smart-list > li { display: flex; gap: 14px; border-top: 1px solid var(--hair); padding: 10px 0; }
+.smart-list__body { flex: 1; min-width: 0; }
+.smart-list details { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.smart-list summary { cursor: pointer; width: fit-content; }
+.smart-list details ul { margin: 6px 0 0; padding-left: 18px; }
+.smart-list .is-unverified { color: #cfa96a; }
+.smart-list__miss { margin: 4px 0 0; font-size: 13px; color: #cfa96a; }
+
+.near-miss { margin-top: 26px; border-top: 1px dashed #3a3a44; padding-top: 16px; }
+.near-miss h4 { margin: 0; font: 600 15px var(--font-display); }
+.near-miss h4 span { color: var(--muted); font: 12px var(--font-mono); }
+.near-miss > .muted { margin: 6px 0 10px; }
+
+.describe__save { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--hair); }
+.describe__save label { flex: 0 1 360px; }
+.describe__save .muted { flex-basis: 100%; margin: 0; }
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 850px) { .describe__out { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .describe { padding: 20px; } }

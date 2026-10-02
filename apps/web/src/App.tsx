@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
+import Describe, { ResultView } from "./Describe";
+import type { Evaluation } from "./Describe";
 
 type Track = { id: string; title: string; artist?: string };
 type Node = {
   id: string;
   name: string;
   parentId: string | null;
-  type: "folder" | "playlist" | "rollup";
+  type: "folder" | "playlist" | "rollup" | "smart";
+  prompt?: string;
+  plan?: { constraints: Array<{ id: string; source_phrase: string }> };
   tracks?: Track[];
   sourceId?: string;
   mode?: "merge" | "shuffle" | "interleave";
 };
 
-type Kind = Node["type"];
+type Kind = Exclude<Node["type"], "smart">;
 
 function tree(nodes: Node[], parentId: string | null, depth = 0): Array<{ node: Node; depth: number }> {
   return nodes.filter((node) => node.parentId === parentId).flatMap((node) => [
@@ -37,8 +41,14 @@ export default function App() {
   const [artist, setArtist] = useState("");
   const selected = nodes.find((node) => node.id === selectedId);
 
+  const [explain, setExplain] = useState<Evaluation | null>(null);
+
   async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(`/api/v1/playlists${path}`, {
+    return call<T>(`/playlists${path}`, options);
+  }
+
+  async function call<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const response = await fetch(`/api/v1${path}`, {
       ...options,
       headers: {
         ...(options.body ? { "content-type": "application/json" } : {}),
@@ -65,13 +75,27 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  async function onSelect(id: string) {
+  async function onSelect(id: string, list = nodes) {
     setSelectedId(id);
     setError("");
+    setExplain(null);
     try {
-      const result = await api<{ tracks: Track[] }>(`/${id}/resolve`);
-      setResolved(result.tracks);
+      if (list.find((node) => node.id === id)?.type === "smart") {
+        const result = await api<{ result: Evaluation }>(`/${id}/explain`);
+        setExplain(result.result);
+        setResolved([]);
+      } else {
+        const result = await api<{ tracks: Track[] }>(`/${id}/resolve`);
+        setResolved(result.tracks);
+      }
     } catch (cause) { setError((cause as Error).message); }
+  }
+
+  async function onSmartSaved(id: string) {
+    const result = await api<{ nodes: Node[] }>("");
+    setNodes(result.nodes);
+    await onSelect(id, result.nodes);
+    document.getElementById("playlist-detail")?.focus();
   }
 
   async function create(event: React.FormEvent) {
@@ -126,12 +150,13 @@ export default function App() {
           sessionStorage.setItem("synamp-playlist-token", token);
           refresh().then(() => setError("")).catch((cause) => setError(cause.message));
         }}><label>Playlist access token <input type="password" value={token} onChange={(event) => setToken(event.target.value)} /></label><button>Connect</button></form>}
+        <Describe request={call} onSaved={(id) => { onSmartSaved(id).catch((cause) => setError(cause.message)); }} />
         <div className="workspace">
           <aside className="panel sidebar"><div className="panel__head"><h2>Collection</h2><span>{nodes.length} nodes</span></div>
             {loading ? <p className="muted">Loading…</p> : nodes.length === 0 ? <p className="muted">No playlists yet. Start below.</p> :
               <div className="tree">{tree(nodes, null).map(({ node, depth }) =>
                 <button key={node.id} className={`tree__item ${selectedId === node.id ? "is-selected" : ""}`} style={{ paddingLeft: 14 + depth * 18 }} onClick={() => onSelect(node.id)}>
-                  <span className="tree__icon">{node.type === "folder" ? "▸" : node.type === "rollup" ? "◇" : "♫"}</span><span>{node.name}</span>
+                  <span className="tree__icon">{node.type === "folder" ? "▸" : node.type === "rollup" ? "◇" : node.type === "smart" ? "✦" : "♫"}</span><span>{node.name}</span>
                 </button>)}</div>}
             <form className="create-form" onSubmit={create}><h3>Create</h3>
               <label>Name<input value={name} onChange={(event) => setName(event.target.value)} required maxLength={120} placeholder="e.g. Afternoon focus" /></label>
@@ -141,14 +166,18 @@ export default function App() {
                 <label>Mode<select value={mode} onChange={(event) => setMode(event.target.value as typeof mode)}><option value="merge">Merge in order</option><option value="shuffle">Shuffle</option><option value="interleave">Interleave playlists</option></select></label></>}
               <button className="primary">Create {kind}</button></form>
           </aside>
-          <section className="panel detail">{selected ? <><div className="panel__head"><div><p className="eyebrow">{selected.type}</p><h2>{selected.name}</h2></div><button className="quiet" onClick={removeNode}>Delete</button></div>
+          <section className="panel detail" id="playlist-detail" tabIndex={-1} aria-label="Playlist detail">{selected ? <><div className="panel__head"><div><p className="eyebrow">{selected.type}</p><h2>{selected.name}</h2></div><button className="quiet" onClick={removeNode}>Delete</button></div>
             {selected.type === "rollup" && <p className="muted">{selected.mode} · source: {nodes.find((node) => node.id === selected.sourceId)?.name ?? "Unknown"}</p>}
             {selected.type === "playlist" && <form className="track-form" onSubmit={addTrack}><h3>Add a track</h3><p className="muted">Use any unique ID to test playlist logic. Real playback will need a Subsonic song ID; library search is coming next.</p>
               <div className="track-fields"><label>Track ID<input value={trackId} onChange={(event) => setTrackId(event.target.value)} required /></label><label>Title<input value={title} onChange={(event) => setTitle(event.target.value)} required /></label><label>Artist<input value={artist} onChange={(event) => setArtist(event.target.value)} /></label><button className="primary">Add</button></div></form>}
             {selected.type === "folder" && <p className="muted">Create lists inside this folder, or use it as a roll-up source.</p>}
-            <div className="results"><div className="panel__head"><h3>Resolved tracks</h3><span>{resolved.length} tracks</span></div>
+            {selected.type === "smart" && <>
+              {selected.prompt && <p className="muted">From “{selected.prompt}” — membership is recomputed every time you open it.</p>}
+              {explain ? <ResultView result={explain} labels={Object.fromEntries((selected.plan?.constraints ?? []).map((item) => [item.id, item.source_phrase]))} /> : <p className="muted">Loading…</p>}
+            </>}
+            {selected.type !== "smart" && <div className="results"><div className="panel__head"><h3>Resolved tracks</h3><span>{resolved.length} tracks</span></div>
               {resolved.length === 0 ? <p className="muted">Nothing here yet.</p> : <ol>{resolved.slice(0, 200).map((track, index) => <li key={`${index}-${track.id}`}><span className="track-number">{index + 1}</span><span className="track-title">{track.title}<small>{track.artist || track.id}</small></span>{selected.type === "playlist" && <button className="quiet" onClick={() => removeTrack(index)}>Remove</button>}</li>)}</ol>}
-              {resolved.length > 200 && <p className="muted">Showing the first 200 tracks.</p>}</div>
+              {resolved.length > 200 && <p className="muted">Showing the first 200 tracks.</p>}</div>}
           </> : <div className="empty"><span>♫</span><h2>Select a playlist</h2><p>Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole branch into one live list.</p></div>}</section>
         </div>
       </main>

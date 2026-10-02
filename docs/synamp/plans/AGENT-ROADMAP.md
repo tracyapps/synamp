@@ -20,6 +20,34 @@ method identity, and made tempo autocorrelation use FFT. See the
 [findings and verification](../../research/beat-timing-findings-2026-09-29.md).
 Full real-music microtiming remains open.
 
+### 2026-10-01 — P2 first slice landed (partial)
+
+`apps/brain/src/query/`: signal registry, closed v2.0-subset plan validator with
+stable hash, deterministic evaluator (two channels → hard guard on union, strict
++ near-miss tiers, declared ladder only, caps/MMR, reasons, counts), and a
+rule-based draft parser standing in for the LLM. Smart playlists persist the
+canonical plan + hash and resolve live against `LIBRARY_SIGNALS_PATH` (synthetic
+sample by default). Web: “Describe what you want to hear” panel.
+
+- **Confirmed (fixtures):** flagship prompt obeys every exclusion incl. after the
+  similarity union; zero/two results reported without padding; malformed and
+  unsupported plans fail with paths/asks; aliases round-trip to the same hash;
+  hash stable under key order; unknown never passes an explicit audio exclusion;
+  missing genre tag ≠ absence; timing predicates gated on `timing_status`; new
+  library rows join saved plans without re-saving. `node --test`: 23/23; `tsc`
+  clean for brain and web.
+- **Not done:** queue snapshots (no queue exists yet — P3); `loosen_soft_to_hard`
+  / `swap_field_proxy` ladder actions; quota constraints; non-flat arcs;
+  `clap_text` (no encoder); analyzer export/import (P1 deliverable 5); P1
+  stage-revision persistence. The registry lives brain-side; a test checks every
+  non-metadata field exists on `AnalysisResult`, but the analyzer does not yet
+  consume it.
+- **Unverified:** everything about real music. Voice, instrument, arousal and
+  mood fields have no producer, so real tracks are unknown for them.
+- **Next smallest experiment:** a versioned analyzer `export` command that writes
+  the `LIBRARY_SIGNALS_PATH` shape from SQLite (produced fields only), run on the
+  200-track sample, so tempo/pulse/loudness plans run on real music today.
+
 ## Dependency order and ownership
 
 | Priority | Work package | Depends on | Write owner / main surfaces |

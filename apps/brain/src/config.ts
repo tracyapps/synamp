@@ -23,6 +23,11 @@ export const config = {
   coreUrl: env("CORE_URL", "http://core:4533"),
   /** Small local playlist store until the Brain DB migrations are in place. */
   playlistDataPath: env("PLAYLIST_DATA_PATH", "./data/playlists.json"),
+  /**
+   * Per-track analysis signals for smart playlists (interim JSON until the
+   * analyzer → brain export exists). Defaults to the synthetic sample.
+   */
+  librarySignalsPath: env("LIBRARY_SIGNALS_PATH", "./fixtures/library.sample.json"),
   /** Required by the deployed app profile; optional for localhost development. */
   playlistApiToken: env("PLAYLIST_API_TOKEN", ""),
 } as const;
