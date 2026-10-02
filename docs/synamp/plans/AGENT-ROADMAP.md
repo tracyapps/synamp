@@ -361,3 +361,16 @@ and notes, edition chooser, found-again, CSV download. beets deliberately not
 used for this read-only step (see LIBRARY-CARE.md). Brain 70/70, analyzer 78/78,
 plus a live run against MusicBrainz. Next: step 4, organise (propose → review →
 apply), the first step that writes to the library.
+
+### 2026-10-02 — Library care step 4: organise (renames and moves)
+
+Brain `library/naming.ts` (safe names, standard forms, artist keys, safe
+relative paths) and `library/organise.ts` (plan of artist-merge and album
+decisions, revisioned reviews, batches with merge-first rebasing, librarian
+job queue with re-claim, report validation, undo, `PathOverlay`, match
+carrying). New `src/librarian/` process (`apply.ts`, `main.ts`): precheck,
+rename-only, rollback, companions, empty-folder pruning, journal, persisted
+unsent reports. Web `OrganiseLibrary.tsx` panel; compose `librarian` profile.
+beets not used for path-only organising (see LIBRARY-CARE.md). Brain 83/83;
+live apply + undo through brain and librarian on a sample library. Next: step 5,
+import (web drop + `incoming/`), or 4b tag writing.

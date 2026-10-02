@@ -64,7 +64,9 @@ export class AlbumMatches {
     this.path = path;
     this.records = readJson<{ records?: Record<string, AlbumRecord> }>(path, {}).records ?? {};
   }
-  save(): void { writeJson(this.path, { format: "synamp.album-matches/1", records: this.records }); }
+  /** Goes up on every change, so views built from the matches know to rebuild. */
+  revision = 0;
+  save(): void { this.revision++; writeJson(this.path, { format: "synamp.album-matches/1", records: this.records }); }
   set(record: AlbumRecord): void { this.records[record.key] = record; this.save(); }
 
   /** Folders that still need a decision: never checked, or uncertain and changed since. */

@@ -1,6 +1,6 @@
 # Library care — leave the library better than we found it
 
-Status: planned 2026-10-02; steps 1–3 done, step 4 (organise) next. Owner request, shaped against
+Status: planned 2026-10-02; steps 1–4 done (step 4: renames and moves; tag writing later), step 5 (import) next. Owner request, shaped against
 the existing plan: ROADMAP Phase 1 already expects a metadata cleanup pass, and
 ARCHITECTURE §16 says to clean metadata *before* the semantic layer. The Brain
 dossier already chose the tools: MusicBrainz (CC0 core) for release data and
@@ -153,6 +153,58 @@ quoting); analyzer 78/78. **Live against real MusicBrainz:** a folder holding
 only "03 - Gravel" from *Little Plastic Castle* matched the 1998 US CD edition
 and listed the other 11 tracks with lengths; a made-up album went to review;
 status/tags saved and appeared in the CSV.
+
+### 4 — Organise (done 2026-10-02: renames and moves)
+
+**Engine decision.** Not beets, for this slice. Renaming needs no autotagger:
+the plan is built from what SynAmp already knows (the export's tags and
+numbers, step 3's MusicBrainz matches), and beets' importer would have to take
+over the library and its own database to do it, with no way to review
+decision by decision. Writing tags *inside* files (4b) is where a tag library
+or beets earns its place; that comes later and goes through the same
+review/journal/undo path.
+
+How it works:
+
+- **The brain proposes** (`apps/brain/src/library/organise.ts`), read-only.
+  Two kinds of decision: **artist merges** (spellings that compare equal —
+  case, accents, `&`/and, "The", "Surname, Name" when the other spelling
+  exists; the MusicBrainz spelling wins, then the tagged one) and **album
+  folders** (`Album (Year)` with the tag year, else MusicBrainz's; `01 - Title`
+  / `1-01 - Title` with numbers from tags, the filename, or the matched
+  release; disc folders folded in; compilations to `Various Artists/`; extra
+  copies get `(2)`; a taken folder name gets the MusicBrainz edition, else is
+  flagged). Every part is a setting. Loose files in an artist folder are left
+  alone.
+- **You review** in the web app's *Organise the library* panel: each decision
+  says in plain words what it does, with before → after and every file move.
+  Approve, skip, or decide later, one at a time or everything shown. An
+  approval is for one revision; if the proposal changes it asks again.
+- **The librarian applies** (`apps/brain/src/librarian/`), a separate process
+  and the only one with write access. Per decision: check everything first,
+  rename (never copy, retag or overwrite), put back on failure, carry artwork
+  and other files along, remove emptied folders (deleting only `.DS_Store`,
+  `._*`, `Thumbs.db`, `desktop.ini`), and journal every move to
+  `renames.jsonl` — shared with the analyzer, so analysis and history follow.
+  In one batch, artist merges run first and album decisions follow the files.
+- **Undo** puts a batch back, newest first. Until the analyzer re-exports, the
+  brain follows recorded moves for files that really moved, so they keep
+  playing; MusicBrainz matches are carried to the new folder names.
+- Deploy: opt-in `librarian` compose profile, running as the share owner
+  (`PUID`/`PGID`), journal at `/volume1/music/.synamp/`.
+
+Confirmed: brain 83/83 (13 new — naming, plan cases, rebasing, reviews and
+revisions, batch/claim/re-claim/report, undo, overlay, matches carried; the
+librarian on real temp folders: apply with artwork and junk, refusal leaves
+everything untouched, mid-failure rollback, path-escape refusal, artist merge,
+the poll loop with a lost report re-sent). **Live:** brain + librarian over
+HTTP on a sample library — 5 decisions (a merge, years, `1-01` disc folding, a
+compilation) applied in one batch, 11 journal lines, old folders gone, the plan
+empty afterwards; then undone back to the original layout. The panel was
+checked in a browser at desktop and phone widths.
+
+Not yet: writing tags (4b); album-artist re-filing by tags; a Btrfs snapshot
+before each batch is the owner's step for now (documented).
 
 ### Missing tracks: extra sources worth importing
 

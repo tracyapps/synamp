@@ -5,6 +5,7 @@ import Player from "./Player";
 import Listening from "./Listening";
 import LibraryHealth from "./LibraryHealth";
 import MissingTracks from "./MissingTracks";
+import OrganiseLibrary from "./OrganiseLibrary";
 import type { SessionView } from "./Player";
 
 type Track = { id: string; title: string; artist?: string };
@@ -213,6 +214,7 @@ export default function App() {
           </> : <div className="empty"><span>♫</span><h2>Select a playlist</h2><p>Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole branch into one live list.</p></div>}</section>
         </div>
         <MissingTracks request={call} download={download} />
+        <OrganiseLibrary request={call} />
         <Listening request={call} />
         <Player request={call} session={session} onSession={setSession}
           playlistName={(id) => nodes.find((node) => node.id === id)?.name}

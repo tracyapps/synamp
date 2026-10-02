@@ -117,6 +117,23 @@ guesses). **Do not also link Last.fm inside Navidrome** (Settings → Personal �
 Last.fm), or plays from other apps are sent twice. The session key is stored in
 `DATA_DIR/brain/lastfm.json` — keep that directory private.
 
+## Organising the library (the librarian)
+
+The **Organise the library** panel proposes tidier names and folders; nothing
+changes until you approve and apply. Applying needs the **librarian**, the one
+service with write access to the music. It is opt-in:
+
+1. Take a Btrfs snapshot of the music share first (Snapshot & Replication).
+2. In `deploy/.env` set `PUID`/`PGID` to the owner of the music files
+   (`id tapps` on the NAS) and check `JOURNAL_DIR` (default
+   `/volume1/music/.synamp`, outside the scan root). Create that folder.
+3. `docker compose --env-file .env --profile app --profile librarian up -d`
+4. On the Mac, point the analyzer at the same journal:
+   `RENAME_JOURNAL_PATH=/Volumes/music/.synamp/renames.jsonl`, then run
+   `scan` and `export` after a batch, so analysis follows the moved files.
+
+Stop it again with `docker compose stop librarian` when you're not organising.
+
 ## 3. Remote access
 
 Put **Tailscale** in front rather than port-forwarding: install the Synology

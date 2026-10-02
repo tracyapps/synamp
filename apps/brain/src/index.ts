@@ -38,6 +38,8 @@ import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
 import { groupAlbums } from "./library/albums.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
 import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
+import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay } from "./library/organise.ts";
+import type { Decision } from "./library/organise.ts";
 
 const STARTED_AT = Date.now();
 const library = new LibrarySource(config.librarySignalsPath);
@@ -51,11 +53,15 @@ const missingNotes = new MissingNotes(join(dataDir, "missing-notes.json"));
 /** One client for the whole process, so every MusicBrainz request shares one rate limit. */
 let musicbrainz: MusicBrainz | undefined;
 const mbClient = () => (musicbrainz ??= new MusicBrainz({ contact: config.musicbrainzContact }));
-const matcher = new Matcher(albumMatches, mbClient, () => library.get());
+const organise = new OrganiseStore(join(dataDir, "organise.json"));
+/** Moved files keep working before the analyzer re-exports (see PathOverlay). */
+const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
+function currentLibrary() { return overlay.apply(library.get()); }
+const matcher = new Matcher(albumMatches, mbClient, () => currentLibrary());
 function matcherView() {
   return {
     state: matcher.state, current: matcher.current, done_this_run: matcher.done, last_error: matcher.lastError,
-    waiting: albumMatches.due(groupAlbums(library.get())).length, contact_set: !!config.musicbrainzContact,
+    waiting: albumMatches.due(groupAlbums(currentLibrary())).length, contact_set: !!config.musicbrainzContact,
   };
 }
 const scrobbler = new Scrobbler(config.lastfmStatePath || join(dataDir, "lastfm.json"),
@@ -65,7 +71,7 @@ const scrobbler = new Scrobbler(config.lastfmStatePath || join(dataDir, "lastfm.
 let flushTimer: NodeJS.Timeout | undefined;
 function afterEvents(added: readonly ListeningEvent[]): void {
   if (!scrobbler.configured) return;
-  const lib = library.get();
+  const lib = currentLibrary();
   for (const event of added) {
     if (event.signal === "started") {
       const track = lib.tracks.find((item) => item.id === event.track_id);
@@ -78,9 +84,9 @@ function afterEvents(added: readonly ListeningEvent[]): void {
     }
   }
   clearTimeout(flushTimer);
-  flushTimer = setTimeout(() => { void scrobbler.flush(events.all(), library.get()); }, 5_000);
+  flushTimer = setTimeout(() => { void scrobbler.flush(events.all(), currentLibrary()); }, 5_000);
 }
-setInterval(() => { void scrobbler.flush(events.all(), library.get()).catch((error) => console.error("Last.fm flush failed", error)); }, 60_000).unref();
+setInterval(() => { void scrobbler.flush(events.all(), currentLibrary()).catch((error) => console.error("Last.fm flush failed", error)); }, 60_000).unref();
 
 /** Plays reported by other Subsonic apps, mapped onto library IDs by real path. */
 function recordCaptured(plays: CapturedPlay[]): void {
@@ -88,7 +94,7 @@ function recordCaptured(plays: CapturedPlay[]): void {
   for (const play of plays) {
     const relative = relativeFromReported(play.song?.path, config.coreMusicPath);
     // Look the path up first: a moved track keeps its original ID, which hashing the new path would miss.
-    const trackId = relative ? (library.idForPath(relative) ?? trackIdForPath(relative)) : `subsonic:${play.songId}`;
+    const trackId = relative ? (overlay.idForPath(relative, library.get()) ?? library.idForPath(relative) ?? trackIdForPath(relative)) : `subsonic:${play.songId}`;
     const when = play.time ?? Date.now();
     const key = `${play.user ?? ""}|${play.client ?? ""}|${play.songId}|${play.submission}|${play.time ?? Math.floor(when / 60_000)}`;
     const id = `${play.submission ? "ext" : "np"}:${createHash("sha256").update(key).digest("hex").slice(0, 24)}`;
@@ -128,7 +134,7 @@ function sendPage(res: ServerResponse, status: number, title: string, message: s
 let feedbackCache: { size: number; version: string; view: FeedbackView } | undefined;
 function feedback(): FeedbackView {
   const size = events.all().length;
-  const version = library.get().version;
+  const version = currentLibrary().version;
   if (!feedbackCache || feedbackCache.size !== size || feedbackCache.version !== version) {
     feedbackCache = { size, version, view: deriveFeedback(events.all(), Date.now(), (id) => library.canonicalId(id)) };
   }
@@ -141,7 +147,7 @@ function feedback(): FeedbackView {
 function evaluateSaved(plan: unknown, playlistId: string) {
   const checked = validatePlan(plan);
   if (!checked.ok) throw new PlaylistError("This smart playlist's saved plan is no longer valid; re-create it", 409);
-  return evaluatePlan(checked, library.get(), { feedback: feedback(), playlistId });
+  return evaluatePlan(checked, currentLibrary(), { feedback: feedback(), playlistId });
 }
 const playlists = new PlaylistStore(config.playlistDataPath, {
   // Re-evaluated on every read: a newly analysed track joins without a restart.
@@ -151,7 +157,7 @@ const playlists = new PlaylistStore(config.playlistDataPath, {
 
 /** The session as clients see it: each entry says whether it can be streamed, and from where. */
 function sessionView(session: Session) {
-  const lib = library.get();
+  const lib = currentLibrary();
   const byId = new Map(lib.tracks.map((track) => [track.id, track]));
   return {
     ...session,
@@ -160,6 +166,60 @@ function sessionView(session: Session) {
       const playable = !!(track?.path && resolveInside(config.libraryPath, track.path));
       return { ...entry, playable, ...(playable ? { stream_url: signer.url(entry.track_id) } : {}) };
     }),
+  };
+}
+
+/** The organise plan, rebuilt only when the library, the matches or the settings change. */
+let planCache: { key: string; plan: Decision[] } | undefined;
+function organisePlan(): Decision[] {
+  const lib = currentLibrary();
+  const key = `${lib.version}|${albumMatches.revision}|${JSON.stringify(organise.state.settings)}`;
+  if (planCache?.key !== key) planCache = { key, plan: buildPlan(lib, albumMatches.records, organise.state.settings) };
+  return planCache.plan;
+}
+function filterPlan(plan: Decision[], query: URLSearchParams): Decision[] {
+  const kind = query.get("kind") ?? "all";
+  const status = query.get("status") ?? "all";
+  const q = (query.get("q") ?? "").trim().toLowerCase();
+  return plan.filter((decision) => {
+    if (kind !== "all" && decision.kind !== kind) return false;
+    const current = organise.statusOf(decision);
+    if (status === "conflict" ? !decision.conflicts.length : status !== "all" && current.status !== status) return false;
+    return !q || decision.title.toLowerCase().includes(q) || decision.preview.some((p) => p.from.toLowerCase().includes(q) || p.to.toLowerCase().includes(q));
+  });
+}
+const LIBRARIAN_ONLINE_MS = 90_000;
+function organiseView(query: URLSearchParams) {
+  const plan = organisePlan();
+  const summary = { total: plan.length, proposed: 0, approved: 0, skipped: 0, conflicts: 0, changed: 0, artist: 0, album: 0, approved_moves: 0 };
+  for (const decision of plan) {
+    const { status, changed } = organise.statusOf(decision);
+    summary[status]++;
+    summary[decision.kind]++;
+    if (changed) summary.changed++;
+    if (decision.conflicts.length) summary.conflicts++;
+    if (status === "approved" && !decision.conflicts.length) summary.approved_moves += decision.moves.length;
+  }
+  const matching = filterPlan(plan, query);
+  const offset = Math.max(0, Number(query.get("offset")) || 0);
+  const limit = Math.min(100, Math.max(1, Number(query.get("limit")) || 25));
+  const seen = organise.state.librarian;
+  return {
+    summary,
+    settings: organise.state.settings,
+    matching: matching.length,
+    offset,
+    decisions: matching.slice(offset, offset + limit).map(({ moves, folders: _folders, ...decision }) => ({
+      ...decision, ...organise.statusOf(decision as Decision), move_count: moves.length,
+      moves: moves.slice(0, 40).map(({ from, to }) => ({ from, to })),
+    })),
+    batches: organise.state.batches.slice(0, 10).map((batch) => ({
+      ...batch,
+      decisions: batch.decisions.map(({ moved, ...decision }) => ({ ...decision, moved_count: moved?.length ?? 0 })),
+    })),
+    busy: !!organise.busy(),
+    librarian: seen ? { ...seen, online: Date.now() - seen.last_seen < LIBRARIAN_ONLINE_MS } : null,
+    pending_export: overlay.count > 0 && currentLibrary().version !== library.get().version,
   };
 }
 
@@ -205,7 +265,8 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
 
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
-    "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums"]
+    "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
+    "/api/v1/organise", "/api/v1/librarian"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -223,7 +284,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (streamPath && (req.method === "GET" || req.method === "HEAD")) {
     const trackId = decodeURIComponent(streamPath[1]!);
     if (!signer.verify(trackId, url.searchParams.get("exp"), url.searchParams.get("sig"))) return send(res, 403, { error: "invalid or expired stream link" });
-    const track = library.get().tracks.find((item) => item.id === trackId);
+    const track = currentLibrary().tracks.find((item) => item.id === trackId);
     const file = track?.path ? resolveInside(config.libraryPath, track.path) : null;
     if (!file) return send(res, 404, { error: "no audio file for this track" });
     return sendFile(req, res, file);
@@ -265,14 +326,14 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return send(res, 202, { received: progress.received_at });
   }
   if (path === "/api/v1/library/health" && req.method === "GET") {
-    return send(res, 200, { analysis: analysisStatus.view(), library: libraryStats(library.get()) });
+    return send(res, 200, { analysis: analysisStatus.view(), library: libraryStats(currentLibrary()) });
   }
   // --- missing tracks (read-only toward the music) ----------------------------
   if (path === "/api/v1/missing" && req.method === "GET") {
-    return send(res, 200, { ...missingList(library.get(), albumMatches, missingNotes), matcher: matcherView() });
+    return send(res, 200, { ...missingList(currentLibrary(), albumMatches, missingNotes), matcher: matcherView() });
   }
   if (path === "/api/v1/missing.csv" && req.method === "GET") {
-    const csv = missingCsv(missingList(library.get(), albumMatches, missingNotes).rows);
+    const csv = missingCsv(missingList(currentLibrary(), albumMatches, missingNotes).rows);
     res.writeHead(200, { "content-type": "text/csv; charset=utf-8", "content-disposition": 'attachment; filename="synamp-missing-tracks.csv"',
       "content-length": Buffer.byteLength(csv) });
     return void res.end(csv);
@@ -291,7 +352,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return send(res, 200, { matcher: matcherView() });
   }
   const unitFor = (key: unknown) => {
-    const unit = groupAlbums(library.get()).find((item) => item.key === key);
+    const unit = groupAlbums(currentLibrary()).find((item) => item.key === key);
     if (!unit) throw new MissingError("No album folder with that key", 404);
     return unit;
   };
@@ -312,6 +373,61 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return send(res, 200, { record: await chooseRelease(albumMatches, unitFor(input.key), releaseId, mbClient()) });
   }
 
+  // --- organise: the brain proposes, the owner approves, the librarian applies ---
+  if (path === "/api/v1/organise" && req.method === "GET") {
+    return send(res, 200, organiseView(url.searchParams));
+  }
+  if (path === "/api/v1/organise/review" && req.method === "POST") {
+    const input = await body(req);
+    const status = input.status;
+    if (status !== "approved" && status !== "skipped" && status !== "proposed") throw new OrganiseError('status must be "approved", "skipped" or "proposed"');
+    const plan = organisePlan();
+    let chosen: Decision[];
+    if (Array.isArray(input.ids)) {
+      const ids = new Set(input.ids.slice(0, 10_000).map(String));
+      chosen = plan.filter((decision) => ids.has(decision.id));
+    } else if (input.filter && typeof input.filter === "object") {
+      // "Approve everything shown": the same filter the list uses, applied to the whole plan.
+      const filter = new URLSearchParams(Object.entries(input.filter as Record<string, unknown>).map(([k, v]): [string, string] => [k, String(v)]));
+      chosen = filterPlan(plan, filter);
+    } else throw new OrganiseError("Send ids, or a filter");
+    // Decisions with conflicts can be skipped, but not approved.
+    if (status === "approved") chosen = chosen.filter((decision) => !decision.conflicts.length);
+    return send(res, 200, { reviewed: organise.review(chosen, status), ...organiseView(url.searchParams) });
+  }
+  if (path === "/api/v1/organise/settings" && req.method === "POST") {
+    organise.setSettings(await body(req));
+    return send(res, 200, organiseView(url.searchParams));
+  }
+  if (path === "/api/v1/organise/apply" && req.method === "POST") {
+    const batch = organise.apply(organisePlan());
+    return send(res, 202, { batch, ...organiseView(url.searchParams) });
+  }
+  if (path === "/api/v1/organise/undo" && req.method === "POST") {
+    const batch = organise.undo(String((await body(req)).batch ?? ""));
+    return send(res, 202, { batch, ...organiseView(url.searchParams) });
+  }
+  // The librarian (the only process that writes to the music) asks for work and reports back.
+  if (path === "/api/v1/librarian/claim" && req.method === "POST") {
+    const input = await body(req);
+    const about = (input.librarian && typeof input.librarian === "object" ? input.librarian : {}) as Record<string, unknown>;
+    const text = (value: unknown) => (typeof value === "string" ? value.slice(0, 300) : undefined);
+    const job = organise.claim({
+      ...(text(about.version) ? { version: text(about.version) } : {}),
+      ...(text(about.root) ? { root: text(about.root) } : {}),
+      ...(text(about.journal) !== undefined ? { journal: text(about.journal) } : {}),
+    });
+    return send(res, 200, { job });
+  }
+  const librarianJob = path.match(/^\/api\/v1\/librarian\/jobs\/(j_[0-9a-f]{12})$/);
+  if (librarianJob && req.method === "POST") {
+    const { job, moved, folders } = organise.complete(librarianJob[1]!, await body(req));
+    overlay.record(moved);
+    carryMatches(albumMatches, folders);
+    planCache = undefined;
+    return send(res, 200, { job: { id: job.id, status: job.status } });
+  }
+
   if (path === "/api/v1/listening" && req.method === "GET") {
     const external = events.all().filter((event) => event.source === "subsonic");
     const byClient: Record<string, number> = {};
@@ -326,7 +442,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
         by_client: byClient,
         last_at: external.at(-1)?.ts ?? null,
       },
-      lastfm: scrobbler.status(events.all(), library.get()),
+      lastfm: scrobbler.status(events.all(), currentLibrary()),
     });
   }
   if (path === "/api/v1/lastfm/connect" && req.method === "POST") return send(res, 200, { url: scrobbler.connectUrl(callbackBase(req)) });
@@ -335,15 +451,15 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (typeof input.enabled !== "boolean") throw new PlaylistError("enabled must be true or false");
     scrobbler.setEnabled(input.enabled);
     if (input.enabled) afterEvents([]);
-    return send(res, 200, { lastfm: scrobbler.status(events.all(), library.get()) });
+    return send(res, 200, { lastfm: scrobbler.status(events.all(), currentLibrary()) });
   }
   if (path === "/api/v1/lastfm/disconnect" && req.method === "POST") {
     scrobbler.disconnect();
-    return send(res, 200, { lastfm: scrobbler.status(events.all(), library.get()) });
+    return send(res, 200, { lastfm: scrobbler.status(events.all(), currentLibrary()) });
   }
   if (path === "/api/v1/lastfm/flush" && req.method === "POST") {
-    const result = await scrobbler.flush(events.all(), library.get());
-    return send(res, 200, { result, lastfm: scrobbler.status(events.all(), library.get()) });
+    const result = await scrobbler.flush(events.all(), currentLibrary());
+    return send(res, 200, { result, lastfm: scrobbler.status(events.all(), currentLibrary()) });
   }
   if (path === "/api/v1/events" && req.method === "GET") {
     const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") ?? 50) || 50));
@@ -357,7 +473,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.length > 500) {
       throw new PlaylistError("prompt must be 1–500 characters");
     }
-    const lib = library.get();
+    const lib = currentLibrary();
     const draft = draftPlan(input.prompt, lib);
     const checked = validatePlan(draft.plan);
     return send(res, 200, {
@@ -372,10 +488,10 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/plans/evaluate" && req.method === "POST") {
     const checked = validatePlan((await body(req)).plan);
     if (!checked.ok) return send(res, 422, { validation: checked });
-    return send(res, 200, { validation: checked, result: evaluatePlan(checked, library.get(), { feedback: feedback() }) });
+    return send(res, 200, { validation: checked, result: evaluatePlan(checked, currentLibrary(), { feedback: feedback() }) });
   }
   if (path === "/api/v1/library" && req.method === "GET") {
-    const lib = library.get();
+    const lib = currentLibrary();
     return send(res, 200, { version: lib.version, tracks: lib.tracks.length, rejected: library.rejected, source: config.librarySignalsPath });
   }
   if (path === "/api/v1/plans/fields" && req.method === "GET") {
@@ -425,7 +541,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);

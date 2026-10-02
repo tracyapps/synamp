@@ -87,7 +87,7 @@ What it buys:
 - **Retagged file** (bytes changed, audio didn't): keeps its analysis instead of re-running every stage.
 - **Moved or renamed file** (a vanished path had the same audio): inherits that track's analysis *and its identity*, so the exported ID — and every play, love and playlist removal attached to it — follows the file.
 - **Duplicate copy** (another present file has the same audio): reuses the measurements but stays a separate track; duplicates are findable by `audio_hash`.
-- **Renames SynAmp makes itself** are listed in a rename journal (`RENAME_JOURNAL_PATH`, JSON Lines of library-relative `from`/`to`). `scan` applies it first, so those files are recognised without even being decoded.
+- **Renames SynAmp makes itself** are listed in a rename journal (`RENAME_JOURNAL_PATH`, JSON Lines of library-relative `from`/`to`). `scan` applies it first, so those files are recognised without even being decoded. The librarian (brain `src/librarian/`) writes it; on the NAS it lives at `/volume1/music/.synamp/renames.jsonl`, so on the Mac set `RENAME_JOURNAL_PATH=/Volumes/music/.synamp/renames.jsonl` and run `scan` + `export` after applying a batch.
 - Tracks analysed before this stage existed are re-opened for just this stage on the next `scan` (reported as "need a newly added stage").
 
 The hash is defined over this analyzer's decode, so it is a stable identity on one machine and decoder version — not a cross-application standard.

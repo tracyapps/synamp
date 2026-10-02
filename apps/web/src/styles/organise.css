@@ -1,0 +1,54 @@
+/* Organise panel. Reuses .listening__toggle, .chip, .missing__pages from the other panels. */
+
+.panel.organise { min-height: 0; margin-top: 18px; }
+.organise__body { padding: 4px 24px 22px; border-top: 1px solid var(--hair); }
+.organise__intro { padding: 14px 0 6px; font-size: 14px; }
+.organise__intro p { margin: 0 0 8px; max-width: 80ch; }
+.organise__intro code, .organise__preview code, .organise__moves code { font: 12px var(--font-mono); color: var(--accent); overflow-wrap: anywhere; }
+.organise__ok::before { content: "● "; color: #6fcf8b; }
+.organise__warn::before { content: "● "; color: var(--accent); }
+
+.organise__settings { margin: 8px 0 4px; font-size: 14px; }
+.organise__settings summary { cursor: pointer; color: var(--muted); font: 12px var(--font-mono); padding: 6px 0; }
+.organise__settings summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.organise__settings form { display: grid; gap: 12px; padding: 8px 0 12px; max-width: 640px; }
+.organise__settings fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; }
+.organise__check { display: flex; gap: 10px; align-items: flex-start; font: 14px var(--font-sans); color: var(--text); }
+.organise__check input { width: auto; margin-top: 3px; accent-color: var(--accent); }
+.organise__check small { display: block; color: var(--muted); font-size: 12px; }
+
+.organise__filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 14px 0 8px; }
+.organise__filters label { min-width: 180px; }
+.organise__kinds, .organise__choice, .organise__bulk { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.organise__bulk { margin-bottom: 6px; font-size: 13px; }
+
+.organise__decision { border-top: 1px solid var(--hair); padding: 14px 0; }
+.organise__decision.is-skipped { opacity: .7; }
+.organise__decision-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.organise__decision-head h4 { margin: 0; font: 600 15px var(--font-display); }
+.organise__kind { font: 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
+.organise__decision.is-approved .organise__kind { color: var(--accent); }
+.organise__changes { margin: 8px 0 6px; padding-left: 18px; font-size: 14px; }
+.organise__preview { margin: 4px 0; font-size: 13px; }
+.organise__note { margin: 6px 0; font-size: 13px; color: var(--accent); }
+.organise__conflicts { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--accent); background: rgba(224, 163, 62, .08); font-size: 13px; }
+.organise__conflicts ul { margin: 4px 0 0; padding-left: 18px; }
+.organise__moves table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; table-layout: fixed; }
+.organise__moves th { text-align: left; font: 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+.organise__moves td { padding: 5px 8px; border-top: 1px solid var(--hair); vertical-align: top; }
+
+.organise__apply { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 18px 0 6px; padding-top: 14px; border-top: 1px solid var(--hair); font-size: 14px; }
+.organise__apply p { margin: 0; flex-basis: 100%; max-width: 80ch; }
+.organise__apply .primary:disabled { opacity: .45; cursor: not-allowed; }
+.organise__batches h3 { margin: 18px 0 6px; font: 600 15px var(--font-display); }
+.organise__batch { border-top: 1px solid var(--hair); padding: 10px 0; font-size: 14px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.organise__batch p { margin: 0; flex-basis: 100%; }
+.organise__batch ul { margin: 0; padding-left: 18px; flex-basis: 100%; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 850px) {
+  .organise__moves thead { display: none; }
+  .organise__moves tr { display: grid; gap: 2px; padding: 6px 0; border-top: 1px solid var(--hair); }
+  .organise__moves td { border: none; padding: 0; }
+  .organise__moves td + td::before { content: "→ "; color: var(--muted); }
+}
+.organise__choice .chip:disabled { opacity: .45; cursor: not-allowed; }

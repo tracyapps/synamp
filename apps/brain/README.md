@@ -147,6 +147,39 @@ which is recomputed from the current library so re-ripped tracks drop off on
 their own. Nothing here touches the music files. Details and decisions:
 `docs/synamp/plans/LIBRARY-CARE.md` step 3.
 
+## Organising the library (`src/library/organise.ts`, `src/librarian/`)
+
+Propose → review → apply. The brain **only proposes**: `organise.ts` builds
+readable decisions from the library index and the MusicBrainz matches —
+artist spelling merges, and per-album naming (`Album (Year)`, `01 - Title`,
+`1-01 - Title`, disc folders folded in, compilations to `Various Artists/`;
+each part is a setting) — and keeps your approvals. An approval holds for one
+revision of a decision; if the proposal changes, it asks again. Conflicts
+(a name that's taken) can't be approved.
+
+**The librarian** is a separate process and the only part of SynAmp with
+write access to the music. It polls the brain for approved batches, checks
+every file first (refuses the whole decision if anything moved or would be
+overwritten), renames — never copies, retags or overwrites — puts things back
+if a step fails, moves artwork and other files along with their folder,
+removes folders left empty (deleting only `.DS_Store`/`._*`/`Thumbs.db`), and
+journals every move to `RENAME_JOURNAL_PATH`. The analyzer reads the same
+journal, so moved tracks keep their analysis and history. Any batch can be
+undone (newest first). Until the next analyzer export, the brain follows the
+recorded moves for files that really moved (`PathOverlay`), so they keep
+playing.
+
+```bash
+LIBRARIAN_MUSIC_PATH=/Volumes/music/library \
+RENAME_JOURNAL_PATH=/Volumes/music/.synamp/renames.jsonl \
+SYNAMP_BRAIN_URL=http://localhost:3001 SYNAMP_BRAIN_TOKEN=… \
+node --experimental-strip-types src/librarian/main.ts          # add --once for one round
+```
+
+On the NAS it runs as the `librarian` compose profile (see deploy/README.md).
+It refuses to start without a writable library or a journal path. Unsent
+reports wait in `LIBRARIAN_STATE_DIR` and are delivered first next time.
+
 ## Endpoints
 
 | Method | Path | Purpose |
@@ -169,6 +202,13 @@ their own. Nothing here touches the music files. Details and decisions:
 | GET | `/api/v1/albums/record?key=` | a folder's match and alternative editions |
 | POST | `/api/v1/albums/search` | `{key, title?, artist?}` search MusicBrainz by hand |
 | POST | `/api/v1/albums/choose` | `{key, release_id \| null}` pick an edition, or skip the folder |
+| GET | `/api/v1/organise?kind&status&q&offset&limit` | proposals (one page), summary, settings, recent batches, librarian status |
+| POST | `/api/v1/organise/review` | `{ids \| filter, status: approved/skipped/proposed}` |
+| POST | `/api/v1/organise/settings` | naming settings |
+| POST | `/api/v1/organise/apply` | queue every approved, conflict-free decision as one batch |
+| POST | `/api/v1/organise/undo` | `{batch}` put a batch back (newest first) |
+| POST | `/api/v1/librarian/claim` | the librarian asks for work (also its heartbeat) |
+| POST | `/api/v1/librarian/jobs/:id` | the librarian reports what it moved |
 | POST | `/api/v1/lastfm/connect` | → `{url}` to sign in on Last.fm |
 | GET | `/api/v1/lastfm/callback?state&token` | Last.fm returns here (state-protected, no bearer) |
 | POST | `/api/v1/lastfm/settings` | `{enabled}` turn scrobbling on/off |
@@ -192,7 +232,7 @@ All via environment (see `src/config.ts`): `BRAIN_PORT`, `BRAIN_HOST`,
 `DATABASE_URL`, `LIBRARY_PATH`, `CORE_URL`, `PLAYLIST_DATA_PATH`,
 `PLAYLIST_API_TOKEN`, `LIBRARY_SIGNALS_PATH`, `EVENTS_PATH`, `SESSION_PATH`,
 `CORE_MUSIC_PATH` (default `/music`), `LASTFM_API_KEY`, `LASTFM_API_SECRET`,
-`LASTFM_STATE_PATH`, `PUBLIC_URL`, `MUSICBRAINZ_CONTACT`. Events, session and Last.fm state default to
+`LASTFM_STATE_PATH`, `PUBLIC_URL`, `MUSICBRAINZ_CONTACT`. Organise state lives in `organise.json` and `organise-moves.jsonl` beside the playlist store. The librarian: `LIBRARIAN_MUSIC_PATH`, `RENAME_JOURNAL_PATH`, `SYNAMP_BRAIN_URL`, `SYNAMP_BRAIN_TOKEN`, `LIBRARIAN_STATE_DIR`, `LIBRARIAN_POLL_SECONDS`. Events, session and Last.fm state default to
 `events.jsonl` / `session.json` / `lastfm.json` beside the playlist store. The token protects every `/api/v1` route except streams, which use
 signed links derived from it.
 
