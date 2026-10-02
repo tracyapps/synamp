@@ -19,7 +19,7 @@ from pathlib import Path
 from . import __version__
 from .config import AnalyzerConfig
 from .export import write_export
-from .pipeline import catalog_and_queue, run_analyze, run_scan
+from .pipeline import run_analyze, run_scan
 from .sampling import materialise, plan_sample
 from .store import load_rows
 
@@ -104,17 +104,31 @@ def _cmd_sample(
     return 0
 
 
-def _cmd_stats(cfg: AnalyzerConfig) -> int:
-    catalog, queue = catalog_and_queue(cfg)
+def _cmd_stats(cfg: AnalyzerConfig, as_json: bool = False) -> int:
+    from .status import snapshot
+    from .store import Database
+
+    if not cfg.db_path.exists():
+        print(f"stats: no analyzer database at {cfg.db_path}")
+        return 1
+    with Database(cfg.db_path) as db:
+        snap = snapshot(db, cfg.library_path)
+    if as_json:
+        print(json.dumps(snap, indent=2))
+        return 0
+    catalog, queue = snap["catalog"], snap["queue"]
     print(f"stats: db={cfg.db_path}")
-    print(
-        f"stats: catalog {catalog['tracks']} tracks "
-        f"({catalog['present']} present, {catalog['missing']} missing)"
-    )
-    print(
-        "stats: queue "
-        + ", ".join(f"{state} {count}" for state, count in sorted(queue.items()))
-    )
+    print(f"stats: catalog {catalog['tracks']} tracks ({catalog['present']} present, {catalog['missing']} missing)")
+    print("stats: queue " + ", ".join(f"{state} {count}" for state, count in queue.items()))
+    present = catalog["present"] or 1
+    for stage in snap["stage_order"]:
+        done = snap["stages"][stage]
+        print(f"stats: stage {stage:<9} {done:>7} of {catalog['present']} ({100 * done / present:.1f}%)")
+    print(f"stats: fully analysed {snap['fully_analysed']} of {catalog['present']}")
+    if snap["fingerprints"]:
+        print("stats: fingerprints " + ", ".join(f"{k} {v}" for k, v in sorted(snap["fingerprints"].items())))
+    for failure in snap["recent_failures"][:5]:
+        print(f"stats: failed {failure['path']}: {failure['error']}")
     return 0
 
 
@@ -196,7 +210,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="recompute one stage for every track (after changing an extractor)",
     )
 
-    sub.add_parser("stats", help="show catalog and queue state")
+    stats = sub.add_parser("stats", help="show catalog, queue and per-stage progress")
+    stats.add_argument("--json", action="store_true", help="machine-readable output")
 
     sample = sub.add_parser(
         "sample",
@@ -239,7 +254,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "analyze":
         return _cmd_analyze(cfg, args.limit, args.requeue_failed, args.redo_stage)
     if args.command == "stats":
-        return _cmd_stats(cfg)
+        return _cmd_stats(cfg, args.json)
     if args.command == "sample":
         return _cmd_sample(cfg, args.count, args.seed, args.mode, args.out, args.dry_run)
     if args.command == "inspect":

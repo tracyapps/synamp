@@ -1,6 +1,6 @@
 # Library care — leave the library better than we found it
 
-Status: planned 2026-10-02; step 1 done (see below), step 2 next. Owner request, shaped against
+Status: planned 2026-10-02; steps 1–2 done, step 3 (missing tracks) next. Owner request, shaped against
 the existing plan: ROADMAP Phase 1 already expects a metadata cleanup pass, and
 ARCHITECTURE §16 says to clean metadata *before* the semantic layer. The Brain
 dossier already chose the tools: MusicBrainz (CC0 core) for release data and
@@ -97,6 +97,21 @@ output on real files is unverified until `brew install chromaprint` on the Mac.
 Also fixed: finished jobs were never re-opened for a newly added stage, so the
 README's "adding a stage back-fills automatically" was not true until now.
 
+### 2 — Library health & analysis progress (done 2026-10-02)
+
+The analyzer pushes `synamp.analysis-progress/1` reports to the brain
+(`SYNAMP_BRAIN_URL`, `SYNAMP_BRAIN_TOKEN`) every ~15 s while analysing and at
+the end of each scan/run: state, per-stage coverage, queue, unreadable files,
+fingerprint coverage, rate and time left. The brain type-checks and keeps the
+latest (on disk), and flags it stale after two minutes of silence mid-run. The
+web app's **Library** strip shows a progress bar, time left and the current
+file, with details: per-stage bars, waiting/unreadable/missing counts,
+recognised-not-re-analysed, Chromaprint hint, failures, and collection stats
+from the export (tracks, artists, albums, tag- vs folder-named, duplicate
+copies). Also: `synamp-analyze stats` now prints per-stage progress
+(`--json` too). Tests: analyzer 77/77 (snapshot, ETA, delivery with token,
+unreachable/failing brain, throttling), brain 58/58.
+
 ### 3 — Missing tracks: extra sources worth importing
 
 - An old **iTunes Library XML** / `.itl` backup lists every track iTunes ever
@@ -121,8 +136,21 @@ contact User-Agent, so matching 4k albums is an overnight background job.
 - Dropbox as a third import door (Dropbox API, read-only scope, copy into
   `incoming/`).
 
-## Open questions for the owner (before step 4, not before 1–3)
+## Naming decisions (owner, 2026-10-02)
 
-- Album-artist folder for compilations: `Various Artists/` or `Compilations/`?
-- Year in album folder names: yes/no?
-- Multi-disc: `Disc 1/` subfolders, or `1-01 - Title` prefixes?
+The owner asked for the most standard conventions. These follow MusicBrainz
+Picard's defaults and MusicBrainz's own conventions, so other tools agree:
+
+- **Compilations** go under **`Various Artists/`** — MusicBrainz's official album
+  artist for compilations, so a tagged compilation files itself there naturally.
+  Existing `Compilations/` folders will be proposed for merging into it (step 4,
+  with review).
+- **Album folders include the year:** `Album Artist/Album (Year)/`. Where two
+  editions of one album would collide (remaster, anniversary, deluxe…), the
+  edition is added from MusicBrainz's disambiguation — e.g. `Album (1994)` and
+  `Album (2014) [20th Anniversary Edition]` — so versions sit side by side.
+- **Multi-disc albums:** one folder, disc number prefixed on the track:
+  `1-01 - Title.flac`, `2-01 - Title.flac` (Picard's default). Single-disc
+  albums stay `01 - Title.flac`.
+
+All three stay settings; these are the defaults.

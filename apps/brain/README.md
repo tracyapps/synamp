@@ -149,6 +149,8 @@ protected by a one-time state value). Then:
 | GET/HEAD | `/api/v1/tracks/:id/stream?exp&sig` | audio with range support (signed link; no bearer token) |
 | any | `/rest/*` | Subsonic pass-through to the library core (Navidrome auth); captures scrobbles |
 | GET | `/api/v1/listening` | plays captured from other apps + Last.fm status |
+| POST | `/api/v1/analysis/progress` | the analyzer's progress report (`synamp.analysis-progress/1`) |
+| GET | `/api/v1/library/health` | latest analyzer progress (with `stale`) + library index stats |
 | POST | `/api/v1/lastfm/connect` | → `{url}` to sign in on Last.fm |
 | GET | `/api/v1/lastfm/callback?state&token` | Last.fm returns here (state-protected, no bearer) |
 | POST | `/api/v1/lastfm/settings` | `{enabled}` turn scrobbling on/off |

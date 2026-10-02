@@ -26,6 +26,7 @@ import json
 from dataclasses import fields as dataclass_fields
 
 from .identity import extract_identity
+from .status import ProgressReporter, RunClock
 from .store import (
     Database, apply_rename, find_donor, link_identity, load_result, record_audio, record_scan, save_result,
 )
@@ -172,6 +173,8 @@ def run_scan(cfg: AnalyzerConfig, progress=print) -> dict[str, int]:
         counts["requeued"] = queue.reset([Path(p) for p in stale])
         # Tracks finished before a new stage existed get just that stage.
         counts["backfilled"] = queue.requeue_incomplete(STAGES)
+        ProgressReporter(cfg.brain_url, cfg.brain_token, cfg.library_path).report(
+            db, "idle", {"last_scan": {key: int(value) for key, value in counts.items()}, "scanned_at": time.time()}, force=True)
         return counts
     finally:
         db.close()
@@ -223,6 +226,7 @@ def run_analyze(
     requeue_failed: bool = False,
     redo_stage: str | None = None,
     progress=print,
+    reporter: ProgressReporter | None = None,
 ) -> dict[str, int]:
     """Drain the queue. Returns a summary of what happened."""
     db = Database(cfg.db_path)
@@ -243,12 +247,29 @@ def run_analyze(
     if requeue_failed:
         summary["requeued_failed"] = queue.requeue_failed()
 
+    reporter = reporter or ProgressReporter(cfg.brain_url, cfg.brain_token, cfg.library_path)
+    clock = RunClock()
+    current = {"name": ""}
+
+    def run_state() -> dict:
+        remaining = db.conn.execute("SELECT COUNT(*) FROM jobs WHERE state IN ('pending', 'running')").fetchone()[0]
+        return {
+            "started_at": clock.started, "claimed": summary["claimed"], "completed": summary["completed"],
+            "failed": summary["failed"],
+            "reused": summary["kept_after_retag"] + summary["moved"] + summary["duplicate_reused"],
+            "current": current["name"], "remaining": remaining,
+            "rate_per_minute": clock.rate_per_minute(), "eta_seconds": clock.eta_seconds(remaining),
+        }
+
+    reporter.report(db, "analyzing", run_state(), force=True)
+
     try:
         while limit is None or summary["claimed"] < limit:
             job = queue.claim()
             if job is None:
                 break
             summary["claimed"] += 1
+            current["name"] = job.track_path.name
             progress(f"  {job.track_path.name}")
             try:
                 existing = load_result(db, job.track_path)
@@ -285,6 +306,10 @@ def run_analyze(
                 queue.fail(job, f"{type(exc).__name__}: {exc}")
                 summary["failed"] += 1
                 progress(f"    ! failed: {type(exc).__name__}: {exc}")
+            clock.tick()
+            reporter.report(db, "analyzing", run_state())
+        current["name"] = ""
+        reporter.report(db, "idle", run_state(), force=True)
     finally:
         db.close()
     return summary

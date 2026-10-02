@@ -39,7 +39,7 @@ export ANALYZER_DB_PATH=/tmp/synamp/analyzer.sqlite3
 uv run synamp-analyze sample --count 200       # random subset → a symlink folder
 uv run synamp-analyze scan                     # walk the share, queue new/changed files
 uv run synamp-analyze analyze [--limit N]      # process the queue
-uv run synamp-analyze stats                    # catalog and queue state
+uv run synamp-analyze stats [--json]           # catalog, queue and per-stage progress
 uv run synamp-analyze inspect --limit 3        # dump stored metrics for a few tracks
 uv run synamp-analyze export --out ~/synamp-sample/library-signals.json   # hand results to the brain
 ```
@@ -183,6 +183,23 @@ yet invalidate completed stages automatically. Recompute that stage explicitly:
 ```bash
 uv run synamp-analyze analyze --redo-stage beat
 ```
+
+## Progress in the web app
+
+Set these and the worker reports progress to the brain, which shows it in the
+web app's **Library** strip (state, tracks done, time left, current file,
+per-stage coverage, unreadable files):
+
+```bash
+export SYNAMP_BRAIN_URL=http://<nas>:8080      # or http://localhost:3001 in development
+export SYNAMP_BRAIN_TOKEN=<PLAYLIST_API_TOKEN>
+```
+
+Reports go every ~15 s during `analyze` and once at the end of `scan` and
+`analyze`. Reporting is best-effort: if the brain is unreachable, analysis
+carries on regardless. If reports stop while a run was in progress (the Mac
+went to sleep), the web app says so after two minutes. Time left is estimated
+from tracks finished in the current run, once at least three have finished.
 
 ## Exporting to the brain
 

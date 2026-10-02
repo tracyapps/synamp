@@ -3,6 +3,7 @@ import Describe, { ResultView } from "./Describe";
 import type { Evaluation } from "./Describe";
 import Player from "./Player";
 import Listening from "./Listening";
+import LibraryHealth from "./LibraryHealth";
 import type { SessionView } from "./Player";
 
 type Track = { id: string; title: string; artist?: string };
@@ -163,6 +164,7 @@ export default function App() {
           sessionStorage.setItem("synamp-playlist-token", token);
           refresh().then(() => setError("")).catch((cause) => setError(cause.message));
         }}><label>Playlist access token <input type="password" value={token} onChange={(event) => setToken(event.target.value)} /></label><button>Connect</button></form>}
+        <LibraryHealth request={call} />
         <Describe request={call} onSaved={(id) => { onSmartSaved(id).catch((cause) => setError(cause.message)); }} />
         <div className="workspace">
           <aside className="panel sidebar"><div className="panel__head"><h2>Collection</h2><span>{nodes.length} nodes</span></div>

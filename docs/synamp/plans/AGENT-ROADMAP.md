@@ -337,3 +337,15 @@ counts feedback under old IDs. Analyzer 72/72, brain 55/55. Unverified: real
 Chromaprint output; decode determinism across macOS decoder updates for `.m4a`
 (a changed decoder would change hashes and look like new audio — the cost is
 re-analysis, not data loss).
+
+### 2026-10-02 — Library care step 2: library health and analysis progress
+
+Analyzer `status.py` (SQL snapshot, run clock, best-effort throttled reporter)
+pushes progress to brain `POST /api/v1/analysis/progress`; brain `library/health.ts`
+validates, persists and flags stale reports; `GET /api/v1/library/health` adds
+index stats. Web `LibraryHealth.tsx` strip with native `<progress>` bars. Naming
+defaults recorded in LIBRARY-CARE.md (Various Artists, `Album (Year)`, `1-01`
+disc prefixes). Analyzer 77/77, brain 58/58; live check: a real analyzer run on
+38 synthetic files reported to a running brain (37 done, 1 unreadable, 1
+duplicate recognised); the panel was checked in a browser with a simulated
+45k-track mid-run report. Next: step 3, missing tracks (MusicBrainz matching).

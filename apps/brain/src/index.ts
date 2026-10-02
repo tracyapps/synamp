@@ -34,6 +34,7 @@ import { createSubsonicProxy } from "./subsonic/proxy.ts";
 import type { CapturedPlay } from "./subsonic/proxy.ts";
 import { LastfmClient, LastfmError } from "./lastfm/client.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
+import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
 
 const STARTED_AT = Date.now();
 const library = new LibrarySource(config.librarySignalsPath);
@@ -41,6 +42,7 @@ const dataDir = dirname(config.playlistDataPath);
 const events = new EventLog(config.eventsPath || join(dataDir, "events.jsonl"));
 const sessions = new SessionStore(config.sessionPath || join(dataDir, "session.json"), events);
 const signer = new StreamSigner(config.playlistApiToken || undefined);
+const analysisStatus = new AnalysisStatus(join(dataDir, "analysis-status.json"));
 const scrobbler = new Scrobbler(config.lastfmStatePath || join(dataDir, "lastfm.json"),
   config.lastfmApiKey && config.lastfmApiSecret ? new LastfmClient({ apiKey: config.lastfmApiKey, secret: config.lastfmApiSecret }) : undefined);
 
@@ -159,7 +161,7 @@ async function body(req: IncomingMessage): Promise<Record<string, unknown>> {
   let input = "";
   for await (const chunk of req) {
     input += chunk;
-    if (input.length > 64_000) throw new PlaylistError("Request body too large", 413);
+    if (input.length > 256_000) throw new PlaylistError("Request body too large", 413);
   }
   try {
     const value: unknown = JSON.parse(input);
@@ -188,7 +190,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
 
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
-    "/api/v1/lastfm", "/api/v1/listening"]
+    "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -241,6 +243,14 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       }
     }
     return send(res, result.duplicate ? 200 : 201, { event: result.event, duplicate: result.duplicate });
+  }
+  // --- library health: analyzer progress (pushed from the Mac) + index stats ---
+  if (path === "/api/v1/analysis/progress" && req.method === "POST") {
+    const progress = analysisStatus.record(await body(req));
+    return send(res, 202, { received: progress.received_at });
+  }
+  if (path === "/api/v1/library/health" && req.method === "GET") {
+    return send(res, 200, { analysis: analysisStatus.view(), library: libraryStats(library.get()) });
   }
   if (path === "/api/v1/listening" && req.method === "GET") {
     const external = events.all().filter((event) => event.source === "subsonic");
@@ -355,6 +365,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
+    if (error instanceof HealthError) return send(res, error.status, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
     send(res, 500, { error: "internal_error" });
