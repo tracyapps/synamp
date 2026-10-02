@@ -268,3 +268,31 @@ test("a saved plan picks up a newly analysed track from the library file", () =>
     assert.equal(source.rejected, 1);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("every signal the analyzer exports is registered here", () => {
+  const exporter = readFileSync(new URL("../../../../services/analyzer/src/synamp_analyzer/export.py", import.meta.url), "utf8");
+  const block = exporter.slice(exporter.indexOf("EXPORTED_SIGNALS"), exporter.indexOf("STATUS_FIELDS"));
+  const names = [...block.matchAll(/"([a-z_]+)"/g)].map((match) => match[1]!).filter((name) => !["dsp_core", "beat"].includes(name));
+  assert.ok(names.length > 10, "parsed the exporter's field list");
+  for (const name of names) {
+    assert.ok(SIGNALS.has(name), `${name} is exported by the analyzer but not in the registry`);
+    assert.equal(SIGNALS.get(name)!.status, "produced", `${name} is exported, so it should be marked produced`);
+  }
+});
+
+test("the library reader accepts analyzer exports and refuses unknown formats", () => {
+  const dir = mkdtempSync(join(tmpdir(), "synamp-fmt-"));
+  try {
+    const path = join(dir, "library.json");
+    writeFileSync(path, JSON.stringify({ format: "synamp.library-signals/1", tracks: [
+      { id: "p:abc", path: "A/B/01 X.flac", title: "X", artist: "A", metadata_source: "path", beat_status: "tracked",
+        stages_done: ["beat", "dsp_core"], signals: { bpm: 120, pulse_clarity: 0.7 } },
+    ] }));
+    const lib = new LibrarySource(path).get();
+    const plan = valid(basePlan({ constraints: [{ id: "fast", source_phrase: "over 100 bpm", hard: true, unknown_policy: "exclude", confidence: 1,
+      where: { field: "bpm", op: "gte", value: 100 } }] }));
+    assert.deepEqual(ids(evaluatePlan(plan, lib).strict), ["p:abc"]);
+    writeFileSync(path, JSON.stringify({ format: "synamp.library-signals/9", tracks: [] }));
+    assert.throws(() => new LibrarySource(path).get(), /unsupported format/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

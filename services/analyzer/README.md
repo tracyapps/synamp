@@ -41,6 +41,7 @@ uv run synamp-analyze scan                     # walk the share, queue new/chang
 uv run synamp-analyze analyze [--limit N]      # process the queue
 uv run synamp-analyze stats                    # catalog and queue state
 uv run synamp-analyze inspect --limit 3        # dump stored metrics for a few tracks
+uv run synamp-analyze export --out ~/synamp-sample/library-signals.json   # hand results to the brain
 ```
 
 Exit codes: `0` success, `1` at least one job failed, `2` usage error.
@@ -163,6 +164,35 @@ yet invalidate completed stages automatically. Recompute that stage explicitly:
 ```bash
 uv run synamp-analyze analyze --redo-stage beat
 ```
+
+## Exporting to the brain
+
+`synamp-analyze export` writes `synamp.library-signals/1` JSON — the file the
+brain's smart playlists read through `LIBRARY_SIGNALS_PATH`. It is the contract
+between the two services; the SQLite queue stays private to the worker.
+
+- **Only current values.** A stage's fields are exported only while the job
+  record counts that stage as done. A changed file (reset by `scan`) or a stage
+  cleared with `--redo-stage` has its old values withheld, not served as current.
+- **Null is absence.** Unmeasured values are omitted, never written as 0.
+- **Declared fields only.** `EXPORTED_SIGNALS` in `export.py` names each field
+  and its stage. Tests fail if a stage produces a field that is neither exported
+  nor listed as internal, and the brain's tests fail if an exported name is not
+  in its signal registry.
+- **Stable IDs.** `id` is a hash of the path relative to `LIBRARY_PATH`, so a
+  sample (a symlink mirror of the library) and the full library agree.
+- **Titles come from paths for now** (`Artist/Album/NN Title.ext`, marked
+  `metadata_source: "path"`). No tag reader is installed; the planned join with
+  Navidrome's tags is by the same relative path.
+- Written atomically (temp file + rename), so a running brain never reads half a file.
+
+```bash
+uv run synamp-analyze export --out ~/synamp-sample/library-signals.json
+LIBRARY_SIGNALS_PATH=~/synamp-sample/library-signals.json pnpm brain:dev
+```
+
+Today that makes tempo, pulse, loudness and microtiming rules work on real music.
+Voice, instrument and mood rules stay "not measured" until those stages exist.
 
 ## Licensing note
 

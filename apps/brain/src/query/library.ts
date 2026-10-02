@@ -14,6 +14,9 @@ import { createHash } from "node:crypto";
 import { readFileSync, statSync } from "node:fs";
 import type { Library, LibraryTrack } from "./evaluate.ts";
 
+/** Formats this reader understands. A file with no `format` is the hand-made/sample shape. */
+export const LIBRARY_FORMATS = ["synamp.library-signals/1"] as const;
+
 export class LibrarySource {
   private path: string;
   private cached: Library = { version: "empty", tracks: [] };
@@ -35,6 +38,11 @@ export class LibrarySource {
     if (stamp === this.stamp) return this.cached;
     const raw = readFileSync(this.path, "utf8");
     const parsed: unknown = JSON.parse(raw);
+    const format = Array.isArray(parsed) ? undefined : (parsed as { format?: unknown }).format;
+    if (format !== undefined && !(LIBRARY_FORMATS as readonly unknown[]).includes(format)) {
+      // A newer exporter must not be read with old assumptions.
+      throw new Error(`Library file ${this.path} has unsupported format ${JSON.stringify(format)}`);
+    }
     const rows = Array.isArray(parsed) ? parsed : (parsed as { tracks?: unknown }).tracks;
     if (!Array.isArray(rows)) throw new Error(`Library file ${this.path} has no tracks array`);
     const seen = new Set<string>();

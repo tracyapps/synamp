@@ -44,9 +44,30 @@ sample by default). Web: “Describe what you want to hear” panel.
   consume it.
 - **Unverified:** everything about real music. Voice, instrument, arousal and
   mood fields have no producer, so real tracks are unknown for them.
-- **Next smallest experiment:** a versioned analyzer `export` command that writes
-  the `LIBRARY_SIGNALS_PATH` shape from SQLite (produced fields only), run on the
-  200-track sample, so tempo/pulse/loudness plans run on real music today.
+- **Next smallest experiment:** ~~analyzer `export` command~~ — done, below.
+
+### 2026-10-01 — P1 deliverable 5: analyzer → brain export (partial P1)
+
+`synamp-analyze export` writes `synamp.library-signals/1` (`export.py`). Fields are
+exported per stage only while the job record counts the stage done, so changed
+files and `--redo-stage` withhold stale values. Null is omitted. IDs hash the
+library-relative path, so sample and full library agree. Titles/artists are
+path-derived (`metadata_source: "path"`); no tag reader yet. The brain refuses
+unknown formats.
+
+- **Confirmed:** 8 new analyzer tests (stale withholding, redo-stage scope,
+  sample/full ID agreement, missing files, atomic write, every stage output
+  classified as exported or internal) — analyzer 64/64; brain cross-checks that
+  every exported name is a `produced` registry field — brain 25/25. End-to-end on
+  synthetic click tracks: scan → analyze → export → “nothing too slow, under 140
+  bpm” returned exactly the 100 and 128 BPM tracks; “no piano” returned no strict
+  tracks and four “not measured” near misses.
+- **Not done:** stage revisions/fingerprints (P1 1–4) — `beat_method` is exported
+  per track but a changed algorithm still needs `--redo-stage`; Postgres sync;
+  tag-based metadata; joining IDs to Navidrome song IDs for playback.
+- **Next smallest experiment:** run `export` on the owner's 200-track sample and
+  try tempo/pulse prompts on it. In code: P3 — real playback events — so the
+  feedback loop has a source of truth.
 
 ## Dependency order and ownership
 

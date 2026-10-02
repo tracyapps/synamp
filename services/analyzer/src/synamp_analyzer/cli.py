@@ -4,6 +4,7 @@
     synamp-analyze analyze [--limit N]   # run queued jobs until the queue drains
     synamp-analyze stats                 # catalog and queue state
     synamp-analyze inspect [--limit N]   # dump stored metrics for analysed tracks
+    synamp-analyze export [--out FILE]   # write the brain's library-signals JSON
 
 Exit codes: 0 success, 1 something failed, 2 usage error.
 """
@@ -17,6 +18,7 @@ from pathlib import Path
 
 from . import __version__
 from .config import AnalyzerConfig
+from .export import write_export
 from .pipeline import catalog_and_queue, run_analyze, run_scan
 from .sampling import materialise, plan_sample
 from .store import load_rows
@@ -140,6 +142,26 @@ def _cmd_inspect(cfg: AnalyzerConfig, limit: int) -> int:
     return 0
 
 
+def _cmd_export(cfg: AnalyzerConfig, out: str | None) -> int:
+    from .store import Database
+
+    destination = Path(out) if out else cfg.cache_dir / "library-signals.json"
+    if not cfg.db_path.exists():
+        print(f"export: no analyzer database at {cfg.db_path}")
+        return 1
+    with Database(cfg.db_path) as db:
+        counts = write_export(db, cfg.library_path, destination)
+    print(f"export: library={cfg.library_path}")
+    print(f"export: wrote {counts['exported']} tracks to {destination}")
+    print(
+        f"export: skipped {counts['missing_on_disk']} missing, {counts['outside_root']} outside the library root; "
+        f"{counts['no_results']} not analysed yet, {counts['withheld_stale']} with stale values withheld, "
+        f"{counts['failed']} failed"
+    )
+    print(f"export: point the brain at it with LIBRARY_SIGNALS_PATH={destination}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="synamp-analyze",
@@ -192,6 +214,9 @@ def build_parser() -> argparse.ArgumentParser:
     inspect = sub.add_parser("inspect", help="dump stored metrics for analysed tracks")
     inspect.add_argument("--limit", type=int, default=3, help="how many tracks to show")
 
+    export = sub.add_parser("export", help="write analysed signals as JSON for the brain")
+    export.add_argument("--out", default=None, help="destination file (default: cache dir)")
+
     return parser
 
 
@@ -208,6 +233,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_sample(cfg, args.count, args.seed, args.mode, args.out, args.dry_run)
     if args.command == "inspect":
         return _cmd_inspect(cfg, args.limit)
+    if args.command == "export":
+        return _cmd_export(cfg, args.out)
     return 2
 
 

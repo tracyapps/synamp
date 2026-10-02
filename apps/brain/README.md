@@ -62,10 +62,11 @@ under-fill returns fewer tracks plus near misses, never a silently widened
 exclusion. These are fixture tests of logic — not evidence any classifier is
 accurate on real music.
 
-**Library data (interim).** There is no analyzer → brain export yet, so the
-brain reads per-track signals from `LIBRARY_SIGNALS_PATH` (default
-`fixtures/library.sample.json`, a **synthetic** 60-track library — regenerate with
-`node fixtures/make-sample-library.mjs`). The file is re-read when it changes,
+**Library data.** The brain reads per-track signals from `LIBRARY_SIGNALS_PATH`.
+Point it at the analyzer's export (`synamp-analyze export`, format
+`synamp.library-signals/1`) to query real analysed music; an unknown `format`
+is refused. The default, `fixtures/library.sample.json`, is a **synthetic**
+60-track library — regenerate with `node fixtures/make-sample-library.mjs`. The file is re-read when it changes,
 so saved smart playlists pick up new tracks without a restart. Most fields the
 flagship prompt needs (voice, instruments, arousal, mood) are `declared` with no
 producer yet: on a real library every track is *unknown* for them until P4
