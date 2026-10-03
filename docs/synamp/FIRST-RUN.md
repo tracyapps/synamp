@@ -86,15 +86,21 @@ On the NAS (all `docker compose` commands in this guide run on the NAS, from
 
 ```bash
 cd /volume1/docker/synamp/deploy
-docker compose --env-file .env --profile app up -d --build db brain web edge
+sudo docker compose --env-file .env --profile app up -d --build db brain web edge
 ```
 
 Naming the four services is what keeps Navidrome (`core`) switched off.
+
+**Why `sudo`:** on DSM only root may use Docker, so without it you get
+`permission denied … docker.sock`. You'll be asked for your DSM password. If
+it then says `docker: command not found`, use the full path:
+`sudo /usr/local/bin/docker compose …` (`which docker` shows it). The
+containers still run as you (1026), so their files belong to you.
 The first build takes a few minutes.
 
 Open `http://Syd.local:8080` and enter the `PLAYLIST_API_TOKEN` when asked.
 
-**Done when** the page loads and `docker compose ps` shows no `core`.
+**Done when** the page loads and `sudo docker compose ps` shows no `core`.
 
 ## 3. First scan and export (Mac)
 
@@ -147,7 +153,7 @@ because merges use MusicBrainz's spelling of each artist.
 1. On the NAS, start the librarian (the only part of SynAmp allowed to change files):
 
    ```bash
-   docker compose --env-file .env --profile app --profile librarian up -d librarian
+   sudo docker compose --env-file .env --profile app --profile librarian up -d librarian
    ```
 
    The Organise panel should say "The librarian is running".
@@ -164,7 +170,7 @@ because merges use MusicBrainz's spelling of each artist.
    ```
 
    This is what lets analysis and history follow the moved files.
-5. When you're done: `docker compose stop librarian`.
+5. When you're done: `sudo docker compose stop librarian`.
 
 **Done when** you're happy with the folders. It doesn't have to be perfect —
 anything you change later is handled, it just costs Navidrome its play counts
@@ -173,7 +179,7 @@ for those tracks (SynAmp keeps its own).
 ## 6. Navidrome's first scan
 
 ```bash
-docker compose --env-file .env up -d core
+sudo docker compose --env-file .env up -d core
 ```
 
 Open `http://Syd.local:4533`, create the Navidrome admin account, and wait for
@@ -201,7 +207,7 @@ the new results.
 
 ## If something goes wrong
 
-- **A container won't start**: `docker compose logs <name>` (brain, web,
+- **A container won't start**: `sudo docker compose logs <name>` (brain, web,
   edge, librarian, core).
 - **Web app shows no tracks**: the export file isn't at
   `/volume1/music/.synamp/library-signals.json`, or `.env` is missing
