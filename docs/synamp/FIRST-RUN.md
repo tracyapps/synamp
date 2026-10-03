@@ -105,20 +105,37 @@ Open `http://Syd.local:8080` and enter the `PLAYLIST_API_TOKEN` when asked.
 ## 3. First scan and export (Mac)
 
 The analyzer runs on the Mac and reads the music over the network share.
-Mount the `music` share (`smb://Syd.local/music`), then in Terminal:
+First mount the `music` share in Finder (Go → Connect to Server →
+`smb://Syd.local/music`).
+
+**3a. Settings, once.** In Terminal, paste these three lines:
+
+```bash
+mkdir -p ~/SynAmp-data
+cp /Users/tapps/_dev/web-apps/SynAmp/services/analyzer/mac-env.example.sh ~/SynAmp-data/env.sh
+open -a TextEdit ~/SynAmp-data/env.sh
+```
+
+In TextEdit, replace `PASTE_YOUR_TOKEN_HERE` with your `PLAYLIST_API_TOKEN`
+(keep the quotes around it), save, and close.
+
+**3b. Install, once.** Paste:
+
+```bash
+brew install chromaprint
+cd /Users/tapps/_dev/web-apps/SynAmp/services/analyzer
+uv pip install -e ".[dev]"
+```
+
+(If `uv` says there is no virtual environment, run `uv venv --python 3.12`
+first, then the last line again. `chromaprint` is optional but recommended:
+it recognises the same song across formats.)
+
+**3c. Scan and export.** Paste:
 
 ```bash
 cd /Users/tapps/_dev/web-apps/SynAmp/services/analyzer
-brew install chromaprint        # optional, recommended: recognises the same song across formats
-uv venv --python 3.12 && uv pip install -e ".[dev]"     # first time only
-
-export LIBRARY_PATH=/Volumes/music/library
-export ANALYZER_DB_PATH=$HOME/SynAmp-data/analyzer.sqlite3      # on the Mac's own disk, never the share
-export RENAME_JOURNAL_PATH=/Volumes/music/.synamp/renames.jsonl
-export SYNAMP_BRAIN_URL=http://Syd.local:8080
-export SYNAMP_BRAIN_TOKEN=<your PLAYLIST_API_TOKEN>
-mkdir -p $HOME/SynAmp-data
-
+source ~/SynAmp-data/env.sh
 uv run synamp-analyze scan
 uv run synamp-analyze export --out /Volumes/music/.synamp/library-signals.json
 ```
@@ -127,8 +144,11 @@ uv run synamp-analyze export --out /Volumes/music/.synamp/library-signals.json
 reads every file's tags over the network, so it's the slow one; later exports
 reuse what it read.
 
-Tip: put the `export` lines in a file (e.g. `~/SynAmp-data/env.sh`) and run
-`source ~/SynAmp-data/env.sh` in each new Terminal window.
+In any new Terminal window, run the `cd` and `source` lines again before
+other `synamp-analyze` commands.
+
+> Paste commands exactly as shown. The Mac's Terminal (zsh) doesn't accept
+> notes after a `#` on a pasted line, or `<` `>` around placeholders.
 
 **Done when** the **Library** strip in the web app shows your track and
 album counts.
@@ -163,10 +183,11 @@ because merges use MusicBrainz's spelling of each artist.
    work.
 3. Then work through the rest in batches — artist merges first, then albums.
    Skip anything you'd rather keep as it is.
-4. After each batch, on the Mac:
+4. After each batch, on the Mac (in the analyzer folder, after `source ~/SynAmp-data/env.sh`):
 
    ```bash
-   uv run synamp-analyze scan && uv run synamp-analyze export --out /Volumes/music/.synamp/library-signals.json
+   uv run synamp-analyze scan
+   uv run synamp-analyze export --out /Volumes/music/.synamp/library-signals.json
    ```
 
    This is what lets analysis and history follow the moved files.
