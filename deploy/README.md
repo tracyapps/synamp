@@ -21,6 +21,10 @@ why the layout is shaped this way.
 The music share is mounted **read-only** into the containers. Everything the app
 *writes* lives under `DATA_DIR`, which is also the only thing you need to back up.
 
+> **First time?** Follow [`../docs/synamp/FIRST-RUN.md`](../docs/synamp/FIRST-RUN.md)
+> instead of this page from top to bottom: it puts these steps in the safe order
+> (tidy the library before Navidrome's first scan).
+
 ## 1. One-time setup
 
 1. In DSM, install **Container Manager** from Package Center.
@@ -32,6 +36,8 @@ The music share is mounted **read-only** into the containers. Everything the app
    mkdir -p /volume1/docker/synamp/data/caddy
    mkdir -p /volume1/docker/synamp/data/caddy-config
    mkdir -p /volume1/docker/synamp/data/brain
+   mkdir -p /volume1/docker/synamp/data/librarian
+   mkdir -p /volume1/music/.synamp
    ```
 
    **Synology's Docker does not auto-create bind-mount host directories.** If you

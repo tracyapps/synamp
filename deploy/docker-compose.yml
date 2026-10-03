@@ -66,6 +66,8 @@ services:
     build:
       context: ../apps/brain
     restart: unless-stopped
+    # Same owner as your music files, so uploads it writes to incoming/ can be filed.
+    user: "${PUID:-1026}:${PGID:-100}"
     depends_on:
       db:
         condition: service_healthy
@@ -85,12 +87,15 @@ services:
       PUBLIC_URL: ${PUBLIC_URL:-}
       # Contact (email or URL) for MusicBrainz's User-Agent; needed for the missing-tracks list.
       MUSICBRAINZ_CONTACT: ${MUSICBRAINZ_CONTACT:-}
+      # The analyzer's export, written by the Mac into the share's .synamp/ folder.
+      LIBRARY_SIGNALS_PATH: /shared/library-signals.json
       # New music waiting to be filed; web uploads land in incoming/_web/. Never the library.
       INCOMING_PATH: /incoming
       UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-2048}
     volumes:
       - ${MUSIC_PATH:?set MUSIC_PATH in deploy/.env}:/music:ro
       - ${INCOMING_PATH:-/volume1/music/incoming}:/incoming
+      - ${MUSIC_SHARE:-/volume1/music}/.synamp:/shared:ro
       - ${DATA_DIR:?set DATA_DIR in deploy/.env}/brain:/data
     expose:
       - "3001"
@@ -137,7 +142,9 @@ services:
     profiles: ["app"]
     image: caddy:2-alpine
     restart: unless-stopped
-    depends_on: [brain, web, core]
+    # Not on `core`: the edge never talks to Navidrome directly (the brain proxies
+    # /rest), so the app can run before Navidrome's first scan — see FIRST-RUN.md.
+    depends_on: [brain, web]
     ports:
       - "${HTTP_PORT:-8080}:80"
     volumes:
