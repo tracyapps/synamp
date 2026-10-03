@@ -41,6 +41,8 @@ import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
 import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay } from "./library/organise.ts";
 import { AUDIO_EXTENSIONS, buildImport, COMPANION_EXTENSIONS, IncomingScanner, PART_SUFFIX, WEB_FOLDER } from "./library/import.ts";
 import { isSafeRelative } from "./library/naming.ts";
+import { artistStats, chooseArtist, DiscographyChecker, DiscographyError, discographyReport, DiscographyStore } from "./library/discography.ts";
+import type { ArtistStat } from "./library/discography.ts";
 import { open as openFile, mkdir, rename as renameFile, unlink, stat as statFile } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
 import { posix } from "node:path";
@@ -62,6 +64,28 @@ const organise = new OrganiseStore(join(dataDir, "organise.json"));
 /** Moved files keep working before the analyzer re-exports (see PathOverlay). */
 const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
 function currentLibrary() { return overlay.apply(library.get()); }
+/** Discography gaps: artists you love, what they released, what you don't have. */
+const discography = new DiscographyStore(join(dataDir, "discography.json"));
+let statsCache: { key: string; stats: ArtistStat[] } | undefined;
+function stats(): ArtistStat[] {
+  const lib = currentLibrary();
+  const key = `${lib.version}|${events.all().length}`;
+  if (statsCache?.key !== key) statsCache = { key, stats: artistStats(lib, events.all(), (id) => library.canonicalId(id)) };
+  return statsCache.stats;
+}
+const discographyChecker = new DiscographyChecker(discography, mbClient, stats, () => albumMatches.records);
+function discographyView() {
+  return {
+    ...discographyReport(currentLibrary(), stats(), discography, albumMatches.records),
+    settings: discography.state.settings,
+    checker: { state: discographyChecker.state, current: discographyChecker.current, done_this_run: discographyChecker.done, last_error: discographyChecker.lastError, contact_set: !!config.musicbrainzContact },
+  };
+}
+const statFor = (key: unknown) => {
+  const found = stats().find((stat) => stat.key === key);
+  if (!found) throw new DiscographyError("No artist with that key in the library", 404);
+  return found;
+};
 /** New music waiting in incoming/ (import is off when INCOMING_PATH isn't set). */
 const incoming = config.incomingPath ? new IncomingScanner(config.incomingPath) : undefined;
 const matcher = new Matcher(albumMatches, mbClient, () => currentLibrary());
@@ -326,7 +350,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -431,6 +455,53 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const input = await body(req);
     const releaseId = input.release_id === null ? null : String(input.release_id ?? "");
     return send(res, 200, { record: await chooseRelease(albumMatches, unitFor(input.key), releaseId, mbClient()) });
+  }
+
+  // --- discography gaps (read-only toward the music) --------------------------
+  if (path === "/api/v1/discography" && req.method === "GET") return send(res, 200, discographyView());
+  if (path === "/api/v1/discography/artists" && req.method === "GET") {
+    // Every library artist, for "follow someone": filtered by name, best first.
+    const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();
+    const followed = new Set(discography.followed(stats()).map((s) => s.key));
+    const list = stats().filter((s) => !q || s.name.toLowerCase().includes(q)).slice(0, 40)
+      .map((s) => ({ ...s, followed: followed.has(s.key), status: discography.state.artists[s.key]?.status ?? null }));
+    return send(res, 200, { artists: list, total: stats().length });
+  }
+  if (path === "/api/v1/discography/follow" && req.method === "POST") {
+    const input = await body(req);
+    if (typeof input.follow !== "boolean") throw new DiscographyError("follow must be true or false");
+    discography.follow(statFor(input.key).key, input.follow, stats());
+    return send(res, 200, discographyView());
+  }
+  if (path === "/api/v1/discography/check" && req.method === "POST") {
+    const input = await body(req);
+    if (input.action === "start") discographyChecker.start()?.catch((error) => console.error("Discography check stopped", error));
+    else if (input.action === "pause") discographyChecker.pause();
+    else throw new DiscographyError('action must be "start" or "pause"');
+    return send(res, 200, discographyView());
+  }
+  if (path === "/api/v1/discography/choose" && req.method === "POST") {
+    const input = await body(req);
+    await chooseArtist(discography, statFor(input.key), input.mbid === null ? null : String(input.mbid ?? ""), mbClient());
+    return send(res, 200, discographyView());
+  }
+  if (path === "/api/v1/discography/search" && req.method === "POST") {
+    const input = await body(req);
+    const name = typeof input.name === "string" && input.name.trim() ? input.name.trim().slice(0, 200) : statFor(input.key).name;
+    const record = discography.state.artists[statFor(input.key).key];
+    const candidates = await mbClient().searchArtists(name);
+    // Remember them, so picking one can name it.
+    discography.set({ ...(record ?? { key: statFor(input.key).key, name: statFor(input.key).name, checked_at: Date.now() }), status: "needs_choice", candidates });
+    return send(res, 200, { candidates });
+  }
+  if (path === "/api/v1/discography/note" && req.method === "POST") {
+    const input = await body(req);
+    discography.note(String(input.id ?? ""), input.status as "want");
+    return send(res, 200, discographyView());
+  }
+  if (path === "/api/v1/discography/settings" && req.method === "POST") {
+    discography.setSettings(await body(req));
+    return send(res, 200, discographyView());
   }
 
   // --- organise: the brain proposes, the owner approves, the librarian applies ---
@@ -611,7 +682,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);

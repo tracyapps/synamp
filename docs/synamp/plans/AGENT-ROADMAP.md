@@ -388,3 +388,14 @@ librarian and undo, copy-and-verify across filesystems. Web `AddMusic.tsx`
 `incoming/` read-write, the librarian mounts the whole share. Brain 91/91,
 analyzer 79/79; live browser upload → review → librarian filing. Next: step 6
 (discography gaps) or 4b (writing tags); Dropbox later.
+
+### 2026-10-03 — Library care step 6: discography gaps
+
+Brain `library/discography.ts` (artist scores from library + listening events,
+auto/manual follows, MusicBrainz artist resolution via matched albums or
+search with a review queue, release-group browse with bootleg filter, gap
+report with new/upcoming flags, notes, listen/buy search links, background
+checker with monthly re-check); `musicbrainz.ts` gains artist search,
+release-group browse, and artist/release-group IDs on release lookups. Web
+`DiscographyGaps.tsx`. Brain 96/96; live MusicBrainz check. Library care plan
+complete apart from 4b (writing tags) and Dropbox import.

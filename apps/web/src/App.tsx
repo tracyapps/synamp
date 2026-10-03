@@ -6,6 +6,7 @@ import Listening from "./Listening";
 import LibraryHealth from "./LibraryHealth";
 import MissingTracks from "./MissingTracks";
 import OrganiseLibrary from "./OrganiseLibrary";
+import DiscographyGaps from "./DiscographyGaps";
 import { newId } from "./ids";
 import type { SessionView } from "./Player";
 
@@ -227,6 +228,7 @@ export default function App() {
         </div>
         <MissingTracks request={call} download={download} />
         <OrganiseLibrary request={call} upload={upload} />
+        <DiscographyGaps request={call} />
         <Listening request={call} />
         <Player request={call} session={session} onSession={setSession}
           playlistName={(id) => nodes.find((node) => node.id === id)?.name}

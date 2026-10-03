@@ -22,7 +22,14 @@ export type MbRelease = {
   status?: string;
   track_count: number;
   media: MbMedium[];
+  /** MusicBrainz artist IDs of the credited artists (newer lookups only). */
+  artist_ids?: string[];
+  /** The release group (the album across all its editions; newer lookups only). */
+  release_group_id?: string;
 };
+export type MbArtist = { id: string; name: string; sort_name?: string; disambiguation?: string; country?: string; type?: string; score: number };
+/** An album, EP or single across all its editions. */
+export type MbReleaseGroup = { id: string; title: string; primary_type?: string; secondary_types: string[]; first_release_date?: string };
 export type MbCandidate = Omit<MbRelease, "media"> & { score: number; formats: string[] };
 
 export class MusicBrainzError extends Error {
@@ -31,7 +38,8 @@ export class MusicBrainzError extends Error {
   get retryable(): boolean { return this.status === 0 || this.status === 429 || this.status === 503 || this.status >= 500; }
 }
 
-type RawCredit = Array<{ name?: string; joinphrase?: string; artist?: { name?: string } }>;
+type RawCredit = Array<{ name?: string; joinphrase?: string; artist?: { name?: string; id?: string } }>;
+const creditIds = (raw: RawCredit | undefined) => (raw ?? []).map((part) => part.artist?.id).filter((id): id is string => typeof id === "string");
 const credit = (raw: RawCredit | undefined) => (raw ?? []).map((part) => (part.name ?? part.artist?.name ?? "") + (part.joinphrase ?? "")).join("").trim();
 
 /** Lucene escaping for MusicBrainz search terms. */
@@ -98,7 +106,7 @@ export class MusicBrainz {
 
   async release(id: string): Promise<MbRelease> {
     if (!/^[0-9a-f-]{36}$/.test(id)) throw new MusicBrainzError("Not a MusicBrainz release ID", 400);
-    const raw = await this.get<Record<string, unknown>>(`/release/${id}?inc=recordings+artist-credits&fmt=json`);
+    const raw = await this.get<Record<string, unknown>>(`/release/${id}?inc=recordings+artist-credits+release-groups&fmt=json`);
     const media = ((raw.media as Array<Record<string, unknown>>) ?? []).map((medium, index) => ({
       position: Number(medium.position ?? index + 1),
       ...(typeof medium.format === "string" ? { format: medium.format } : {}),
@@ -119,6 +127,40 @@ export class MusicBrainz {
       ...(typeof raw.status === "string" ? { status: raw.status } : {}),
       track_count: media.reduce((sum, medium) => sum + medium.tracks.length, 0),
       media,
+      ...(creditIds(raw["artist-credit"] as RawCredit).length ? { artist_ids: creditIds(raw["artist-credit"] as RawCredit) } : {}),
+      ...(typeof (raw["release-group"] as { id?: unknown } | undefined)?.id === "string" ? { release_group_id: (raw["release-group"] as { id: string }).id } : {}),
     };
+  }
+
+  async searchArtists(name: string, limit = 8): Promise<MbArtist[]> {
+    const data = await this.get<{ artists?: Array<Record<string, unknown>> }>(
+      `/artist?query=${encodeURIComponent(`artist:"${luceneEscape(name)}"`)}&limit=${limit}&fmt=json`);
+    return (data.artists ?? []).map((raw) => ({
+      id: String(raw.id), name: String(raw.name ?? ""), score: Number(raw.score ?? 0),
+      ...(typeof raw["sort-name"] === "string" ? { sort_name: raw["sort-name"] } : {}),
+      ...(typeof raw.disambiguation === "string" && raw.disambiguation ? { disambiguation: raw.disambiguation } : {}),
+      ...(typeof raw.country === "string" ? { country: raw.country } : {}),
+      ...(typeof raw.type === "string" ? { type: raw.type } : {}),
+    }));
+  }
+
+  /** Every release group credited to an artist (browsed 100 at a time, up to `max`), leaving out ones that only exist as bootlegs. */
+  async releaseGroups(artistId: string, max = 500): Promise<MbReleaseGroup[]> {
+    if (!/^[0-9a-f-]{36}$/.test(artistId)) throw new MusicBrainzError("Not a MusicBrainz artist ID", 400);
+    const out: MbReleaseGroup[] = [];
+    for (let offset = 0; offset < max; offset += 100) {
+      const data = await this.get<{ "release-groups"?: Array<Record<string, unknown>>; "release-group-count"?: number }>(
+        `/release-group?artist=${artistId}&release-group-status=website-default&limit=100&offset=${offset}&fmt=json`);
+      for (const raw of data["release-groups"] ?? []) {
+        out.push({
+          id: String(raw.id), title: String(raw.title ?? ""),
+          ...(typeof raw["primary-type"] === "string" ? { primary_type: raw["primary-type"] } : {}),
+          secondary_types: Array.isArray(raw["secondary-types"]) ? (raw["secondary-types"] as unknown[]).map(String) : [],
+          ...(typeof raw["first-release-date"] === "string" && raw["first-release-date"] ? { first_release_date: raw["first-release-date"] } : {}),
+        });
+      }
+      if (offset + 100 >= Number(data["release-group-count"] ?? 0)) break;
+    }
+    return out;
   }
 }

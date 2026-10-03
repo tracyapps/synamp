@@ -1,6 +1,6 @@
 # Library care — leave the library better than we found it
 
-Status: planned 2026-10-02; steps 1–5 done (step 4: renames and moves; tag writing later; step 5 without Dropbox), step 6 (discography gaps) or 4b (writing tags) next. Owner request, shaped against
+Status: planned 2026-10-02; steps 1–6 done (step 4: renames and moves; step 5 without Dropbox). Open: 4b writing tags, Dropbox import. Owner request, shaped against
 the existing plan: ROADMAP Phase 1 already expects a metadata cleanup pass, and
 ARCHITECTURE §16 says to clean metadata *before* the semantic layer. The Brain
 dossier already chose the tools: MusicBrainz (CC0 core) for release data and
@@ -256,6 +256,41 @@ failed. It now falls back to `getRandomValues`.
 Not yet: Dropbox as a third door; automatic filing without review; recognising
 the same recording in a different format as a duplicate (needs the analyzer's
 fingerprints).
+
+### 6 — Discography gaps (done 2026-10-03)
+
+Read-only toward the music (`apps/brain/src/library/discography.ts`):
+
+- **Who you love**: every artist folder scored by tracks and albums kept, plays
+  (SynAmp's own full plays and plays from other apps) and loves. The top 50
+  are followed automatically (a setting); follow or unfollow anyone in
+  *Artists you follow*.
+- **Which MusicBrainz artist**: from albums already matched in step 3 when
+  they carry the artist ID (album lookups now keep artist and release-group
+  IDs), else a name search. One clear match is taken; namesakes go to **Which
+  artist?** for the owner to pick (or skip).
+- **What they released**: the artist's release groups (an album across all its
+  editions), leaving out ones MusicBrainz knows only as bootlegs
+  (`release-group-status=website-default`). Albums by default; EPs, singles and
+  live/compilation/soundtrack/remix releases are settings.
+- **What you don't have**: compared by release group where known, else by
+  loosely compared title (remaster/deluxe suffixes ignored). Each gap shows
+  year and type, **New** (last ~4 months) or **Coming <date>**, Want / Not
+  interested, and plain search links to listen or buy: MusicBrainz, Bandcamp,
+  Apple Music, Spotify, YouTube Music, Discogs (CD/vinyl). No accounts or APIs.
+- Checking runs in the background at MusicBrainz's pace (sharing the one rate-
+  limited client), pausable, with backoff; each artist is re-checked monthly,
+  which is what surfaces new releases.
+
+Confirmed: brain 96/96 (scores and follows, artist ID from matched albums
+with no search, clear vs ambiguous names, owned by group and title, type and
+bootleg filters, new/upcoming, not-interested hidden, checker and monthly
+re-check, choosing an artist, link encoding). **Live** against MusicBrainz:
+Ani DiFranco and Tracy Chapman looked up, 30 albums listed as not owned; the
+bootleg filter removed two stray entries. Panel checked in a browser.
+
+Not yet: alerts outside the app (email/push) for new releases; using
+Last.fm history to find artists you love but don't own at all.
 
 ### Missing tracks: extra sources worth importing
 

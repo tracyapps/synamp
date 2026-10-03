@@ -197,6 +197,18 @@ and only then removes the original. Import journal lines carry `source`/
 `target` instead of `from`/`to`, so the analyzer treats them as new files, not
 renames. `INCOMING_PATH` turns it on; `UPLOAD_MAX_MB` caps a single file.
 
+## Discography gaps (`src/library/discography.ts`)
+
+Albums by artists you love that you don't have yet. Artists are scored from
+the library and listening events (top 50 followed automatically; follow or
+unfollow anyone), resolved to MusicBrainz (from step 3's matched albums when
+possible, else a search; namesakes wait for you), and their release groups —
+minus bootleg-only ones — are compared with your albums by release group and
+title. Gaps carry New / Coming flags, Want / Not interested, and plain search
+links (MusicBrainz, Bandcamp, Apple Music, Spotify, YouTube Music, Discogs).
+Background checking shares the one MusicBrainz client and re-checks monthly.
+State: `discography.json` beside the playlist store.
+
 ## Endpoints
 
 | Method | Path | Purpose |
@@ -226,6 +238,13 @@ renames. `INCOMING_PATH` turns it on; `UPLOAD_MAX_MB` caps a single file.
 | POST | `/api/v1/organise/undo` | `{batch}` put a batch back (newest first) |
 | PUT | `/api/v1/import/upload?upload&path` | one file from the web app → `incoming/_web/<upload>/<path>` (`x-content-sha256` optional) |
 | POST | `/api/v1/import/rescan` | look at `incoming/` again now |
+| GET | `/api/v1/discography` | gaps per followed artist, review queue, settings, checker state |
+| GET | `/api/v1/discography/artists?q=` | library artists with scores and follow state |
+| POST | `/api/v1/discography/follow` | `{key, follow}` |
+| POST | `/api/v1/discography/check` | `{action: "start" \| "pause"}` |
+| POST | `/api/v1/discography/search` / `choose` | find / pick the MusicBrainz artist (`mbid: null` skips) |
+| POST | `/api/v1/discography/note` | `{id, status: want/ignore/none}` |
+| POST | `/api/v1/discography/settings` | `{albums, eps, singles, include_other, auto_follow}` |
 | POST | `/api/v1/librarian/claim` | the librarian asks for work (also its heartbeat) |
 | POST | `/api/v1/librarian/jobs/:id` | the librarian reports what it moved |
 | POST | `/api/v1/lastfm/connect` | → `{url}` to sign in on Last.fm |
