@@ -73,10 +73,13 @@ export function cleanSettings(input: Record<string, unknown>, current: OrganiseS
 
 // --- the plan -------------------------------------------------------------------------
 
-export type Move = { from: string; to: string; track_id?: string; audio_hash?: string };
+/** Where a path lives: the library (default) or `incoming/` (imports). */
+export type Area = "incoming";
+export type Move = { from: string; to: string; track_id?: string; audio_hash?: string; from_area?: Area; to_area?: Area };
 export type FolderMove = {
   from: string;
   to: string;
+  from_area?: Area;
   /** Sub-folders that belong to other albums: left where they are. */
   keep?: string[];
 };
@@ -86,7 +89,7 @@ export type Decision = {
   id: string;
   /** Changes whenever the proposed moves change; an approval is for one revision. */
   rev: string;
-  kind: "artist" | "album";
+  kind: "artist" | "album" | "import";
   title: string;
   /** Plain-language list of what this does. */
   changes: string[];
@@ -258,7 +261,7 @@ function albumDecision(unit: AlbumUnit, ctx: PlanContext, settings: OrganiseSett
     }
   }
   const discs = new Set(unit.tracks.map((t) => discOf(t) ?? fromRelease.get(t.id)?.disc ?? 1));
-  const multiDisc = discs.size > 1 || unit.tracks.some((t) => (t.disc_total ?? 1) > 1);
+  const multiDisc = discs.size > 1 || [...discs].some((d) => d > 1) || unit.tracks.some((t) => (t.disc_total ?? 1) > 1);
   const highest = Math.max(0, ...unit.tracks.map((t) => Math.max(t.track_total ?? 0, t.track_no ?? 0)));
   const width = Math.max(2, String(highest).length);
 
@@ -374,7 +377,7 @@ export type Job = {
   claimed_at?: number;
   decisions: JobDecision[];
 };
-export type LibrarianSeen = { last_seen: number; version?: string; root?: string; journal?: string; problem?: string };
+export type LibrarianSeen = { last_seen: number; version?: string; root?: string; incoming?: string; journal?: string; problem?: string };
 
 type State = {
   format: "synamp.organise/1";
@@ -394,6 +397,12 @@ function writeJson(path: string, value: unknown): void {
   const temp = `${path}.${randomBytes(6).toString("hex")}.tmp`;
   writeFileSync(temp, JSON.stringify(value) + "\n", { mode: 0o600 });
   renameSync(temp, path);
+}
+
+/** The same move backwards (areas swap too). */
+export function reverseMove(move: Move): Move {
+  const { from_area, to_area, ...rest } = move;
+  return { ...rest, from: move.to, to: move.from, ...(to_area ? { from_area: to_area } : {}), ...(from_area ? { to_area: from_area } : {}) };
 }
 
 export class OrganiseStore {
@@ -446,11 +455,14 @@ export class OrganiseStore {
     if (!chosen.length) throw new OrganiseError("Nothing approved to apply");
     const moved: FolderMove[] = [];
     const jobDecisions: JobDecision[] = [];
-    // Artist merges first; album decisions then follow the files to their merged folder.
-    for (const decision of [...chosen.filter((d) => d.kind === "artist"), ...chosen.filter((d) => d.kind !== "artist")]) {
-      const moves = decision.moves.map((move) => ({ ...move, from: rebase(move.from, moved), to: rebase(move.to, moved) }));
+    // New music first (it may land in a folder that a merge or rename then moves, along with it);
+    // then artist merges; album decisions then follow the files to their merged folder.
+    const order = { import: 0, artist: 1, album: 2 } as const;
+    for (const decision of [...chosen].sort((a, b) => order[a.kind] - order[b.kind])) {
+      const inLibrary = (path: string, area?: Area) => (area ? path : rebase(path, moved));
+      const moves = decision.moves.map((move) => ({ ...move, from: inLibrary(move.from, move.from_area), to: inLibrary(move.to, move.to_area) }));
       const folders = decision.folders.map((folder) => ({
-        ...folder, from: rebase(folder.from, moved), to: rebase(folder.to, moved),
+        ...folder, from: inLibrary(folder.from, folder.from_area), to: rebase(folder.to, moved),
         ...(folder.keep ? { keep: folder.keep.map((key) => rebase(key, moved)) } : {}),
       }));
       jobDecisions.push({ id: decision.id, title: decision.title, kind: decision.kind, moves, folders });
@@ -481,7 +493,7 @@ export class OrganiseStore {
     const decisions: JobDecision[] = batch.decisions
       .filter((d) => d.status === "applied" && d.moved?.length && d.undo?.status !== "undone")
       .reverse()
-      .map((d) => ({ id: d.id, title: d.title, kind: d.kind, folders: [], moves: [...d.moved!].reverse().map((m) => ({ ...m, from: m.to, to: m.from })) }));
+      .map((d) => ({ id: d.id, title: d.title, kind: d.kind, folders: [], moves: [...d.moved!].reverse().map(reverseMove) }));
     if (!decisions.length) throw new OrganiseError("Nothing in this batch to undo");
     batch.undo = { status: "queued", requested_at: now };
     this.state.jobs.push({ id: `j_${randomBytes(6).toString("hex")}`, batch: batch.id, kind: "undo", status: "queued", created_at: now, decisions });
@@ -518,7 +530,8 @@ export class OrganiseStore {
       const outcome = batch?.decisions.find((d) => d.id === result.id);
       const planned = job.decisions.find((d) => d.id === result.id)!;
       moved.push(...result.moved);
-      if (result.status === "applied") folders.push(...planned.folders.map(({ from, to }) => ({ from, to })));
+      // Folder moves inside the library carry the MusicBrainz matches along; imports have none yet.
+      if (result.status === "applied") folders.push(...planned.folders.filter((f) => !f.from_area).map(({ from, to }) => ({ from, to })));
       if (!outcome) continue;
       if (job.kind === "apply") {
         outcome.status = result.status;
@@ -528,8 +541,8 @@ export class OrganiseStore {
         if (result.status === "applied") delete this.state.reviews[result.id];
       } else {
         // An undo that only partly worked keeps what is left, so it can be tried again.
-        const undone = new Set(result.moved.map((m) => `${m.to}\n${m.from}`));
-        if (outcome.moved) outcome.moved = outcome.moved.filter((m) => !undone.has(`${m.from}\n${m.to}`));
+        const undone = new Set(result.moved.map((m) => `${m.to_area ?? ""}:${m.to}\n${m.from_area ?? ""}:${m.from}`));
+        if (outcome.moved) outcome.moved = outcome.moved.filter((m) => !undone.has(`${m.from_area ?? ""}:${m.from}\n${m.to_area ?? ""}:${m.to}`));
         outcome.undo = { status: result.status === "applied" ? "undone" : "failed", ...(result.errors.length ? { errors: result.errors } : {}) };
       }
     }
@@ -566,7 +579,10 @@ function cleanResults(input: unknown, job: Job): CleanResult[] {
     if (typeof entry.id !== "string" || !known.has(entry.id) || out.some((r) => r.id === entry.id)) continue;
     const moved = (Array.isArray(entry.moved) ? entry.moved : [])
       .filter((m): m is Move => !!m && typeof m === "object" && isSafeRelative((m as Move).from) && isSafeRelative((m as Move).to))
-      .map((m) => ({ from: m.from, to: m.to, ...(typeof m.track_id === "string" ? { track_id: m.track_id } : {}), ...(typeof m.audio_hash === "string" ? { audio_hash: m.audio_hash } : {}) }));
+      .map((m) => ({
+        from: m.from, to: m.to, ...(typeof m.track_id === "string" ? { track_id: m.track_id } : {}), ...(typeof m.audio_hash === "string" ? { audio_hash: m.audio_hash } : {}),
+        ...(m.from_area === "incoming" ? { from_area: "incoming" as const } : {}), ...(m.to_area === "incoming" ? { to_area: "incoming" as const } : {}),
+      }));
     out.push({ id: entry.id, status: entry.status === "applied" ? "applied" : "failed", moved, errors: texts(entry.errors), notes: texts(entry.notes) });
   }
   // Anything the librarian didn't mention did not happen.
@@ -624,7 +640,9 @@ export class PathOverlay {
 
   get count(): number { return this.moves.length; }
 
-  record(moves: Move[]): void {
+  record(all: Move[]): void {
+    // Only moves inside the library matter here; new arrivals reach the index with the next export.
+    const moves = all.filter((m) => !m.from_area && !m.to_area);
     if (!moves.length) return;
     mkdirSync(dirname(this.file), { recursive: true });
     appendFileSync(this.file, moves.map((m) => JSON.stringify({ from: m.from, to: m.to })).join("\n") + "\n");

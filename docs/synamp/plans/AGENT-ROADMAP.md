@@ -374,3 +374,17 @@ unsent reports. Web `OrganiseLibrary.tsx` panel; compose `librarian` profile.
 beets not used for path-only organising (see LIBRARY-CARE.md). Brain 83/83;
 live apply + undo through brain and librarian on a sample library. Next: step 5,
 import (web drop + `incoming/`), or 4b tag writing.
+
+### 2026-10-03 — Library care step 5: import
+
+Brain `library/tags.ts` (dependency-free ID3/FLAC/MP4 tag reader),
+`library/import.ts` (incoming scanner with settle time and tag cache, "new
+music" decisions that reuse existing artist/album folders, content duplicates
+set aside, versions kept), streamed web upload endpoint into
+`incoming/_web/`, moves with areas (library / incoming) through organise,
+librarian and undo, copy-and-verify across filesystems. Web `AddMusic.tsx`
+(drop zone, file and folder pickers, progress) inside the Organise panel;
+`ids.ts` fixes `crypto.randomUUID` on plain-HTTP pages. Compose: brain gets
+`incoming/` read-write, the librarian mounts the whole share. Brain 91/91,
+analyzer 79/79; live browser upload → review → librarian filing. Next: step 6
+(discography gaps) or 4b (writing tags); Dropbox later.

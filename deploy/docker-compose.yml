@@ -85,8 +85,12 @@ services:
       PUBLIC_URL: ${PUBLIC_URL:-}
       # Contact (email or URL) for MusicBrainz's User-Agent; needed for the missing-tracks list.
       MUSICBRAINZ_CONTACT: ${MUSICBRAINZ_CONTACT:-}
+      # New music waiting to be filed; web uploads land in incoming/_web/. Never the library.
+      INCOMING_PATH: /incoming
+      UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-2048}
     volumes:
       - ${MUSIC_PATH:?set MUSIC_PATH in deploy/.env}:/music:ro
+      - ${INCOMING_PATH:-/volume1/music/incoming}:/incoming
       - ${DATA_DIR:?set DATA_DIR in deploy/.env}/brain:/data
     expose:
       - "3001"
@@ -94,8 +98,8 @@ services:
 
   # --- librarian: the ONLY service that may change the music files ----------
   # Opt-in:  docker compose --env-file .env --profile app --profile librarian up -d
-  # Applies organise batches you approved in the web app (renames/moves only,
-  # journaled, undoable). Same image as the brain, different command.
+  # Applies batches you approved in the web app (renames/moves, and filing new
+  # music from incoming/; journaled, undoable). Same image as the brain.
   librarian:
     profiles: ["librarian"]
     build:
@@ -105,14 +109,16 @@ services:
     depends_on: [brain]
     user: "${PUID:-1026}:${PGID:-100}"
     environment:
-      LIBRARIAN_MUSIC_PATH: /music
-      RENAME_JOURNAL_PATH: /journal/renames.jsonl
+      # One mount for the whole share, so library/ and incoming/ are on the same
+      # filesystem and filing new music is an instant rename, not a copy.
+      LIBRARIAN_MUSIC_PATH: /share/library
+      LIBRARIAN_INCOMING_PATH: /share/incoming
+      RENAME_JOURNAL_PATH: /share/.synamp/renames.jsonl
       LIBRARIAN_STATE_DIR: /data
       SYNAMP_BRAIN_URL: http://brain:3001
       SYNAMP_BRAIN_TOKEN: ${PLAYLIST_API_TOKEN:?set PLAYLIST_API_TOKEN in deploy/.env}
     volumes:
-      - ${MUSIC_PATH:?set MUSIC_PATH in deploy/.env}:/music          # read-write: this one only
-      - ${JOURNAL_DIR:-/volume1/music/.synamp}:/journal
+      - ${MUSIC_SHARE:-/volume1/music}:/share          # read-write: this service only
       - ${DATA_DIR:?set DATA_DIR in deploy/.env}/librarian:/data
     networks: [synamp]
 

@@ -1,6 +1,6 @@
 # Library care — leave the library better than we found it
 
-Status: planned 2026-10-02; steps 1–4 done (step 4: renames and moves; tag writing later), step 5 (import) next. Owner request, shaped against
+Status: planned 2026-10-02; steps 1–5 done (step 4: renames and moves; tag writing later; step 5 without Dropbox), step 6 (discography gaps) or 4b (writing tags) next. Owner request, shaped against
 the existing plan: ROADMAP Phase 1 already expects a metadata cleanup pass, and
 ARCHITECTURE §16 says to clean metadata *before* the semantic layer. The Brain
 dossier already chose the tools: MusicBrainz (CC0 core) for release data and
@@ -205,6 +205,57 @@ checked in a browser at desktop and phone widths.
 
 Not yet: writing tags (4b); album-artist re-filing by tags; a Btrfs snapshot
 before each batch is the owner's step for now (documented).
+
+### 5 — Import (done 2026-10-03; Dropbox later)
+
+Two doors, one pipeline, the same review as organising:
+
+- **`incoming/` on the NAS**: copy albums in with Finder. Files changed in the
+  last 30 s are "still arriving" and wait.
+- **Drag and drop in the web app** (or Choose files / Choose a folder): copies
+  only — the owner's originals are never touched. The brain streams each file
+  into `incoming/_web/<upload>/` under a temporary name, checks its size (and the
+  browser's SHA-256 when the page is on HTTPS), then renames it into place. The
+  brain gets read-write on `incoming/` only; the library stays read-only.
+- **The proposal** (`apps/brain/src/library/import.ts`): tags from the files
+  (`tags.ts`: ID3v2.2–2.4/ID3v1, FLAC Vorbis comments, iTunes MP4 atoms; no
+  dependencies), else `Artist/Album/` folder names, else flagged. One "New
+  music" decision per arriving album. An artist already in the library keeps
+  its folder spelling; an album already there is **filled in** (re-ripped
+  missing tracks land in their album and drop off the missing list after the
+  next export); otherwise a new `Album (Year)` folder. Track names follow the
+  organise settings; disc folders fold in.
+- **Duplicates by content**: a file byte-identical to one already in that album
+  folder (under any name) is **set aside** in `incoming/_duplicates/`, never
+  deleted. A different file with the same name is kept as "(2)". (Same
+  recording in another format simply has another extension, so both are kept.)
+- **Filing** is the librarian's: same precheck / rollback / journal / undo.
+  On one filesystem it's a rename; across disks it copies, compares SHA-256,
+  and only then removes the original. In a batch, new music goes first. Import
+  journal lines use `source`/`target` (not `from`/`to`), so the analyzer sees
+  new files rather than renames (tested on the analyzer side too).
+- Deploy: the librarian now mounts the whole share (`MUSIC_SHARE`) so
+  `incoming/` → `library/` is a same-filesystem rename; journal at
+  `.synamp/renames.jsonl` in the share.
+
+Confirmed: brain 91/91 (tags from real ID3/FLAC/MP4 layouts and junk files,
+the incoming scan, filling existing albums, folder-name fallback, disc folders,
+compilations, unknowns flagged, duplicates set aside / versions as "(2)",
+artwork with loose uploads, batch ordering and undo across areas, the librarian
+filing from incoming, a real cross-filesystem copy-and-verify); analyzer 79/79.
+**Live:** browser upload of loose files and of a whole album folder, plus a
+folder copied into `incoming/`; an identical copy of a track already in the
+library was set aside; approved, applied by the librarian, filed into the
+existing album and two new ones, `incoming/` left empty apart from
+`_duplicates/`. Checked at desktop and phone widths.
+
+Also fixed: the web app used `crypto.randomUUID()`, which browsers only offer
+on HTTPS pages — opened as `http://nas:8080`, playing a playlist would have
+failed. It now falls back to `getRandomValues`.
+
+Not yet: Dropbox as a third door; automatic filing without review; recognising
+the same recording in a different format as a duplicate (needs the analyzer's
+fingerprints).
 
 ### Missing tracks: extra sources worth importing
 

@@ -39,6 +39,11 @@ import { groupAlbums } from "./library/albums.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
 import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
 import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay } from "./library/organise.ts";
+import { AUDIO_EXTENSIONS, buildImport, COMPANION_EXTENSIONS, IncomingScanner, PART_SUFFIX, WEB_FOLDER } from "./library/import.ts";
+import { isSafeRelative } from "./library/naming.ts";
+import { open as openFile, mkdir, rename as renameFile, unlink, stat as statFile } from "node:fs/promises";
+import { randomBytes } from "node:crypto";
+import { posix } from "node:path";
 import type { Decision } from "./library/organise.ts";
 
 const STARTED_AT = Date.now();
@@ -57,6 +62,8 @@ const organise = new OrganiseStore(join(dataDir, "organise.json"));
 /** Moved files keep working before the analyzer re-exports (see PathOverlay). */
 const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
 function currentLibrary() { return overlay.apply(library.get()); }
+/** New music waiting in incoming/ (import is off when INCOMING_PATH isn't set). */
+const incoming = config.incomingPath ? new IncomingScanner(config.incomingPath) : undefined;
 const matcher = new Matcher(albumMatches, mbClient, () => currentLibrary());
 function matcherView() {
   return {
@@ -169,12 +176,62 @@ function sessionView(session: Session) {
   };
 }
 
+/**
+ * One uploaded file → incoming/_web/<upload>/<path>. Written to a temporary
+ * name while it streams, checked (size, and the browser's checksum when it
+ * sent one), then renamed into place, so the import never sees half a file.
+ */
+async function receiveUpload(req: IncomingMessage, url: URL) {
+  if (!incoming) throw new OrganiseError("Importing is off: set INCOMING_PATH on the brain", 409);
+  const upload = url.searchParams.get("upload") ?? "";
+  const relative = url.searchParams.get("path") ?? "";
+  if (!/^[a-z0-9-]{6,40}$/.test(upload)) throw new OrganiseError("Bad upload id");
+  if (!isSafeRelative(relative) || relative.split("/").length > 8 || relative.split("/").some((part) => part.startsWith("."))) throw new OrganiseError("Bad file path");
+  const extension = posix.extname(relative).toLowerCase();
+  if (!AUDIO_EXTENSIONS.has(extension) && !COMPANION_EXTENSIONS.has(extension)) {
+    throw new OrganiseError(`Only music files and the artwork, cue sheets or logs that go with them can be added (not ${extension || "this file"})`, 415);
+  }
+  const declared = Number(req.headers["content-length"] ?? NaN);
+  if (declared > config.uploadMaxBytes) throw new OrganiseError(`Files over ${Math.round(config.uploadMaxBytes / 1048576)} MB aren't accepted`, 413);
+  const expected = String(req.headers["x-content-sha256"] ?? "").toLowerCase();
+  const target = join(incoming.root, WEB_FOLDER, upload, ...relative.split("/"));
+  if (await statFile(target).then(() => true, () => false)) throw new OrganiseError("That file was already uploaded", 409);
+  await mkdir(dirname(target), { recursive: true });
+  const temp = `${target}${PART_SUFFIX}-${randomBytes(4).toString("hex")}`;
+  const handle = await openFile(temp, "wx");
+  const hash = createHash("sha256");
+  let bytes = 0;
+  try {
+    for await (const chunk of req as AsyncIterable<Buffer>) {
+      bytes += chunk.length;
+      if (bytes > config.uploadMaxBytes) throw new OrganiseError(`Files over ${Math.round(config.uploadMaxBytes / 1048576)} MB aren't accepted`, 413);
+      hash.update(chunk);
+      await handle.write(chunk);
+    }
+    await handle.close();
+    const sha256 = hash.digest("hex");
+    if (Number.isFinite(declared) && bytes !== declared) throw new OrganiseError("The upload was cut short; try again", 422);
+    if (/^[0-9a-f]{64}$/.test(expected) && expected !== sha256) throw new OrganiseError("The file arrived damaged (checksum mismatch); try again", 422);
+    await renameFile(temp, target);
+    incoming.invalidate();
+    return { path: `${WEB_FOLDER}/${upload}/${relative}`, bytes, sha256 };
+  } catch (error) {
+    await handle.close().catch(() => undefined);
+    await unlink(temp).catch(() => undefined);
+    throw error;
+  }
+}
+
 /** The organise plan, rebuilt only when the library, the matches or the settings change. */
 let planCache: { key: string; plan: Decision[] } | undefined;
 function organisePlan(): Decision[] {
   const lib = currentLibrary();
-  const key = `${lib.version}|${albumMatches.revision}|${JSON.stringify(organise.state.settings)}`;
-  if (planCache?.key !== key) planCache = { key, plan: buildPlan(lib, albumMatches.records, organise.state.settings) };
+  const scan = incoming?.scan();
+  const key = `${lib.version}|${albumMatches.revision}|${JSON.stringify(organise.state.settings)}|${scan?.scanned_at ?? 0}`;
+  if (planCache?.key !== key) {
+    const imports = scan ? buildImport(scan, lib, organise.state.settings, { incomingRoot: incoming!.root, libraryRoot: config.libraryPath }) : [];
+    planCache = { key, plan: [...imports, ...buildPlan(lib, albumMatches.records, organise.state.settings)] };
+  }
   return planCache.plan;
 }
 function filterPlan(plan: Decision[], query: URLSearchParams): Decision[] {
@@ -191,7 +248,7 @@ function filterPlan(plan: Decision[], query: URLSearchParams): Decision[] {
 const LIBRARIAN_ONLINE_MS = 90_000;
 function organiseView(query: URLSearchParams) {
   const plan = organisePlan();
-  const summary = { total: plan.length, proposed: 0, approved: 0, skipped: 0, conflicts: 0, changed: 0, artist: 0, album: 0, approved_moves: 0 };
+  const summary = { total: plan.length, proposed: 0, approved: 0, skipped: 0, conflicts: 0, changed: 0, artist: 0, album: 0, import: 0, approved_moves: 0 };
   for (const decision of plan) {
     const { status, changed } = organise.statusOf(decision);
     summary[status]++;
@@ -220,6 +277,9 @@ function organiseView(query: URLSearchParams) {
     busy: !!organise.busy(),
     librarian: seen ? { ...seen, online: Date.now() - seen.last_seen < LIBRARIAN_ONLINE_MS } : null,
     pending_export: overlay.count > 0 && currentLibrary().version !== library.get().version,
+    incoming: incoming ? (({ files, arriving, ignored, set_aside, truncated }) => ({ enabled: true, files: files.length, arriving, ignored, set_aside, truncated }))(incoming.scan())
+      : { enabled: false },
+    upload_max_mb: Math.round(config.uploadMaxBytes / 1024 / 1024),
   };
 }
 
@@ -266,7 +326,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -407,6 +467,14 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const batch = organise.undo(String((await body(req)).batch ?? ""));
     return send(res, 202, { batch, ...organiseView(url.searchParams) });
   }
+  // Web drag-and-drop: one file per request, streamed into incoming/_web/<upload>/ (never the library).
+  if (path === "/api/v1/import/upload" && req.method === "PUT") {
+    return send(res, 201, await receiveUpload(req, url));
+  }
+  if (path === "/api/v1/import/rescan" && req.method === "POST") {
+    incoming?.invalidate();
+    return send(res, 200, organiseView(url.searchParams));
+  }
   // The librarian (the only process that writes to the music) asks for work and reports back.
   if (path === "/api/v1/librarian/claim" && req.method === "POST") {
     const input = await body(req);
@@ -415,6 +483,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const job = organise.claim({
       ...(text(about.version) ? { version: text(about.version) } : {}),
       ...(text(about.root) ? { root: text(about.root) } : {}),
+      ...(text(about.incoming) ? { incoming: text(about.incoming) } : {}),
       ...(text(about.journal) !== undefined ? { journal: text(about.journal) } : {}),
     });
     return send(res, 200, { job });
@@ -424,6 +493,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const { job, moved, folders } = organise.complete(librarianJob[1]!, await body(req));
     overlay.record(moved);
     carryMatches(albumMatches, folders);
+    incoming?.invalidate();
     planCache = undefined;
     return send(res, 200, { job: { id: job.id, status: job.status } });
   }

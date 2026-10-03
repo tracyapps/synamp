@@ -1,10 +1,11 @@
 /** The librarian on real (temporary) folders: apply, refuse, put back, undo, report. */
 
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
+import { reverseMove } from "../library/organise.ts";
 import type { JobDecision } from "../library/organise.ts";
 import { applyDecision, inside, Journal, pruneEmpty, runJob, undoDecision } from "./apply.ts";
 import { checkSetup, runOnce } from "./main.ts";
@@ -198,4 +199,58 @@ test("the librarian loop: claims a job from the brain, does it, reports — and 
     assert.equal((reports[0] as { results: Array<{ status: string }> }).results[0]!.status, "applied");
     assert.ok(!existsSync(join(state, "pending-report.json")));
   } finally { lib.cleanup(); rmSync(state, { recursive: true, force: true }); }
+});
+
+test("import: files from incoming/ are filed, artwork follows, identical copies set aside, undo puts them back", () => {
+  const lib = library({ "Ani DiFranco/Little Plastic Castle (1998)/01 - Little Plastic Castle.mp3": "lpc" });
+  const incoming = mkdtempSync(join(tmpdir(), "synamp-incoming-"));
+  try {
+    const add = (path: string, content: string) => { mkdirSync(dirname(join(incoming, path)), { recursive: true }); writeFileSync(join(incoming, path), content); };
+    add("ani/lpc/Gravel.mp3", "gravel");
+    add("ani/lpc/cover.jpg", "art");
+    add("ani/lpc/.DS_Store", "junk");
+    add("ani/lpc/again.mp3", "lpc");
+    const decision: JobDecision = { id: "import:1", title: "New: Ani DiFranco — Little Plastic Castle", kind: "import",
+      moves: [
+        { from: "ani/lpc/Gravel.mp3", to: "Ani DiFranco/Little Plastic Castle (1998)/03 - Gravel.mp3", from_area: "incoming" },
+        { from: "ani/lpc/again.mp3", to: "_duplicates/ani/lpc/again.mp3", from_area: "incoming", to_area: "incoming" },
+      ],
+      folders: [{ from: "ani/lpc", to: "Ani DiFranco/Little Plastic Castle (1998)", from_area: "incoming" }] };
+    assert.match(applyDecision(decision, { root: lib.root, batch: "b", journal: lib.journal }).errors[0]!, /LIBRARIAN_INCOMING_PATH/);
+
+    const ctx = { root: lib.root, incoming, batch: "b_2", journal: lib.journal };
+    const result = applyDecision(decision, ctx);
+    assert.equal(result.status, "applied", result.errors.join());
+    assert.deepEqual(lib.tree(), [
+      "Ani DiFranco/Little Plastic Castle (1998)/01 - Little Plastic Castle.mp3",
+      "Ani DiFranco/Little Plastic Castle (1998)/03 - Gravel.mp3",
+      "Ani DiFranco/Little Plastic Castle (1998)/cover.jpg",
+    ]);
+    assert.ok(existsSync(join(incoming, "_duplicates/ani/lpc/again.mp3")), "set aside, not deleted");
+    assert.ok(!existsSync(join(incoming, "ani")), "the emptied arrival folder is tidied away");
+    assert.ok(existsSync(incoming), "incoming/ itself always stays");
+    const journal = lib.journalLines();
+    assert.ok(journal.every((line) => line.from === undefined && line.to === undefined), "the analyzer must not read imports as renames");
+    assert.equal(journal[0].source_area, "incoming");
+    assert.equal(journal[0].target, "Ani DiFranco/Little Plastic Castle (1998)/03 - Gravel.mp3");
+
+    const back = undoDecision({ ...decision, folders: [], moves: [...result.moved].reverse().map(reverseMove) }, ctx);
+    assert.equal(back.status, "applied", back.errors.join());
+    assert.ok(existsSync(join(incoming, "ani/lpc/Gravel.mp3")) && existsSync(join(incoming, "ani/lpc/again.mp3")) && existsSync(join(incoming, "ani/lpc/cover.jpg")));
+    assert.deepEqual(lib.tree(), ["Ani DiFranco/Little Plastic Castle (1998)/01 - Little Plastic Castle.mp3"]);
+  } finally { lib.cleanup(); rmSync(incoming, { recursive: true, force: true }); }
+});
+
+test("import across disks: copied, checksum-verified, then the original removed", { skip: !existsSync("/dev/shm") || statSync("/dev/shm").dev === statSync(tmpdir()).dev }, () => {
+  const lib = library({});
+  const incoming = mkdtempSync(join("/dev/shm", "synamp-incoming-"));
+  try {
+    writeFileSync(join(incoming, "song.mp3"), "a".repeat(5000));
+    const decision: JobDecision = { id: "import:2", title: "New", kind: "import", moves: [{ from: "song.mp3", to: "A/B (2000)/01 - Song.mp3", from_area: "incoming" }], folders: [] };
+    const result = applyDecision(decision, { root: lib.root, incoming, batch: "b", journal: lib.journal });
+    assert.equal(result.status, "applied", result.errors.join());
+    assert.equal(lib.read("A/B (2000)/01 - Song.mp3"), "a".repeat(5000));
+    assert.ok(!existsSync(join(incoming, "song.mp3")));
+    assert.deepEqual(lib.tree(), ["A/B (2000)/01 - Song.mp3"], "no temporary copies left behind");
+  } finally { lib.cleanup(); rmSync(incoming, { recursive: true, force: true }); }
 });

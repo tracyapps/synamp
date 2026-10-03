@@ -193,3 +193,20 @@ def test_tracks_finished_before_identity_existed_get_only_that_stage(tmp_path: P
     with Database(config.db_path) as db:
         assert load_result(db, library / "old.flac").audio_hash
         assert db.conn.execute("SELECT COUNT(*) FROM track_audio").fetchone()[0] == 1
+
+
+def test_librarian_import_lines_are_not_mistaken_for_renames(tmp_path: Path) -> None:
+    """New music filed from incoming/ is journaled without from/to; scan must skip it, not choke."""
+    library = tmp_path / "music"
+    tone(library / "Someone" / "Album (2001)" / "01 - Track.flac")
+    journal = tmp_path / "renames.jsonl"
+    journal.write_text(
+        json.dumps({"source": "x/track.flac", "source_area": "incoming", "target": "Someone/Album (2001)/01 - Track.flac",
+                    "target_area": "library", "reason": "import: New", "batch": "b", "decision": "import:1", "at": 1}) + "\n"
+        + json.dumps({"source": "a.flac", "source_area": "incoming", "target": "_duplicates/a.flac", "target_area": "incoming",
+                      "reason": "import", "batch": "b", "decision": "import:1", "at": 1}) + "\n",
+        encoding="utf-8",
+    )
+    counts = run_scan(config_for(library, tmp_path, journal), progress=quiet)
+    assert counts["renamed"] == 0
+    assert counts["new"] == 1

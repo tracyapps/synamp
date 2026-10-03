@@ -6,6 +6,7 @@ import Listening from "./Listening";
 import LibraryHealth from "./LibraryHealth";
 import MissingTracks from "./MissingTracks";
 import OrganiseLibrary from "./OrganiseLibrary";
+import { newId } from "./ids";
 import type { SessionView } from "./Player";
 
 type Track = { id: string; title: string; artist?: string };
@@ -102,7 +103,7 @@ export default function App() {
   async function play(id: string) {
     setError("");
     try {
-      const result = await call<{ session: SessionView }>("/session/queue", { method: "POST", body: JSON.stringify({ event_id: crypto.randomUUID(), playlist_id: id }) });
+      const result = await call<{ session: SessionView }>("/session/queue", { method: "POST", body: JSON.stringify({ event_id: newId(), playlist_id: id }) });
       setSession(result.session);
     } catch (cause) { setError((cause as Error).message); }
   }
@@ -117,6 +118,17 @@ export default function App() {
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  }
+
+  /** A raw file upload (PUT), with the access token. */
+  async function upload(path: string, body: Blob, headers: Record<string, string> = {}) {
+    const response = await fetch(`/api/v1${path}`, {
+      method: "PUT", body,
+      headers: { "content-type": "application/octet-stream", ...headers, ...(token ? { authorization: `Bearer ${token}` } : {}) },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`);
+    return data;
   }
 
   async function onSmartSaved(id: string) {
@@ -204,7 +216,7 @@ export default function App() {
               {selected.prompt && <p className="muted">From “{selected.prompt}” — membership is recomputed every time you open it.</p>}
               {explain ? <ResultView result={explain} labels={Object.fromEntries((selected.plan?.constraints ?? []).map((item) => [item.id, item.source_phrase]))}
                 onRestore={(trackId) => {
-                  call("/feedback", { method: "POST", body: JSON.stringify({ event_id: crypto.randomUUID(), signal: "restore", track_id: trackId, scope: "playlist", playlist_id: selected.id }) })
+                  call("/feedback", { method: "POST", body: JSON.stringify({ event_id: newId(), signal: "restore", track_id: trackId, scope: "playlist", playlist_id: selected.id }) })
                     .then(() => onSelect(selected.id)).catch((cause) => setError((cause as Error).message));
                 }} /> : <p className="muted">Loading…</p>}
             </>}
@@ -214,7 +226,7 @@ export default function App() {
           </> : <div className="empty"><span>♫</span><h2>Select a playlist</h2><p>Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole branch into one live list.</p></div>}</section>
         </div>
         <MissingTracks request={call} download={download} />
-        <OrganiseLibrary request={call} />
+        <OrganiseLibrary request={call} upload={upload} />
         <Listening request={call} />
         <Player request={call} session={session} onSession={setSession}
           playlistName={(id) => nodes.find((node) => node.id === id)?.name}

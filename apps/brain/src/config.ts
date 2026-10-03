@@ -46,6 +46,14 @@ export const config = {
    * terms ask. Needed to match albums for the missing-tracks list.
    */
   musicbrainzContact: env("MUSICBRAINZ_CONTACT", ""),
+  /**
+   * The `incoming/` folder (new music waiting to be filed). The brain reads it to
+   * propose imports and writes web uploads into `incoming/_web/`. Never the
+   * library itself — that stays read-only. Empty: import is off.
+   */
+  incomingPath: env("INCOMING_PATH", ""),
+  /** Largest single file accepted from the web app. */
+  uploadMaxBytes: Number(env("UPLOAD_MAX_MB", "2048")) * 1024 * 1024,
   /** Required by the deployed app profile; optional for localhost development. */
   playlistApiToken: env("PLAYLIST_API_TOKEN", ""),
 } as const;

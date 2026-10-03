@@ -1,5 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import "./styles/organise.css";
+import AddMusic from "./AddMusic";
+import type { IncomingStatus, Upload } from "./AddMusic";
 
 /*
  * Organise the library: SynAmp proposes, you review, the librarian applies.
@@ -9,7 +11,7 @@ import "./styles/organise.css";
 
 type Status = "proposed" | "approved" | "skipped";
 type Decision = {
-  id: string; kind: "artist" | "album"; title: string; changes: string[]; conflicts: string[];
+  id: string; kind: "artist" | "album" | "import"; title: string; changes: string[]; conflicts: string[];
   preview: Array<{ from: string; to: string }>; status: Status; changed: boolean;
   move_count: number; moves: Array<{ from: string; to: string }>;
 };
@@ -23,10 +25,12 @@ type Batch = {
 };
 type Settings = { merge_artists: boolean; add_year: boolean; number_tracks: boolean; fold_disc_folders: boolean; compilations_folder: string };
 type View = {
-  summary: { total: number; proposed: number; approved: number; skipped: number; conflicts: number; changed: number; artist: number; album: number; approved_moves: number };
+  summary: { total: number; proposed: number; approved: number; skipped: number; conflicts: number; changed: number; artist: number; album: number; import: number; approved_moves: number };
   settings: Settings; matching: number; offset: number; decisions: Decision[]; batches: Batch[]; busy: boolean;
-  librarian: { last_seen: number; online: boolean; root?: string; journal?: string; version?: string } | null;
+  librarian: { last_seen: number; online: boolean; root?: string; incoming?: string; journal?: string; version?: string } | null;
   pending_export: boolean;
+  incoming: IncomingStatus;
+  upload_max_mb: number;
 };
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
 
@@ -64,7 +68,7 @@ function DecisionCard({ decision, review }: { decision: Decision; review: (ids: 
   return (
     <article className={`organise__decision is-${decision.status}`} aria-labelledby={`d-${decision.id}`}>
       <div className="organise__decision-head">
-        <h4 id={`d-${decision.id}`}><span className="organise__kind">{decision.kind === "artist" ? "Merge" : "Album"}</span> {decision.title}</h4>
+        <h4 id={`d-${decision.id}`}><span className="organise__kind">{decision.kind === "artist" ? "Merge" : decision.kind === "import" ? "New" : "Album"}</span> {decision.title}</h4>
         <div className="organise__choice" role="group" aria-label={`Decision for ${decision.title}`}>
           {choice("approved", "Approve", blocked)}{choice("skipped", "Skip")}{choice("proposed", "Decide later")}
         </div>
@@ -110,10 +114,10 @@ function SettingsForm({ settings, save }: { settings: Settings; save: (next: Set
   );
 }
 
-export default function OrganiseLibrary({ request }: { request: Request }) {
+export default function OrganiseLibrary({ request, upload }: { request: Request; upload: Upload }) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View | null>(null);
-  const [kind, setKind] = useState<"all" | "artist" | "album">("all");
+  const [kind, setKind] = useState<"all" | "artist" | "album" | "import">("all");
   const [status, setStatus] = useState<"all" | Status | "conflict">("proposed");
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
@@ -146,27 +150,32 @@ export default function OrganiseLibrary({ request }: { request: Request }) {
   return (
     <section className="panel organise" aria-labelledby={`${ids}-title`}>
       <button type="button" className="listening__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
-        <span id={`${ids}-title`}>Organise the library{s ? ` — ${n(s.total)} proposals, ${n(s.approved)} approved` : ""}</span>
+        <span id={`${ids}-title`}>Organise the library{s ? ` — ${n(s.total)} ${s.total === 1 ? "proposal" : "proposals"}, ${n(s.approved)} approved` : ""}</span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
       </button>
       {open && <div className="organise__body">
         {!view ? <p className="muted">Loading…</p> : <>
           <div className="organise__intro">
-            <p>SynAmp proposes tidier names and folders; nothing changes until you approve and press Apply. Every move is written to a journal and can be undone, and your analysis and play history follow the files.</p>
+            <p>SynAmp proposes tidier names and folders, and where new music should go; nothing changes until you approve and press Apply. Every move is written to a journal and can be undone, and your analysis and play history follow the files.</p>
             <p role="status" className={lib?.online ? "organise__ok" : "organise__warn"}>
               {lib?.online ? <>The librarian is running{lib.root ? <> on <code>{lib.root}</code></> : null}.</>
                 : lib ? <>The librarian hasn’t checked in since {when(lib.last_seen)}. Approved batches will wait for it.</>
                 : <>The librarian isn’t running yet. It is the only part of SynAmp allowed to change files — see the brain README to start it. You can review now; batches wait for it.</>}
               {lib && !lib.journal && <> It has no journal set, so moved tracks would be re-analysed.</>}
+              {lib && view.incoming.enabled && !lib.incoming && <> It can’t reach <code>incoming/</code> (no <code>LIBRARIAN_INCOMING_PATH</code>), so new music can be reviewed but not filed yet.</>}
             </p>
             {view.pending_export && <p className="muted">Some moved files are still listed at their old place by the last analyzer export. They already play from the new place; the next analyzer scan and export makes it permanent.</p>}
           </div>
+
+          <AddMusic upload={upload} incoming={view.incoming} maxMb={view.upload_max_mb}
+            onUploaded={() => { setKind("import"); setStatus("proposed"); setOffset(0); request("/import/rescan", { method: "POST", body: "{}" }).then(() => load()).catch(() => load()); }}
+            onRescan={() => send("/import/rescan", {}, "Checked incoming/.")} />
 
           <SettingsForm settings={view.settings} save={(next) => send("/organise/settings", next, "Settings saved — proposals updated.")} />
 
           <div className="organise__filters">
             <div className="organise__kinds" role="group" aria-label="Show">
-              {([["all", `All (${n(s!.total)})`], ["artist", `Artist merges (${n(s!.artist)})`], ["album", `Albums (${n(s!.album)})`]] as const).map(([key, label]) => (
+              {([["all", `All (${n(s!.total)})`], ["import", `New music (${n(s!.import)})`], ["artist", `Artist merges (${n(s!.artist)})`], ["album", `Albums (${n(s!.album)})`]] as const).map(([key, label]) => (
                 <button key={key} type="button" className={`chip ${kind === key ? "is-on" : ""}`} aria-pressed={kind === key} onClick={() => { setKind(key); setOffset(0); }}>{label}</button>
               ))}
             </div>

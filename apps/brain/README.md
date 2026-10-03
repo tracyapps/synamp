@@ -180,6 +180,23 @@ On the NAS it runs as the `librarian` compose profile (see deploy/README.md).
 It refuses to start without a writable library or a journal path. Unsent
 reports wait in `LIBRARIAN_STATE_DIR` and are delivered first next time.
 
+## Adding new music (`src/library/import.ts`, `tags.ts`)
+
+Two doors, one pipeline: files copied into `incoming/` on the NAS, and files
+dragged into the web app (streamed by `PUT /api/v1/import/upload` into
+`incoming/_web/<upload>/`, written to a temporary name, size- and
+checksum-checked, then renamed into place). The brain reads their tags (a
+small built-in reader for MP3/ID3, FLAC and M4A — no dependencies), falls back
+to `Artist/Album/` folder names, and proposes one **New music** decision per
+arriving album: existing artist spellings and album folders are reused (re-rips
+fill the album in), names follow the organise settings, byte-identical copies
+are set aside in `incoming/_duplicates/` (never deleted), and a different file
+with the same name is kept as "(2)". Files touched in the last 30 s wait. The
+librarian files approved arrivals; across disks it copies, compares checksums,
+and only then removes the original. Import journal lines carry `source`/
+`target` instead of `from`/`to`, so the analyzer treats them as new files, not
+renames. `INCOMING_PATH` turns it on; `UPLOAD_MAX_MB` caps a single file.
+
 ## Endpoints
 
 | Method | Path | Purpose |
@@ -207,6 +224,8 @@ reports wait in `LIBRARIAN_STATE_DIR` and are delivered first next time.
 | POST | `/api/v1/organise/settings` | naming settings |
 | POST | `/api/v1/organise/apply` | queue every approved, conflict-free decision as one batch |
 | POST | `/api/v1/organise/undo` | `{batch}` put a batch back (newest first) |
+| PUT | `/api/v1/import/upload?upload&path` | one file from the web app → `incoming/_web/<upload>/<path>` (`x-content-sha256` optional) |
+| POST | `/api/v1/import/rescan` | look at `incoming/` again now |
 | POST | `/api/v1/librarian/claim` | the librarian asks for work (also its heartbeat) |
 | POST | `/api/v1/librarian/jobs/:id` | the librarian reports what it moved |
 | POST | `/api/v1/lastfm/connect` | → `{url}` to sign in on Last.fm |
@@ -232,7 +251,7 @@ All via environment (see `src/config.ts`): `BRAIN_PORT`, `BRAIN_HOST`,
 `DATABASE_URL`, `LIBRARY_PATH`, `CORE_URL`, `PLAYLIST_DATA_PATH`,
 `PLAYLIST_API_TOKEN`, `LIBRARY_SIGNALS_PATH`, `EVENTS_PATH`, `SESSION_PATH`,
 `CORE_MUSIC_PATH` (default `/music`), `LASTFM_API_KEY`, `LASTFM_API_SECRET`,
-`LASTFM_STATE_PATH`, `PUBLIC_URL`, `MUSICBRAINZ_CONTACT`. Organise state lives in `organise.json` and `organise-moves.jsonl` beside the playlist store. The librarian: `LIBRARIAN_MUSIC_PATH`, `RENAME_JOURNAL_PATH`, `SYNAMP_BRAIN_URL`, `SYNAMP_BRAIN_TOKEN`, `LIBRARIAN_STATE_DIR`, `LIBRARIAN_POLL_SECONDS`. Events, session and Last.fm state default to
+`LASTFM_STATE_PATH`, `PUBLIC_URL`, `MUSICBRAINZ_CONTACT`. Organise state lives in `organise.json` and `organise-moves.jsonl` beside the playlist store. Import: `INCOMING_PATH`, `UPLOAD_MAX_MB`. The librarian: `LIBRARIAN_MUSIC_PATH`, `LIBRARIAN_INCOMING_PATH`, `RENAME_JOURNAL_PATH`, `SYNAMP_BRAIN_URL`, `SYNAMP_BRAIN_TOKEN`, `LIBRARIAN_STATE_DIR`, `LIBRARIAN_POLL_SECONDS`. Events, session and Last.fm state default to
 `events.jsonl` / `session.json` / `lastfm.json` beside the playlist store. The token protects every `/api/v1` route except streams, which use
 signed links derived from it.
 

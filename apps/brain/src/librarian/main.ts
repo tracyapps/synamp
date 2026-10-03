@@ -6,6 +6,7 @@
  * ideally on the NAS itself (fast, same-volume renames, correct ownership):
  *
  *   LIBRARIAN_MUSIC_PATH=/music            the library root (read-write)
+ *   LIBRARIAN_INCOMING_PATH=/incoming      new music to file (optional; imports)
  *   SYNAMP_BRAIN_URL=http://brain:3001     where the brain is
  *   SYNAMP_BRAIN_TOKEN=…                   the brain's PLAYLIST_API_TOKEN
  *   RENAME_JOURNAL_PATH=/journal/renames.jsonl
@@ -29,6 +30,7 @@ export const LIBRARIAN_VERSION = "0.1.0";
 
 export type LibrarianConfig = {
   root: string;
+  incoming?: string;
   brainUrl: string;
   token: string;
   journal?: string;
@@ -41,6 +43,7 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): LibrarianCo
   const stateDir = env.LIBRARIAN_STATE_DIR || "./data/librarian";
   return {
     root, stateDir,
+    ...(env.LIBRARIAN_INCOMING_PATH ? { incoming: env.LIBRARIAN_INCOMING_PATH } : {}),
     brainUrl: (env.SYNAMP_BRAIN_URL || "http://127.0.0.1:3001").replace(/\/+$/, ""),
     token: env.SYNAMP_BRAIN_TOKEN ?? "",
     ...(env.RENAME_JOURNAL_PATH ? { journal: env.RENAME_JOURNAL_PATH } : {}),
@@ -56,6 +59,10 @@ export function checkSetup(config: LibrarianConfig): string[] {
   else if (!existsSync(config.root) || !statSync(config.root).isDirectory()) problems.push(`LIBRARIAN_MUSIC_PATH ${config.root} is not a folder.`);
   else {
     try { accessSync(config.root, constants.W_OK); } catch { problems.push(`The librarian can't write to ${config.root} (mounted read-only, or the wrong user).`); }
+  }
+  if (config.incoming) {
+    if (!existsSync(config.incoming) || !statSync(config.incoming).isDirectory()) problems.push(`LIBRARIAN_INCOMING_PATH ${config.incoming} is not a folder.`);
+    else try { accessSync(config.incoming, constants.W_OK); } catch { problems.push(`The librarian can't write to ${config.incoming}.`); }
   }
   if (!config.journal) problems.push("Set RENAME_JOURNAL_PATH so the analyzer can follow the moves (otherwise moved tracks are re-analysed).");
   return problems;
@@ -81,12 +88,12 @@ export async function runOnce(config: LibrarianConfig, fetchImpl: typeof fetch =
     // A report that didn't get through last time goes first: the brain must hear what was done.
     if (existsSync(pendingFile)) await report(JSON.parse(readFileSync(pendingFile, "utf8")) as Pending);
     const claimed = await post("/api/v1/librarian/claim", {
-      librarian: { version: LIBRARIAN_VERSION, root: config.root, journal: config.journal ?? "", host: hostname() },
+      librarian: { version: LIBRARIAN_VERSION, root: config.root, incoming: config.incoming ?? "", journal: config.journal ?? "", host: hostname() },
     });
     const job = claimed.job as Job | null;
     if (!job) return "idle";
     log(`${job.kind === "apply" ? "Applying" : "Undoing"} batch ${job.batch}: ${job.decisions.length} decision(s)`);
-    const results = runJob(job, { root: config.root, journal: new Journal(config.journal) });
+    const results = runJob(job, { root: config.root, ...(config.incoming ? { incoming: config.incoming } : {}), journal: new Journal(config.journal) });
     for (const result of results) {
       log(`  ${result.status === "applied" ? "✓" : "✗"} ${job.decisions.find((d) => d.id === result.id)?.title ?? result.id} — ${result.moved.length} moved${result.errors.length ? `; ${result.errors.join("; ")}` : ""}`);
     }

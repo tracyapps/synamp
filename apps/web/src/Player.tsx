@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import "./styles/player.css";
+import { newId } from "./ids";
 
 /*
  * The player is a thin client. It reports what physically happened — started,
@@ -15,7 +16,6 @@ export type QueueEntry = {
 export type SessionView = { id: string; queue: QueueEntry[]; index: number; state: "idle" | "playing" | "paused" };
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
 
-const newId = () => crypto.randomUUID();
 const clock = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
   const s = Math.floor(seconds);

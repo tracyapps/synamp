@@ -248,3 +248,33 @@ test("overlay: moved tracks follow their files until the next export; matches ar
     assert.ok(matches.records["Ani Difranco/Dilate"], "the old key stays until the export catches up");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("batches with new music: imports go first, undo swaps the areas back, the overlay ignores arrivals", () => {
+  const dir = tempDir();
+  try {
+    const store = new OrganiseStore(join(dir, "organise.json"));
+    const library = lib([track("x1", "Tusk/Tusk/01 Over.mp3", "Over", { track_no: 1, year: 1979 })]);
+    const album = buildPlan(library, {}, store.state.settings)[0]!;
+    const arrival: Decision = { id: "import:a", rev: "r1", kind: "import", title: "New: A — B", changes: [], conflicts: [], preview: [],
+      moves: [{ from: "a/b/1.mp3", to: "A/B (2000)/01 - One.mp3", from_area: "incoming" }], folders: [{ from: "a/b", to: "A/B (2000)", from_area: "incoming" }] };
+    store.review([album, arrival], "approved");
+    const batch = store.apply([album, arrival], 1);
+    const job = store.claim({}, 2)!;
+    assert.deepEqual(job.decisions.map((d) => d.kind), ["import", "album"]);
+    assert.deepEqual(job.decisions[0]!.folders, arrival.folders, "incoming paths are never rebased");
+    const done = store.complete(job.id, { results: [
+      { id: arrival.id, status: "applied", moved: [{ ...arrival.moves[0]!, from_area: "incoming" }, { from: "a/b/cover.jpg", to: "A/B (2000)/cover.jpg", from_area: "incoming" }] },
+      { id: album.id, status: "applied", moved: job.decisions[1]!.moves },
+    ] }, 3);
+    assert.equal(done.moved[0]!.from_area, "incoming", "areas survive the report");
+    assert.deepEqual(done.folders, [{ from: "Tusk/Tusk", to: "Tusk/Tusk (1979)" }], "only library folders carry matches");
+    const overlay = new PathOverlay(join(dir, "moves.jsonl"), "/music", () => false);
+    overlay.record(done.moved);
+    assert.equal(overlay.count, 1, "arrivals aren't renames of known tracks");
+
+    store.undo(batch.id, 4);
+    const undoJob = store.claim({}, 5)!;
+    assert.deepEqual(undoJob.decisions.map((d) => d.kind), ["album", "import"]);
+    assert.deepEqual(undoJob.decisions[1]!.moves[0], { from: "A/B (2000)/cover.jpg", to: "a/b/cover.jpg", to_area: "incoming" });
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
