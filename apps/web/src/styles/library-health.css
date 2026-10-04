@@ -1,7 +1,7 @@
 /* Library health strip + details. */
 
 .panel.health { min-height: 0; margin-bottom: 18px; padding: 18px 24px; }
-.health__summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 260px) auto; gap: 18px; align-items: center; }
+.health__summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 260px); gap: 18px; align-items: center; }
 .health__text .eyebrow { margin: 0 0 4px; }
 .health__headline { margin: 0; font: 600 17px var(--font-display); }
 .health__detail { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
@@ -12,7 +12,12 @@
 .health progress::-webkit-progress-value { background: var(--accent); border-radius: 999px; }
 .health progress::-moz-progress-bar { background: var(--accent); border-radius: 999px; }
 
-.health__details { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 18px; padding-top: 6px; border-top: 1px solid var(--hair); }
+.health__toggle { display: flex; align-items: baseline; gap: 8px; width: 100%; margin-top: 14px; padding: 10px 0 0; border: 0; border-top: 1px solid var(--hair); background: none; color: var(--text); font-size: 14px; text-align: left; }
+.health__toggle .muted { font-size: 13px; }
+.health__toggle:hover { color: var(--accent); }
+.health__toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.health__chevron { color: var(--accent); font-family: var(--font-mono); width: 1em; }
+.health__details { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 4px; padding-top: 0; }
 .health__details h3 { margin: 14px 0 10px; font: 600 15px var(--font-display); }
 .health__stages { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 10px; }
 .health__stages li { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(80px, 1.2fr) 44px; gap: 12px; align-items: center; font-size: 14px; }

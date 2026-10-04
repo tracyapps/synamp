@@ -120,11 +120,13 @@ export default function LibraryHealth({ request }: { request: Request }) {
           <progress className="health__bar" max={a.catalog.present || 1} value={a.fully_analysed}
             aria-label={`Fully analysed: ${n(a.fully_analysed)} of ${n(a.catalog.present)} tracks`} />
         )}
-        <button type="button" className="quiet" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(!open)}>
-          {open ? "Hide details" : "Details"}
-        </button>
       </div>
       {control && <AnalyzerControls control={control} act={act} message={message} />}
+      {/* The toggle sits right above what it opens, so the change happens where you're looking. */}
+      <button type="button" className="health__toggle" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(!open)}>
+        <span className="health__chevron" aria-hidden="true">{open ? "▾" : "▸"}</span>
+        {open ? "Hide details" : "Details"}<span className="muted"> — analysis stages, speed, recent jobs, collection counts</span>
+      </button>
       <div id={detailsId} hidden={!open} className="health__details">
         {a.reported && <div>
           <h3>Analysis</h3>

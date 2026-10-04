@@ -309,6 +309,22 @@ link. Same reasoning as Navidrome: don't rebuild a mature core. Evaluate in
 step 3 before committing; MusicBrainz allows ~1 request/second with a
 contact User-Agent, so matching 4k albums is an overnight background job.
 
+### Next (owner request, 2026-10-04): resolve merges blocked by duplicates
+
+Some artist/album merges can't be approved because a track already exists at
+the target ("“…” already exists"). When the two files are **the same
+recording** — same audio fingerprint (Chromaprint) or same audio hash, similar
+length — offer **"Keep the better copy, set the other aside"** on that
+conflict instead of blocking the merge:
+
+- Keep: higher quality (lossless > lossy, then bitrate), then better tags.
+- The other copy moves to `_duplicates/` beside `incoming/` — never deleted,
+  journaled and undoable like any other move.
+- Only offered when identity is certain; "same name, different recording"
+  (live vs studio, remaster) stays a conflict for a person to decide.
+- Needs fingerprints from the analysis run, so it gets more useful as the
+  15-day analysis progresses. Lower priority than finishing the cleanup.
+
 ### Later extras
 
 - ReplayGain tags from the loudness the analyzer already measures.
