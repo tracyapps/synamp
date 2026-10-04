@@ -227,7 +227,7 @@ def _payload_result(payload: str) -> AnalysisResult | None:
         return None
 
 
-def backfill_fingerprints(db: Database, should_stop=None, progress=print) -> int:
+def backfill_fingerprints(db: Database, should_stop=None, progress=print, on_track=None) -> int:
     """Fill in fingerprints for tracks analysed before Chromaprint was installed.
 
     Only the fingerprint runs (fpcalc reads the first two minutes); nothing else
@@ -240,9 +240,11 @@ def backfill_fingerprints(db: Database, should_stop=None, progress=print) -> int
         "SELECT track_path, payload FROM results WHERE payload LIKE '%\"fingerprint_status\": \"tool_missing\"%'"
     ).fetchall()
     filled = 0
-    for row in rows:
+    for done, row in enumerate(rows):
         if should_stop is not None and should_stop():
             break
+        if on_track is not None:
+            on_track(done, len(rows))  # keeps the web app's progress alive meanwhile
         result = _payload_result(row["payload"])
         if result is None or result.fingerprint_status != "tool_missing" or not result.track_path.is_file():
             continue
@@ -311,8 +313,11 @@ def run_analyze(
             # Chromaprint installed (now or mid-run): catch up the tracks done without it.
             if not fingerprints_filled and summary["claimed"] % 50 == 0 and find_fpcalc():
                 fingerprints_filled = True
-                current["name"] = "filling in fingerprints for earlier tracks"
-                summary["fingerprints_filled"] = backfill_fingerprints(db, should_stop, progress)
+                def on_track(done: int, total: int) -> None:
+                    current["name"] = f"filling in fingerprints for earlier tracks ({done:,} of {total:,})"
+                    reporter.report(db, "analyzing", run_state())
+                summary["fingerprints_filled"] = backfill_fingerprints(db, should_stop, progress, on_track)
+                current["name"] = ""
             job = queue.claim()
             if job is None:
                 break
