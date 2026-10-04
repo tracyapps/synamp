@@ -25,10 +25,10 @@ from .queue import Job, JobQueue
 import json
 from dataclasses import fields as dataclass_fields
 
-from .identity import extract_identity
+from .identity import chromaprint, extract_identity, find_fpcalc
 from .status import ProgressReporter, RunClock
 from .store import (
-    Database, apply_rename, find_donor, link_identity, load_result, record_audio, record_scan, save_result,
+    Database, _deserialise, apply_rename, find_donor, link_identity, load_result, record_audio, record_scan, save_result,
 )
 
 # Fields that describe the file itself, never copied from another path's analysis.
@@ -220,6 +220,40 @@ def run_stages(
     return result
 
 
+def _payload_result(payload: str) -> AnalysisResult | None:
+    try:
+        return _deserialise(payload)
+    except (ValueError, TypeError):
+        return None
+
+
+def backfill_fingerprints(db: Database, should_stop=None, progress=print) -> int:
+    """Fill in fingerprints for tracks analysed before Chromaprint was installed.
+
+    Only the fingerprint runs (fpcalc reads the first two minutes); nothing else
+    is re-analysed. Does nothing while fpcalc still isn't installed.
+    """
+    tool = find_fpcalc()
+    if not tool:
+        return 0
+    rows = db.conn.execute(
+        "SELECT track_path, payload FROM results WHERE payload LIKE '%\"fingerprint_status\": \"tool_missing\"%'"
+    ).fetchall()
+    filled = 0
+    for row in rows:
+        if should_stop is not None and should_stop():
+            break
+        result = _payload_result(row["payload"])
+        if result is None or result.fingerprint_status != "tool_missing" or not result.track_path.is_file():
+            continue
+        result.fingerprint, result.fingerprint_status = chromaprint(result.track_path, tool)
+        save_result(db, result, __version__)
+        filled += 1
+        if filled % 100 == 0:
+            progress(f"  fingerprints filled in for {filled:,} earlier tracks")
+    return filled
+
+
 def run_analyze(
     cfg: AnalyzerConfig,
     limit: int | None = None,
@@ -267,12 +301,18 @@ def run_analyze(
         }
 
     reporter.report(db, "analyzing", run_state(), force=True)
+    fingerprints_filled = False
 
     try:
         while limit is None or summary["claimed"] < limit:
             if should_stop is not None and should_stop():
                 summary["stopped"] = 1
                 break
+            # Chromaprint installed (now or mid-run): catch up the tracks done without it.
+            if not fingerprints_filled and summary["claimed"] % 50 == 0 and find_fpcalc():
+                fingerprints_filled = True
+                current["name"] = "filling in fingerprints for earlier tracks"
+                summary["fingerprints_filled"] = backfill_fingerprints(db, should_stop, progress)
             job = queue.claim()
             if job is None:
                 break

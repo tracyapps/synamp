@@ -42,9 +42,24 @@ def audio_hash(mono: np.ndarray, sample_rate: int) -> str:
     return digest.hexdigest()
 
 
+# Where Homebrew puts it. The background worker (launchd) starts with a bare
+# PATH that doesn't include these, so look there too.
+FPCALC_PLACES = ("/opt/homebrew/bin/fpcalc", "/usr/local/bin/fpcalc")
+
+
+def find_fpcalc() -> str | None:
+    found = shutil.which("fpcalc")
+    if found:
+        return found
+    for place in FPCALC_PLACES:
+        if Path(place).is_file():
+            return place
+    return None
+
+
 def chromaprint(path: Path, fpcalc: str | None = None) -> tuple[str | None, str]:
     """(fingerprint, status). Status: measured | tool_missing | failed."""
-    tool = fpcalc or shutil.which("fpcalc")
+    tool = fpcalc or find_fpcalc()
     if not tool:
         return None, "tool_missing"
     try:

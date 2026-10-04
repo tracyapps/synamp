@@ -124,3 +124,56 @@ def test_login_item_runs_the_worker_with_the_settings_file() -> None:
     assert f"<string>{AGENT_LABEL}</string>" in plist
     assert "source '/Users/tapps/SynAmp-data/env.sh' &amp;&amp; cd '/Users/tapps/SynAmp/services/analyzer' &amp;&amp; exec '/opt/homebrew/bin/uv' run synamp-analyze worker" in plist
     assert "<key>RunAtLoad</key><true/>" in plist and "<key>KeepAlive</key><true/>" in plist
+
+
+def test_a_new_version_on_disk_restarts_the_worker_and_analysis_carries_on(tmp_path: Path) -> None:
+    cfg, _music = library(tmp_path, count=4)
+    brain = FakeBrain([{"id": "a_000000000003", "action": "update"}, {"id": "a_000000000004", "action": "analyze"}])
+    brain.requests = []
+    original_post = brain.post
+
+    def post(path: str, body: dict) -> dict:
+        if path == "/api/v1/analyzer/request":
+            brain.requests.append(body)
+            return {}
+        return original_post(path, body)
+
+    brain.post = post
+    version = {"stamp": "v1"}
+    worker, lines = make(cfg, brain, now=Clock(), stamp=lambda: version["stamp"])
+    assert worker.once() == "done"
+    assert not worker.code_changed()
+
+    version["stamp"] = "v2"  # a new version of the analyzer was copied onto the Mac
+    assert worker.once() == "restart"
+    report = brain.reports["a_000000000004"]
+    assert report["status"] == "stopped", "stops after the current track, like Pause"
+    assert "restarting to use the new version" in report["summary"]
+    assert brain.requests == [{"action": "analyze"}], "the analysis is queued again for the new version"
+    worker.run_forever()  # returns at once: launchd starts the new version
+    assert lines[-1] == "worker: restarting to use the new version of the analyzer"
+
+
+def test_fingerprints_are_filled_in_once_chromaprint_is_installed(tmp_path: Path, monkeypatch) -> None:
+    from synamp_analyzer import pipeline
+    from synamp_analyzer.store import Database, load_result
+
+    cfg, music = library(tmp_path, count=2)
+    monkeypatch.setattr(pipeline, "find_fpcalc", lambda: None)
+    monkeypatch.setattr("synamp_analyzer.identity.find_fpcalc", lambda: None)
+    pipeline.run_scan(cfg, progress=lambda *_: None)
+    pipeline.run_analyze(cfg, progress=lambda *_: None)
+    track = next(music.rglob("01*.flac"))
+    with Database(cfg.db_path) as db:
+        assert load_result(db, track).fingerprint_status == "tool_missing"
+
+    # Now "installed": a stand-in fpcalc that prints a fingerprint.
+    fake = tmp_path / "fpcalc"
+    fake.write_text('#!/bin/sh\necho \'{"fingerprint": "AQAAfake"}\'\n')
+    fake.chmod(0o755)
+    monkeypatch.setattr(pipeline, "find_fpcalc", lambda: str(fake))
+    with Database(cfg.db_path) as db:
+        assert pipeline.backfill_fingerprints(db, progress=lambda *_: None) == 2
+        result = load_result(db, track)
+        assert (result.fingerprint, result.fingerprint_status) == ("AQAAfake", "measured")
+        assert pipeline.backfill_fingerprints(db, progress=lambda *_: None) == 0, "only once"

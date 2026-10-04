@@ -120,13 +120,11 @@ export default function LibraryHealth({ request }: { request: Request }) {
           <progress className="health__bar" max={a.catalog.present || 1} value={a.fully_analysed}
             aria-label={`Fully analysed: ${n(a.fully_analysed)} of ${n(a.catalog.present)} tracks`} />
         )}
+        <button type="button" className="quiet" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(!open)}>
+          {open ? "Hide details" : "Details"}
+        </button>
       </div>
       {control && <AnalyzerControls control={control} act={act} message={message} />}
-      {/* The toggle sits right above what it opens, so the change happens where you're looking. */}
-      <button type="button" className="health__toggle" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(!open)}>
-        <span className="health__chevron" aria-hidden="true">{open ? "▾" : "▸"}</span>
-        {open ? "Hide details" : "Details"}<span className="muted"> — analysis stages, speed, recent jobs, collection counts</span>
-      </button>
       <div id={detailsId} hidden={!open} className="health__details">
         {a.reported && <div>
           <h3>Analysis</h3>
@@ -147,7 +145,7 @@ export default function LibraryHealth({ request }: { request: Request }) {
             {a.run.reused > 0 && <div><dt>Recognised, not re-analysed</dt><dd>{n(a.run.reused)}</dd></div>}
           </dl>
           {(a.fingerprints.tool_missing ?? 0) > 0 && (
-            <p className="muted">Cross-format fingerprints are off for {n(a.fingerprints.tool_missing!)} tracks — install Chromaprint on the Mac (<code>brew install chromaprint</code>) to turn them on.</p>
+            <p className="muted">Cross-format fingerprints are off for {n(a.fingerprints.tool_missing!)} tracks. Install Chromaprint on the Mac (<code>brew install chromaprint</code>, once) to turn them on — the analyzer picks it up by itself and fills in the tracks it already did.</p>
           )}
           {a.recent_failures.length > 0 && <details>
             <summary>Files that couldn’t be read ({n(a.queue.failed)})</summary>

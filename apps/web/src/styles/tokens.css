@@ -162,3 +162,6 @@ input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); ou
 .token-form button { background: var(--accent); border: none; border-radius: 6px; padding: 10px; }
 @media (max-width: 850px) { .workspace { grid-template-columns: 1fr; } .panel { min-height: 0; } .track-fields { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 520px) { .shell { padding: 0 18px 60px; } .detail { padding: 20px; } .track-fields { grid-template-columns: 1fr; } .intro { padding-top: 32px; } }
+
+/* Anything given a display value in CSS would otherwise ignore the hidden attribute. */
+[hidden] { display: none !important; }

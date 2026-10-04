@@ -10,6 +10,10 @@ and asks the brain what to do, the same way the librarian does:
     analyze  = analyse the queue until it's empty or you press Pause; exports
                every hour along the way and once at the end
 
+When its own code changes (a new version of SynAmp on this Mac), it finishes
+the current track, exits, and launchd starts the new version 30 seconds later;
+an analysis that was running carries on by itself.
+
 It reports progress through the usual progress reports, keeps the Mac awake
 while analysing (macOS `caffeinate`), and tries to mount the music share if it
 isn't mounted (SYNAMP_MUSIC_SHARE_URL, e.g. smb://Syd.local/music).
@@ -17,6 +21,7 @@ isn't mounted (SYNAMP_MUSIC_SHARE_URL, e.g. smb://Syd.local/music).
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
@@ -39,6 +44,18 @@ CHECK_EVERY_S = 10.0
 EXPORT_EVERY_S = 60 * 60.0
 MOUNT_RETRY_S = 5 * 60.0
 AGENT_LABEL = "org.synamp.analyzer"
+
+
+def code_stamp(root: Path = Path(__file__).parent) -> str:
+    """Changes whenever any of the analyzer's own Python files change."""
+    digest = hashlib.sha256()
+    for path in sorted(root.rglob("*.py")):
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        digest.update(f"{path.relative_to(root)}\0{stat.st_size}\0{stat.st_mtime_ns}\n".encode())
+    return digest.hexdigest()
 
 
 class BrainError(Exception):
@@ -79,7 +96,7 @@ def default_export_path(cfg: AnalyzerConfig) -> Path:
 
 class Worker:
     def __init__(self, cfg: AnalyzerConfig, brain: Brain, export_path: Path | None = None,
-                 log=print, sleep=time.sleep, now=time.time, mount=None, keep_awake=None):
+                 log=print, sleep=time.sleep, now=time.time, mount=None, keep_awake=None, stamp=code_stamp):
         self.cfg = cfg
         self.brain = brain
         self.export_path = export_path or default_export_path(cfg)
@@ -89,6 +106,13 @@ class Worker:
         self.mount = mount if mount is not None else try_mount
         self.keep_awake = keep_awake if keep_awake is not None else caffeinate
         self.last_mount_try = -MOUNT_RETRY_S
+        self.stamp = stamp
+        self.started_with = stamp()
+        self.resume_analysis = False
+
+    def code_changed(self) -> bool:
+        """A new version of the analyzer is on disk: time to restart into it."""
+        return self.stamp() != self.started_with
 
     # --- what the web app sees ------------------------------------------------------
     def library_ok(self) -> bool:
@@ -143,6 +167,10 @@ class Worker:
                     state["stop"] = bool(self.brain.post(f"/api/v1/analyzer/commands/{command_id}/check", {}).get("stop"))
                 except BrainError as error:
                     self.log(f"worker: {error} (carrying on)")
+                if not state["stop"] and self.code_changed():
+                    self.log("worker: a new version of the analyzer is here; stopping after this track to restart into it")
+                    state["stop"] = True
+                    self.resume_analysis = True
             if not state["stop"] and now - state["exported"] >= EXPORT_EVERY_S:
                 state["exported"] = now
                 self.log("worker: hourly export so smart playlists see the new results")
@@ -160,6 +188,10 @@ class Worker:
                 awake.terminate()
         exported = self.export()
         text = f"analysed {summary['completed']:,} tracks ({summary['failed']:,} couldn't be read); {exported}"
+        if summary.get("fingerprints_filled"):
+            text += f"; fingerprints filled in for {summary['fingerprints_filled']:,} earlier tracks"
+        if self.resume_analysis:
+            text += "; restarting to use the new version, then carrying on"
         return ("stopped" if summary.get("stopped") else "done"), text
 
     def run_command(self, command: dict) -> dict:
@@ -203,6 +235,13 @@ class Worker:
         result = self.run_command(command)
         self.log(f"worker: {result['status']}: {result['summary']}")
         self.report(str(command["id"]), result)
+        if self.resume_analysis:
+            # Queue the analysis again, so the new version picks it up where this one stopped.
+            try:
+                self.brain.post("/api/v1/analyzer/request", {"action": "analyze"})
+            except BrainError as error:
+                self.log(f"worker: couldn't queue the analysis to carry on ({error}); press Start analysis")
+            return "restart"
         return result["status"]
 
     def run_forever(self, poll: float = 5.0) -> None:
@@ -214,6 +253,10 @@ class Worker:
             except BrainError as error:
                 self.log(f"worker: {error}")
                 outcome = "unreachable"
+            if outcome == "restart" or self.code_changed():
+                # launchd (KeepAlive) starts the new version in 30 seconds.
+                self.log("worker: restarting to use the new version of the analyzer")
+                return
             self.sleep(poll if outcome in ("idle",) else 1.0 if outcome != "unreachable" else poll * 6)
 
 

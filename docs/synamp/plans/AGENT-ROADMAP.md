@@ -445,3 +445,16 @@ web app shows **An update is ready to install** with the two DSM steps
 install** in Settings. Updating is now `synamp-sync` + one button. Brain
 102/102; compose config checked with and without the profile; live: notice
 appears after a copied change, Settings shows the version.
+
+**Fixes from the first days of the big analysis (2026-10-04).** (1) The
+Library strip's **Details** never hid anything: `.health__details { display:
+grid }` overrode the `hidden` attribute. Fixed there, plus a global
+`[hidden] { display: none !important }`. (2) Fingerprints were "off" even
+with Chromaprint installed: the launchd worker starts with a bare PATH that
+lacks `/opt/homebrew/bin`. `find_fpcalc()` now also looks in Homebrew's
+folders, and `backfill_fingerprints()` fills in tracks analysed without it
+(fpcalc only; runs at the start of analysis and as soon as the tool appears
+mid-run). (3) The worker restarts itself into a new version: it fingerprints
+its own `.py` files (`code_stamp`), and when they change it stops after the
+current track, queues the analysis again and exits; launchd (KeepAlive) starts
+the new code 30 s later. Analyzer 87/87.
