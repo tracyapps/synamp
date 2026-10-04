@@ -86,10 +86,23 @@ On the NAS (all `docker compose` commands in this guide run on the NAS, from
 
 ```bash
 cd /volume1/docker/synamp/deploy
-sudo docker compose --env-file .env --profile app up -d --build db brain web edge
+sudo /usr/local/bin/docker compose --env-file .env --profile app up -d --build db brain web edge
 ```
 
 Naming the four services is what keeps Navidrome (`core`) switched off.
+
+**A shortcut for every later command.** Paste this on the NAS once (and add it
+to `~/.profile` to keep it):
+
+```bash
+alias dc='sudo /usr/local/bin/docker compose -f /volume1/docker/synamp/deploy/docker-compose.yml --env-file /volume1/docker/synamp/deploy/.env --profile app --profile librarian'
+```
+
+Docker hides services in optional groups (`app`, `librarian`) unless the
+command names the group — without it you get `no such service: brain`. `dc`
+always names both, and works from any folder. Always name the services you
+mean (`dc up -d brain web`): a bare `dc up -d` would start everything,
+Navidrome included.
 
 **Why `sudo`:** on DSM only root may use Docker, so without it you get
 `permission denied … docker.sock`. You'll be asked for your DSM password. If
@@ -100,7 +113,7 @@ The first build takes a few minutes.
 
 Open `http://Syd.local:8080` and enter the `PLAYLIST_API_TOKEN` when asked.
 
-**Done when** the page loads and `sudo docker compose ps` shows no `core`.
+**Done when** the page loads and `dc ps` shows no `core`.
 
 ## 3. First scan and export (Mac)
 
@@ -174,7 +187,7 @@ because merges use MusicBrainz's spelling of each artist.
 1. On the NAS, start the librarian (the only part of SynAmp allowed to change files):
 
    ```bash
-   sudo docker compose --env-file .env --profile app --profile librarian up -d librarian
+   dc up -d librarian
    ```
 
    The Organise panel should say "The librarian is running".
@@ -192,7 +205,7 @@ because merges use MusicBrainz's spelling of each artist.
    ```
 
    This is what lets analysis and history follow the moved files.
-5. When you're done: `sudo docker compose stop librarian`.
+5. When you're done: `dc stop librarian`.
 
 **Done when** you're happy with the folders. It doesn't have to be perfect —
 anything you change later is handled, it just costs Navidrome its play counts
@@ -201,7 +214,7 @@ for those tracks (SynAmp keeps its own).
 ## 6. Navidrome's first scan
 
 ```bash
-sudo docker compose --env-file .env up -d core
+dc up -d core
 ```
 
 Open `http://Syd.local:4533`, create the Navidrome admin account, and wait for
@@ -229,7 +242,7 @@ the new results.
 
 ## If something goes wrong
 
-- **A container won't start**: `sudo docker compose logs <name>` (brain, web,
+- **A container won't start**: `dc logs --tail 40 <name>` (brain, web,
   edge, librarian, core).
 - **Web app shows no tracks**: the export file isn't at
   `/volume1/music/.synamp/library-signals.json`, or `.env` is missing
