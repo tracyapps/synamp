@@ -1,8 +1,11 @@
 # SynAmp — first run on the NAS
 
-The order matters. **Navidrome is started last.** It identifies tracks by
-their path, so anything renamed after its first scan looks deleted and re-added
-to it. So: tidy first, then let Navidrome scan, then run the long analysis.
+The order matters. **Use Navidrome last.** It identifies tracks by their
+path, so anything renamed after it has collected plays loses those play counts
+in Navidrome (SynAmp keeps its own). It starts with everything else
+(Container Manager starts every service in the project), but that's harmless
+while nobody plays through it: it simply re-scans after each change. So: tidy
+first, then set up Navidrome and your apps, then run the long analysis.
 
 | Phase | Where | How long | Changes music files? |
 |---|---|---|---|
@@ -12,7 +15,7 @@ to it. So: tidy first, then let Navidrome scan, then run the long analysis.
 | 3. First scan and export | Mac | ~1 hour | no |
 | 4. Match albums (missing tracks) | browser | a few hours, unattended | no |
 | 5. Organise | browser | as long as you like | **yes** — reviewed, undoable |
-| 6. Navidrome's first scan | DSM | a few minutes | no |
+| 6. Navidrome | browser | a few minutes | no |
 | 7. The big analysis | Mac | days, resumable | no |
 
 Each phase ends with **Done when**, so you know it worked before moving on.
@@ -96,8 +99,7 @@ Then **Next** (skip the Web Station portal) → **Done**. Container Manager
 builds SynAmp and starts it — the first build takes a few minutes; its log
 window shows progress.
 
-Navidrome (`core`) stays off: it only starts once `.env` says
-`COMPOSE_PROFILES=navidrome` (phase 6). The librarian (the only part allowed
+Navidrome (`core`) starts too, but leave it alone until phase 6. The librarian (the only part allowed
 to change music files) starts too, but does nothing until you apply a batch
 you approved — and **Pause file changes** in the Organise panel holds it
 whenever you like.
@@ -106,8 +108,7 @@ Open `http://Syd.local:8080` and enter the `PLAYLIST_API_TOKEN` when asked.
 Then open **Settings** (bottom of the page) and enter your email as the
 MusicBrainz contact.
 
-**Done when** the page loads, and Container Manager → Container lists no
-`synamp-core`.
+**Done when** the page loads.
 
 ## 3. First scan and export (Mac)
 
@@ -215,12 +216,7 @@ because merges use MusicBrainz's spelling of each artist.
 anything you change later is handled, it just costs Navidrome its play counts
 for those tracks (SynAmp keeps its own).
 
-## 6. Navidrome's first scan
-
-1. Open `deploy/.env` (in Finder: the `docker` share → `synamp/deploy/.env`;
-   it's hidden — press Cmd-Shift-. to show hidden files) in TextEdit, change
-   `COMPOSE_PROFILES=` to `COMPOSE_PROFILES=navidrome`, and save.
-2. Container Manager → **Project** → `synamp` → **Action** → **Build**.
+## 6. Navidrome
 
 Open `http://Syd.local:4533`, create the Navidrome admin account, and wait for
 its scan to finish (a few minutes). Then point your phone/desktop apps at

@@ -67,9 +67,9 @@ DSM → **Container Manager** → **Project** → **Create**: name `synamp`, pat
 `/volume1/docker/synamp/deploy`, **Use existing docker-compose.yml** → Done.
 That builds and starts the database, brain, web app, edge and librarian.
 
-Navidrome (`core`) starts only when `.env` has `COMPOSE_PROFILES=navidrome`
-(after the library is organised — see `docs/synamp/FIRST-RUN.md`); then
-**Action → Build** again.
+Navidrome (`core`) starts with them. Container Manager starts every service
+in the project (it ignores compose profiles), so don't use Navidrome or point
+apps at it until the library is organised — see `docs/synamp/FIRST-RUN.md`.
 
 **Updating:** copy the new `apps/` and `deploy/` over (`synamp-sync` on the
 Mac), then **Project → synamp → Action → Build**. The web app notices the new

@@ -458,3 +458,12 @@ mid-run). (3) The worker restarts itself into a new version: it fingerprints
 its own `.py` files (`code_stamp`), and when they change it stops after the
 current track, queues the analysis again and exits; launchd (KeepAlive) starts
 the new code 30 s later. Analyzer 87/87.
+
+**Container Manager, as it really behaves (2026-10-04).** Two assumptions
+failed on the real NAS: (1) Container Manager starts every service in the
+project, ignoring compose profiles, so Navidrome started early — the profile
+is gone and the docs say "don't use Navidrome until organised" instead
+(harmless: no plays recorded yet). (2) **Build** reused existing images, so
+updates never arrived (the update notice stayed, the web app stayed old).
+`pull_policy: build` on brain, librarian and web makes every Build rebuild
+from the NAS copy; Docker's cache keeps unchanged builds quick.

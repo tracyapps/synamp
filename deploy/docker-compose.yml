@@ -14,8 +14,10 @@
 # Updating later = copy the new code over (synamp-sync on the Mac), then
 # Project -> synamp -> Action -> Build. See docs/synamp/FIRST-RUN.md.
 #
-# Navidrome (core) is off until COMPOSE_PROFILES=navidrome is set in .env:
-# it must not scan the library before it has been organised.
+# The services SynAmp builds itself use `pull_policy: build`, so every Build
+# in Container Manager rebuilds them from the copy on the NAS (Docker's cache
+# keeps that quick when nothing changed). Without it, Build reuses the old
+# images and an update never arrives.
 
 name: synamp
 
@@ -39,7 +41,6 @@ services:
 
   # --- library core: scan, transcode, Subsonic/OpenSubsonic -------------------
   core:
-    profiles: ["navidrome"]
     image: deluan/navidrome:latest
     restart: unless-stopped
     environment:
@@ -72,6 +73,7 @@ services:
       # The whole apps/ folder, so the image can fingerprint the web code too.
       context: ../apps
       dockerfile: brain/Dockerfile
+    pull_policy: build
     restart: unless-stopped
     # Same owner as your music files, so uploads it writes to incoming/ can be filed.
     user: "${PUID:-1026}:${PGID:-100}"
@@ -120,6 +122,7 @@ services:
     build:
       context: ../apps
       dockerfile: brain/Dockerfile
+    pull_policy: build
     command: ["node", "--experimental-strip-types", "src/librarian/main.ts"]
     restart: unless-stopped
     depends_on: [brain]
@@ -142,6 +145,7 @@ services:
   web:
     build:
       context: ../apps/web
+    pull_policy: build
     restart: unless-stopped
     expose:
       - "80"
