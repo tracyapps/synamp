@@ -66,7 +66,7 @@ export default function Listening({ request }: { request: Request }) {
         <div>
           <h3>Last.fm scrobbling</h3>
           {!lf ? null : !lf.configured ? (
-            <p className="muted">Off. To offer it, add <code>LASTFM_API_KEY</code> and <code>LASTFM_API_SECRET</code> to the server settings (create them at last.fm/api/account/create), then restart the brain.</p>
+            <p className="muted">Off. To offer it, add a Last.fm API key and shared secret under <strong>Settings</strong> (below), then come back here.</p>
           ) : !lf.connected ? <>
             <p className="muted">Send what you play — here and in your other apps — to your Last.fm profile.</p>
             <button type="button" className="primary" disabled={busy} onClick={() => act("/lastfm/connect")}>Connect Last.fm</button>

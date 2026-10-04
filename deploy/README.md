@@ -127,7 +127,9 @@ Last.fm), or plays from other apps are sent twice. The session key is stored in
 
 The **Organise the library** panel proposes tidier names and folders; nothing
 changes until you approve and apply. Applying needs the **librarian**, the one
-service with write access to the music. It is opt-in:
+service with write access to the music. It starts with the app and sits idle
+until you apply a batch; **Pause file changes** in the Organise panel holds it
+(a batch already under way finishes first). Before your first batch:
 
 1. Take a Btrfs snapshot of the music share first (Snapshot & Replication).
 2. In `deploy/.env` set `PUID`/`PGID` to the owner of the music files. Over
@@ -135,12 +137,11 @@ service with write access to the music. It is opt-in:
    3rd and 4th columns (e.g. `1026 100`); `id tapps` should agree. Check
    `MUSIC_SHARE` (default `/volume1/music`) and create `/volume1/music/.synamp`
    for the journal.
-3. `docker compose --env-file .env --profile app --profile librarian up -d`
-4. On the Mac, point the analyzer at the same journal:
-   `RENAME_JOURNAL_PATH=/Volumes/music/.synamp/renames.jsonl`, then run
-   `scan` and `export` after a batch, so analysis follows the moved files.
-
-Stop it again with `docker compose stop librarian` when you're not organising.
+3. `docker compose --env-file .env --profile app up -d --build brain web edge librarian`
+4. On the Mac, point the analyzer at the same journal
+   (`RENAME_JOURNAL_PATH=/Volumes/music/.synamp/renames.jsonl` in
+   `~/SynAmp-data/env.sh`). With the analyzer's background worker installed,
+   it scans and exports by itself after each batch.
 
 ### Adding new music
 

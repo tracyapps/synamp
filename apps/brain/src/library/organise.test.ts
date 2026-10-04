@@ -180,6 +180,12 @@ test("reviews, batches and the librarian's reports", () => {
     // The batch runs the merge first and moves the album decision's paths along with it.
     const batch = store.apply(plan, 1000);
     assert.throws(() => store.apply(plan), /still working/);
+    // "Pause file changes": the librarian checks in but gets nothing until resumed.
+    store.setPaused(true, 1500);
+    assert.equal(store.claim({ version: "t" }, 1600), null);
+    assert.equal(new OrganiseStore(join(dir, "organise.json")).state.paused?.at, 1500, "a pause survives a restart");
+    assert.throws(() => store.setPaused("yes"), /true or false/);
+    store.setPaused(false);
     assert.equal(store.claim({ version: "t" }, 2000)!.batch, batch.id);
     const job = store.state.jobs.find((j) => j.batch === batch.id)!;
     assert.deepEqual(job.decisions.map((d) => d.kind), ["artist", "album"]);

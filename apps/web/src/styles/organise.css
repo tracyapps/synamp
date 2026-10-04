@@ -74,3 +74,9 @@
 .organise__progress p { margin: 0; }
 .organise__progress progress { width: 100%; accent-color: var(--accent); }
 .organise__progress code { font: 12px var(--font-mono); color: var(--accent); overflow-wrap: anywhere; }
+
+/* "Pause file changes": the switch itself is .switch (listening.css). */
+.organise__pause { display: grid; gap: 2px; margin: 10px 0; }
+.organise__pause .switch { justify-self: start; }
+.organise__pause .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.organise__pause p { margin: 0; font-size: 13px; }

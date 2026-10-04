@@ -33,6 +33,7 @@ import { relativeFromReported, trackIdForPath } from "./subsonic/identity.ts";
 import { createSubsonicProxy } from "./subsonic/proxy.ts";
 import type { CapturedPlay } from "./subsonic/proxy.ts";
 import { LastfmClient, LastfmError } from "./lastfm/client.ts";
+import { RuntimeSettings, SettingsError } from "./settings.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
 import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
 import { groupAlbums } from "./library/albums.ts";
@@ -58,9 +59,14 @@ const signer = new StreamSigner(config.playlistApiToken || undefined);
 const analysisStatus = new AnalysisStatus(join(dataDir, "analysis-status.json"));
 const albumMatches = new AlbumMatches(join(dataDir, "albums.json"));
 const missingNotes = new MissingNotes(join(dataDir, "missing-notes.json"));
+/** Settings changed in the web app (Settings panel); deploy/.env gives the starting values. */
+const runtime = new RuntimeSettings(join(dataDir, "settings.json"), {
+  musicbrainzContact: config.musicbrainzContact, lastfmApiKey: config.lastfmApiKey, lastfmApiSecret: config.lastfmApiSecret,
+  publicUrl: config.publicUrl, uploadMaxMb: Math.round(config.uploadMaxBytes / 1048576),
+});
 /** One client for the whole process, so every MusicBrainz request shares one rate limit. */
 let musicbrainz: MusicBrainz | undefined;
-const mbClient = () => (musicbrainz ??= new MusicBrainz({ contact: config.musicbrainzContact }));
+const mbClient = () => (musicbrainz ??= new MusicBrainz({ contact: runtime.musicbrainzContact }));
 const organise = new OrganiseStore(join(dataDir, "organise.json"));
 /** Moved files keep working before the analyzer re-exports (see PathOverlay). */
 const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
@@ -81,7 +87,7 @@ function discographyView() {
   return {
     ...discographyReport(currentLibrary(), stats(), discography, albumMatches.records),
     settings: discography.state.settings,
-    checker: { state: discographyChecker.state, current: discographyChecker.current, done_this_run: discographyChecker.done, last_error: discographyChecker.lastError, contact_set: !!config.musicbrainzContact },
+    checker: { state: discographyChecker.state, current: discographyChecker.current, done_this_run: discographyChecker.done, last_error: discographyChecker.lastError, contact_set: !!runtime.musicbrainzContact },
   };
 }
 const statFor = (key: unknown) => {
@@ -95,11 +101,17 @@ const matcher = new Matcher(albumMatches, mbClient, () => currentLibrary());
 function matcherView() {
   return {
     state: matcher.state, current: matcher.current, done_this_run: matcher.done, last_error: matcher.lastError,
-    waiting: albumMatches.due(groupAlbums(currentLibrary())).length, contact_set: !!config.musicbrainzContact,
+    waiting: albumMatches.due(groupAlbums(currentLibrary())).length, contact_set: !!runtime.musicbrainzContact,
   };
 }
-const scrobbler = new Scrobbler(config.lastfmStatePath || join(dataDir, "lastfm.json"),
-  config.lastfmApiKey && config.lastfmApiSecret ? new LastfmClient({ apiKey: config.lastfmApiKey, secret: config.lastfmApiSecret }) : undefined);
+const lastfmClient = () => runtime.lastfmApiKey && runtime.lastfmApiSecret
+  ? new LastfmClient({ apiKey: runtime.lastfmApiKey, secret: runtime.lastfmApiSecret }) : undefined;
+const scrobbler = new Scrobbler(config.lastfmStatePath || join(dataDir, "lastfm.json"), lastfmClient());
+// Saved in Settings: picked up straight away, no restart.
+runtime.onChange = (changed) => {
+  if (changed.includes("musicbrainz_contact")) musicbrainz = undefined;
+  if (changed.includes("lastfm_api_key") || changed.includes("lastfm_api_secret")) scrobbler.setClient(lastfmClient());
+};
 
 /** After new events: tell Last.fm what's playing now, and send finished plays soon. */
 let flushTimer: NodeJS.Timeout | undefined;
@@ -149,7 +161,7 @@ function recordCaptured(plays: CapturedPlay[]): void {
 const subsonic = createSubsonicProxy({ coreUrl: config.coreUrl, onPlays: recordCaptured });
 
 function callbackBase(req: IncomingMessage): string {
-  if (config.publicUrl) return config.publicUrl;
+  if (runtime.publicUrl) return runtime.publicUrl;
   const proto = String(req.headers["x-forwarded-proto"] ?? "http").split(",")[0]!.trim();
   const host = String(req.headers["x-forwarded-host"] ?? req.headers.host ?? "localhost").split(",")[0]!.trim();
   return `${proto}://${host}`;
@@ -219,7 +231,7 @@ async function receiveUpload(req: IncomingMessage, url: URL) {
     throw new OrganiseError(`Only music files and the artwork, cue sheets or logs that go with them can be added (not ${extension || "this file"})`, 415);
   }
   const declared = Number(req.headers["content-length"] ?? NaN);
-  if (declared > config.uploadMaxBytes) throw new OrganiseError(`Files over ${Math.round(config.uploadMaxBytes / 1048576)} MB aren't accepted`, 413);
+  if (declared > runtime.uploadMaxBytes) throw new OrganiseError(`Files over ${Math.round(runtime.uploadMaxBytes / 1048576)} MB aren't accepted`, 413);
   const expected = String(req.headers["x-content-sha256"] ?? "").toLowerCase();
   const target = join(incoming.root, WEB_FOLDER, upload, ...relative.split("/"));
   if (await statFile(target).then(() => true, () => false)) throw new OrganiseError("That file was already uploaded", 409);
@@ -231,7 +243,7 @@ async function receiveUpload(req: IncomingMessage, url: URL) {
   try {
     for await (const chunk of req as AsyncIterable<Buffer>) {
       bytes += chunk.length;
-      if (bytes > config.uploadMaxBytes) throw new OrganiseError(`Files over ${Math.round(config.uploadMaxBytes / 1048576)} MB aren't accepted`, 413);
+      if (bytes > runtime.uploadMaxBytes) throw new OrganiseError(`Files over ${Math.round(runtime.uploadMaxBytes / 1048576)} MB aren't accepted`, 413);
       hash.update(chunk);
       await handle.write(chunk);
     }
@@ -307,8 +319,13 @@ function organiseView(query: URLSearchParams) {
     pending_export: overlay.count > 0 && currentLibrary().version !== library.get().version,
     incoming: incoming ? (({ files, arriving, ignored, set_aside, truncated }) => ({ enabled: true, files: files.length, arriving, ignored, set_aside, truncated }))(incoming.scan())
       : { enabled: false },
-    upload_max_mb: Math.round(config.uploadMaxBytes / 1024 / 1024),
+    upload_max_mb: runtime.uploadMaxMb,
+    paused: organise.state.paused ?? null,
   };
+}
+
+function settingsView() {
+  return { settings: runtime.view(), lastfm_configured: scrobbler.configured };
 }
 
 function send(res: ServerResponse, status: number, body: unknown): void {
@@ -354,7 +371,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -535,6 +552,15 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return send(res, 200, discographyView());
   }
 
+  // --- settings changed in the web app ----------------------------------------
+  if (path === "/api/v1/settings" && req.method === "GET") {
+    return send(res, 200, settingsView());
+  }
+  if (path === "/api/v1/settings" && req.method === "POST") {
+    const changed = runtime.update(await body(req));
+    return send(res, 200, { changed, ...settingsView() });
+  }
+
   // --- organise: the brain proposes, the owner approves, the librarian applies ---
   if (path === "/api/v1/organise" && req.method === "GET") {
     return send(res, 200, organiseView(url.searchParams));
@@ -559,6 +585,10 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   }
   if (path === "/api/v1/organise/settings" && req.method === "POST") {
     organise.setSettings(await body(req));
+    return send(res, 200, organiseView(url.searchParams));
+  }
+  if (path === "/api/v1/organise/pause" && req.method === "POST") {
+    organise.setPaused((await body(req)).paused);
     return send(res, 200, organiseView(url.searchParams));
   }
   if (path === "/api/v1/organise/apply" && req.method === "POST") {
@@ -721,7 +751,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);

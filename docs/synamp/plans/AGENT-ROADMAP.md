@@ -415,3 +415,18 @@ macOS login item via `install-agent`) driven from the Library strip — Scan
 for changes, Start / Pause analysis — and scans + exports by itself after
 each librarian batch. Brain 99/99, analyzer 85/85; live: buttons → worker →
 scan, export, analyse, pause.
+
+**Baking it in, part 2: Settings and an always-on librarian.** A **Settings**
+panel replaces editing `deploy/.env` for MusicBrainz contact, Last.fm API key
+and secret, SynAmp's address and the upload limit (`apps/brain/src/settings.ts`,
+`GET/POST /api/v1/settings`): `.env` gives the starting values, saved values
+win and apply without a restart, clearing a field goes back to `.env`, and
+secrets never go back to the browser (key shown as "…last4", secret as
+"saved"). The librarian is now in the `app` profile, so it starts with
+everything else and waits; **Pause file changes** (`POST
+/api/v1/organise/pause`, an accessible switch in the Organise panel) holds it
+— a batch under way finishes, nothing new starts, and the pause survives
+restarts. Brain 100/100; live: settings validation and save, Last.fm becoming
+available without a restart, pause switch. Next candidates: install and
+update through Container Manager instead of SSH; writing tags (4b); Dropbox
+import.

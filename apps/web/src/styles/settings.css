@@ -1,0 +1,15 @@
+/* Settings panel. The toggle reuses .listening__toggle; on/off switches use .switch (listening.css). */
+
+.panel.settings { min-height: 0; margin-top: 18px; }
+.settings__body { padding: 4px 24px 22px; border-top: 1px solid var(--hair); }
+.settings__body form { max-width: 640px; }
+.settings__intro { margin: 14px 0 4px; font-size: 14px; }
+.settings__group { border: 0; margin: 18px 0 0; padding: 0; display: grid; gap: 6px; }
+.settings__group legend { font: 600 15px var(--font-display); color: var(--text); padding: 0; margin-bottom: 8px; }
+.settings__group label { margin-top: 8px; }
+.settings__group .quiet { justify-self: start; margin-top: 4px; }
+.settings__hint { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+.settings__hint a { color: var(--accent); }
+.settings__hint a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.settings__actions { margin-top: 22px; }
+.settings__problem { margin: 12px 0 0; }

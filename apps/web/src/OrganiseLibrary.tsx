@@ -31,19 +31,22 @@ type View = {
   pending_export: boolean;
   incoming: IncomingStatus;
   upload_max_mb: number;
+  /** "Pause file changes" is on: the librarian takes no new batches. */
+  paused: { at: number } | null;
   progress: { job: string; batch: string; kind: "apply" | "undo"; done: number; total: number; current?: string; updated_at: number; claimed_at?: number } | null;
 };
 
 /** Where the librarian is with the current batch: shown at the top of the panel while it works. */
-function BatchProgress({ progress, online }: { progress: NonNullable<View["progress"]>; online: boolean }) {
+function BatchProgress({ progress, online, paused }: { progress: NonNullable<View["progress"]>; online: boolean; paused: boolean }) {
   const id = useId();
   const verb = progress.kind === "undo" ? "Undoing" : "Applying";
   const ago = Math.round((Date.now() - progress.updated_at) / 1000);
   if (!progress.claimed_at) {
     return (
       <div className="organise__progress" role="status">
-        <p><strong>Waiting for the librarian</strong> to pick up a batch of {n(progress.total)} {progress.total === 1 ? "change" : "changes"}.
-          {!online && <> It isn’t running — start it on the NAS with <code>sudo docker compose --env-file .env --profile app --profile librarian up -d librarian</code>.</>}</p>
+        <p><strong>{paused ? "Paused" : "Waiting for the librarian"}</strong>{paused ? <> — a batch of {n(progress.total)} {progress.total === 1 ? "change" : "changes"} starts when you switch file changes back on.</>
+          : <> to pick up a batch of {n(progress.total)} {progress.total === 1 ? "change" : "changes"}.</>}
+          {!online && !paused && <> It isn’t running — start it on the NAS with <code>dc up -d librarian</code>.</>}</p>
       </div>
     );
   }
@@ -53,7 +56,7 @@ function BatchProgress({ progress, online }: { progress: NonNullable<View["progr
         {progress.current && <> · now: {progress.current}</>}</label>
       <progress id={id} value={progress.done} max={progress.total} />
       <p className="muted">{ago < 120 ? `Updated ${ago} s ago.` : `No word from the librarian for ${Math.round(ago / 60)} min — it may still be busy with a big folder; its log shows each change as it goes (sudo docker compose logs -f librarian).`}
-        {" "}You can close this page; it carries on.</p>
+        {" "}You can close this page; it carries on.{paused && " File changes are paused: this batch finishes, then nothing new starts."}</p>
     </div>
   );
 }
@@ -183,13 +186,25 @@ export default function OrganiseLibrary({ request, upload }: { request: Request;
           <div className="organise__intro">
             <p>SynAmp proposes tidier names and folders, and where new music should go; nothing changes until you approve and press Apply. Every move is written to a journal and can be undone, and your analysis and play history follow the files.</p>
             <p role="status" className={lib?.online ? "organise__ok" : "organise__warn"}>
-              {lib?.online ? <>The librarian is running{lib.root ? <> on <code>{lib.root}</code></> : null}.</>
+              {lib?.online ? <>The librarian is {view.paused ? "paused" : "running"}{lib.root ? <> on <code>{lib.root}</code></> : null}.</>
                 : lib ? <>The librarian hasn’t checked in since {when(lib.last_seen)}. Approved batches will wait for it.</>
-                : <>The librarian isn’t running yet. It is the only part of SynAmp allowed to change files — see the brain README to start it. You can review now; batches wait for it.</>}
+                : <>The librarian isn’t running yet. It is the only part of SynAmp allowed to change files and starts with the rest of SynAmp on the NAS (<code>dc up -d librarian</code>). You can review now; batches wait for it.</>}
               {lib && !lib.journal && <> It has no journal set, so moved tracks would be re-analysed.</>}
               {lib && view.incoming.enabled && !lib.incoming && <> It can’t reach <code>incoming/</code> (no <code>LIBRARIAN_INCOMING_PATH</code>), so new music can be reviewed but not filed yet.</>}
             </p>
-            {view.progress && <BatchProgress progress={view.progress} online={!!lib?.online} />}
+            <div className="organise__pause">
+              <button type="button" role="switch" aria-checked={!!view.paused} className={`switch ${view.paused ? "is-on" : ""}`}
+                aria-describedby={`${ids}-pause-hint`}
+                onClick={() => send("/organise/pause", { paused: !view.paused }, view.paused ? "File changes are back on." : "File changes paused.")}>
+                <span className="switch__track" aria-hidden="true"><span className="switch__thumb" /></span>
+                <span>Pause file changes</span>
+              </button>
+              <p className="muted" id={`${ids}-pause-hint`}>
+                {view.paused ? <>Paused since {when(view.paused.at)}. You can keep reviewing and applying; batches wait until you switch this off.</>
+                  : <>Holds the librarian: nothing in your music folders changes while this is on. A batch already under way finishes first.</>}
+              </p>
+            </div>
+            {view.progress && <BatchProgress progress={view.progress} online={!!lib?.online} paused={!!view.paused} />}
             {view.pending_export && <p className="muted">Some moved files are still listed at their old place by the last analyzer export. They already play from the new place; the next analyzer scan and export makes it permanent.</p>}
           </div>
 

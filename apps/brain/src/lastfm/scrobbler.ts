@@ -122,11 +122,13 @@ export class Scrobbler {
   }
 
   get configured(): boolean { return !!this.client; }
+  /** New API key or secret saved in Settings: use them from now on (no restart). */
+  setClient(client?: LastfmClient): void { this.client = client; }
 
   // --- connecting -------------------------------------------------------------
   /** Starts web auth. The state nonce is what protects the (unauthenticated) callback. */
   connectUrl(callbackBase: string): string {
-    if (!this.client) throw new LastfmError(-1, "Last.fm is not configured: set LASTFM_API_KEY and LASTFM_API_SECRET");
+    if (!this.client) throw new LastfmError(-1, "Last.fm is not configured: add the Last.fm API key and shared secret in Settings");
     const nonce = randomBytes(18).toString("base64url");
     this.nonces.set(nonce, this.now() + 10 * 60_000);
     return this.client.authUrl(`${callbackBase.replace(/\/$/, "")}/api/v1/lastfm/callback?state=${nonce}`);

@@ -102,11 +102,12 @@ services:
     networks: [synamp]
 
   # --- librarian: the ONLY service that may change the music files ----------
-  # Opt-in:  docker compose --env-file .env --profile app --profile librarian up -d
-  # Applies batches you approved in the web app (renames/moves, and filing new
-  # music from incoming/; journaled, undoable). Same image as the brain.
+  # Starts with the app and waits for work. It changes nothing until you apply a
+  # batch you approved in the web app (renames/moves, and filing new music from
+  # incoming/; journaled, undoable). "Pause file changes" in the Organise panel
+  # holds it without stopping the container. Same image as the brain.
   librarian:
-    profiles: ["librarian"]
+    profiles: ["app", "librarian"]
     build:
       context: ../apps/brain
     command: ["node", "--experimental-strip-types", "src/librarian/main.ts"]

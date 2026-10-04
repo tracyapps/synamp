@@ -7,6 +7,7 @@ import LibraryHealth from "./LibraryHealth";
 import MissingTracks from "./MissingTracks";
 import OrganiseLibrary from "./OrganiseLibrary";
 import DiscographyGaps from "./DiscographyGaps";
+import Settings from "./Settings";
 import { newId } from "./ids";
 import type { SessionView } from "./Player";
 
@@ -240,6 +241,7 @@ export default function App() {
         <OrganiseLibrary request={call} upload={upload} />
         <DiscographyGaps request={call} />
         <Listening request={call} />
+        <Settings request={call} />
         <Player request={call} session={session} onSession={setSession}
           playlistName={(id) => nodes.find((node) => node.id === id)?.name}
           onChanged={() => { if (selectedId) onSelect(selectedId).catch(() => undefined); }} />

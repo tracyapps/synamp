@@ -73,8 +73,11 @@ Each phase ends with **Done when**, so you know it worked before moving on.
    | `DATA_DIR` | `/volume1/docker/synamp/data` |
    | `POSTGRES_PASSWORD` | anything long and random |
    | `PLAYLIST_API_TOKEN` | long and random — make one with `openssl rand -hex 32` and keep a copy; the web app and the Mac both need it |
-   | `MUSICBRAINZ_CONTACT` | your email (sent only to musicbrainz.org) |
    | `PUID` / `PGID` | `1026` / `100` |
+
+   The rest (MusicBrainz contact, Last.fm keys, SynAmp's address, upload
+   limit) is set in the web app under **Settings** — no need to edit this file
+   for them.
 
 **Done when** `/volume1/docker/synamp/` holds `apps/`, `deploy/` and `data/`,
 and `.env` is filled in.
@@ -86,10 +89,13 @@ On the NAS (all `docker compose` commands in this guide run on the NAS, from
 
 ```bash
 cd /volume1/docker/synamp/deploy
-sudo /usr/local/bin/docker compose --env-file .env --profile app up -d --build db brain web edge
+sudo /usr/local/bin/docker compose --env-file .env --profile app up -d --build db brain web edge librarian
 ```
 
-Naming the four services is what keeps Navidrome (`core`) switched off.
+Naming the services is what keeps Navidrome (`core`) switched off. The
+librarian (the only part allowed to change music files) starts too, but does
+nothing until you apply a batch you approved — and **Pause file changes** in
+the Organise panel holds it whenever you like.
 
 **A shortcut for every later command.** Paste this on the NAS once (and add it
 to `~/.profile` to keep it):
@@ -112,6 +118,8 @@ containers still run as you (1026), so their files belong to you.
 The first build takes a few minutes.
 
 Open `http://Syd.local:8080` and enter the `PLAYLIST_API_TOKEN` when asked.
+Then open **Settings** (bottom of the page) and enter your email as the
+MusicBrainz contact.
 
 **Done when** the page loads and `dc ps` shows no `core`.
 
@@ -202,14 +210,8 @@ because merges use MusicBrainz's spelling of each artist.
 
 ## 5. Organise
 
-1. On the NAS, start the librarian (the only part of SynAmp allowed to change files):
-
-   ```bash
-   dc up -d librarian
-   ```
-
-   The Organise panel should say "The librarian is running".
-
+1. The Organise panel should say "The librarian is running". (It started in
+   phase 2. If it says it isn't: `dc up -d librarian` on the NAS.)
 2. **Start small.** Approve two or three proposals, press **Apply**, and look
    at those folders in Finder. Try **Undo this batch** once so you've seen it
    work.
@@ -219,7 +221,8 @@ because merges use MusicBrainz's spelling of each artist.
    itself (you'll see it in the Library strip). That's what lets analysis and
    history follow the moved files. If you switched that off: **Scan for
    changes** in the Library strip.
-5. When you're done: `dc stop librarian`.
+5. Want a break from changes? Switch on **Pause file changes** in the
+   Organise panel. A batch already under way finishes; nothing new starts.
 
 **Done when** you're happy with the folders. It doesn't have to be perfect —
 anything you change later is handled, it just costs Navidrome its play counts

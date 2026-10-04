@@ -386,6 +386,8 @@ type State = {
   batches: Batch[];
   jobs: Job[];
   librarian?: LibrarianSeen;
+  /** "Pause file changes": the librarian gets no new work until resumed. */
+  paused?: { at: number };
 };
 
 /** A claimed job that never reported back is offered again after this long. */
@@ -423,9 +425,18 @@ export class OrganiseStore {
       batches: loaded.batches ?? [],
       jobs: loaded.jobs ?? [],
       ...(loaded.librarian ? { librarian: loaded.librarian } : {}),
+      ...(loaded.paused ? { paused: loaded.paused } : {}),
     };
   }
   save(): void { writeJson(this.path, this.state); }
+
+  /** Pause or resume file changes. A batch already under way finishes; nothing new starts. */
+  setPaused(paused: unknown, now = Date.now()): void {
+    if (typeof paused !== "boolean") throw new OrganiseError("paused must be true or false");
+    if (paused && !this.state.paused) this.state.paused = { at: now };
+    if (!paused) delete this.state.paused;
+    this.save();
+  }
 
   setSettings(input: Record<string, unknown>): OrganiseSettings {
     this.state.settings = cleanSettings(input, this.state.settings);
@@ -508,6 +519,7 @@ export class OrganiseStore {
   /** The librarian asks for work; this is also how the brain knows it is alive. */
   claim(seen: Omit<LibrarianSeen, "last_seen">, now = Date.now()): Job | null {
     this.state.librarian = { ...seen, last_seen: now };
+    if (this.state.paused) { this.save(); return null; }
     const job = this.state.jobs.find((item) => item.status === "queued")
       // A job that went quiet (no report, no progress) for an hour is offered again.
       ?? this.state.jobs.find((item) => item.status === "running"
