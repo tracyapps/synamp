@@ -299,6 +299,7 @@ function organiseView(query: URLSearchParams) {
       decisions: batch.decisions.map(({ moved, ...decision }) => ({ ...decision, moved_count: moved?.length ?? 0 })),
     })),
     busy: !!organise.busy(),
+    progress: organise.progressView(),
     librarian: seen ? { ...seen, online: Date.now() - seen.last_seen < LIBRARIAN_ONLINE_MS } : null,
     pending_export: overlay.count > 0 && currentLibrary().version !== library.get().version,
     incoming: incoming ? (({ files, arriving, ignored, set_aside, truncated }) => ({ enabled: true, files: files.length, arriving, ignored, set_aside, truncated }))(incoming.scan())
@@ -316,11 +317,11 @@ function send(res: ServerResponse, status: number, body: unknown): void {
   res.end(payload);
 }
 
-async function body(req: IncomingMessage): Promise<Record<string, unknown>> {
+async function body(req: IncomingMessage, limit = 256_000): Promise<Record<string, unknown>> {
   let input = "";
   for await (const chunk of req) {
     input += chunk;
-    if (input.length > 256_000) throw new PlaylistError("Request body too large", 413);
+    if (input.length > limit) throw new PlaylistError("Request body too large", 413);
   }
   try {
     const value: unknown = JSON.parse(input);
@@ -559,9 +560,15 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     });
     return send(res, 200, { job });
   }
+  const librarianProgress = path.match(/^\/api\/v1\/librarian\/jobs\/(j_[0-9a-f]{12})\/progress$/);
+  if (librarianProgress && req.method === "POST") {
+    organise.progress(librarianProgress[1]!, await body(req));
+    return send(res, 202, { ok: true });
+  }
   const librarianJob = path.match(/^\/api\/v1\/librarian\/jobs\/(j_[0-9a-f]{12})$/);
   if (librarianJob && req.method === "POST") {
-    const { job, moved, folders } = organise.complete(librarianJob[1]!, await body(req));
+    // A big batch's report lists every file moved: thousands of decisions are megabytes.
+    const { job, moved, folders } = organise.complete(librarianJob[1]!, await body(req, 128_000_000));
     overlay.record(moved);
     carryMatches(albumMatches, folders);
     incoming?.invalidate();

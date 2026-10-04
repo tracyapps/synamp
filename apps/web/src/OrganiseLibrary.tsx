@@ -31,7 +31,32 @@ type View = {
   pending_export: boolean;
   incoming: IncomingStatus;
   upload_max_mb: number;
+  progress: { job: string; batch: string; kind: "apply" | "undo"; done: number; total: number; current?: string; updated_at: number; claimed_at?: number } | null;
 };
+
+/** Where the librarian is with the current batch: shown at the top of the panel while it works. */
+function BatchProgress({ progress, online }: { progress: NonNullable<View["progress"]>; online: boolean }) {
+  const id = useId();
+  const verb = progress.kind === "undo" ? "Undoing" : "Applying";
+  const ago = Math.round((Date.now() - progress.updated_at) / 1000);
+  if (!progress.claimed_at) {
+    return (
+      <div className="organise__progress" role="status">
+        <p><strong>Waiting for the librarian</strong> to pick up a batch of {n(progress.total)} {progress.total === 1 ? "change" : "changes"}.
+          {!online && <> It isn’t running — start it on the NAS with <code>sudo docker compose --env-file .env --profile app --profile librarian up -d librarian</code>.</>}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="organise__progress" role="status" aria-live="polite">
+      <label htmlFor={id}><strong>{verb} {n(progress.done)} of {n(progress.total)}</strong>
+        {progress.current && <> · now: {progress.current}</>}</label>
+      <progress id={id} value={progress.done} max={progress.total} />
+      <p className="muted">{ago < 120 ? `Updated ${ago} s ago.` : `No word from the librarian for ${Math.round(ago / 60)} min — it may still be busy with a big folder; its log shows each change as it goes (sudo docker compose logs -f librarian).`}
+        {" "}You can close this page; it carries on.</p>
+    </div>
+  );
+}
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
 
 const PAGE = 20;
@@ -164,6 +189,7 @@ export default function OrganiseLibrary({ request, upload }: { request: Request;
               {lib && !lib.journal && <> It has no journal set, so moved tracks would be re-analysed.</>}
               {lib && view.incoming.enabled && !lib.incoming && <> It can’t reach <code>incoming/</code> (no <code>LIBRARIAN_INCOMING_PATH</code>), so new music can be reviewed but not filed yet.</>}
             </p>
+            {view.progress && <BatchProgress progress={view.progress} online={!!lib?.online} />}
             {view.pending_export && <p className="muted">Some moved files are still listed at their old place by the last analyzer export. They already play from the new place; the next analyzer scan and export makes it permanent.</p>}
           </div>
 
@@ -206,7 +232,7 @@ export default function OrganiseLibrary({ request, upload }: { request: Request;
           </nav>}
 
           <div className="organise__apply">
-            {view.busy ? <p role="status">The librarian is working on a batch…</p> : confirming === "apply" ? <>
+            {view.busy ? <p>The librarian is working on a batch — progress is shown at the top of this panel.</p> : confirming === "apply" ? <>
               <p><strong>Apply {n(s!.approved)} approved {s!.approved === 1 ? "change" : "changes"}?</strong> This renames or moves {n(s!.approved_moves)} music files, plus the artwork beside them. It can be undone from the list below.</p>
               <button type="button" className="primary" onClick={() => { setConfirming(null); send("/organise/apply", {}, "Sent to the librarian."); }}>Yes, apply</button>
               <button type="button" className="quiet" onClick={() => setConfirming(null)}>Cancel</button>

@@ -405,9 +405,13 @@ export function reverseMove(move: Move): Move {
   return { ...rest, from: move.to, to: move.from, ...(to_area ? { from_area: to_area } : {}), ...(from_area ? { to_area: from_area } : {}) };
 }
 
+export type JobProgress = { job: string; batch: string; kind: Job["kind"]; done: number; total: number; current?: string; updated_at: number };
+
 export class OrganiseStore {
   private path: string;
   state: State;
+  /** Live progress from the librarian (not saved: it's only for watching). */
+  private live = new Map<string, JobProgress>();
   constructor(path: string) {
     this.path = path;
     let loaded: Partial<State> = {};
@@ -505,7 +509,9 @@ export class OrganiseStore {
   claim(seen: Omit<LibrarianSeen, "last_seen">, now = Date.now()): Job | null {
     this.state.librarian = { ...seen, last_seen: now };
     const job = this.state.jobs.find((item) => item.status === "queued")
-      ?? this.state.jobs.find((item) => item.status === "running" && now - (item.claimed_at ?? 0) > RECLAIM_AFTER_MS);
+      // A job that went quiet (no report, no progress) for an hour is offered again.
+      ?? this.state.jobs.find((item) => item.status === "running"
+        && now - Math.max(item.claimed_at ?? 0, this.live.get(item.id)?.updated_at ?? 0) > RECLAIM_AFTER_MS);
     if (job) {
       job.status = "running";
       job.claimed_at = now;
@@ -515,6 +521,31 @@ export class OrganiseStore {
     }
     this.save();
     return job ?? null;
+  }
+
+  /** The librarian says how far along a job is. */
+  progress(jobId: string, input: unknown, now = Date.now()): void {
+    const job = this.state.jobs.find((item) => item.id === jobId);
+    if (!job || job.status !== "running") return;
+    const raw = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
+    const count = (value: unknown) => (typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.round(value) : 0);
+    this.live.set(jobId, {
+      job: jobId, batch: job.batch, kind: job.kind, total: job.decisions.length,
+      done: Math.min(count(raw.done), job.decisions.length), updated_at: now,
+      ...(typeof raw.current === "string" ? { current: raw.current.slice(0, 300) } : {}),
+    });
+    if (this.state.librarian) this.state.librarian.last_seen = now;
+  }
+
+  /** The running job, with live progress when the librarian has sent some. */
+  progressView(): (JobProgress & { claimed_at?: number }) | null {
+    const job = this.state.jobs.find((item) => item.status === "running");
+    if (!job) {
+      const queued = this.state.jobs.find((item) => item.status === "queued");
+      return queued ? { job: queued.id, batch: queued.batch, kind: queued.kind, done: 0, total: queued.decisions.length, updated_at: queued.created_at } : null;
+    }
+    return { job: job.id, batch: job.batch, kind: job.kind, done: 0, total: job.decisions.length, updated_at: job.claimed_at ?? job.created_at,
+      ...(job.claimed_at ? { claimed_at: job.claimed_at } : {}), ...this.live.get(job.id) };
   }
 
   /** The librarian's report. Returns the moves that actually happened, in order. */
@@ -547,6 +578,7 @@ export class OrganiseStore {
       }
     }
     job.status = "done";
+    this.live.delete(job.id);
     if (batch) {
       if (job.kind === "apply") {
         const applied = batch.decisions.filter((d) => d.status === "applied").length;

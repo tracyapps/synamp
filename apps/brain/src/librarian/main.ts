@@ -23,7 +23,7 @@ import { accessSync, constants, existsSync, mkdirSync, readFileSync, renameSync,
 import { hostname } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import type { Job } from "../library/organise.ts";
-import { Journal, runJob } from "./apply.ts";
+import { applyDecision, Journal, undoDecision } from "./apply.ts";
 import type { DecisionResult } from "./apply.ts";
 
 export const LIBRARIAN_VERSION = "0.1.0";
@@ -93,9 +93,23 @@ export async function runOnce(config: LibrarianConfig, fetchImpl: typeof fetch =
     const job = claimed.job as Job | null;
     if (!job) return "idle";
     log(`${job.kind === "apply" ? "Applying" : "Undoing"} batch ${job.batch}: ${job.decisions.length} decision(s)`);
-    const results = runJob(job, { root: config.root, ...(config.incoming ? { incoming: config.incoming } : {}), journal: new Journal(config.journal) });
-    for (const result of results) {
-      log(`  ${result.status === "applied" ? "✓" : "✗"} ${job.decisions.find((d) => d.id === result.id)?.title ?? result.id} — ${result.moved.length} moved${result.errors.length ? `; ${result.errors.join("; ")}` : ""}`);
+    const context = { root: config.root, ...(config.incoming ? { incoming: config.incoming } : {}), journal: new Journal(config.journal), batch: job.batch };
+    const results: DecisionResult[] = [];
+    let lastProgress = 0;
+    const tell = async (done: number, current?: string) => {
+      // Best effort: the web app shows it; the work goes on even if this doesn't arrive.
+      try { await post(`/api/v1/librarian/jobs/${encodeURIComponent(job.id)}/progress`, { done, ...(current ? { current } : {}) }); } catch { /* ignore */ }
+    };
+    await tell(0, job.decisions[0]?.title);
+    for (const decision of job.decisions) {
+      const result = job.kind === "apply" ? applyDecision(decision, context) : undoDecision(decision, context);
+      results.push(result);
+      log(`  ${result.status === "applied" ? "✓" : "✗"} ${decision.title} — ${result.moved.length} moved${result.errors.length ? `; ${result.errors.join("; ")}` : ""}`);
+      if (Date.now() - lastProgress > 2_000) {
+        lastProgress = Date.now();
+        const next = job.decisions[results.length];
+        await tell(results.length, next?.title);
+      }
     }
     const pending: Pending = { job: job.id, results };
     mkdirSync(config.stateDir, { recursive: true });

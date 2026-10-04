@@ -278,3 +278,26 @@ test("batches with new music: imports go first, undo swaps the areas back, the o
     assert.deepEqual(undoJob.decisions[1]!.moves[0], { from: "A/B (2000)/cover.jpg", to: "a/b/cover.jpg", to_area: "incoming" });
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("live progress from the librarian: shown while running, keeps a slow big batch from being handed out again", () => {
+  const dir = tempDir();
+  try {
+    const store = new OrganiseStore(join(dir, "organise.json"));
+    const library = lib([track("y1", "Tusk/Tusk/01 Over.mp3", "Over", { track_no: 1, year: 1979 })]);
+    const plan = buildPlan(library, {}, store.state.settings);
+    store.review(plan, "approved");
+    store.apply(plan, 0);
+    assert.equal(store.progressView()!.claimed_at, undefined, "queued: waiting for the librarian");
+    const job = store.claim({}, 1000)!;
+    store.progress(job.id, { done: 1, current: "Tusk — Tusk", total: 999 }, 2000);
+    assert.deepEqual({ ...store.progressView()!, updated_at: 0 }, { job: job.id, batch: job.batch, kind: "apply", done: 1, total: 1, current: "Tusk — Tusk", updated_at: 0, claimed_at: 1000 });
+    // Two hours in, but it reported progress a minute ago: still its job.
+    store.progress(job.id, { done: 1 }, 2 * 3600_000);
+    assert.equal(store.claim({}, 2 * 3600_000 + 60_000), null);
+    // Silent for over an hour: offered again.
+    assert.equal(store.claim({}, 4 * 3600_000)?.id, job.id);
+    store.progress("j_000000000000", { done: 5 }); // unknown job: ignored
+    store.complete(job.id, { results: [] });
+    assert.equal(store.progressView(), null);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

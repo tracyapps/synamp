@@ -172,6 +172,7 @@ test("the librarian loop: claims a job from the brain, does it, reports — and 
     assert.match(checkSetup({ root: "/", brainUrl: "x", token: "", journal: "j", stateDir: state, pollSeconds: 10 })[0]!, /filesystem root/);
 
     const reports: unknown[] = [];
+    const progress: Array<{ done: number; current?: string }> = [];
     let failReport = true;
     let offered = false;
     const fetchImpl = (async (url: string | URL | Request, init?: RequestInit) => {
@@ -181,6 +182,10 @@ test("the librarian loop: claims a job from the brain, does it, reports — and 
         const job = offered ? null : { id: "j_000000000001", batch: "b_1", kind: "apply", status: "running", created_at: 0, decisions: [albumDecision()] };
         offered = true;
         return Response.json({ job });
+      }
+      if (href.endsWith("/api/v1/librarian/jobs/j_000000000001/progress")) {
+        progress.push(JSON.parse(String(init?.body)));
+        return Response.json({ ok: true });
       }
       if (href.endsWith("/api/v1/librarian/jobs/j_000000000001")) {
         if (failReport) { failReport = false; return new Response("down", { status: 503 }); }
@@ -196,6 +201,7 @@ test("the librarian loop: claims a job from the brain, does it, reports — and 
     assert.ok(existsSync(join(state, "pending-report.json")));
     assert.equal(await runOnce(config, fetchImpl, quiet), "idle", "next round: report delivered first, then nothing to do");
     assert.equal(reports.length, 1);
+    assert.deepEqual(progress[0], { done: 0, current: "Ani DiFranco — Little Plastic Castle" }, "the web app hears it has started");
     assert.equal((reports[0] as { results: Array<{ status: string }> }).results[0]!.status, "applied");
     assert.ok(!existsSync(join(state, "pending-report.json")));
   } finally { lib.cleanup(); rmSync(state, { recursive: true, force: true }); }

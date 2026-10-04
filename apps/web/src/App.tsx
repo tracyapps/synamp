@@ -64,8 +64,18 @@ export default function App() {
         ...(token ? { authorization: `Bearer ${token}` } : {}),
       },
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(response.status === 401 ? "Enter the playlist access token." : data.error ?? `HTTP ${response.status}`);
+    // An empty or non-JSON answer means the brain didn't answer (restarting, or the edge
+    // couldn't reach it): say that, rather than a cryptic JSON parse error.
+    const text = await response.text();
+    let data: { error?: string } | undefined;
+    try { data = text ? JSON.parse(text) : undefined; } catch { data = undefined; }
+    if (!response.ok) {
+      if (response.status === 401) throw new Error("Enter the playlist access token.");
+      throw new Error(data?.error ?? (response.status >= 500
+        ? `The SynAmp server didn't answer (HTTP ${response.status}). It may be restarting — try again in a minute.`
+        : `HTTP ${response.status}`));
+    }
+    if (data === undefined) throw new Error("The SynAmp server sent an empty answer. It may be restarting — try again in a minute.");
     return data as T;
   }
 
