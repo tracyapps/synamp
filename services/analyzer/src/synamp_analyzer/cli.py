@@ -174,7 +174,7 @@ def _cmd_export(cfg: AnalyzerConfig, out: str | None, read_tags: bool = True) ->
         print(f"export: no analyzer database at {cfg.db_path}")
         return 1
     with Database(cfg.db_path) as db:
-        counts = write_export(db, cfg.library_path, destination, read_tags)
+        counts = write_export(db, cfg.library_path, destination, read_tags, progress=lambda line: print(line, flush=True))
     print(f"export: library={cfg.library_path}")
     print(f"export: wrote {counts['exported']} tracks to {destination} ({counts['tagged']} named from tags, the rest from folders)")
     print(

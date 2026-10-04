@@ -140,9 +140,10 @@ uv run synamp-analyze scan
 uv run synamp-analyze export --out /Volumes/music/.synamp/library-signals.json
 ```
 
-`scan` lists every file (it doesn't analyse anything yet). The first `export`
-reads every file's tags over the network, so it's the slow one; later exports
-reuse what it read.
+`scan` lists every file (it doesn't analyse anything yet) — a few minutes.
+The first `export` reads every file's tags over the network, several at a
+time, and prints how far along it is with time left; later exports reuse what
+it read and take seconds. Stopping it (Ctrl-C) keeps what it has read so far.
 
 In any new Terminal window, run the `cd` and `source` lines again before
 other `synamp-analyze` commands.

@@ -201,3 +201,48 @@ def test_numbers_and_year_for_finding_missing_tracks(tmp_path: Path) -> None:
         track = by_path(build_export(db, config.library_path))["Artist/Album/03 - tagged.flac"]
     assert track["track_no"] == 5, "the tag wins over the filename"
     assert track["year"] == 1997
+
+
+def test_tags_are_read_in_parallel_with_progress_and_kept_if_interrupted(tmp_path: Path, monkeypatch) -> None:
+    """Over a network share, reading 46k files one by one takes hours: read several at once,
+    say how far along it is, and save as it goes so stopping half-way keeps the work."""
+    import synamp_analyzer.export as export_module
+
+    library = tmp_path / "music"
+    (library / "Artist" / "Album").mkdir(parents=True)
+    for n in range(12):
+        sine(library / "Artist" / "Album" / f"{n + 1:02d} - tone.flac", seconds=0.5)
+    config = config_for(library, tmp_path)
+    run_scan(config, progress=quiet)
+
+    calls: list[str] = []
+    real = export_module.read_tags
+    def counting(path: Path) -> dict:
+        calls.append(str(path))
+        if len(calls) == 7:
+            raise KeyboardInterrupt  # someone presses Ctrl-C part-way
+        return real(path)
+    monkeypatch.setattr(export_module, "read_tags", counting)
+    monkeypatch.setattr(export_module, "_COMMIT_EVERY", 3)
+    lines: list[str] = []
+    with Database(config.db_path) as db:
+        try:
+            build_export(db, config.library_path, progress=lines.append, workers=1)
+        except KeyboardInterrupt:
+            pass
+    with Database(config.db_path) as db:
+        kept = db.conn.execute("SELECT COUNT(*) FROM tag_cache").fetchone()[0]
+    assert kept >= 6, "everything read before the interruption was committed"
+
+    calls.clear()
+    monkeypatch.setattr(export_module, "read_tags", real)
+    monkeypatch.setattr(export_module, "_REPORT_EVERY_S", 0.0)
+    lines.clear()
+    with Database(config.db_path) as db:
+        document = build_export(db, config.library_path, progress=lines.append, workers=4)
+    assert document["counts"]["exported"] == 12
+    assert lines[0].startswith(f"export: reading tags from {12 - kept} files ({kept} already known), 4 at a time")
+    assert lines[-1].startswith(f"export: tags {12 - kept} / {12 - kept} (100%)")
+    with Database(config.db_path) as db:
+        build_export(db, config.library_path, progress=lines.append, workers=4)
+        assert db.conn.execute("SELECT COUNT(*) FROM tag_cache").fetchone()[0] == 12

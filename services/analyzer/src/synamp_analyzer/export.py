@@ -29,6 +29,7 @@ Rules the export enforces, because the brain trusts what it receives:
 from __future__ import annotations
 
 import hashlib
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import re
@@ -165,21 +166,6 @@ def number_from_filename(relative: PurePosixPath) -> dict:
     return out if 0 < out["track_no"] < 1000 else {}
 
 
-def _cached_tags(db: Database, path: Path, size: int, mtime: float) -> dict:
-    row = db.conn.execute("SELECT size_bytes, mtime, payload FROM tag_cache WHERE path = ?", (str(path),)).fetchone()
-    if row is not None and row["size_bytes"] == size and row["mtime"] == mtime:
-        cached = json.loads(row["payload"])
-        if cached.get("_v") == TAG_CACHE_VERSION:
-            return cached
-    tags = {**read_tags(path), "_v": TAG_CACHE_VERSION}
-    db.conn.execute(
-        "INSERT INTO tag_cache (path, size_bytes, mtime, payload) VALUES (?, ?, ?, ?) "
-        "ON CONFLICT(path) DO UPDATE SET size_bytes = excluded.size_bytes, mtime = excluded.mtime, payload = excluded.payload",
-        (str(path), size, mtime, json.dumps(tags, sort_keys=True)),
-    )
-    return tags
-
-
 def describe(relative: PurePosixPath, tags: dict) -> dict:
     """Tag names when the file has a title and an artist; otherwise the folder layout."""
     if tags.get("title") and (tags.get("artist") or tags.get("album_artist")):
@@ -197,7 +183,80 @@ def _finite(value: object) -> bool:
         and value not in (float("inf"), float("-inf"))
 
 
-def build_export(db: Database, library_root: Path, read_file_tags: bool = True) -> dict:
+TAG_READ_WORKERS = 8
+_COMMIT_EVERY = 250
+_REPORT_EVERY_S = 10.0
+
+
+def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: int = TAG_READ_WORKERS) -> dict[str, dict]:
+    """Tags for every present file: from the cache when unchanged, else read.
+
+    Reading is network-bound over a share (one open and a few small reads per
+    file), so several files are read at once. Results are saved to the cache as
+    they arrive and committed every few hundred files, so stopping half-way
+    keeps what was read; progress is reported every ~10 seconds.
+    """
+    cached: dict[str, dict] = {}
+    known = {
+        row["path"]: row
+        for row in db.conn.execute("SELECT path, size_bytes, mtime, payload FROM tag_cache")
+    }
+    todo: list[tuple[str, int, float]] = []
+    for row in rows:
+        if row["missing"]:
+            continue
+        hit = known.get(row["path"])
+        if hit is not None and hit["size_bytes"] == row["size_bytes"] and hit["mtime"] == row["mtime"]:
+            payload = json.loads(hit["payload"])
+            if payload.get("_v") == TAG_CACHE_VERSION:
+                cached[row["path"]] = payload
+                continue
+        todo.append((row["path"], row["size_bytes"], row["mtime"]))
+    if not todo:
+        return cached
+
+    def say(text: str) -> None:
+        if progress is not None:
+            progress(text)
+
+    say(f"export: reading tags from {len(todo):,} files ({len(cached):,} already known), {workers} at a time")
+    started = last_report = time.time()
+    done = 0
+    pool = ThreadPoolExecutor(max_workers=max(1, workers))
+    try:
+        futures = {pool.submit(read_tags, Path(path)): (path, size, mtime) for path, size, mtime in todo}
+        for future in as_completed(futures):
+            path, size, mtime = futures[future]
+            try:
+                tags = future.result()
+            except Exception:  # read_tags already swallows errors; belt and braces
+                tags = {}
+            tags = {**tags, "_v": TAG_CACHE_VERSION}
+            cached[path] = tags
+            db.conn.execute(
+                "INSERT INTO tag_cache (path, size_bytes, mtime, payload) VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(path) DO UPDATE SET size_bytes = excluded.size_bytes, mtime = excluded.mtime, payload = excluded.payload",
+                (path, size, mtime, json.dumps(tags, sort_keys=True)),
+            )
+            done += 1
+            if done % _COMMIT_EVERY == 0:
+                db.conn.commit()
+            now = time.time()
+            if now - last_report >= _REPORT_EVERY_S or done == len(todo):
+                last_report = now
+                rate = done / max(now - started, 1e-6)
+                left = (len(todo) - done) / rate if rate > 0 else 0
+                when = f"~{left / 60:.0f} min left" if left >= 90 else f"~{left:.0f} s left"
+                say(f"export: tags {done:,} / {len(todo):,} ({100 * done / len(todo):.0f}%), {rate:.0f} files/s, {when}")
+    finally:
+        # Ctrl-C or an error: keep what was read, and don't wait for the queued files.
+        db.conn.commit()
+        pool.shutdown(wait=False, cancel_futures=True)
+    return cached
+
+
+def build_export(db: Database, library_root: Path, read_file_tags: bool = True, progress=None,
+                 workers: int = TAG_READ_WORKERS) -> dict:
     """The export document, as a plain dict."""
     root = library_root.expanduser()
     if read_file_tags:
@@ -213,6 +272,7 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True) 
         """
     ).fetchall()
 
+    tag_cache = _read_tags_parallel(db, rows, root, progress, workers) if read_file_tags else {}
     tracks: list[dict] = []
     counts = {"catalog": len(rows), "exported": 0, "missing_on_disk": 0, "outside_root": 0,
               "no_results": 0, "withheld_stale": 0, "failed": 0, "tagged": 0}
@@ -251,7 +311,7 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True) 
                 if isinstance(value, str) and value:
                     status[name] = value
 
-        tags = _cached_tags(db, path, row["size_bytes"], row["mtime"]) if read_file_tags else {}
+        tags = tag_cache.get(row["path"], {}) if read_file_tags else {}
         names = describe(relative, tags)
         if names["metadata_source"] == "tags":
             counts["tagged"] += 1
@@ -303,9 +363,10 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True) 
     }
 
 
-def write_export(db: Database, library_root: Path, out: Path, read_file_tags: bool = True) -> dict:
+def write_export(db: Database, library_root: Path, out: Path, read_file_tags: bool = True, progress=None,
+                 workers: int = TAG_READ_WORKERS) -> dict:
     """Write atomically (temp file + rename) so the brain never reads half a file."""
-    document = build_export(db, library_root, read_file_tags)
+    document = build_export(db, library_root, read_file_tags, progress, workers)
     out = out.expanduser()
     out.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix=f".{out.name}.", suffix=".tmp", dir=out.parent)
