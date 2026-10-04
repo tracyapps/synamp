@@ -9,6 +9,7 @@ import OrganiseLibrary from "./OrganiseLibrary";
 import DiscographyGaps from "./DiscographyGaps";
 import Settings from "./Settings";
 import { UpdateNotice } from "./Updates";
+import SpotCheck from "./SpotCheck";
 import { newId } from "./ids";
 import type { SessionView } from "./Player";
 
@@ -205,6 +206,7 @@ export default function App() {
           refresh().then(() => setError("")).catch((cause) => setError(cause.message));
         }}><label>Playlist access token <input type="password" value={token} onChange={(event) => setToken(event.target.value)} /></label><button>Connect</button></form>}
         <LibraryHealth request={call} />
+        <SpotCheck request={call} />
         <Describe request={call} onSaved={(id) => { onSmartSaved(id).catch((cause) => setError(cause.message)); }} />
         <div className="workspace">
           <aside className="panel sidebar"><div className="panel__head"><h2>Collection</h2><span>{nodes.length} nodes</span></div>

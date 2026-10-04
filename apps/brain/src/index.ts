@@ -35,6 +35,7 @@ import type { CapturedPlay } from "./subsonic/proxy.ts";
 import { LastfmClient, LastfmError } from "./lastfm/client.ts";
 import { RuntimeSettings, SettingsError } from "./settings.ts";
 import { VersionCheck } from "./version.ts";
+import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
 import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
 import { groupAlbums } from "./library/albums.ts";
@@ -73,7 +74,11 @@ const mbClient = () => (musicbrainz ??= new MusicBrainz({ contact: runtime.music
 const organise = new OrganiseStore(join(dataDir, "organise.json"));
 /** Moved files keep working before the analyzer re-exports (see PathOverlay). */
 const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
-function currentLibrary() { return overlay.apply(library.get()); }
+/** Tempo checks you made in "Check the measurements": answers and corrections. */
+const spotChecks = new SpotChecks(join(dataDir, "spotchecks.json"));
+/** As analysed (moved files followed), before your tempo corrections. */
+function measuredLibrary() { return overlay.apply(library.get()); }
+function currentLibrary() { return spotChecks.apply(measuredLibrary()); }
 /** The analyzer on the Mac takes its orders from here (Library strip buttons). */
 const analyzerControl = new AnalyzerControl(join(dataDir, "analyzer-control.json"));
 /** Discography gaps: artists you love, what they released, what you don't have. */
@@ -319,11 +324,26 @@ function organiseView(query: URLSearchParams) {
     busy: !!organise.busy(),
     progress: organise.progressView(),
     librarian: seen ? { ...seen, online: Date.now() - seen.last_seen < LIBRARIAN_ONLINE_MS } : null,
-    pending_export: overlay.count > 0 && currentLibrary().version !== library.get().version,
+    pending_export: overlay.count > 0 && measuredLibrary().version !== library.get().version,
     incoming: incoming ? (({ files, arriving, ignored, set_aside, truncated }) => ({ enabled: true, files: files.length, arriving, ignored, set_aside, truncated }))(incoming.scan())
       : { enabled: false },
     upload_max_mb: runtime.uploadMaxMb,
     paused: organise.state.paused ?? null,
+  };
+}
+
+/** The next track to check (with a link to play it) and how the checks add up so far. */
+function spotCheckView() {
+  const lib = measuredLibrary();
+  const track = spotChecks.next(lib);
+  return {
+    track: track ? {
+      id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}), ...(track.album ? { album: track.album } : {}),
+      ...(track.year ? { year: track.year } : {}), ...(track.duration_s ? { duration_s: track.duration_s } : {}),
+      bpm: track.signals?.bpm, tempo_confidence: track.signals?.tempo_confidence ?? null,
+      stream_url: signer.url(track.id),
+    } : null,
+    summary: spotChecks.summary(lib),
   };
 }
 
@@ -374,7 +394,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -558,6 +578,20 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // --- this install: version, and whether an update is waiting for Build -------
   if (path === "/api/v1/system" && req.method === "GET") {
     return send(res, 200, { version: versionCheck.view(Date.now(), url.searchParams.has("fresh") ? 0 : 60_000) });
+  }
+
+  // --- check the measurements (tempo) ----------------------------------------------
+  if (path === "/api/v1/spotcheck" && req.method === "GET") return send(res, 200, spotCheckView());
+  if (path === "/api/v1/spotcheck" && req.method === "POST") {
+    const input = await body(req);
+    const track = measuredLibrary().tracks.find((item) => item.id === input.track_id);
+    if (!track) throw new SpotCheckError("No track with that id", 404);
+    const check = spotChecks.record(track, input);
+    return send(res, 200, { checked: { id: track.id, ...check }, ...spotCheckView() });
+  }
+  if (path === "/api/v1/spotcheck/forget" && req.method === "POST") {
+    spotChecks.forget(String((await body(req)).track_id ?? ""));
+    return send(res, 200, spotCheckView());
   }
 
   // --- settings changed in the web app ----------------------------------------
@@ -759,7 +793,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);

@@ -467,3 +467,15 @@ is gone and the docs say "don't use Navidrome until organised" instead
 updates never arrived (the update notice stayed, the web app stayed old).
 `pull_policy: build` on brain, librarian and web makes every Build rebuild
 from the NAS copy; Docker's cache keeps unchanged builds quick.
+
+**Check the measurements (2026-10-04).** A panel under the Library strip plays
+a random analysed track (native `<audio>`, starting 45 s in) and asks whether
+its measured tempo is right: Sounds right / Real tempo is half / double /
+Something else / Skip, or **Tap along** (≥4 taps → BPM; the verdict is
+derived within 8 %). `library/spotcheck.ts` keeps the answers
+(`DATA_DIR/brain/spotchecks.json`), reports accuracy overall and split by the
+analyzer's `tempo_confidence` (≥ 0.5), and applies corrections in
+`currentLibrary()` (half/double/tapped → `bpm`, `tempo_confidence: 1`). A
+correction only holds while the measured BPM is the one checked; a
+re-analysis that measures differently wins and the track can be checked
+again. Undo takes back the last answer. Brain 104/104.
