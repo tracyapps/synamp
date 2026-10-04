@@ -8,6 +8,7 @@ import MissingTracks from "./MissingTracks";
 import OrganiseLibrary from "./OrganiseLibrary";
 import DiscographyGaps from "./DiscographyGaps";
 import Settings from "./Settings";
+import { UpdateNotice } from "./Updates";
 import { newId } from "./ids";
 import type { SessionView } from "./Player";
 
@@ -196,6 +197,7 @@ export default function App() {
       <main>
         <div className="intro"><p className="eyebrow">Phase 2 · first slice</p><h1>Build your listening day.</h1>
           <p>Make folders, fill playlists, then point a roll-up at any folder. Its tracks update whenever a source playlist changes.</p></div>
+        <UpdateNotice request={call} />
         {error && <p className="alert" role="alert">{error}</p>}
         {error.includes("access token") && <form className="token-form" onSubmit={(event) => {
           event.preventDefault();

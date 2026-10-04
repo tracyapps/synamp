@@ -1,0 +1,7 @@
+# The brain image is built from the whole apps/ folder (it fingerprints the web
+# code too). Never send installed packages, builds or local data into it.
+**/node_modules
+**/dist
+**/data
+**/*.log
+**/.DS_Store

@@ -1,9 +1,24 @@
-# SynAmp brain — no build step; Node strips the TypeScript types at runtime.
+# SynAmp brain (and the librarian, same image) — no build step; Node strips the
+# TypeScript types at runtime.
+#
+# Built from the apps/ folder (see deploy/docker-compose.yml), so it can
+# fingerprint the web app's code too: that is how the app knows whether a
+# newer copy on the NAS is waiting for Build in Container Manager.
+
+# 1. Fingerprint the code these images are built from. Docker re-runs this only
+#    when that code changed, so build.json always matches what's inside.
+FROM node:22-alpine AS fingerprint
+WORKDIR /apps
+COPY brain/src ./brain/src
+COPY web/src ./web/src
+COPY web/index.html web/package.json web/package-lock.json ./web/
+RUN node --experimental-strip-types brain/src/version.ts /apps > /build.json
+
+# 2. The brain itself.
 FROM node:22-alpine
-
 WORKDIR /app
-
-COPY src ./src
+COPY brain/src ./src
+COPY --from=fingerprint /build.json ./build.json
 
 ENV NODE_ENV=production \
     BRAIN_HOST=0.0.0.0 \
@@ -11,6 +26,5 @@ ENV NODE_ENV=production \
 
 EXPOSE 3001
 
-# No dependencies yet, so no install step. Add `pnpm install --prod` here once
-# the brain grows real dependencies.
+# No dependencies yet, so no install step.
 CMD ["node", "--experimental-strip-types", "src/index.ts"]

@@ -8,11 +8,11 @@ to it. So: tidy first, then let Navidrome scan, then run the long analysis.
 |---|---|---|---|
 | 0. Safety net | NAS | 5 min | no |
 | 1. Put SynAmp on the NAS | Mac + NAS | 20 min | no |
-| 2. Start SynAmp — without Navidrome | NAS | 10 min | no |
+| 2. Start SynAmp — without Navidrome | DSM | 10 min | no |
 | 3. First scan and export | Mac | ~1 hour | no |
 | 4. Match albums (missing tracks) | browser | a few hours, unattended | no |
 | 5. Organise | browser | as long as you like | **yes** — reviewed, undoable |
-| 6. Navidrome's first scan | NAS | a few minutes | no |
+| 6. Navidrome's first scan | DSM | a few minutes | no |
 | 7. The big analysis | Mac | days, resumable | no |
 
 Each phase ends with **Done when**, so you know it worked before moving on.
@@ -84,44 +84,30 @@ and `.env` is filled in.
 
 ## 2. Start SynAmp — without Navidrome
 
-On the NAS (all `docker compose` commands in this guide run on the NAS, from
-`/volume1/docker/synamp/deploy`):
+In DSM, open **Container Manager** → **Project** → **Create**:
 
-```bash
-cd /volume1/docker/synamp/deploy
-sudo /usr/local/bin/docker compose --env-file .env --profile app up -d --build db brain web edge librarian
-```
+| Field | Value |
+|---|---|
+| Project name | `synamp` |
+| Path | `/volume1/docker/synamp/deploy` |
+| Source | **Use existing docker-compose.yml** |
 
-Naming the services is what keeps Navidrome (`core`) switched off. The
-librarian (the only part allowed to change music files) starts too, but does
-nothing until you apply a batch you approved — and **Pause file changes** in
-the Organise panel holds it whenever you like.
+Then **Next** (skip the Web Station portal) → **Done**. Container Manager
+builds SynAmp and starts it — the first build takes a few minutes; its log
+window shows progress.
 
-**A shortcut for every later command.** Paste this on the NAS once (and add it
-to `~/.profile` to keep it):
-
-```bash
-alias dc='sudo /usr/local/bin/docker compose -f /volume1/docker/synamp/deploy/docker-compose.yml --env-file /volume1/docker/synamp/deploy/.env --profile app --profile librarian'
-```
-
-Docker hides services in optional groups (`app`, `librarian`) unless the
-command names the group — without it you get `no such service: brain`. `dc`
-always names both, and works from any folder. Always name the services you
-mean (`dc up -d brain web`): a bare `dc up -d` would start everything,
-Navidrome included.
-
-**Why `sudo`:** on DSM only root may use Docker, so without it you get
-`permission denied … docker.sock`. You'll be asked for your DSM password. If
-it then says `docker: command not found`, use the full path:
-`sudo /usr/local/bin/docker compose …` (`which docker` shows it). The
-containers still run as you (1026), so their files belong to you.
-The first build takes a few minutes.
+Navidrome (`core`) stays off: it only starts once `.env` says
+`COMPOSE_PROFILES=navidrome` (phase 6). The librarian (the only part allowed
+to change music files) starts too, but does nothing until you apply a batch
+you approved — and **Pause file changes** in the Organise panel holds it
+whenever you like.
 
 Open `http://Syd.local:8080` and enter the `PLAYLIST_API_TOKEN` when asked.
 Then open **Settings** (bottom of the page) and enter your email as the
 MusicBrainz contact.
 
-**Done when** the page loads and `dc ps` shows no `core`.
+**Done when** the page loads, and Container Manager → Container lists no
+`synamp-core`.
 
 ## 3. First scan and export (Mac)
 
@@ -211,7 +197,8 @@ because merges use MusicBrainz's spelling of each artist.
 ## 5. Organise
 
 1. The Organise panel should say "The librarian is running". (It started in
-   phase 2. If it says it isn't: `dc up -d librarian` on the NAS.)
+   phase 2. If it says it isn't: Container Manager → Container →
+   `synamp-librarian` → **Start**.)
 2. **Start small.** Approve two or three proposals, press **Apply**, and look
    at those folders in Finder. Try **Undo this batch** once so you've seen it
    work.
@@ -230,9 +217,10 @@ for those tracks (SynAmp keeps its own).
 
 ## 6. Navidrome's first scan
 
-```bash
-dc up -d core
-```
+1. Open `deploy/.env` (in Finder: the `docker` share → `synamp/deploy/.env`;
+   it's hidden — press Cmd-Shift-. to show hidden files) in TextEdit, change
+   `COMPOSE_PROFILES=` to `COMPOSE_PROFILES=navidrome`, and save.
+2. Container Manager → **Project** → `synamp` → **Action** → **Build**.
 
 Open `http://Syd.local:4533`, create the Navidrome admin account, and wait for
 its scan to finish (a few minutes). Then point your phone/desktop apps at
@@ -253,10 +241,47 @@ better as it goes. The strip shows progress and time left.
 
 ---
 
+## Updating SynAmp
+
+Two steps, no Terminal on the NAS:
+
+1. On the Mac: `synamp-sync` (copies the new version to the NAS).
+2. The web app then shows **An update is ready to install** at the top. Do
+   what it says: DSM → Container Manager → **Project** → `synamp` →
+   **Action** → **Build**.
+
+SynAmp is unavailable for a few minutes while it rebuilds. Let a batch in
+Organise finish first (or switch on **Pause file changes**); analysis on the
+Mac carries on by itself. **Settings → About this install** shows the version
+that's running.
+
+### Already running SynAmp from Terminal? Switch once
+
+If you started SynAmp with `dc up` before, hand it over to Container Manager
+once:
+
+1. On the Mac: `synamp-sync`.
+2. On the NAS, one last time: `dc down` — this removes the containers only;
+   your data, settings and music stay where they are. (Without Terminal:
+   Container Manager → **Container**, select every `synamp-…` container,
+   **Action** → **Stop**, then **Action** → **Delete**.)
+3. Create the project as in phase 2.
+
+If you still want the `dc` shortcut for logs, the profile flags are no longer
+needed:
+
+```bash
+alias dc='sudo /usr/local/bin/docker compose -f /volume1/docker/synamp/deploy/docker-compose.yml --env-file /volume1/docker/synamp/deploy/.env'
+```
+
+---
+
 ## If something goes wrong
 
-- **A container won't start**: `dc logs --tail 40 <name>` (brain, web,
-  edge, librarian, core).
+- **A container won't start**: Container Manager → **Container** → select it
+  → **Details** → **Log** (brain, web, edge, librarian, core).
+- **Project → Build says a container name is already in use**: the old
+  Terminal-started containers are still there — see "Switch once" above.
 - **Web app shows no tracks**: the export file isn't at
   `/volume1/music/.synamp/library-signals.json`, or `.env` is missing
   `MUSIC_SHARE`. Re-run phase 3's `export`.

@@ -430,3 +430,18 @@ restarts. Brain 100/100; live: settings validation and save, Last.fm becoming
 available without a restart, pause switch. Next candidates: install and
 update through Container Manager instead of SSH; writing tags (4b); Dropbox
 import.
+
+**Baking it in, part 3: install and update from Container Manager.** No more
+profiles for the app: `docker compose up` (what Container Manager's Project
+runs) starts db, brain, web, edge and librarian; Navidrome sits behind the
+`navidrome` profile, switched on with `COMPOSE_PROFILES=navidrome` in `.env`
+(verified: compose reads it from the project's `.env`). The brain image is
+built from `apps/` and fingerprints the brain + web code at build time
+(`src/version.ts` → `build.json`; Docker re-runs that step only when the code
+changed). At runtime it fingerprints the NAS copy (`../apps` mounted
+read-only at `/source`) and `GET /api/v1/system` says `same` / `waiting`. The
+web app shows **An update is ready to install** with the two DSM steps
+(Container Manager → Project → synamp → Action → Build) and **About this
+install** in Settings. Updating is now `synamp-sync` + one button. Brain
+102/102; compose config checked with and without the profile; live: notice
+appears after a copied change, Settings shows the version.

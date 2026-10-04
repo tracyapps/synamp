@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import "./styles/settings.css";
+import { AboutInstall } from "./Updates";
 
 /*
  * Settings: the things you used to change in deploy/.env, now saved from here.
@@ -143,6 +144,8 @@ export default function Settings({ request }: { request: Request }) {
                 {hint("upload_max_mb", "For files added with Add music. 1 to 20480.")}
               </p>
             </fieldset>
+
+            <AboutInstall request={request} />
 
             <div className="settings__actions">
               <button type="submit" className="primary" disabled={busy}>{busy ? "Saving…" : "Save settings"}</button>

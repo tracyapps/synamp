@@ -52,6 +52,10 @@ export const config = {
    * library itself — that stays read-only. Empty: import is off.
    */
   incomingPath: env("INCOMING_PATH", ""),
+  /** Written into the image at build time (see Dockerfile): which code is running. */
+  buildInfoPath: env("BUILD_INFO_PATH", new URL("../build.json", import.meta.url).pathname),
+  /** The NAS copy of apps/, read-only, to notice an update waiting for Build. Empty: don't check. */
+  sourcePath: env("SOURCE_PATH", ""),
   /** Largest single file accepted from the web app. */
   uploadMaxBytes: Number(env("UPLOAD_MAX_MB", "2048")) * 1024 * 1024,
   /** Required by the deployed app profile; optional for localhost development. */

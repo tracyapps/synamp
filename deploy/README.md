@@ -56,19 +56,27 @@ The music share is mounted **read-only** into the containers. Everything the app
    ```
 
    At minimum: `MUSIC_PATH`, `DATA_DIR`, a real `POSTGRES_PASSWORD`, and a
-   long random `PLAYLIST_API_TOKEN` if using the `app` profile.
+   long random `PLAYLIST_API_TOKEN`.
 
    **Never put `.env` inside the music share**, and never commit it. It is
    already gitignored.
 
 ## 2. Bring it up
 
-```bash
-cd /volume1/docker/synamp/deploy
+DSM → **Container Manager** → **Project** → **Create**: name `synamp`, path
+`/volume1/docker/synamp/deploy`, **Use existing docker-compose.yml** → Done.
+That builds and starts the database, brain, web app, edge and librarian.
 
-docker compose --env-file .env up -d                  # library core + database
-docker compose --env-file .env --profile app up -d    # + brain, web, edge
-```
+Navidrome (`core`) starts only when `.env` has `COMPOSE_PROFILES=navidrome`
+(after the library is organised — see `docs/synamp/FIRST-RUN.md`); then
+**Action → Build** again.
+
+**Updating:** copy the new `apps/` and `deploy/` over (`synamp-sync` on the
+Mac), then **Project → synamp → Action → Build**. The web app notices the new
+copy and says so at the top of the page until it's built; **Settings → About
+this install** shows the running version.
+
+From a terminal instead: `sudo /usr/local/bin/docker compose --env-file .env up -d --build`.
 
 Then:
 
@@ -115,8 +123,8 @@ app's `scrobble`, records the play. For that to work:
   “could not be matched” in SynAmp.
 - Apps report plays, not skips, so they only ever count as a mild positive.
 
-**Last.fm (optional).** Put `LASTFM_API_KEY` / `LASTFM_API_SECRET` in `.env`,
-restart the app profile, then in SynAmp open **Listening history & Last.fm →
+**Last.fm (optional).** Paste the API key and shared secret into SynAmp's
+**Settings** panel (or `LASTFM_API_KEY` / `LASTFM_API_SECRET` in `.env`), then open **Listening history & Last.fm →
 Connect Last.fm**. It scrobbles plays from the SynAmp player and from your
 other apps, only while switched on, using names from tags (never folder
 guesses). **Do not also link Last.fm inside Navidrome** (Settings → Personal →
@@ -178,10 +186,8 @@ The worker writes results into the `db` service, which *does* run on the NAS.
 
 - Audio transcoding is cheap: the V1500B handles several simultaneous audio
   streams. Hardware acceleration is irrelevant (that is a video concern).
-- The `--profile app` services build from the relative contexts `../apps/brain`
-  and `../apps/web`, so `deploy/` has to sit **inside the repo** (`<repo>/deploy`,
-  with `<repo>/apps/` present). Copying only `deploy/` to the NAS is not enough
-  for that profile. The base profile still gives you a working library +
-  Subsonic server on its own.
+- The brain, librarian and web images build from `../apps`, so `deploy/` has
+  to sit next to `apps/` (as `synamp-sync` copies them). The brain also mounts
+  `../apps` read-only, only to compare it with the code it's running.
 - **Never bind-mount `DATA_DIR` from a network share.** Postgres needs real file
   locking; a network filesystem can corrupt it. Local disk or the NAS only.

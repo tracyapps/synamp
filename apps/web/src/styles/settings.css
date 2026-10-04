@@ -13,3 +13,13 @@
 .settings__hint a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .settings__actions { margin-top: 22px; }
 .settings__problem { margin: 12px 0 0; }
+.settings__group code { font: 12px var(--font-mono); color: var(--accent); }
+.settings__group > p { margin: 0; font-size: 14px; }
+
+/* "An update is ready to install" — top of the page, until it's built. */
+.update { margin: 0 0 18px; padding: 16px 20px; border: 1px solid var(--accent); border-radius: 8px; background: rgba(232, 168, 56, .08); }
+.update h2 { margin: 0 0 6px; font: 600 16px var(--font-display); }
+.update p { margin: 0 0 8px; font-size: 14px; }
+.update a { color: var(--accent); }
+.update a:focus-visible, .update button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.update__steps { margin: 4px 0 10px; padding-left: 22px; font-size: 14px; line-height: 1.6; }

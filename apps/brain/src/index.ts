@@ -34,6 +34,7 @@ import { createSubsonicProxy } from "./subsonic/proxy.ts";
 import type { CapturedPlay } from "./subsonic/proxy.ts";
 import { LastfmClient, LastfmError } from "./lastfm/client.ts";
 import { RuntimeSettings, SettingsError } from "./settings.ts";
+import { VersionCheck } from "./version.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
 import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
 import { groupAlbums } from "./library/albums.ts";
@@ -64,6 +65,8 @@ const runtime = new RuntimeSettings(join(dataDir, "settings.json"), {
   musicbrainzContact: config.musicbrainzContact, lastfmApiKey: config.lastfmApiKey, lastfmApiSecret: config.lastfmApiSecret,
   publicUrl: config.publicUrl, uploadMaxMb: Math.round(config.uploadMaxBytes / 1048576),
 });
+/** Which code is running, and whether a newer copy on the NAS is waiting for Build. */
+const versionCheck = new VersionCheck(config.buildInfoPath, config.sourcePath);
 /** One client for the whole process, so every MusicBrainz request shares one rate limit. */
 let musicbrainz: MusicBrainz | undefined;
 const mbClient = () => (musicbrainz ??= new MusicBrainz({ contact: runtime.musicbrainzContact }));
@@ -371,7 +374,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -550,6 +553,11 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/discography/settings" && req.method === "POST") {
     discography.setSettings(await body(req));
     return send(res, 200, discographyView());
+  }
+
+  // --- this install: version, and whether an update is waiting for Build -------
+  if (path === "/api/v1/system" && req.method === "GET") {
+    return send(res, 200, { version: versionCheck.view(Date.now(), url.searchParams.has("fresh") ? 0 : 60_000) });
   }
 
   // --- settings changed in the web app ----------------------------------------
