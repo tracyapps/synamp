@@ -15,5 +15,9 @@ export RENAME_JOURNAL_PATH=/Volumes/music/.synamp/renames.jsonl
 # Progress reports go to the web app
 export SYNAMP_BRAIN_URL=http://Syd.local:8080
 
+# The music share, so the background analyzer can mount it if it isn't
+# (uses the password saved in your Keychain when you first connected in Finder)
+export SYNAMP_MUSIC_SHARE_URL=smb://Syd.local/music
+
 # Paste the PLAYLIST_API_TOKEN from deploy/.env on the NAS between the quotes
 export SYNAMP_BRAIN_TOKEN="PASTE_YOUR_TOKEN_HERE"

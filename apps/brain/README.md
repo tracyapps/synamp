@@ -245,6 +245,11 @@ State: `discography.json` beside the playlist store.
 | POST | `/api/v1/discography/search` / `choose` | find / pick the MusicBrainz artist (`mbid: null` skips) |
 | POST | `/api/v1/discography/note` | `{id, status: want/ignore/none}` |
 | POST | `/api/v1/discography/settings` | `{albums, eps, singles, include_other, auto_follow}` |
+| GET | `/api/v1/analyzer` | the background analyzer: worker status, running/queued commands, recent results |
+| POST | `/api/v1/analyzer/request` | `{action: update/scan/export/analyze}` (Library strip buttons) |
+| POST | `/api/v1/analyzer/stop` | pause analysis after the current track; cancel what's waiting |
+| POST | `/api/v1/analyzer/settings` | `{update_after_librarian}` |
+| POST | `/api/v1/analyzer/claim` · `/commands/:id` · `/commands/:id/check` | the worker on the Mac: ask for work, report, "should I stop?" |
 | POST | `/api/v1/librarian/claim` | the librarian asks for work (also its heartbeat) |
 | POST | `/api/v1/librarian/jobs/:id` | the librarian reports what it moved |
 | POST | `/api/v1/lastfm/connect` | → `{url}` to sign in on Last.fm |

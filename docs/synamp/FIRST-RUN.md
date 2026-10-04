@@ -167,6 +167,24 @@ other `synamp-analyze` commands.
 **Done when** the **Library** strip in the web app shows your track and
 album counts.
 
+**3d. Let the analyzer run in the background — the last Terminal step on the
+Mac.** Paste:
+
+```bash
+cd /Users/tapps/_dev/web-apps/SynAmp/services/analyzer
+uv run synamp-analyze install-agent
+```
+
+From now on the analyzer starts by itself whenever you log in, and takes its
+orders from the **Library** strip in the web app: **Scan for changes**,
+**Start analysis**, **Pause analysis**. After every batch you apply in
+Organise, it scans and updates the library list by itself. (To remove it:
+`uv run synamp-analyze uninstall-agent`.)
+
+If the Library strip says the music isn't reachable: macOS may ask whether
+"zsh" or "python" may access files on a network volume — allow it (System
+Settings → Privacy & Security → Files and Folders).
+
 ## 4. Match albums with MusicBrainz
 
 Web app → **Missing tracks** → **Start checking**. It works through every
@@ -197,14 +215,10 @@ because merges use MusicBrainz's spelling of each artist.
    work.
 3. Then work through the rest in batches — artist merges first, then albums.
    Skip anything you'd rather keep as it is.
-4. After each batch, on the Mac (in the analyzer folder, after `source ~/SynAmp-data/env.sh`):
-
-   ```bash
-   uv run synamp-analyze scan
-   uv run synamp-analyze export --out /Volumes/music/.synamp/library-signals.json
-   ```
-
-   This is what lets analysis and history follow the moved files.
+4. After each batch, the analyzer scans and updates the library list by
+   itself (you'll see it in the Library strip). That's what lets analysis and
+   history follow the moved files. If you switched that off: **Scan for
+   changes** in the Library strip.
 5. When you're done: `dc stop librarian`.
 
 **Done when** you're happy with the folders. It doesn't have to be perfect —
@@ -224,19 +238,15 @@ playback (deploy README, "Bring it up").
 
 **Done when** an app plays a track through `:8080`.
 
-## 7. The big analysis (Mac)
+## 7. The big analysis
 
-```bash
-caffeinate -i uv run synamp-analyze analyze
-```
+Web app → **Library** strip → **Start analysis**.
 
-`caffeinate` stops the Mac sleeping while it works. This measures tempo,
-loudness, beat and more for every track, and takes days for ~45,000 tracks.
-It can be stopped (Ctrl-C) and restarted any time; it carries on where it
-left off. The Library strip shows progress and time left.
-
-Every so often (say once a day), run `export` again so smart playlists see
-the new results.
+It measures tempo, loudness, beat and more for every track — days for ~45,000
+tracks — and keeps the Mac awake while it works. **Pause analysis** stops it
+after the current track; **Start analysis** carries on where it left off. It
+updates the library list every hour along the way, so smart playlists get
+better as it goes. The strip shows progress and time left.
 
 ---
 

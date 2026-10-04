@@ -19,6 +19,19 @@ type Stats = {
   with_audio_identity: number; with_measurements: number; duplicate_groups: number; duplicate_extra_copies: number;
 };
 type Health = { analysis: Analysis; library: Stats };
+type Command = { id: string; action: "update" | "scan" | "export" | "analyze"; requested_by: string; status: string; created_at: number; finished_at?: number; summary?: string; stop?: boolean };
+type Control = {
+  worker: null | { online: boolean; last_seen: number; host?: string; library_ok?: boolean; library_path?: string; problem?: string };
+  running: Command | null; queued: Command[]; recent: Command[];
+  settings: { update_after_librarian: boolean };
+};
+const ACTION_NAMES: Record<Command["action"], string> = {
+  update: "Scanning for changes and updating the library list",
+  scan: "Scanning for changes",
+  export: "Updating the library list",
+  analyze: "Analysing",
+};
+const STATUS_NAMES: Record<string, string> = { done: "Done", failed: "Didn’t work", stopped: "Paused", cancelled: "Cancelled" };
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
 
 const STAGE_NAMES: Record<string, string> = {
@@ -41,18 +54,38 @@ export default function LibraryHealth({ request }: { request: Request }) {
   const [health, setHealth] = useState<Health | null>(null);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
+  const [control, setControl] = useState<Control | null>(null);
+  const [message, setMessage] = useState("");
   const detailsId = useId();
+  const working = !!(control?.running || control?.queued.length);
   const analysing = health?.analysis.reported && health.analysis.state !== "idle" && !health.analysis.stale;
 
   useEffect(() => {
     let cancelled = false;
-    const load = () => request<Health>("/library/health")
-      .then((data) => { if (!cancelled) { setHealth(data); setError(""); } })
-      .catch((cause) => { if (!cancelled) setError((cause as Error).message); });
+    const load = () => {
+      request<Health>("/library/health")
+        .then((data) => { if (!cancelled) { setHealth(data); setError(""); } })
+        .catch((cause) => { if (!cancelled) setError((cause as Error).message); });
+      request<Control>("/analyzer").then((data) => { if (!cancelled) setControl(data); }).catch(() => undefined);
+    };
     load();
-    const timer = setInterval(load, analysing ? 10_000 : 60_000);
+    const timer = setInterval(load, analysing || working ? 5_000 : 60_000);
     return () => { cancelled = true; clearInterval(timer); };
-  }, [analysing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [analysing, working]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Messages are for the moment: clear them after a while.
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(""), 8_000);
+    return () => clearTimeout(timer);
+  }, [message]);
+
+  async function act(path: string, body: unknown, done: string) {
+    try {
+      setControl(await request<Control>(path, { method: "POST", body: JSON.stringify(body) }));
+      setMessage(done);
+    } catch (cause) { setMessage((cause as Error).message); }
+  }
 
   if (!health) return error ? <p className="alert" role="alert">Library health: {error}</p> : null;
   const a = health.analysis;
@@ -91,6 +124,7 @@ export default function LibraryHealth({ request }: { request: Request }) {
           {open ? "Hide details" : "Details"}
         </button>
       </div>
+      {control && <AnalyzerControls control={control} act={act} message={message} />}
       <div id={detailsId} hidden={!open} className="health__details">
         {a.reported && <div>
           <h3>Analysis</h3>
@@ -118,6 +152,14 @@ export default function LibraryHealth({ request }: { request: Request }) {
             <ul className="health__failures">{a.recent_failures.map((f) => <li key={f.path}><code>{f.path}</code> — {f.error}</li>)}</ul>
           </details>}
         </div>}
+        {control && control.recent.length > 0 && <div>
+          <h3>Recent analyzer jobs</h3>
+          <ul className="health__jobs">{control.recent.map((c) => (
+            <li key={c.id}><strong>{STATUS_NAMES[c.status] ?? c.status}</strong> · {ACTION_NAMES[c.action]}{c.requested_by === "the librarian" ? " (after organising)" : ""}
+              {c.finished_at ? <span className="muted"> · {ago(Date.now() - c.finished_at)}</span> : null}
+              {c.summary && <span className="health__job-summary">{c.summary}</span>}</li>
+          ))}</ul>
+        </div>}
         <div>
           <h3>Collection</h3>
           <dl className="health__facts">
@@ -128,9 +170,49 @@ export default function LibraryHealth({ request }: { request: Request }) {
             <div><dt>Named from folders only</dt><dd>{n(lib.named_from_folders)}</dd></div>
             <div><dt>Duplicate copies</dt><dd>{n(lib.duplicate_extra_copies)} in {n(lib.duplicate_groups)} {lib.duplicate_groups === 1 ? "group" : "groups"}</dd></div>
           </dl>
-          <p className="muted">These counts come from the latest analyzer export. Fixing names, merging artists and the missing-tracks list come next.</p>
+          <p className="muted">These counts come from the latest library list the analyzer sent.</p>
         </div>
       </div>
     </section>
+  );
+}
+
+/** The analyzer on the Mac, as buttons: what it's doing, and what you can ask it to do. */
+function AnalyzerControls({ control, act, message }: { control: Control; act: (path: string, body: unknown, done: string) => void; message: string }) {
+  const w = control.worker;
+  const running = control.running;
+  const analysing = running?.action === "analyze" || control.queued.some((c) => c.action === "analyze");
+  const busy = !!running || control.queued.length > 0;
+  let status: React.ReactNode;
+  if (!w) {
+    status = <>The analyzer isn’t set up to run in the background yet. On the Mac, in the analyzer folder, run once: <code>uv run synamp-analyze install-agent</code>. After that, everything happens from these buttons.</>;
+  } else if (!w.online) {
+    status = <>The analyzer on {w.host ?? "the Mac"} isn’t answering (last heard from {ago(Date.now() - w.last_seen)}). It runs whenever the Mac is awake and you’re logged in; anything you ask for waits until then.</>;
+  } else if (running) {
+    status = <>{ACTION_NAMES[running.action]}{running.stop ? " — pausing after the current track" : "…"}{running.requested_by === "the librarian" ? " (after organising)" : ""}</>;
+  } else if (w.problem) {
+    status = <>{w.problem}</>;
+  } else {
+    status = <>The analyzer on {w.host ?? "the Mac"} is ready.</>;
+  }
+  return (
+    <div className="health__controls">
+      <p className={`health__worker ${w?.online && !w.problem ? "is-ok" : "is-warn"}`} role="status">{status}</p>
+      <div className="health__buttons" role="group" aria-label="Analyzer">
+        <button type="button" className="quiet" disabled={busy}
+          onClick={() => act("/analyzer/request", { action: "update" }, "Asked the analyzer to look for changes.")}>Scan for changes</button>
+        {analysing
+          ? <button type="button" className="quiet" disabled={!!running?.stop} onClick={() => act("/analyzer/stop", {}, "Pausing after the current track.")}>Pause analysis</button>
+          : <button type="button" className="primary" disabled={busy && !analysing}
+            onClick={() => act("/analyzer/request", { action: "analyze" }, "Analysis will start in a moment. It keeps the Mac awake while it works.")}>Start analysis</button>}
+        {control.queued.length > 0 && <span className="muted">{control.queued.length} waiting</span>}
+      </div>
+      <label className="organise__check health__auto">
+        <input type="checkbox" checked={control.settings.update_after_librarian}
+          onChange={(e) => act("/analyzer/settings", { update_after_librarian: e.target.checked }, e.target.checked ? "Will scan after organising." : "Won’t scan after organising.")} />
+        <span>Scan for changes automatically after organising or adding music</span>
+      </label>
+      {message && <p className="listening__message" role="status">{message}</p>}
+    </div>
   );
 }

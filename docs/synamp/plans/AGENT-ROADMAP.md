@@ -399,3 +399,19 @@ checker with monthly re-check); `musicbrainz.ts` gains artist search,
 release-group browse, and artist/release-group IDs on release lookups. Web
 `DiscographyGaps.tsx`. Brain 96/96; live MusicBrainz check. Library care plan
 complete apart from 4b (writing tags) and Dropbox import.
+
+### 2026-10-04 — First real run; the analyzer moves into the app
+
+The owner's first run on the NAS (FIRST-RUN.md) surfaced and fixed: brain
+not pointed at the export; edge depending on Navidrome; `sudo` and compose
+profiles on DSM (`dc` alias); web image built with npm instead of corepack
+pnpm; zsh-safe Mac commands (settings file); a silent, single-threaded first
+export (now 8 files at a time, with progress, committing as it goes); a
+librarian report too big for the 256 KB request limit (now 128 MB) and no
+progress during big batches (now a live bar). Principle agreed with the
+owner: every step that has worked by hand gets baked into the app. First of
+those: the analyzer is now a background worker (`synamp-analyze worker`,
+macOS login item via `install-agent`) driven from the Library strip — Scan
+for changes, Start / Pause analysis — and scans + exports by itself after
+each librarian batch. Brain 99/99, analyzer 85/85; live: buttons → worker →
+scan, export, analyse, pause.

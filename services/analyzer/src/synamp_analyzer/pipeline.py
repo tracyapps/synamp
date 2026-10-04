@@ -227,8 +227,13 @@ def run_analyze(
     redo_stage: str | None = None,
     progress=print,
     reporter: ProgressReporter | None = None,
+    should_stop=None,
 ) -> dict[str, int]:
-    """Drain the queue. Returns a summary of what happened."""
+    """Drain the queue. Returns a summary of what happened.
+
+    `should_stop` (optional) is asked before each track; returning True ends the
+    run cleanly, as if the queue were empty (the worker's Pause button).
+    """
     db = Database(cfg.db_path)
     queue = JobQueue(db, cfg.max_attempts)
     summary = {
@@ -265,6 +270,9 @@ def run_analyze(
 
     try:
         while limit is None or summary["claimed"] < limit:
+            if should_stop is not None and should_stop():
+                summary["stopped"] = 1
+                break
             job = queue.claim()
             if job is None:
                 break

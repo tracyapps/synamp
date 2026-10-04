@@ -5,6 +5,9 @@
     synamp-analyze stats                 # catalog and queue state
     synamp-analyze inspect [--limit N]   # dump stored metrics for analysed tracks
     synamp-analyze export [--out FILE]   # write the brain's library-signals JSON
+    synamp-analyze worker                # run in the background, controlled from the web app
+    synamp-analyze install-agent         # macOS: start the worker now and at every login
+    synamp-analyze uninstall-agent       # macOS: stop it and remove it from login
 
 Exit codes: 0 success, 1 something failed, 2 usage error.
 """
@@ -243,7 +246,35 @@ def build_parser() -> argparse.ArgumentParser:
     export.add_argument("--out", default=None, help="destination file (default: cache dir)")
     export.add_argument("--no-tags", action="store_true", help="skip reading file tags (names come from folders)")
 
+    worker = sub.add_parser("worker", help="run in the background and take orders from the web app")
+    worker.add_argument("--once", action="store_true", help="check once, run any waiting command, then exit")
+    worker.add_argument("--poll", type=float, default=5.0, help="seconds between checks (default 5)")
+
+    install = sub.add_parser("install-agent", help="macOS: run the worker now and at every login")
+    install.add_argument("--env-file", default=str(Path.home() / "SynAmp-data" / "env.sh"),
+                         help="the settings file to load (default ~/SynAmp-data/env.sh)")
+    sub.add_parser("uninstall-agent", help="macOS: stop the background worker and remove it from login")
+
     return parser
+
+
+def _cmd_worker(cfg: AnalyzerConfig, once: bool, poll: float) -> int:
+    from .worker import Brain, BrainError, Worker
+
+    if not cfg.brain_url:
+        print("worker: set SYNAMP_BRAIN_URL (and SYNAMP_BRAIN_TOKEN) so the worker can take orders from the web app")
+        return 2
+    cfg.db_path.parent.mkdir(parents=True, exist_ok=True)
+    worker = Worker(cfg, Brain(cfg.brain_url, cfg.brain_token), log=lambda line: print(line, flush=True))
+    if once:
+        try:
+            print(f"worker: {worker.once()}")
+        except BrainError as error:
+            print(f"worker: {error}")
+            return 1
+        return 0
+    worker.run_forever(poll)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -261,6 +292,14 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_inspect(cfg, args.limit)
     if args.command == "export":
         return _cmd_export(cfg, args.out, not args.no_tags)
+    if args.command == "worker":
+        return _cmd_worker(cfg, args.once, args.poll)
+    if args.command == "install-agent":
+        from .worker import install_agent
+        return install_agent(Path(args.env_file).expanduser(), Path(__file__).resolve().parents[2])
+    if args.command == "uninstall-agent":
+        from .worker import uninstall_agent
+        return uninstall_agent()
     return 2
 
 

@@ -184,6 +184,28 @@ yet invalidate completed stages automatically. Recompute that stage explicitly:
 uv run synamp-analyze analyze --redo-stage beat
 ```
 
+## Running in the background (controlled from the web app)
+
+Day to day, nobody needs a Terminal: the analyzer runs as a background worker
+and takes its orders from the web app's **Library** strip — **Scan for
+changes** (scan + update the library list), **Start analysis**, **Pause
+analysis**. After the librarian applies a batch, the brain queues a scan +
+export by itself.
+
+```bash
+uv run synamp-analyze install-agent     # macOS, once: run now and at every login (launchd)
+uv run synamp-analyze uninstall-agent   # remove it again
+uv run synamp-analyze worker            # the same thing in the foreground (any OS)
+```
+
+The login item loads `~/SynAmp-data/env.sh` (see `mac-env.example.sh`) and
+logs to `~/SynAmp-data/worker.log`. The worker exports to
+`<share>/.synamp/library-signals.json` (beside the library, where the brain
+reads it; `SYNAMP_EXPORT_PATH` overrides), keeps the Mac awake while
+analysing (`caffeinate`), exports hourly during long runs and at the end,
+and, if the music isn't mounted, tries `SYNAMP_MUSIC_SHARE_URL` (e.g.
+`smb://Syd.local/music`) through Finder with the Keychain password.
+
 ## Progress in the web app
 
 Set these and the worker reports progress to the brain, which shows it in the

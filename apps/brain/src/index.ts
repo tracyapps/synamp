@@ -41,6 +41,7 @@ import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
 import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay } from "./library/organise.ts";
 import { AUDIO_EXTENSIONS, buildImport, COMPANION_EXTENSIONS, IncomingScanner, PART_SUFFIX, WEB_FOLDER } from "./library/import.ts";
 import { isSafeRelative } from "./library/naming.ts";
+import { AnalyzerControl, AnalyzerError } from "./library/analyzer.ts";
 import { artistStats, chooseArtist, DiscographyChecker, DiscographyError, discographyReport, DiscographyStore } from "./library/discography.ts";
 import type { ArtistStat } from "./library/discography.ts";
 import { open as openFile, mkdir, rename as renameFile, unlink, stat as statFile } from "node:fs/promises";
@@ -64,6 +65,8 @@ const organise = new OrganiseStore(join(dataDir, "organise.json"));
 /** Moved files keep working before the analyzer re-exports (see PathOverlay). */
 const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
 function currentLibrary() { return overlay.apply(library.get()); }
+/** The analyzer on the Mac takes its orders from here (Library strip buttons). */
+const analyzerControl = new AnalyzerControl(join(dataDir, "analyzer-control.json"));
 /** Discography gaps: artists you love, what they released, what you don't have. */
 const discography = new DiscographyStore(join(dataDir, "discography.json"));
 let statsCache: { key: string; stats: ArtistStat[] } | undefined;
@@ -351,7 +354,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -456,6 +459,33 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const input = await body(req);
     const releaseId = input.release_id === null ? null : String(input.release_id ?? "");
     return send(res, 200, { record: await chooseRelease(albumMatches, unitFor(input.key), releaseId, mbClient()) });
+  }
+
+  // --- the analyzer on the Mac: buttons in the web app, a worker that asks for work ---
+  if (path === "/api/v1/analyzer" && req.method === "GET") return send(res, 200, analyzerControl.view());
+  if (path === "/api/v1/analyzer/request" && req.method === "POST") {
+    analyzerControl.request((await body(req)).action);
+    return send(res, 202, analyzerControl.view());
+  }
+  if (path === "/api/v1/analyzer/stop" && req.method === "POST") {
+    analyzerControl.stop();
+    return send(res, 200, analyzerControl.view());
+  }
+  if (path === "/api/v1/analyzer/settings" && req.method === "POST") {
+    analyzerControl.setSettings(await body(req));
+    return send(res, 200, analyzerControl.view());
+  }
+  if (path === "/api/v1/analyzer/claim" && req.method === "POST") {
+    const input = await body(req);
+    return send(res, 200, { command: analyzerControl.claim(input.worker) });
+  }
+  const analyzerCheck = path.match(/^\/api\/v1\/analyzer\/commands\/(a_[0-9a-f]{12})\/check$/);
+  if (analyzerCheck && req.method === "POST") return send(res, 200, analyzerControl.check(analyzerCheck[1]!));
+  const analyzerDone = path.match(/^\/api\/v1\/analyzer\/commands\/(a_[0-9a-f]{12})$/);
+  if (analyzerDone && req.method === "POST") {
+    const command = analyzerControl.complete(analyzerDone[1]!, await body(req));
+    if (command.status === "done") incoming?.invalidate();
+    return send(res, 200, { command });
   }
 
   // --- discography gaps (read-only toward the music) --------------------------
@@ -572,6 +602,8 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     overlay.record(moved);
     carryMatches(albumMatches, folders);
     incoming?.invalidate();
+    // Files moved: have the analyzer scan and export, so analysis and the library list follow them.
+    if (moved.length) analyzerControl.afterLibrarian();
     planCache = undefined;
     return send(res, 200, { job: { id: job.id, status: job.status } });
   }
@@ -689,7 +721,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
