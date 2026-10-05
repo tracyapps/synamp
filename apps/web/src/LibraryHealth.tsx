@@ -19,7 +19,11 @@ type Stats = {
   with_audio_identity: number; with_measurements: number; duplicate_groups: number; duplicate_extra_copies: number;
 };
 type Health = { analysis: Analysis; library: Stats };
-type Command = { id: string; action: "update" | "scan" | "export" | "analyze"; requested_by: string; status: string; created_at: number; finished_at?: number; summary?: string; stop?: boolean };
+type Command = {
+  id: string; action: "update" | "scan" | "export" | "analyze"; requested_by: string; status: string; created_at: number; finished_at?: number; summary?: string; stop?: boolean;
+  /** The worker is updating the library list inside this command (analysis waits for it). */
+  activity?: { kind: "export"; done?: number; total?: number; at: number };
+};
 type Control = {
   worker: null | { online: boolean; last_seen: number; host?: string; library_ok?: boolean; library_path?: string; problem?: string };
   running: Command | null; queued: Command[]; recent: Command[];
@@ -48,6 +52,9 @@ function duration(seconds: number): string {
   const hours = Math.floor(minutes / 60), rest = minutes % 60;
   return hours < 48 ? `about ${hours} h${rest ? ` ${rest} min` : ""}` : `about ${Math.round(hours / 24)} days`;
 }
+/** "26,300 of 46,151 (57%)", or "" before the count is known. */
+const listProgress = (activity: NonNullable<Command["activity"]>) =>
+  activity.total ? `${n(activity.done ?? 0)} of ${n(activity.total)} (${Math.floor(100 * (activity.done ?? 0) / activity.total)}%)` : "";
 const ago = (ms: number) => (ms < 90_000 ? "just now" : `${duration(ms / 1000).replace("about ", "")} ago`);
 
 export default function LibraryHealth({ request }: { request: Request }) {
@@ -93,7 +100,12 @@ export default function LibraryHealth({ request }: { request: Request }) {
 
   let headline: string;
   let detail = "";
-  if (!a.reported) {
+  const listUpdate = control?.running?.activity;
+  if (listUpdate && control?.running?.action === "analyze") {
+    // Analysis stops reporting while this runs, so say why rather than "stopped reporting".
+    headline = "Analysis is waiting while the library list updates";
+    detail = `${listUpdate.total ? `Reading song details: ${listProgress(listUpdate)}. ` : ""}Analysis carries on by itself when it’s done.`;
+  } else if (!a.reported) {
     headline = "The analyzer hasn’t reported yet.";
     detail = "Run it on your Mac with SYNAMP_BRAIN_URL (this address) and SYNAMP_BRAIN_TOKEN set, and progress will show here.";
   } else if (a.stale) {
@@ -188,6 +200,10 @@ function AnalyzerControls({ control, act, message }: { control: Control; act: (p
     status = <>The analyzer isn’t set up to run in the background yet. On the Mac, in the analyzer folder, run once: <code>uv run synamp-analyze install-agent</code>. After that, everything happens from these buttons.</>;
   } else if (!w.online) {
     status = <>The analyzer on {w.host ?? "the Mac"} isn’t answering (last heard from {ago(Date.now() - w.last_seen)}). It runs whenever the Mac is awake and you’re logged in; anything you ask for waits until then.</>;
+  } else if (running?.activity) {
+    const after = running.action === "analyze" ? " Analysis carries on after it." : "";
+    status = <>Updating the library list{running.activity.total ? <> — reading song details, {listProgress(running.activity)}.</> : "…"}{after}
+      {running.stop && running.action === "analyze" && " Pause takes effect when this is done."}</>;
   } else if (running) {
     status = <>{ACTION_NAMES[running.action]}{running.stop ? " — pausing after the current track" : "…"}{running.requested_by === "the librarian" ? " (after organising)" : ""}</>;
   } else if (w.problem) {
@@ -198,6 +214,10 @@ function AnalyzerControls({ control, act, message }: { control: Control; act: (p
   return (
     <div className="health__controls">
       <p className={`health__worker ${w?.online && !w.problem ? "is-ok" : "is-warn"}`} role="status">{status}</p>
+      {running?.activity?.total ? (
+        <progress className="health__list-bar" max={running.activity.total} value={running.activity.done ?? 0}
+          aria-label={`Library list update: ${listProgress(running.activity)}`} />
+      ) : null}
       <div className="health__buttons" role="group" aria-label="Analyzer">
         <button type="button" className="quiet" disabled={busy}
           onClick={() => act("/analyzer/request", { action: "update" }, "Asked the analyzer to look for changes.")}>Scan for changes</button>

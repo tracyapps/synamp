@@ -30,7 +30,10 @@ export type Command = {
   finished_at?: number;
   summary?: string;
   stop?: boolean;
+  /** What the worker is busy with inside this command (e.g. updating the library list), while it lasts. */
+  activity?: Activity;
 };
+export type Activity = { kind: "export"; done?: number; total?: number; at: number };
 export type WorkerSeen = {
   last_seen: number; host?: string; version?: string; state?: string;
   library_path?: string; library_ok?: boolean; export_path?: string; journal?: string; problem?: string;
@@ -44,6 +47,8 @@ type State = {
 
 /** A worker that hasn't asked for work in this long is shown as not running. */
 export const WORKER_ONLINE_MS = 60_000;
+/** The worker reports export progress every ~10 s; after this long without word, don't show old numbers. */
+export const ACTIVITY_STALE_MS = 5 * 60_000;
 const KEEP = 30;
 
 const text = (value: unknown, max = 500) => (typeof value === "string" ? value.slice(0, max) : undefined);
@@ -137,10 +142,29 @@ export class AnalyzerControl {
     return { stop: !command || command.status !== "running" || !!command.stop };
   }
 
+  /**
+   * The worker says what it's busy with inside a command — the library list update can take
+   * the better part of an hour after an update, and analysis waits for it. Not saved: only for watching.
+   */
+  setActivity(id: string, input: unknown, now = Date.now()): Command {
+    const command = this.state.commands.find((c) => c.id === id);
+    if (!command) throw new AnalyzerError("No command with that id", 404);
+    if (this.state.worker) this.state.worker.last_seen = now;
+    const raw = input && typeof input === "object" ? (input as { activity?: unknown }).activity : undefined;
+    if (raw === null || command.status !== "running") { delete command.activity; return command; }
+    if (!raw || typeof raw !== "object" || (raw as { kind?: unknown }).kind !== "export") throw new AnalyzerError("activity must be {kind: \"export\", done?, total?} or null");
+    const count = (value: unknown) => (typeof value === "number" && Number.isFinite(value) && value >= 0 ? Math.round(value) : undefined);
+    const { done, total } = raw as { done?: unknown; total?: unknown };
+    const t = count(total), d = count(done);
+    command.activity = { kind: "export", at: now, ...(t !== undefined ? { total: t, done: Math.min(d ?? 0, t) } : {}) };
+    return command;
+  }
+
   complete(id: string, input: unknown, now = Date.now()): Command {
     const command = this.state.commands.find((c) => c.id === id);
     if (!command) throw new AnalyzerError("No command with that id", 404);
     const raw = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
+    delete command.activity;
     if (command.status === "running") {
       command.status = raw.status === "done" ? "done" : raw.status === "stopped" ? "stopped" : "failed";
       command.finished_at = now;
@@ -165,10 +189,15 @@ export class AnalyzerControl {
 
   view(now = Date.now()) {
     const worker = this.state.worker;
+    let running = this.state.commands.find((c) => c.status === "running") ?? null;
+    if (running?.activity && now - running.activity.at > ACTIVITY_STALE_MS) {
+      const { activity: _stale, ...rest } = running;
+      running = rest;
+    }
     return {
       // While it scans or exports it doesn't check in, so a running command counts as alive.
       worker: worker ? { ...worker, online: now - worker.last_seen < WORKER_ONLINE_MS || this.state.commands.some((c) => c.status === "running") } : null,
-      running: this.state.commands.find((c) => c.status === "running") ?? null,
+      running,
       queued: this.state.commands.filter((c) => c.status === "queued"),
       recent: this.state.commands.filter((c) => c.status !== "queued" && c.status !== "running").slice(-8).reverse(),
       settings: this.state.settings,

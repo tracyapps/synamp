@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { AnalyzerControl, WORKER_ONLINE_MS } from "./analyzer.ts";
+import { ACTIVITY_STALE_MS, AnalyzerControl, WORKER_ONLINE_MS } from "./analyzer.ts";
 
 const temp = () => mkdtempSync(join(tmpdir(), "synamp-analyzer-control-"));
 
@@ -60,5 +60,28 @@ test("an interrupted command is marked as such; the librarian's batches trigger 
     control.setSettings({ update_after_librarian: false });
     assert.equal(control.afterLibrarian(), null);
     assert.throws(() => control.setSettings({ update_after_librarian: "yes" }), /true or false/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("while analysis waits for a library list update, the web app sees how far along it is", () => {
+  const dir = temp();
+  try {
+    const control = new AnalyzerControl(join(dir, "control.json"));
+    control.request("analyze", "you", 1);
+    const job = control.claim({ host: "tappsBook" }, 2)!;
+    control.setActivity(job.id, { activity: { kind: "export" } }, 3);
+    assert.deepEqual(control.view(3).running!.activity, { kind: "export", at: 3 }, "started, count not known yet");
+    control.setActivity(job.id, { activity: { kind: "export", done: 26_300, total: 46_151 } }, 4);
+    assert.deepEqual(control.view(4).running!.activity, { kind: "export", done: 26_300, total: 46_151, at: 4 });
+    control.setActivity(job.id, { activity: { kind: "export", done: 99, total: 10 } }, 5);
+    assert.equal(control.view(5).running!.activity!.done, 10, "never more than the total");
+    assert.throws(() => control.setActivity(job.id, { activity: { kind: "dance" } }), /activity must be/);
+    assert.throws(() => control.setActivity("a_000000000000", { activity: null }), /No command/);
+    assert.equal(control.view(5 + ACTIVITY_STALE_MS + 1).running!.activity, undefined, "old numbers aren't shown");
+    control.setActivity(job.id, { activity: null }, 6);
+    assert.equal(control.view(6).running!.activity, undefined, "cleared when the update is done");
+    control.setActivity(job.id, { activity: { kind: "export" } }, 7);
+    control.complete(job.id, { status: "done" }, 8);
+    assert.equal(control.view(8).recent[0]!.activity, undefined, "a finished command carries none");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

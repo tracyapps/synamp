@@ -219,7 +219,8 @@ _COMMIT_EVERY = 250
 _REPORT_EVERY_S = 10.0
 
 
-def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: int = TAG_READ_WORKERS) -> dict[str, dict]:
+def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: int = TAG_READ_WORKERS,
+                        on_count=None) -> dict[str, dict]:
     """Tags for every present file: from the cache when unchanged, else read.
 
     Reading is network-bound over a share (one open and a few small reads per
@@ -251,6 +252,8 @@ def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: 
             progress(text)
 
     say(f"export: reading tags from {len(todo):,} files ({len(cached):,} already known), {workers} at a time")
+    if on_count is not None:
+        on_count(0, len(todo))
     started = last_report = time.time()
     done = 0
     pool = ThreadPoolExecutor(max_workers=max(1, workers))
@@ -279,6 +282,8 @@ def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: 
                 left = (len(todo) - done) / rate if rate > 0 else 0
                 when = f"~{left / 60:.0f} min left" if left >= 90 else f"~{left:.0f} s left"
                 say(f"export: tags {done:,} / {len(todo):,} ({100 * done / len(todo):.0f}%), {rate:.0f} files/s, {when}")
+                if on_count is not None:
+                    on_count(done, len(todo))
     finally:
         # Ctrl-C or an error: keep what was read, and don't wait for the queued files.
         db.conn.commit()
@@ -287,7 +292,7 @@ def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: 
 
 
 def build_export(db: Database, library_root: Path, read_file_tags: bool = True, progress=None,
-                 workers: int = TAG_READ_WORKERS) -> dict:
+                 workers: int = TAG_READ_WORKERS, on_count=None) -> dict:
     """The export document, as a plain dict."""
     root = library_root.expanduser()
     if read_file_tags:
@@ -303,7 +308,7 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True, 
         """
     ).fetchall()
 
-    tag_cache = _read_tags_parallel(db, rows, root, progress, workers) if read_file_tags else {}
+    tag_cache = _read_tags_parallel(db, rows, root, progress, workers, on_count) if read_file_tags else {}
     tracks: list[dict] = []
     counts = {"catalog": len(rows), "exported": 0, "missing_on_disk": 0, "outside_root": 0,
               "no_results": 0, "withheld_stale": 0, "failed": 0, "tagged": 0}
@@ -399,9 +404,9 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True, 
 
 
 def write_export(db: Database, library_root: Path, out: Path, read_file_tags: bool = True, progress=None,
-                 workers: int = TAG_READ_WORKERS) -> dict:
+                 workers: int = TAG_READ_WORKERS, on_count=None) -> dict:
     """Write atomically (temp file + rename) so the brain never reads half a file."""
-    document = build_export(db, library_root, read_file_tags, progress, workers)
+    document = build_export(db, library_root, read_file_tags, progress, workers, on_count)
     out = out.expanduser()
     out.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix=f".{out.name}.", suffix=".tmp", dir=out.parent)
