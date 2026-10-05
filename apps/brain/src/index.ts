@@ -804,3 +804,15 @@ const server = createServer((req, res) => {
 server.listen(config.port, config.host, () => {
   console.log(`synamp-brain listening on http://${config.host}:${config.port}`);
 });
+
+// Stop (Container Manager, docker stop) means stop now. Every store is written
+// atomically as it changes, so there is nothing to flush. Without this, Node
+// as the container's first process ignores the request and Stop hangs.
+for (const signal of ["SIGTERM", "SIGINT"] as const) {
+  process.on(signal, () => {
+    console.log(`synamp-brain: ${signal}, stopping`);
+    server.close();
+    setTimeout(() => process.exit(0), 1500).unref();
+    server.closeAllConnections?.();
+  });
+}

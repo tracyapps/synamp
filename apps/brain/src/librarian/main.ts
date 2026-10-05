@@ -134,15 +134,26 @@ async function main(): Promise<void> {
   mkdirSync(dirname(join(config.stateDir, "x")), { recursive: true });
   console.log(`synamp-librarian ${LIBRARIAN_VERSION}: ${config.root} → journal ${config.journal}; asking ${config.brainUrl} every ${config.pollSeconds}s`);
   const once = process.argv.includes("--once");
+  // Stop (Container Manager, docker stop): leave at once when waiting; when
+  // working, finish the batch in hand first (compose gives it two minutes).
   let stopping = false;
-  process.on("SIGTERM", () => { stopping = true; });
-  process.on("SIGINT", () => { stopping = true; });
+  let wake: (() => void) | undefined;
+  const stop = () => { stopping = true; wake?.(); };
+  process.on("SIGTERM", stop);
+  process.on("SIGINT", stop);
   do {
     const outcome = await runOnce(config);
-    if (once) break;
+    if (once || stopping) break;
     // Straight on to the next job after work; otherwise wait.
-    if (outcome !== "worked") await new Promise((done) => setTimeout(done, config.pollSeconds * 1000));
+    if (outcome !== "worked") {
+      await new Promise<void>((done) => {
+        const timer = setTimeout(done, config.pollSeconds * 1000);
+        wake = () => { clearTimeout(timer); done(); };
+      });
+      wake = undefined;
+    }
   } while (!stopping);
+  console.log("synamp-librarian: stopped");
 }
 
 if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("librarian/main.ts")) {

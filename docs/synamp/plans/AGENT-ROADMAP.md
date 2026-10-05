@@ -479,3 +479,10 @@ analyzer's `tempo_confidence` (≥ 0.5), and applies corrections in
 correction only holds while the measured BPM is the one checked; a
 re-analysis that measures differently wins and the track can be checked
 again. Undo takes back the last answer. Brain 104/104.
+
+**Stop didn't stop (2026-10-04).** Container Manager greys out Build while the
+project runs, and its Stop never finished: Node as a container's first process
+ignores SIGTERM. Brain now exits on SIGTERM/SIGINT (stores are written
+atomically, nothing to flush); the librarian leaves at once when idle and
+finishes the batch in hand when working (`stop_grace_period: 2m`); both run
+with `init: true`. Measured: brain 18 ms, idle librarian 9 ms.

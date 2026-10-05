@@ -74,6 +74,8 @@ services:
       context: ../apps
       dockerfile: brain/Dockerfile
     pull_policy: build
+    # A tiny init as the first process, so Stop reaches Node straight away.
+    init: true
     restart: unless-stopped
     # Same owner as your music files, so uploads it writes to incoming/ can be filed.
     user: "${PUID:-1026}:${PGID:-100}"
@@ -123,6 +125,9 @@ services:
       context: ../apps
       dockerfile: brain/Dockerfile
     pull_policy: build
+    init: true
+    # On Stop it finishes the batch in hand (or leaves at once when idle).
+    stop_grace_period: 2m
     command: ["node", "--experimental-strip-types", "src/librarian/main.ts"]
     restart: unless-stopped
     depends_on: [brain]

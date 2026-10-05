@@ -244,7 +244,9 @@ Two steps, no Terminal on the NAS:
 1. On the Mac: `synamp-sync` (copies the new version to the NAS).
 2. The web app then shows **An update is ready to install** at the top. Do
    what it says: DSM → Container Manager → **Project** → `synamp` →
-   **Action** → **Build**.
+   **Stop**, then **Action** → **Build** (Build is greyed out while the
+   project runs). Stop takes a few seconds; the librarian finishes a batch
+   it's in the middle of first.
 
 SynAmp is unavailable for a few minutes while it rebuilds. Let a batch in
 Organise finish first (or switch on **Pause file changes**); analysis on the
