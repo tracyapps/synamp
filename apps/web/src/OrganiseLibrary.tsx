@@ -13,8 +13,12 @@ type Status = "proposed" | "approved" | "skipped";
 type Decision = {
   id: string; kind: "artist" | "album" | "import"; title: string; changes: string[]; conflicts: string[];
   preview: Array<{ from: string; to: string }>; status: Status; changed: boolean;
-  move_count: number; moves: Array<{ from: string; to: string }>;
+  move_count: number; moves: Array<{ from: string; to: string; to_area?: "incoming" }>;
+  /** Copies of one recording that met here: which stays, which is set aside. */
+  duplicates?: DuplicatePair[];
 };
+type DuplicateCopy = { id: string; path: string; quality: string };
+type DuplicatePair = { pair: string; how: "identical" | "recording"; keep: DuplicateCopy; aside: DuplicateCopy; why: string; chosen_by: "SynAmp" | "you" };
 type Outcome = {
   id: string; title: string; kind: string; status: "queued" | "applied" | "failed"; errors?: string[]; notes?: string[];
   moved_count: number; undo?: { status: "undone" | "failed"; errors?: string[] };
@@ -23,9 +27,9 @@ type Batch = {
   id: string; created_at: number; finished_at?: number; status: "queued" | "running" | "done" | "partial" | "failed";
   decisions: Outcome[]; undo?: { status: "queued" | "running" | "done" | "partial"; requested_at: number };
 };
-type Settings = { merge_artists: boolean; add_year: boolean; number_tracks: boolean; fold_disc_folders: boolean; compilations_folder: string };
+type Settings = { merge_artists: boolean; add_year: boolean; number_tracks: boolean; fold_disc_folders: boolean; set_aside_duplicates: boolean; compilations_folder: string };
 type View = {
-  summary: { total: number; proposed: number; approved: number; skipped: number; conflicts: number; changed: number; artist: number; album: number; import: number; approved_moves: number };
+  summary: { total: number; proposed: number; approved: number; skipped: number; conflicts: number; changed: number; artist: number; album: number; import: number; approved_moves: number; set_aside: number };
   settings: Settings; matching: number; offset: number; decisions: Decision[]; batches: Batch[]; busy: boolean;
   librarian: { last_seen: number; online: boolean; root?: string; incoming?: string; journal?: string; version?: string } | null;
   pending_export: boolean;
@@ -79,7 +83,8 @@ function Moves({ decision }: { decision: Decision }) {
         <table>
           <caption className="visually-hidden">Files moved by: {decision.title}</caption>
           <thead><tr><th scope="col">Now</th><th scope="col">Becomes</th></tr></thead>
-          <tbody>{decision.moves.map((move) => <tr key={move.from}><td><code>{move.from}</code></td><td><code>{move.to}</code></td></tr>)}</tbody>
+          <tbody>{decision.moves.map((move) => <tr key={move.from}><td><code>{move.from}</code></td>
+            <td>{move.to_area && <span className="organise__aside-tag">Set aside: </span>}<code>{move.to_area ? `${move.to_area}/` : ""}{move.to}</code></td></tr>)}</tbody>
         </table>
         {decision.move_count > decision.moves.length && <p className="muted">…and {n(decision.move_count - decision.moves.length)} more.</p>}
       </div>}
@@ -87,7 +92,38 @@ function Moves({ decision }: { decision: Decision }) {
   );
 }
 
-function DecisionCard({ decision, review }: { decision: Decision; review: (ids: string[], status: Status) => void }) {
+/** Two copies of one recording: which stays, which is set aside, and a way to pick the other. */
+function Duplicates({ decision, keep }: { decision: Decision; keep: (pair: string, track: string | null) => void }) {
+  const id = useId();
+  const pairs = decision.duplicates ?? [];
+  if (!pairs.length) return null;
+  return (
+    <div className="organise__dupes">
+      <h5 id={id}>{pairs.length === 1 ? "A second copy of the same recording" : `${n(pairs.length)} second copies of the same recording`}</h5>
+      <p className="muted">The better copy stays; the other moves to <code>incoming/_duplicates/</code> — nothing is deleted, and Undo brings it back.</p>
+      <ul aria-labelledby={id}>
+        {pairs.map((pair) => (
+          <li key={pair.pair} className="organise__dupe">
+            <dl>
+              <dt>Keeps</dt><dd><code>{pair.keep.path}</code> <span className="organise__quality">{pair.keep.quality}</span></dd>
+              <dt>Sets aside</dt><dd><code>{pair.aside.path}</code> <span className="organise__quality">{pair.aside.quality}</span></dd>
+              <dt>Why</dt><dd id={`why-${pair.pair}`}>{pair.chosen_by === "you" ? "You chose this copy." : pair.why}
+                {pair.how === "recording" && pair.chosen_by !== "you" && <> Same recording by its fingerprint, but not identical audio — if one is a remaster or another edition, pick the one you want.</>}</dd>
+            </dl>
+            <div className="organise__dupe-actions">
+              <button type="button" className="quiet" aria-describedby={`why-${pair.pair}`} onClick={() => keep(pair.pair, pair.aside.id)}>
+                Keep the other copy instead<span className="visually-hidden">: {pair.aside.path}</span>
+              </button>
+              {pair.chosen_by === "you" && <button type="button" className="quiet" onClick={() => keep(pair.pair, null)}>Go back to SynAmp’s pick</button>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function DecisionCard({ decision, review, keep }: { decision: Decision; review: (ids: string[], status: Status) => void; keep: (pair: string, track: string | null) => void }) {
   const choice = (status: Status, label: string, disabled = false) => (
     <button type="button" className={`chip ${decision.status === status ? "is-on" : ""}`} aria-pressed={decision.status === status} disabled={disabled}
       onClick={() => review([decision.id], status)}>{label}</button>
@@ -110,6 +146,7 @@ function DecisionCard({ decision, review }: { decision: Decision; review: (ids: 
         <strong>Can’t apply as it stands:</strong>
         <ul>{decision.conflicts.map((c) => <li key={c}>{c}</li>)}</ul>
       </div>}
+      <Duplicates decision={decision} keep={keep} />
       <Moves decision={decision} />
     </article>
   );
@@ -132,6 +169,7 @@ function SettingsForm({ settings, save }: { settings: Settings; save: (next: Set
           {box("add_year", "Year on album folders", "Album (1998) — lets two versions of an album sit side by side")}
           {box("number_tracks", "Number track files", "01 - Title, or 1-01 - Title on multi-disc albums")}
           {box("fold_disc_folders", "Bring disc folders into the album", "CD1/ and CD2/ become one folder")}
+          {box("set_aside_duplicates", "Set aside second copies of the same recording", "When a merge meets an identical recording, keep the better copy and move the other to incoming/_duplicates (never deleted)")}
         </fieldset>
         <label>Compilations folder
           <input value={draft.compilations_folder} onChange={(e) => setDraft({ ...draft, compilations_folder: e.target.value })} placeholder="leave empty to keep compilations where they are" />
@@ -146,7 +184,7 @@ export default function OrganiseLibrary({ request, upload }: { request: Request;
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View | null>(null);
   const [kind, setKind] = useState<"all" | "artist" | "album" | "import">("all");
-  const [status, setStatus] = useState<"all" | Status | "conflict">("proposed");
+  const [status, setStatus] = useState<"all" | Status | "conflict" | "duplicates">("proposed");
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
   const [confirming, setConfirming] = useState<"apply" | string | null>(null);
@@ -168,6 +206,8 @@ export default function OrganiseLibrary({ request, upload }: { request: Request;
     return () => clearInterval(timer);
   }, [open, kind, status, q, offset, view?.busy]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const keep = (pair: string, track: string | null) => send("/organise/keep", { pair, keep: track },
+    track ? "Switched which copy stays. The proposal changed, so approve it again when it looks right." : "Back to SynAmp’s pick. Approve the proposal again when it looks right.");
   const review = (decisionIds: string[], next: Status) => send("/organise/review", { ids: decisionIds, status: next });
   const reviewShown = (next: Status) => send("/organise/review", { filter: { kind, status, q }, status: next },
     next === "approved" ? "Approved everything shown that can be applied." : next === "skipped" ? "Skipped everything shown." : "Cleared.");
@@ -225,6 +265,7 @@ export default function OrganiseLibrary({ request, upload }: { request: Request;
               <option value="approved">Approved ({n(s!.approved)})</option>
               <option value="skipped">Skipped ({n(s!.skipped)})</option>
               <option value="conflict">Can’t apply ({n(s!.conflicts)})</option>
+              <option value="duplicates">Sets aside copies ({n(s!.set_aside ?? 0)} {(s!.set_aside ?? 0) === 1 ? "copy" : "copies"})</option>
               <option value="all">All</option>
             </select></label>
             <label>Search<input type="search" value={q} onChange={(e) => { setQ(e.target.value); setOffset(0); }} placeholder="artist, album or folder" /></label>
@@ -239,7 +280,7 @@ export default function OrganiseLibrary({ request, upload }: { request: Request;
 
           {view.decisions.length === 0
             ? <p className="muted">{s!.total ? "Nothing matches these filters." : "Nothing to propose — the library already follows the naming settings (or hasn’t been exported yet)."}</p>
-            : view.decisions.map((decision) => <DecisionCard key={decision.id} decision={decision} review={review} />)}
+            : view.decisions.map((decision) => <DecisionCard key={decision.id} decision={decision} review={review} keep={keep} />)}
           {view.matching > PAGE && <nav className="missing__pages" aria-label="Pages">
             <button type="button" className="quiet" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE))}>Previous</button>
             <span>{n(offset + 1)}–{n(Math.min(offset + PAGE, view.matching))} of {n(view.matching)}</span>

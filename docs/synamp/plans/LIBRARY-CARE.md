@@ -309,21 +309,38 @@ link. Same reasoning as Navidrome: don't rebuild a mature core. Evaluate in
 step 3 before committing; MusicBrainz allows ~1 request/second with a
 contact User-Agent, so matching 4k albums is an overnight background job.
 
-### Next (owner request, 2026-10-04): resolve merges blocked by duplicates
+### Done (2026-10-05): merges blocked by duplicates
 
-Some artist/album merges can't be approved because a track already exists at
-the target ("“…” already exists"). When the two files are **the same
-recording** — same audio fingerprint (Chromaprint) or same audio hash, similar
-length — offer **"Keep the better copy, set the other aside"** on that
-conflict instead of blocking the merge:
+Owner request (2026-10-04). When a merge or rename would put a file where
+another one already sits, and the two are **certainly the same recording**,
+the decision keeps the better copy and sets the other aside instead of being
+blocked. Setting: **Set aside second copies of the same recording** (on by
+default).
 
-- Keep: higher quality (lossless > lossy, then bitrate), then better tags.
-- The other copy moves to `_duplicates/` beside `incoming/` — never deleted,
-  journaled and undoable like any other move.
-- Only offered when identity is certain; "same name, different recording"
-  (live vs studio, remaster) stays a conflict for a person to decide.
-- Needs fingerprints from the analysis run, so it gets more useful as the
-  15-day analysis progresses. Lower priority than finishing the cleanup.
+- **Same recording** means identical audio (equal audio hash) *or* matching
+  Chromaprint sketches (bit-error rate ≤ 0.15 over ~6 s from ~30 s in, small
+  shifts allowed) with lengths within 2 s. Not analysed yet, different
+  lengths, or different sketches → still a conflict, now with the reason.
+- **Better copy:** lossless > lossy; then bit depth and sample rate (lossless)
+  or bitrate (lossy); then fuller tags; on a tie the copy already in place
+  stays (one move fewer).
+- The other copy moves to `incoming/_duplicates/<its library path>` — the same
+  place imports already set identical copies aside. Never deleted; journaled
+  (as a set-aside, so the analyzer doesn't treat it as a rename); undone with
+  the batch. A name already taken there gets " (2)".
+- Set-asides run first in the decision, so the better copy can take the
+  freed place; the librarian's precheck allows a target only when an earlier
+  move in the same decision empties it.
+- Also inside one album folder: two copies that would both be named
+  `02 - Dreams.mp3` no longer become "(2)" when they're the same recording.
+- **Keep the other copy instead** on each pair (a remaster can fingerprint as
+  the same recording). The proposal's revision changes, so it is approved
+  again. Filter: Status → "Sets aside copies".
+- Analyzer side: the export carries `fp_sketch` (`cp1:<start>:<base64>`, 48
+  raw values decoded from the stored fingerprint in numpy — no Chromaprint
+  library), `audio_duration_s` and `quality` (format, lossless, bitrate,
+  sample rate, bit depth, size). The tag cache moved to version 3, so the
+  first export after updating re-reads every file's tags once.
 
 ### Later extras
 

@@ -107,7 +107,7 @@ test("plan: disc folders fold in with 1-01 numbering; copies get (2); compilatio
   const now = plan.find((d) => d.title.includes("Now 42"))!;
   assert.deepEqual(now.moves.map((m) => m.to).sort(), ["Various Artists/Now 42 (1999)/01 - Song (2).mp3", "Various Artists/Now 42 (1999)/01 - Song.mp3"]);
   assert.ok(now.changes.some((c) => /Moves to “Various Artists”/.test(c)));
-  assert.ok(now.changes.some((c) => /duplicate copy/.test(c)));
+  assert.ok(now.changes.some((c) => /“\(2\)” added/.test(c)));
   const stay = buildPlan(library, {}, { ...DEFAULT_SETTINGS, compilations_folder: "" }).find((d) => d.title.includes("Now 42"))!;
   assert.ok(stay.moves.every((m) => m.to.startsWith("Compilations/")));
 });

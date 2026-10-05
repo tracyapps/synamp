@@ -38,6 +38,7 @@ import time
 from pathlib import Path, PurePosixPath
 
 from . import __version__
+from .fpsketch import sketch as fingerprint_sketch
 from .store import Database
 
 try:  # tag reading is optional at runtime: a missing package degrades to path names
@@ -135,6 +136,11 @@ def read_tags(path: Path) -> dict:
     year = _year(tag.year)
     if year:
         out["year"] = year
+    # Audio quality, used to pick the better of two copies of one recording.
+    for key, value, low, high in (("bitrate_kbps", tag.bitrate, 1, 100_000), ("sample_rate", tag.samplerate, 1000, 1_000_000),
+                                  ("bit_depth", getattr(tag, "bitdepth", None), 1, 64)):
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and low <= value <= high:
+            out[key] = round(float(value)) if key != "bitrate_kbps" else round(float(value), 1)
     other = getattr(tag, "other", None) or {}
     for key, values in other.items():
         normal = key.lower().replace(" ", "_")
@@ -146,7 +152,7 @@ def read_tags(path: Path) -> dict:
 
 
 _MBID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-TAG_CACHE_VERSION = 2
+TAG_CACHE_VERSION = 3  # 3: bitrate, sample rate, bit depth
 
 
 def _year(value: object) -> int | None:
@@ -164,6 +170,31 @@ def number_from_filename(relative: PurePosixPath) -> dict:
     if match.group(1):
         out["disc_no"] = int(match.group(1))
     return out if 0 < out["track_no"] < 1000 else {}
+
+
+LOSSLESS_FORMATS = {"flac", "wav", "aif", "aiff", "ape", "wv", "alac", "dsf", "dff"}
+LOSSY_FORMATS = {"mp3", "aac", "ogg", "oga", "opus", "wma", "mp2", "mpc"}
+# An .m4a can be AAC (lossy) or ALAC (lossless); ALAC of CD audio runs far above any AAC encode.
+M4A_LOSSLESS_KBPS = 500
+
+
+def quality(relative: PurePosixPath, tags: dict, size_bytes: int | None) -> dict:
+    """Format, lossless or not, bitrate, sample rate, bit depth, size — whatever is known."""
+    fmt = relative.suffix.lower().lstrip(".")
+    out: dict = {"format": fmt}
+    bitrate = tags.get("bitrate_kbps")
+    if fmt in LOSSLESS_FORMATS:
+        out["lossless"] = True
+    elif fmt in LOSSY_FORMATS:
+        out["lossless"] = False
+    elif fmt in ("m4a", "mp4", "m4b") and isinstance(bitrate, (int, float)):
+        out["lossless"] = bitrate >= M4A_LOSSLESS_KBPS
+    for key in ("bitrate_kbps", "sample_rate", "bit_depth"):
+        if key in tags:
+            out[key] = tags[key]
+    if isinstance(size_bytes, int) and size_bytes > 0:
+        out["size_bytes"] = size_bytes
+    return out
 
 
 def describe(relative: PurePosixPath, tags: dict) -> dict:
@@ -340,6 +371,10 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True, 
             **status,
             **({"aliases": aliases} if aliases else {}),
             **({"audio_hash": payload["audio_hash"]} if "identity" in current & stored and payload.get("audio_hash") else {}),
+            # A slice of the Chromaprint fingerprint: "same recording, maybe another format?" (fpsketch.py).
+            **({"fp_sketch": sketched} if "identity" in current & stored and (sketched := fingerprint_sketch(payload.get("fingerprint"))) else {}),
+            **({"audio_duration_s": payload["audio_duration_s"]} if "identity" in current & stored and _finite(payload.get("audio_duration_s")) else {}),
+            "quality": quality(relative, tags, row["size_bytes"]),
             "stages_done": sorted(current & stored),
             "signals": signals,
         }

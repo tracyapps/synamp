@@ -24,6 +24,7 @@ import type { Library, LibraryTrack } from "../query/evaluate.ts";
 import { discFromFolder, groupAlbums, matchRelease } from "./albums.ts";
 import type { AlbumUnit } from "./albums.ts";
 import type { AlbumMatches, AlbumRecord } from "./missing.ts";
+import { betterCopy, describeQuality, pairKey, sameRecording, SET_ASIDE_FOLDER } from "./duplicates.ts";
 import { albumFolderName, artistKey, isSafeRelative, pathKey, safeName, trackFileName, unswapName } from "./naming.ts";
 
 export class OrganiseError extends Error {
@@ -50,15 +51,18 @@ export type OrganiseSettings = {
   fold_disc_folders: boolean;
   /** Where compilations go. Empty: leave compilations where they are. */
   compilations_folder: string;
+  /** Two copies of the same recording in one place: keep the better, set the other aside (never deleted). */
+  set_aside_duplicates: boolean;
 };
 
 export const DEFAULT_SETTINGS: OrganiseSettings = {
   merge_artists: true, add_year: true, number_tracks: true, fold_disc_folders: true, compilations_folder: "Various Artists",
+  set_aside_duplicates: true,
 };
 
 export function cleanSettings(input: Record<string, unknown>, current: OrganiseSettings): OrganiseSettings {
   const next = { ...current };
-  for (const key of ["merge_artists", "add_year", "number_tracks", "fold_disc_folders"] as const) {
+  for (const key of ["merge_artists", "add_year", "number_tracks", "fold_disc_folders", "set_aside_duplicates"] as const) {
     if (input[key] === undefined) continue;
     if (typeof input[key] !== "boolean") throw new OrganiseError(`${key} must be true or false`);
     next[key] = input[key];
@@ -73,7 +77,7 @@ export function cleanSettings(input: Record<string, unknown>, current: OrganiseS
 
 // --- the plan -------------------------------------------------------------------------
 
-/** Where a path lives: the library (default) or `incoming/` (imports). */
+/** Where a path lives: the library (default) or `incoming/` (imports, and `incoming/_duplicates/` for set-aside copies). */
 export type Area = "incoming";
 export type Move = { from: string; to: string; track_id?: string; audio_hash?: string; from_area?: Area; to_area?: Area };
 export type FolderMove = {
@@ -100,7 +104,47 @@ export type Decision = {
   conflicts: string[];
   /** Before → after, for display: one line per folder. */
   preview: Array<{ from: string; to: string }>;
+  /** Copies of one recording that met here: which is kept, which is set aside, and why. */
+  duplicates?: DuplicatePair[];
 };
+
+export type DuplicateCopy = { id: string; path: string; quality: string };
+export type DuplicatePair = {
+  /** Stable key for the two tracks (for "Keep this one instead"). */
+  pair: string;
+  how: "identical" | "recording";
+  keep: DuplicateCopy;
+  aside: DuplicateCopy;
+  why: string;
+  chosen_by: "SynAmp" | "you";
+};
+/** The owner's picks: pair key → the track ID to keep. */
+export type KeepChoices = Record<string, string>;
+
+const copyOf = (track: LibraryTrack): DuplicateCopy => ({ id: track.id, path: track.path!, quality: describeQuality(track.quality) });
+
+/** Same recording? Then which copy stays. A string is the reason it stays a conflict. */
+function resolveDuplicate(resident: LibraryTrack, arriving: LibraryTrack, choices: KeepChoices): DuplicatePair | string {
+  const same = sameRecording(resident, arriving);
+  if (!same.same) return same.why;
+  const auto = betterCopy(resident, arriving);
+  const pair = pairKey(resident, arriving);
+  const wanted = choices[pair];
+  const swap = wanted !== undefined && wanted !== auto.keep.id && wanted === auto.aside.id;
+  const [keep, aside] = swap ? [auto.aside, auto.keep] : [auto.keep, auto.aside];
+  return {
+    pair, how: same.how, keep: copyOf(keep), aside: copyOf(aside),
+    why: swap ? "your choice" : `${same.how === "identical" ? "Identical audio" : "Same recording"}: ${auto.why}`,
+    chosen_by: swap ? "you" : "SynAmp",
+  };
+}
+
+/** Set a copy aside: into `incoming/_duplicates/`, keeping its library path so it's easy to find (and undo). */
+const asideMove = (track: LibraryTrack): Move => ({
+  from: track.path!, to: `${SET_ASIDE_FOLDER}/${track.path!}`, to_area: "incoming", track_id: track.id,
+  ...(track.audio_hash ? { audio_hash: track.audio_hash } : {}),
+});
+const asideNote = (n: number) => `${plural(n, "duplicate copy", "duplicate copies")} of the same recording: the better copy stays, the other goes to incoming/${SET_ASIDE_FOLDER} (not deleted)`;
 
 const VARIOUS = /^(?:various(?: artists)?|va)$/i;
 const discOf = (track: LibraryTrack) => track.disc_no ?? (track.path ? discFromFolder(track.path) : undefined);
@@ -111,18 +155,22 @@ type PlanContext = {
   /** Lower-cased paths of every file, and of every folder that holds one. */
   files: Set<string>;
   folders: Set<string>;
+  /** Lower-cased path → the track there. */
+  byPath: Map<string, LibraryTrack>;
 };
 
 function context(library: Library): PlanContext {
   const tracks = library.tracks.filter((track) => track.path && isSafeRelative(track.path));
   const files = new Set<string>();
   const folders = new Set<string>();
+  const byPath = new Map<string, LibraryTrack>();
   for (const track of tracks) {
     files.add(pathKey(track.path!));
+    byPath.set(pathKey(track.path!), track);
     let dir = posix.dirname(track.path!);
     while (dir !== "." && !folders.has(pathKey(dir))) { folders.add(pathKey(dir)); dir = posix.dirname(dir); }
   }
-  return { tracks, files, folders };
+  return { tracks, files, folders, byPath };
 }
 
 function finish(decision: Omit<Decision, "rev">): Decision {
@@ -130,7 +178,7 @@ function finish(decision: Omit<Decision, "rev">): Decision {
 }
 
 /** Artist folders that are spellings of one artist, merged into the best-supported spelling. */
-function artistDecisions(ctx: PlanContext, units: AlbumUnit[], records: Record<string, AlbumRecord>): Decision[] {
+function artistDecisions(ctx: PlanContext, units: AlbumUnit[], records: Record<string, AlbumRecord>, settings: OrganiseSettings, choices: KeepChoices): Decision[] {
   const byFolder = new Map<string, LibraryTrack[]>();
   for (const track of ctx.tracks) {
     const folder = topFolder(track.path!);
@@ -177,12 +225,22 @@ function artistDecisions(ctx: PlanContext, units: AlbumUnit[], records: Record<s
     const canonical = [...score].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]![0];
     const moving = folders.filter((folder) => folder !== canonical);
     const moves: Move[] = [];
+    const asides: Move[] = [];
+    const duplicates: DuplicatePair[] = [];
     const conflicts: string[] = [];
     for (const folder of moving) for (const track of byFolder.get(folder)!) {
       const to = canonical + track.path!.slice(folder.length);
       if (ctx.files.has(pathKey(to)) && !moving.some((m) => pathKey(to).startsWith(pathKey(m) + "/"))) {
-        conflicts.push(`“${to}” already exists`);
-        continue;
+        const resident = ctx.byPath.get(pathKey(to));
+        const outcome = settings.set_aside_duplicates && resident ? resolveDuplicate(resident, track, choices) : undefined;
+        if (outcome && typeof outcome !== "string") {
+          duplicates.push(outcome);
+          if (outcome.keep.id === resident!.id) { asides.push(asideMove(track)); continue; }
+          asides.push(asideMove(resident!)); // the arriving copy is better: it takes the place
+        } else {
+          conflicts.push(`“${to}” already exists${outcome ? ` (${outcome})` : ""}`);
+          continue;
+        }
       }
       moves.push({ from: track.path!, to, track_id: track.id, ...(track.audio_hash ? { audio_hash: track.audio_hash } : {}) });
     }
@@ -194,8 +252,11 @@ function artistDecisions(ctx: PlanContext, units: AlbumUnit[], records: Record<s
       changes: [
         ...folders.map((folder) => `“${folder}”: ${plural(albums(folder), "folder")}, ${plural(byFolder.get(folder)!.length, "track")}${folder === canonical ? " (kept)" : ""}`),
         ...(!folders.includes(canonical) ? [`“${canonical}” is the spelling MusicBrainz uses`] : mbNames.has(canonical) ? ["MusicBrainz agrees with this spelling"] : []),
+        ...(duplicates.length ? [asideNote(duplicates.length)] : []),
       ],
-      moves,
+      // Set-asides first: they make room for the better copy.
+      moves: [...asides, ...moves],
+      ...(duplicates.length ? { duplicates } : {}),
       folders: moving.map((folder) => ({ from: folder, to: canonical })),
       conflicts: [...new Set(conflicts)].slice(0, 20),
       preview: moving.map((folder) => ({ from: folder, to: canonical })),
@@ -214,7 +275,7 @@ function albumYear(unit: AlbumUnit, record?: AlbumRecord): { year?: number; sour
 }
 
 function albumDecision(unit: AlbumUnit, ctx: PlanContext, settings: OrganiseSettings, record: AlbumRecord | undefined,
-  claimed: Map<string, string>, units: AlbumUnit[]): Decision | undefined {
+  claimed: Map<string, string>, units: AlbumUnit[], choices: KeepChoices = {}): Decision | undefined {
   const parent = posix.dirname(unit.key);
   // Loose files in an artist folder group as "Artist" — that is not an album folder to rename.
   if (parent === ".") return undefined;
@@ -265,8 +326,12 @@ function albumDecision(unit: AlbumUnit, ctx: PlanContext, settings: OrganiseSett
   const highest = Math.max(0, ...unit.tracks.map((t) => Math.max(t.track_total ?? 0, t.track_no ?? 0)));
   const width = Math.max(2, String(highest).length);
 
-  const moves: Move[] = [];
+  let moves: Move[] = [];
+  const asides: Move[] = [];
+  const duplicatePairs: DuplicatePair[] = [];
   const targets = new Set<string>();
+  /** Which track has claimed each new name (to spot two copies of one recording). */
+  const owners = new Map<string, LibraryTrack>();
   const sourceFolders = new Map<string, string>();
   let numbered = 0, numberedFromMb = 0, duplicates = 0, folded = 0;
   for (const track of [...unit.tracks].sort((a, b) => a.path!.localeCompare(b.path!))) {
@@ -285,23 +350,40 @@ function albumDecision(unit: AlbumUnit, ctx: PlanContext, settings: OrganiseSett
       ? trackFileName({ title: track.title, ext: ext(from), track: number, disc, multiDisc, width, stem: stem(from) })
       : posix.basename(from);
     if (settings.number_tracks && number !== undefined && !same(name, posix.basename(from))) numbered++;
-    // Two copies of one track would get the same name: number the extra copies.
+    // Two copies of one recording would get the same name: keep the better one there, set the other aside.
+    const holder = owners.get(pathKey(`${dir}/${name}`));
+    const outcome = holder && settings.set_aside_duplicates ? resolveDuplicate(holder, track, choices) : undefined;
+    if (holder && outcome && typeof outcome !== "string") {
+      duplicatePairs.push(outcome);
+      if (outcome.keep.id === holder.id) { asides.push(asideMove(track)); continue; }
+      // This copy is better: it takes the name, and the holder goes aside instead.
+      moves = moves.filter((move) => move.track_id !== holder.id);
+      asides.push(asideMove(holder));
+      owners.set(pathKey(`${dir}/${name}`), track);
+      const to = `${dir}/${name}`;
+      sourceFolders.set(posix.dirname(from), dir);
+      if (!same(from, to)) moves.push({ from, to, track_id: track.id, ...(track.audio_hash ? { audio_hash: track.audio_hash } : {}) });
+      continue;
+    }
+    // Two different recordings would get the same name: number the extra copies.
     for (let copy = 2; targets.has(pathKey(`${dir}/${name}`)); copy++) {
       name = `${safeName(`${stem(name).replace(/ \(\d+\)$/, "")} (${copy})`, 190)}${ext(name)}`;
       if (copy === 2) duplicates++;
     }
     const to = `${dir}/${name}`;
     targets.add(pathKey(to));
+    owners.set(pathKey(to), track);
     sourceFolders.set(posix.dirname(from), dir);
     if (!same(from, to)) moves.push({ from, to, track_id: track.id, ...(track.audio_hash ? { audio_hash: track.audio_hash } : {}) });
   }
-  if (!moves.length) return undefined;
+  if (!moves.length && !asides.length) return undefined;
   // The album folder itself, even when every track sits in a disc folder (its artwork follows too).
   if (!sourceFolders.has(unit.key)) sourceFolders.set(unit.key, newKey);
   if (numbered) changes.push(`Names ${plural(numbered, "track")} “${multiDisc ? "1-01" : "01"} - Title”${numberedFromMb ? ` (${numberedFromMb} numbered from MusicBrainz)` : ""}`);
   if (folded) changes.push(`Brings ${plural(folded, "track")} out of disc folders into the album folder`);
-  if (duplicates) changes.push(`${plural(duplicates, "duplicate copy", "duplicate copies")} get “(2)” added, so nothing is overwritten`);
-  if (!numbered && !folded && newKey === unit.key) changes.push(`Tidies ${plural(moves.length, "file name")}`);
+  if (duplicates) changes.push(`${plural(duplicates, "copy", "copies")} with the same name but a different recording (or not analysed yet) get “(2)” added, so nothing is overwritten`);
+  if (duplicatePairs.length) changes.push(asideNote(duplicatePairs.length));
+  if (!numbered && !folded && newKey === unit.key && moves.length) changes.push(`Tidies ${plural(moves.length, "file name")}`);
 
   // Other albums nested inside this folder (not disc folders) stay where they are.
   const nested = units.filter((other) => other.key !== unit.key && other.key.startsWith(unit.key + "/")).map((other) => other.key);
@@ -314,19 +396,20 @@ function albumDecision(unit: AlbumUnit, ctx: PlanContext, settings: OrganiseSett
     kind: "album",
     title: `${unit.artist === "Various Artists" || isCompilation ? "Various Artists" : unit.artist} — ${unit.title}`,
     changes,
-    moves,
+    moves: [...asides, ...moves],
     folders,
     conflicts,
+    ...(duplicatePairs.length ? { duplicates: duplicatePairs } : {}),
     preview: newKey === unit.key ? [{ from: unit.key, to: unit.key }] : [{ from: unit.key, to: newKey }],
   });
 }
 
-export function buildPlan(library: Library, records: Record<string, AlbumRecord>, settings: OrganiseSettings): Decision[] {
+export function buildPlan(library: Library, records: Record<string, AlbumRecord>, settings: OrganiseSettings, choices: KeepChoices = {}): Decision[] {
   const ctx = context(library);
   const units = groupAlbums({ version: library.version, tracks: ctx.tracks });
-  const artists = settings.merge_artists ? artistDecisions(ctx, units, records) : [];
+  const artists = settings.merge_artists ? artistDecisions(ctx, units, records, settings, choices) : [];
   const claimed = new Map<string, string>();
-  const albums = units.map((unit) => albumDecision(unit, ctx, settings, records[unit.key], claimed, units)).filter((d): d is Decision => !!d);
+  const albums = units.map((unit) => albumDecision(unit, ctx, settings, records[unit.key], claimed, units, choices)).filter((d): d is Decision => !!d);
   return [
     ...artists.sort((a, b) => a.title.localeCompare(b.title)),
     ...albums.sort((a, b) => a.title.localeCompare(b.title)),
@@ -388,6 +471,8 @@ type State = {
   librarian?: LibrarianSeen;
   /** "Pause file changes": the librarian gets no new work until resumed. */
   paused?: { at: number };
+  /** "Keep this one instead": the owner's pick for a pair of duplicate copies. */
+  keep?: KeepChoices;
 };
 
 /** A claimed job that never reported back is offered again after this long. */
@@ -426,7 +511,27 @@ export class OrganiseStore {
       jobs: loaded.jobs ?? [],
       ...(loaded.librarian ? { librarian: loaded.librarian } : {}),
       ...(loaded.paused ? { paused: loaded.paused } : {}),
+      ...(loaded.keep ? { keep: loaded.keep } : {}),
     };
+  }
+
+  get choices(): KeepChoices { return this.state.keep ?? {}; }
+
+  /**
+   * Which copy of a duplicate pair to keep. `keep` is a track ID from that pair
+   * (checked against the plan by the caller); null forgets the choice.
+   */
+  choose(pair: unknown, keep: unknown): void {
+    if (typeof pair !== "string" || !/^[0-9a-f]{16}$/.test(pair)) throw new OrganiseError("pair must be a pair key from the plan");
+    const choices = { ...(this.state.keep ?? {}) };
+    if (keep === null) delete choices[pair];
+    else if (typeof keep === "string" && keep.length <= 200) choices[pair] = keep;
+    else throw new OrganiseError("keep must be a track ID, or null");
+    // Old picks for pairs that were resolved long ago don't need to live forever.
+    const keys = Object.keys(choices);
+    for (const key of keys.slice(0, Math.max(0, keys.length - 5000))) delete choices[key];
+    this.state.keep = choices;
+    this.save();
   }
   save(): void { writeJson(this.path, this.state); }
 

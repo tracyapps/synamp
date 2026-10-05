@@ -80,3 +80,21 @@
 .organise__pause .switch { justify-self: start; }
 .organise__pause .switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 .organise__pause p { margin: 0; font-size: 13px; }
+
+/* Duplicate-blocked merges: which copy stays, which is set aside. */
+.organise__dupes { margin: 10px 0; padding: 10px 12px; border-left: 3px solid var(--muted); background: var(--hair); font-size: 13px; }
+.organise__dupes h5 { margin: 0 0 4px; font: 600 13px var(--font-sans); }
+.organise__dupes > p { margin: 0 0 8px; }
+.organise__dupes > ul { list-style: none; margin: 0; padding: 0; }
+.organise__dupe + .organise__dupe { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--hair); }
+.organise__dupe dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 10px; margin: 0; }
+.organise__dupe dt { color: var(--muted); font: 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; padding-top: 2px; }
+.organise__dupe dd { margin: 0; min-width: 0; }
+.organise__dupe code { font: 12px var(--font-mono); color: var(--accent); overflow-wrap: anywhere; }
+.organise__quality { color: var(--muted); white-space: nowrap; }
+.organise__dupe-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.organise__aside-tag { color: var(--muted); font: 11px var(--font-mono); }
+@media (max-width: 520px) {
+  .organise__dupe dl { grid-template-columns: 1fr; }
+  .organise__dupe dt { padding-top: 6px; }
+}

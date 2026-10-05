@@ -509,3 +509,21 @@ exact compose (v2.20.1). First failure came after the `pull_policy: build`
 build, but nothing proves the link. Development updates now go through the
 CLI (`up -d --build`, folded into the owner's `synamp-sync`); revisit when
 there's an error message to go on.
+
+**Duplicate-blocked merges (2026-10-05).** Merges and album renames that
+collide with the *same recording* keep the better copy and set the other aside
+in `incoming/_duplicates/` (never deleted, undoable) — details in
+LIBRARY-CARE.md. New: `library/duplicates.ts` (sameness from audio hash or a
+Chromaprint sketch + length; quality ranking; pair keys),
+`POST /api/v1/organise/keep` ("Keep the other copy instead"), setting
+`set_aside_duplicates`, librarian precheck that understands a place emptied
+earlier in the same decision, and free names in `_duplicates/`. Analyzer:
+`fpsketch.py` decodes stored fingerprints (verified bit-for-bit against
+`fpcalc -raw`; ~0.4 ms a track); the export adds `fp_sketch`,
+`audio_duration_s`, `quality`; tag cache v3 (one full tag re-read). Brain
+115/115, analyzer 93/93 (with and without fpcalc; `test_status` no longer
+assumes fpcalc is absent). Live on temp folders with real brain + librarian
+processes: plan → pick → bad pick refused → approve → apply → files as planned
+→ undo → every file back. **Unverified:** the 0.15 bit-error threshold on real
+transcodes and remasters (only synthetic audio so far); the web panel was
+type-checked, not seen in a browser.
