@@ -500,3 +500,12 @@ beat" (`tempo_confidence: 0`), and the summary adds "found the pulse" (right
 at some metrical level) next to strict accuracy. This is the human evidence
 BEAT-TIMING R4 asks for; the analyzer itself still reports one tempo (R2's
 multiple metrical hypotheses are the real fix). Brain 107/107.
+
+**Container Manager Stop keeps failing (2026-10-05), cause unknown.** After the
+SIGTERM fix, `docker compose stop` from the CLI stops all six containers in
+2–6 s, but Container Manager's Stop/Restart still log "failed" with no detail
+(nothing in /var/log/messages). The compose file validates with the NAS's
+exact compose (v2.20.1). First failure came after the `pull_policy: build`
+build, but nothing proves the link. Development updates now go through the
+CLI (`up -d --build`, folded into the owner's `synamp-sync`); revisit when
+there's an error message to go on.

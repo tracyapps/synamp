@@ -252,6 +252,14 @@ Two steps, no Terminal on the NAS:
    project runs). Stop takes a few seconds; the librarian finishes a batch
    it's in the middle of first.
 
+**If Stop fails in Container Manager** (it does on some DSM setups; the
+command-line Stop works and SynAmp itself is fine), rebuild from Terminal on
+the NAS instead — one step, no Stop needed:
+
+```bash
+sudo /usr/local/bin/docker compose -f /volume1/docker/synamp/deploy/docker-compose.yml --env-file /volume1/docker/synamp/deploy/.env up -d --build
+```
+
 SynAmp is unavailable for a few minutes while it rebuilds. Let a batch in
 Organise finish first (or switch on **Pause file changes**); analysis on the
 Mac carries on by itself. **Settings → About this install** shows the version
