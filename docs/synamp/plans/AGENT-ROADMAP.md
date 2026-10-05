@@ -20,6 +20,90 @@ method identity, and made tempo autocorrelation use FFT. See the
 [findings and verification](../../research/beat-timing-findings-2026-09-29.md).
 Full real-music microtiming remains open.
 
+### 2026-10-01 — P2 first slice landed (partial)
+
+`apps/brain/src/query/`: signal registry, closed v2.0-subset plan validator with
+stable hash, deterministic evaluator (two channels → hard guard on union, strict
++ near-miss tiers, declared ladder only, caps/MMR, reasons, counts), and a
+rule-based draft parser standing in for the LLM. Smart playlists persist the
+canonical plan + hash and resolve live against `LIBRARY_SIGNALS_PATH` (synthetic
+sample by default). Web: “Describe what you want to hear” panel.
+
+- **Confirmed (fixtures):** flagship prompt obeys every exclusion incl. after the
+  similarity union; zero/two results reported without padding; malformed and
+  unsupported plans fail with paths/asks; aliases round-trip to the same hash;
+  hash stable under key order; unknown never passes an explicit audio exclusion;
+  missing genre tag ≠ absence; timing predicates gated on `timing_status`; new
+  library rows join saved plans without re-saving. `node --test`: 23/23; `tsc`
+  clean for brain and web.
+- **Not done:** queue snapshots (no queue exists yet — P3); `loosen_soft_to_hard`
+  / `swap_field_proxy` ladder actions; quota constraints; non-flat arcs;
+  `clap_text` (no encoder); analyzer export/import (P1 deliverable 5); P1
+  stage-revision persistence. The registry lives brain-side; a test checks every
+  non-metadata field exists on `AnalysisResult`, but the analyzer does not yet
+  consume it.
+- **Unverified:** everything about real music. Voice, instrument, arousal and
+  mood fields have no producer, so real tracks are unknown for them.
+- **Next smallest experiment:** ~~analyzer `export` command~~ — done, below.
+
+### 2026-10-01 — P1 deliverable 5: analyzer → brain export (partial P1)
+
+`synamp-analyze export` writes `synamp.library-signals/1` (`export.py`). Fields are
+exported per stage only while the job record counts the stage done, so changed
+files and `--redo-stage` withhold stale values. Null is omitted. IDs hash the
+library-relative path, so sample and full library agree. Titles/artists are
+path-derived (`metadata_source: "path"`); no tag reader yet. The brain refuses
+unknown formats.
+
+- **Confirmed:** 8 new analyzer tests (stale withholding, redo-stage scope,
+  sample/full ID agreement, missing files, atomic write, every stage output
+  classified as exported or internal) — analyzer 64/64; brain cross-checks that
+  every exported name is a `produced` registry field — brain 25/25. End-to-end on
+  synthetic click tracks: scan → analyze → export → “nothing too slow, under 140
+  bpm” returned exactly the 100 and 128 BPM tracks; “no piano” returned no strict
+  tracks and four “not measured” near misses.
+- **Not done:** stage revisions/fingerprints (P1 1–4) — `beat_method` is exported
+  per track but a changed algorithm still needs `--redo-stage`; Postgres sync;
+  tag-based metadata; joining IDs to Navidrome song IDs for playback.
+- **Next smallest experiment:** run `export` on the owner's 200-track sample and
+  try tempo/pulse prompts on it. In code: P3 — real playback events — so the
+  feedback loop has a source of truth.
+
+### 2026-10-01 — P3 first slice: real playback events and scoped feedback (partial)
+
+`apps/brain/src/session/`: append-only JSONL event log with client-id dedupe;
+server-owned session with queue snapshots and exposure records (no invented
+propensities — `policy: deterministic_rank`); player reports classified
+server-side (early/late skip, heard-through, repeat; errors, seeks, interruptions
+and previous are never dislikes); explicit love / thumbs / remove / restore with
+declared scope; `heuristic-v1` re-ranker derived by replaying the log, bounded
+and applied only inside the strict tier, with per-track `score_breakdown`.
+Signed-URL streaming from `LIBRARY_PATH` lets the SynAmp web player be a real
+event source. Web: player bar, feedback controls, “Removed by you” with restore.
+
+- **Confirmed:** 14 new brain tests (39/39 total; `pnpm --filter @synamp/brain
+  test` now also runs the query and session suites, which it previously
+  skipped): play→skip persists session-scoped; remove→resolve hides only in
+  that playlist and restore undoes it; report/queue/feedback retries are
+  idempotent; interruption, error and seek produce no preference; restart
+  restores session and dedupe; torn log line recovery; loving a piano track
+  does not get it past “no piano”; corroborated global negatives; decay; stream
+  signing, expiry, traversal/symlink escape and range requests. In a real
+  browser on synthetic click-track audio: play → skip logged `skip_late` at
+  3.3 s of a 12 s track (relative floor 3 s); a played-out track logged
+  `full_play` at 12000 ms and auto-advanced; love and remove recorded and the
+  smart playlist recomputed without the removed track.
+- **Not done:** Subsonic/Navidrome scrobble bridge (third-party app plays are
+  not captured); WebSocket/SSE push; `queue_up`/`queue_remove` signals;
+  exploration budget; Rocchio/taste vector (v2); offline evaluation. Events
+  live in a local file, not Postgres.
+- **Unverified:** every magnitude, threshold and half-life is the dossier's
+  candidate value; nothing is tuned on real listening yet.
+- **Next smallest experiment:** listen for a week on the 200-track sample with
+  the web player, then read `/api/v1/events` and check whether skips and
+  removals match what you meant. In code: the Navidrome scrobble bridge, or the
+  first P4 producer (voice/instrument) so “no words”/“no piano” work on real music.
+
 ## Dependency order and ownership
 
 | Priority | Work package | Depends on | Write owner / main surfaces |
@@ -211,3 +295,217 @@ Leave the exact inputs, changed contract/version, fresh commands and exit codes,
 benchmark denominator and exclusions, unresolved failures, and next smallest
 experiment. Label results as confirmed, partial, unverified or failed. Preserve
 research evidence states; do not promote a candidate because code now exists.
+
+### 2026-10-01 — Plays from other apps + optional Last.fm scrobbling (P3 continued)
+
+The edge now routes Subsonic (`/rest/*`) through the brain, which forwards every
+call to Navidrome unchanged (streams piped) and records `external_play` /
+`now_playing` only for scrobbles Navidrome accepted. Real paths
+(`ND_SUBSONIC_DEFAULTREPORTREALPATH`) map onto the analyzer's IDs. The analyzer
+export now reads tags (tinytag, MIT, cached per file). Optional Last.fm
+scrobbling: web-auth connect with a one-time state, on/off periods, Last.fm's
+play rule, outbox derived from the event log, 50-per-batch, retry only
+retryable errors, pause on invalid session, tag-sourced names only.
+
+- **Confirmed:** brain 53/53 (14 new: pass-through incl. a 300 KB stream,
+  accepted vs rejected scrobble, form POST with several ids, path → ID matches
+  the Python value, signing, play rule, state-protected connect, on/off
+  periods, no resend after restart, batching 120 → 50/50/20, backoff on 11,
+  pause on 9, refusals not retried, folder names held). Analyzer 65/65 (tags
+  read, folder fallback, cache). Live check: a scrobble through the running
+  brain against a stand-in core was captured as `external_play`, matched to the
+  exported track's ID, and appeared as waiting in the Last.fm panel; a rejected
+  scrobble recorded nothing; a forged callback was refused.
+- **Not verified against the real services:** no real Navidrome and no real
+  Last.fm account were used. First real run: connect one app through the edge,
+  play a track past half, check `/api/v1/listening`, then connect Last.fm and
+  watch it arrive.
+- **Not done:** ListenBrainz; inferring skips from other apps (they don't report
+  them — left unknown on purpose); historical import of Navidrome play counts.
+
+### 2026-10-02 — Library care step 1: track identity + rename journal
+
+New plan: [LIBRARY-CARE.md](LIBRARY-CARE.md) (identity → health view → missing
+tracks → organise → import → discography gaps), added to ROADMAP before Phase 2.
+Step 1 landed: analyzer stage `identity` (audio hash over decoded samples,
+optional Chromaprint via `fpcalc`) runs first; retags keep analysis; moves
+inherit analysis and the exported ID (minted from the first path; `aliases`
+list later ones); copies reuse measurements as separate tracks; the librarian's
+rename journal is applied on `scan` without decoding; finished jobs are now
+re-opened for newly added stages. Brain maps paths via the library index and
+counts feedback under old IDs. Analyzer 72/72, brain 55/55. Unverified: real
+Chromaprint output; decode determinism across macOS decoder updates for `.m4a`
+(a changed decoder would change hashes and look like new audio — the cost is
+re-analysis, not data loss).
+
+### 2026-10-02 — Library care step 2: library health and analysis progress
+
+Analyzer `status.py` (SQL snapshot, run clock, best-effort throttled reporter)
+pushes progress to brain `POST /api/v1/analysis/progress`; brain `library/health.ts`
+validates, persists and flags stale reports; `GET /api/v1/library/health` adds
+index stats. Web `LibraryHealth.tsx` strip with native `<progress>` bars. Naming
+defaults recorded in LIBRARY-CARE.md (Various Artists, `Album (Year)`, `1-01`
+disc prefixes). Analyzer 77/77, brain 58/58; live check: a real analyzer run on
+38 synthetic files reported to a running brain (37 done, 1 unreadable, 1
+duplicate recognised); the panel was checked in a browser with a simulated
+45k-track mid-run report. Next: step 3, missing tracks (MusicBrainz matching).
+
+### 2026-10-02 — Library care step 3: missing-tracks list
+
+Brain `library/albums.ts` (folder grouping, loose title matching, release diff),
+`library/musicbrainz.ts` (rate-limited client, contact UA), `library/missing.ts`
+(background matcher with edition preference and review queue, notes store,
+recomputed list, CSV). Analyzer export adds track/disc numbers, year and
+`mb_albumid`. Web `MissingTracks.tsx`: matcher controls, filters, sorting, tags
+and notes, edition chooser, found-again, CSV download. beets deliberately not
+used for this read-only step (see LIBRARY-CARE.md). Brain 70/70, analyzer 78/78,
+plus a live run against MusicBrainz. Next: step 4, organise (propose → review →
+apply), the first step that writes to the library.
+
+### 2026-10-02 — Library care step 4: organise (renames and moves)
+
+Brain `library/naming.ts` (safe names, standard forms, artist keys, safe
+relative paths) and `library/organise.ts` (plan of artist-merge and album
+decisions, revisioned reviews, batches with merge-first rebasing, librarian
+job queue with re-claim, report validation, undo, `PathOverlay`, match
+carrying). New `src/librarian/` process (`apply.ts`, `main.ts`): precheck,
+rename-only, rollback, companions, empty-folder pruning, journal, persisted
+unsent reports. Web `OrganiseLibrary.tsx` panel; compose `librarian` profile.
+beets not used for path-only organising (see LIBRARY-CARE.md). Brain 83/83;
+live apply + undo through brain and librarian on a sample library. Next: step 5,
+import (web drop + `incoming/`), or 4b tag writing.
+
+### 2026-10-03 — Library care step 5: import
+
+Brain `library/tags.ts` (dependency-free ID3/FLAC/MP4 tag reader),
+`library/import.ts` (incoming scanner with settle time and tag cache, "new
+music" decisions that reuse existing artist/album folders, content duplicates
+set aside, versions kept), streamed web upload endpoint into
+`incoming/_web/`, moves with areas (library / incoming) through organise,
+librarian and undo, copy-and-verify across filesystems. Web `AddMusic.tsx`
+(drop zone, file and folder pickers, progress) inside the Organise panel;
+`ids.ts` fixes `crypto.randomUUID` on plain-HTTP pages. Compose: brain gets
+`incoming/` read-write, the librarian mounts the whole share. Brain 91/91,
+analyzer 79/79; live browser upload → review → librarian filing. Next: step 6
+(discography gaps) or 4b (writing tags); Dropbox later.
+
+### 2026-10-03 — Library care step 6: discography gaps
+
+Brain `library/discography.ts` (artist scores from library + listening events,
+auto/manual follows, MusicBrainz artist resolution via matched albums or
+search with a review queue, release-group browse with bootleg filter, gap
+report with new/upcoming flags, notes, listen/buy search links, background
+checker with monthly re-check); `musicbrainz.ts` gains artist search,
+release-group browse, and artist/release-group IDs on release lookups. Web
+`DiscographyGaps.tsx`. Brain 96/96; live MusicBrainz check. Library care plan
+complete apart from 4b (writing tags) and Dropbox import.
+
+### 2026-10-04 — First real run; the analyzer moves into the app
+
+The owner's first run on the NAS (FIRST-RUN.md) surfaced and fixed: brain
+not pointed at the export; edge depending on Navidrome; `sudo` and compose
+profiles on DSM (`dc` alias); web image built with npm instead of corepack
+pnpm; zsh-safe Mac commands (settings file); a silent, single-threaded first
+export (now 8 files at a time, with progress, committing as it goes); a
+librarian report too big for the 256 KB request limit (now 128 MB) and no
+progress during big batches (now a live bar). Principle agreed with the
+owner: every step that has worked by hand gets baked into the app. First of
+those: the analyzer is now a background worker (`synamp-analyze worker`,
+macOS login item via `install-agent`) driven from the Library strip — Scan
+for changes, Start / Pause analysis — and scans + exports by itself after
+each librarian batch. Brain 99/99, analyzer 85/85; live: buttons → worker →
+scan, export, analyse, pause.
+
+**Baking it in, part 2: Settings and an always-on librarian.** A **Settings**
+panel replaces editing `deploy/.env` for MusicBrainz contact, Last.fm API key
+and secret, SynAmp's address and the upload limit (`apps/brain/src/settings.ts`,
+`GET/POST /api/v1/settings`): `.env` gives the starting values, saved values
+win and apply without a restart, clearing a field goes back to `.env`, and
+secrets never go back to the browser (key shown as "…last4", secret as
+"saved"). The librarian is now in the `app` profile, so it starts with
+everything else and waits; **Pause file changes** (`POST
+/api/v1/organise/pause`, an accessible switch in the Organise panel) holds it
+— a batch under way finishes, nothing new starts, and the pause survives
+restarts. Brain 100/100; live: settings validation and save, Last.fm becoming
+available without a restart, pause switch. Next candidates: install and
+update through Container Manager instead of SSH; writing tags (4b); Dropbox
+import.
+
+**Baking it in, part 3: install and update from Container Manager.** No more
+profiles for the app: `docker compose up` (what Container Manager's Project
+runs) starts db, brain, web, edge and librarian; Navidrome sits behind the
+`navidrome` profile, switched on with `COMPOSE_PROFILES=navidrome` in `.env`
+(verified: compose reads it from the project's `.env`). The brain image is
+built from `apps/` and fingerprints the brain + web code at build time
+(`src/version.ts` → `build.json`; Docker re-runs that step only when the code
+changed). At runtime it fingerprints the NAS copy (`../apps` mounted
+read-only at `/source`) and `GET /api/v1/system` says `same` / `waiting`. The
+web app shows **An update is ready to install** with the two DSM steps
+(Container Manager → Project → synamp → Action → Build) and **About this
+install** in Settings. Updating is now `synamp-sync` + one button. Brain
+102/102; compose config checked with and without the profile; live: notice
+appears after a copied change, Settings shows the version.
+
+**Fixes from the first days of the big analysis (2026-10-04).** (1) The
+Library strip's **Details** never hid anything: `.health__details { display:
+grid }` overrode the `hidden` attribute. Fixed there, plus a global
+`[hidden] { display: none !important }`. (2) Fingerprints were "off" even
+with Chromaprint installed: the launchd worker starts with a bare PATH that
+lacks `/opt/homebrew/bin`. `find_fpcalc()` now also looks in Homebrew's
+folders, and `backfill_fingerprints()` fills in tracks analysed without it
+(fpcalc only; runs at the start of analysis and as soon as the tool appears
+mid-run). (3) The worker restarts itself into a new version: it fingerprints
+its own `.py` files (`code_stamp`), and when they change it stops after the
+current track, queues the analysis again and exits; launchd (KeepAlive) starts
+the new code 30 s later. Analyzer 87/87.
+
+**Container Manager, as it really behaves (2026-10-04).** Two assumptions
+failed on the real NAS: (1) Container Manager starts every service in the
+project, ignoring compose profiles, so Navidrome started early — the profile
+is gone and the docs say "don't use Navidrome until organised" instead
+(harmless: no plays recorded yet). (2) **Build** reused existing images, so
+updates never arrived (the update notice stayed, the web app stayed old).
+`pull_policy: build` on brain, librarian and web makes every Build rebuild
+from the NAS copy; Docker's cache keeps unchanged builds quick.
+
+**Check the measurements (2026-10-04).** A panel under the Library strip plays
+a random analysed track (native `<audio>`, starting 45 s in) and asks whether
+its measured tempo is right: Sounds right / Real tempo is half / double /
+Something else / Skip, or **Tap along** (≥4 taps → BPM; the verdict is
+derived within 8 %). `library/spotcheck.ts` keeps the answers
+(`DATA_DIR/brain/spotchecks.json`), reports accuracy overall and split by the
+analyzer's `tempo_confidence` (≥ 0.5), and applies corrections in
+`currentLibrary()` (half/double/tapped → `bpm`, `tempo_confidence: 1`). A
+correction only holds while the measured BPM is the one checked; a
+re-analysis that measures differently wins and the track can be checked
+again. Undo takes back the last answer. Brain 104/104.
+
+**Stop didn't stop (2026-10-04).** Container Manager greys out Build while the
+project runs, and its Stop never finished: Node as a container's first process
+ignores SIGTERM. Brain now exits on SIGTERM/SIGINT (stores are written
+atomically, nothing to flush); the librarian leaves at once when idle and
+finishes the batch in hand when working (`stop_grace_period: 2m`); both run
+with `init: true`. Measured: brain 18 ms, idle librarian 9 ms.
+
+**Listen anywhere + metre-aware spot-checks (2026-10-04).** Phase 1 as a
+guided checklist (`ListenAnywhere.tsx`, `src/setup.ts`, `GET/POST
+/api/v1/setup`): Navidrome running (live `/ping`), Navidrome account,
+Tailscale on the NAS (its tailnet name → the "Anywhere" address with a Copy
+button), Tailscale on the phone, a Subsonic app (links Navidrome's app list;
+warns off `:4533`), "SynAmp hears your apps" (live: plays reported through the
+proxy, by app), and a Wi-Fi-off test. The owner's first tempo checks raised
+6/8 and non-Western metres: tapping now recognises three-based relations
+(×3, ×⅓, ×1.5, ×⅔ → `other_level`, the tapped tempo is used), "No steady
+beat" (`tempo_confidence: 0`), and the summary adds "found the pulse" (right
+at some metrical level) next to strict accuracy. This is the human evidence
+BEAT-TIMING R4 asks for; the analyzer itself still reports one tempo (R2's
+multiple metrical hypotheses are the real fix). Brain 107/107.
+
+**Container Manager Stop keeps failing (2026-10-05), cause unknown.** After the
+SIGTERM fix, `docker compose stop` from the CLI stops all six containers in
+2–6 s, but Container Manager's Stop/Restart still log "failed" with no detail
+(nothing in /var/log/messages). The compose file validates with the NAS's
+exact compose (v2.20.1). First failure came after the `pull_policy: build`
+build, but nothing proves the link. Development updates now go through the
+CLI (`up -d --build`, folded into the owner's `synamp-sync`); revisit when
+there's an error message to go on.

@@ -23,6 +23,41 @@ export const config = {
   coreUrl: env("CORE_URL", "http://core:4533"),
   /** Small local playlist store until the Brain DB migrations are in place. */
   playlistDataPath: env("PLAYLIST_DATA_PATH", "./data/playlists.json"),
+  /**
+   * Per-track analysis signals for smart playlists (interim JSON until the
+   * analyzer → brain export exists). Defaults to the synthetic sample.
+   */
+  librarySignalsPath: env("LIBRARY_SIGNALS_PATH", "./fixtures/library.sample.json"),
+  /** Append-only listening events (JSON Lines). Defaults beside the playlist store. */
+  eventsPath: env("EVENTS_PATH", ""),
+  /** The server-owned playback session. Defaults beside the playlist store. */
+  sessionPath: env("SESSION_PATH", ""),
+  /** Where the library core sees the music (its real-path prefix), to map its paths to ours. */
+  coreMusicPath: env("CORE_MUSIC_PATH", "/music"),
+  /** Optional Last.fm scrobbling. Both empty = the feature is hidden. */
+  lastfmApiKey: env("LASTFM_API_KEY", ""),
+  lastfmApiSecret: env("LASTFM_API_SECRET", ""),
+  /** Session key and delivery state. Defaults beside the playlist store; keep it private. */
+  lastfmStatePath: env("LASTFM_STATE_PATH", ""),
+  /** Public base URL (e.g. https://music.example.net) for the Last.fm sign-in callback. Derived from the request if empty. */
+  publicUrl: env("PUBLIC_URL", ""),
+  /**
+   * Contact (email or URL) sent to MusicBrainz in the User-Agent, as its API
+   * terms ask. Needed to match albums for the missing-tracks list.
+   */
+  musicbrainzContact: env("MUSICBRAINZ_CONTACT", ""),
+  /**
+   * The `incoming/` folder (new music waiting to be filed). The brain reads it to
+   * propose imports and writes web uploads into `incoming/_web/`. Never the
+   * library itself — that stays read-only. Empty: import is off.
+   */
+  incomingPath: env("INCOMING_PATH", ""),
+  /** Written into the image at build time (see Dockerfile): which code is running. */
+  buildInfoPath: env("BUILD_INFO_PATH", new URL("../build.json", import.meta.url).pathname),
+  /** The NAS copy of apps/, read-only, to notice an update waiting for Build. Empty: don't check. */
+  sourcePath: env("SOURCE_PATH", ""),
+  /** Largest single file accepted from the web app. */
+  uploadMaxBytes: Number(env("UPLOAD_MAX_MB", "2048")) * 1024 * 1024,
   /** Required by the deployed app profile; optional for localhost development. */
   playlistApiToken: env("PLAYLIST_API_TOKEN", ""),
 } as const;

@@ -43,6 +43,23 @@ CREATE TABLE IF NOT EXISTS jobs (
 
 CREATE INDEX IF NOT EXISTS jobs_state ON jobs(state);
 
+-- Which audio each path holds (stage `identity`), for spotting moves and retags.
+CREATE TABLE IF NOT EXISTS track_audio (
+    path        TEXT PRIMARY KEY,
+    audio_hash  TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS track_audio_hash ON track_audio(audio_hash);
+
+-- A path that is the same track as an earlier one (moved or renamed). `origin`
+-- is the first path the track was known by; exported IDs are minted from it, so
+-- IDs survive moves.
+CREATE TABLE IF NOT EXISTS identity_links (
+    path       TEXT PRIMARY KEY,
+    origin     TEXT NOT NULL,
+    reason     TEXT NOT NULL,
+    linked_at  REAL NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS results (
     track_path  TEXT PRIMARY KEY,
     payload     TEXT    NOT NULL,
@@ -226,3 +243,92 @@ def load_rows(db_path: Path | str, limit: int) -> list[sqlite3.Row]:
 def missing_stages(result: AnalysisResult) -> list[str]:
     """Stages still to run for this track, in order."""
     return [s for s in STAGES if s not in result.stages_done]
+
+
+# --------------------------------------------------------------------------
+# Identity (stage `identity`, rename journal)
+# --------------------------------------------------------------------------
+
+
+def record_audio(db: Database, path: Path, audio_hash: str) -> None:
+    db.conn.execute(
+        "INSERT INTO track_audio (path, audio_hash) VALUES (?, ?) "
+        "ON CONFLICT(path) DO UPDATE SET audio_hash = excluded.audio_hash",
+        (str(path), audio_hash),
+    )
+    db.conn.commit()
+
+
+def origin_of(db: Database, path: Path | str) -> str:
+    row = db.conn.execute("SELECT origin FROM identity_links WHERE path = ?", (str(path),)).fetchone()
+    return row["origin"] if row else str(path)
+
+
+def link_identity(db: Database, path: Path | str, previous: Path | str, reason: str) -> str:
+    """Declare that `path` is the same track as `previous`. Returns the origin."""
+    origin = origin_of(db, previous)
+    if origin == str(path):
+        return origin  # moved back to where it started: no link needed
+    db.conn.execute(
+        "INSERT INTO identity_links (path, origin, reason, linked_at) VALUES (?, ?, ?, ?) "
+        "ON CONFLICT(path) DO UPDATE SET origin = excluded.origin, reason = excluded.reason, linked_at = excluded.linked_at",
+        (str(path), origin, reason, time.time()),
+    )
+    db.conn.commit()
+    return origin
+
+
+def find_donor(db: Database, audio_hash: str, exclude: Path) -> tuple[Path, bool] | None:
+    """Another path holding the same audio with analysis to reuse.
+
+    Returns (path, missing). A missing donor means the file moved; a present one
+    is a duplicate copy (its measurements are still valid for identical audio).
+    Prefers missing donors, then the earliest-seen path, so the choice is stable.
+    """
+    row = db.conn.execute(
+        """
+        SELECT a.path, t.missing FROM track_audio a
+          JOIN tracks t  ON t.path = a.path
+          JOIN results r ON r.track_path = a.path
+         WHERE a.audio_hash = ? AND a.path != ?
+         ORDER BY t.missing DESC, t.first_seen ASC, a.path ASC
+         LIMIT 1
+        """,
+        (audio_hash, str(exclude)),
+    ).fetchone()
+    return (Path(row["path"]), bool(row["missing"])) if row else None
+
+
+def apply_rename(db: Database, old: Path, new: Path, reason: str) -> bool:
+    """Carry a known track to its new path without re-reading the file.
+
+    Used for renames SynAmp itself made (the rename journal). Only applies when
+    the old path is catalogued and the new one is not, so it is idempotent.
+    """
+    if old == new:
+        return False
+    known = db.conn.execute("SELECT 1 FROM tracks WHERE path = ?", (str(old),)).fetchone()
+    taken = db.conn.execute("SELECT 1 FROM tracks WHERE path = ?", (str(new),)).fetchone()
+    if not known or taken:
+        return False
+    origin = origin_of(db, old)
+    db.conn.execute("BEGIN IMMEDIATE")
+    try:
+        for table, column in (("tracks", "path"), ("jobs", "track_path"), ("results", "track_path"), ("track_audio", "path")):
+            db.conn.execute(f"UPDATE {table} SET {column} = ? WHERE {column} = ?", (str(new), str(old)))
+        row = db.conn.execute("SELECT payload FROM results WHERE track_path = ?", (str(new),)).fetchone()
+        if row is not None:
+            payload = json.loads(row["payload"])
+            payload["track_path"] = str(new)
+            db.conn.execute("UPDATE results SET payload = ? WHERE track_path = ?", (json.dumps(payload, sort_keys=True), str(new)))
+        db.conn.execute("DELETE FROM identity_links WHERE path = ?", (str(old),))
+        if origin != str(new):
+            db.conn.execute(
+                "INSERT OR REPLACE INTO identity_links (path, origin, reason, linked_at) VALUES (?, ?, ?, ?)",
+                (str(new), origin, reason, time.time()),
+            )
+        db.conn.execute("COMMIT")
+    except BaseException:
+        db.conn.execute("ROLLBACK")
+        raise
+    return True

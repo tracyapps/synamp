@@ -73,3 +73,29 @@ test("persists edits and protects referenced nodes from deletion", () => {
     assert.deepEqual(new PlaylistStore(path).resolve(rollup.id), []);
   } finally { cleanup(); }
 });
+
+test("smart playlists store the plan, resolve live, and reject invalid plans", () => {
+  const { store, cleanup } = fixture();
+  let catalog = [{ id: "a", title: "A" }];
+  const live = new PlaylistStore(join(mkdtempSync(join(tmpdir(), "synamp-smart-")), "p.json"), { resolveSmart: () => catalog });
+  try {
+    const plan = {
+      version: "2.0", intent: { query_type: "exclusion" }, target_size: 10,
+      constraints: [{ id: "no_piano", source_phrase: "no piano", hard: true, explicit_exclusion: true, unknown_policy: "exclude",
+        confidence: 0.8, where: { field: "instruments.piano", op: "lt", value: 0.2 } }],
+      ranking: { signals: [] }, relaxation: { min_results: 1, tiers: "strict", ladder: [] },
+    };
+    const smart = live.create({ type: "smart", name: "No piano", plan, prompt: "no piano" });
+    assert.equal(smart.type, "smart");
+    assert.match(smart.type === "smart" ? smart.planHash : "", /^[0-9a-f]{64}$/);
+    const roll = live.create({ type: "rollup", name: "All", sourceId: smart.id, mode: "merge" });
+    assert.deepEqual(live.resolve(roll.id).map((track) => track.id), ["a"]);
+    catalog = [...catalog, { id: "b", title: "B" }];
+    assert.deepEqual(live.resolve(roll.id).map((track) => track.id), ["a", "b"], "a newly analysed track joins without re-saving");
+    assert.throws(() => live.create({ type: "smart", name: "Bad", plan: { ...plan, version: "9" } }), /Invalid plan at \$\.version/);
+    assert.throws(() => live.addTrack(smart.id, { id: "x", title: "X" }), /only be added to playlists/);
+    // A store without a library source refuses rather than returning an empty list.
+    const offline = store.create({ type: "smart", name: "Offline", plan });
+    assert.throws(() => store.resolve(offline.id), /need a library source/);
+  } finally { cleanup(); }
+});

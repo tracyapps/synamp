@@ -21,6 +21,10 @@ why the layout is shaped this way.
 The music share is mounted **read-only** into the containers. Everything the app
 *writes* lives under `DATA_DIR`, which is also the only thing you need to back up.
 
+> **First time?** Follow [`../docs/synamp/FIRST-RUN.md`](../docs/synamp/FIRST-RUN.md)
+> instead of this page from top to bottom: it puts these steps in the safe order
+> (tidy the library before Navidrome's first scan).
+
 ## 1. One-time setup
 
 1. In DSM, install **Container Manager** from Package Center.
@@ -32,6 +36,8 @@ The music share is mounted **read-only** into the containers. Everything the app
    mkdir -p /volume1/docker/synamp/data/caddy
    mkdir -p /volume1/docker/synamp/data/caddy-config
    mkdir -p /volume1/docker/synamp/data/brain
+   mkdir -p /volume1/docker/synamp/data/librarian
+   mkdir -p /volume1/music/.synamp
    ```
 
    **Synology's Docker does not auto-create bind-mount host directories.** If you
@@ -50,19 +56,27 @@ The music share is mounted **read-only** into the containers. Everything the app
    ```
 
    At minimum: `MUSIC_PATH`, `DATA_DIR`, a real `POSTGRES_PASSWORD`, and a
-   long random `PLAYLIST_API_TOKEN` if using the `app` profile.
+   long random `PLAYLIST_API_TOKEN`.
 
    **Never put `.env` inside the music share**, and never commit it. It is
    already gitignored.
 
 ## 2. Bring it up
 
-```bash
-cd /volume1/docker/synamp/deploy
+DSM → **Container Manager** → **Project** → **Create**: name `synamp`, path
+`/volume1/docker/synamp/deploy`, **Use existing docker-compose.yml** → Done.
+That builds and starts the database, brain, web app, edge and librarian.
 
-docker compose --env-file .env up -d                  # library core + database
-docker compose --env-file .env --profile app up -d    # + brain, web, edge
-```
+Navidrome (`core`) starts with them. Container Manager starts every service
+in the project (it ignores compose profiles), so don't use Navidrome or point
+apps at it until the library is organised — see `docs/synamp/FIRST-RUN.md`.
+
+**Updating:** copy the new `apps/` and `deploy/` over (`synamp-sync` on the
+Mac), then **Project → synamp → Action → Build**. The web app notices the new
+copy and says so at the top of the page until it's built; **Settings → About
+this install** shows the running version.
+
+From a terminal instead: `sudo /usr/local/bin/docker compose --env-file .env up -d --build`.
 
 Then:
 
@@ -94,6 +108,62 @@ Phase 1 complete.
 The first Navidrome scan of a ~4,200-album library takes a few minutes; watch it
 at `http://<nas>:4533/`.
 
+## Plays from other apps, and Last.fm
+
+Native apps reach Navidrome **through the brain** (`/rest/*` → brain → core).
+The brain passes every call through untouched and, when Navidrome accepts an
+app's `scrobble`, records the play. For that to work:
+
+- **Point apps at the edge** (`http://<nas>:8080`), never at `:4533` directly —
+  plays sent straight to Navidrome bypass SynAmp.
+- **Real paths.** Compose sets `ND_SUBSONIC_DEFAULTREPORTREALPATH=true`, which
+  applies to players Navidrome sees for the first time. For apps you already
+  connected, open Navidrome → your profile → **Players**, pick each app and turn
+  on **Report Real Path**. Without it, plays are still recorded but show as
+  “could not be matched” in SynAmp.
+- Apps report plays, not skips, so they only ever count as a mild positive.
+
+**Last.fm (optional).** Paste the API key and shared secret into SynAmp's
+**Settings** panel (or `LASTFM_API_KEY` / `LASTFM_API_SECRET` in `.env`), then open **Listening history & Last.fm →
+Connect Last.fm**. It scrobbles plays from the SynAmp player and from your
+other apps, only while switched on, using names from tags (never folder
+guesses). **Do not also link Last.fm inside Navidrome** (Settings → Personal →
+Last.fm), or plays from other apps are sent twice. The session key is stored in
+`DATA_DIR/brain/lastfm.json` — keep that directory private.
+
+## Organising the library (the librarian)
+
+The **Organise the library** panel proposes tidier names and folders; nothing
+changes until you approve and apply. Applying needs the **librarian**, the one
+service with write access to the music. It starts with the app and sits idle
+until you apply a batch; **Pause file changes** in the Organise panel holds it
+(a batch already under way finishes first). Before your first batch:
+
+1. Take a Btrfs snapshot of the music share first (Snapshot & Replication).
+2. In `deploy/.env` set `PUID`/`PGID` to the owner of the music files. Over
+   SSH on the NAS, `ls -ln /volume1/music/library | head -5` shows them as the
+   3rd and 4th columns (e.g. `1026 100`); `id tapps` should agree. Check
+   `MUSIC_SHARE` (default `/volume1/music`) and create `/volume1/music/.synamp`
+   for the journal.
+3. `docker compose --env-file .env --profile app up -d --build brain web edge librarian`
+4. On the Mac, point the analyzer at the same journal
+   (`RENAME_JOURNAL_PATH=/Volumes/music/.synamp/renames.jsonl` in
+   `~/SynAmp-data/env.sh`). With the analyzer's background worker installed,
+   it scans and exports by itself after each batch.
+
+### Adding new music
+
+Two doors, one review: copy albums into `/volume1/music/incoming/` (Finder,
+over the `music` share), or drag files and folders onto **Add music** in the
+web app (copies; your originals stay put). Either way they appear under
+**New music** in the Organise panel, named to the standard: tracks for an album
+you already have go into that album's folder, an artist you already have keeps
+its folder spelling, and a file identical to one already there is set aside in
+`incoming/_duplicates/` (never deleted). Approve, Apply, and the librarian files
+them. Files still being copied into `incoming/` wait until they've been still
+for 30 seconds. The brain needs read-write on `incoming/` only (`INCOMING_PATH`);
+the library stays read-only for everything but the librarian.
+
 ## 3. Remote access
 
 Put **Tailscale** in front rather than port-forwarding: install the Synology
@@ -116,10 +186,8 @@ The worker writes results into the `db` service, which *does* run on the NAS.
 
 - Audio transcoding is cheap: the V1500B handles several simultaneous audio
   streams. Hardware acceleration is irrelevant (that is a video concern).
-- The `--profile app` services build from the relative contexts `../apps/brain`
-  and `../apps/web`, so `deploy/` has to sit **inside the repo** (`<repo>/deploy`,
-  with `<repo>/apps/` present). Copying only `deploy/` to the NAS is not enough
-  for that profile. The base profile still gives you a working library +
-  Subsonic server on its own.
+- The brain, librarian and web images build from `../apps`, so `deploy/` has
+  to sit next to `apps/` (as `synamp-sync` copies them). The brain also mounts
+  `../apps` read-only, only to compare it with the code it's running.
 - **Never bind-mount `DATA_DIR` from a network share.** Postgres needs real file
   locking; a network filesystem can corrupt it. Local disk or the NAS only.

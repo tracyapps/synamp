@@ -15,10 +15,12 @@
 		reverse_proxy brain:3001
 	}
 
-	# Subsonic endpoint on the library core, so existing native clients
-	# (play:Sub, substreamer, Symfonium, Feishin, …) can talk to SynAmp.
+	# Subsonic endpoint for native clients (play:Sub, substreamer, Symfonium,
+	# Feishin, …). It goes through the brain, which forwards every call to the
+	# library core unchanged and notes the plays apps report (scrobble), so
+	# listening in other apps reaches SynAmp — and Last.fm, if you turn it on.
 	handle /rest/* {
-		reverse_proxy core:4533
+		reverse_proxy brain:3001
 	}
 
 	# The SynAmp web app.

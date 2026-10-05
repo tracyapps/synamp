@@ -82,6 +82,7 @@ for what each of these implies for the design.
 
 - [Agent implementation roadmap](plans/AGENT-ROADMAP.md) — current research handoff, dependencies and acceptance tests
 - [Beat timing plan](plans/BEAT-TIMING.md) — dense-mix repair and remaining real-music timing work
+- [Library care plan](plans/LIBRARY-CARE.md) — identity, missing tracks, organising and importing the library
 - [Latest findings](../research/beat-timing-findings-2026-09-29.md) — reproduction and fresh verification
 
 - [`DECISIONS.md`](./DECISIONS.md) — accepted Phase 0 decisions + hardware baseline

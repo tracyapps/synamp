@@ -21,7 +21,8 @@ from pathlib import Path
 
 # Stages run in this order. A track resumes at the first stage missing from
 # `stages_done`, so adding a stage is the only change needed to back-fill it.
-STAGES: tuple[str, ...] = ("dsp_core", "beat")
+# `identity` runs first so a retagged or moved file can reuse earlier analysis.
+STAGES: tuple[str, ...] = ("identity", "dsp_core", "beat")
 
 
 @dataclass(frozen=True)
@@ -48,6 +49,17 @@ class AnalysisResult:
     """
 
     track_path: Path
+
+    # --- identity -----------------------------------------------------------
+    # Filled by: identity (see identity.py). Not a signal: never used to rank.
+    audio_hash: str | None = None
+    """sha256 over this analyzer's decoded samples — unchanged by tags or renames."""
+    audio_hash_method: str | None = None
+    audio_duration_s: float | None = None
+    fingerprint: str | None = None
+    """Chromaprint fingerprint (fpcalc). Null when the tool is missing or failed."""
+    fingerprint_status: str | None = None
+    """measured | tool_missing | failed."""
 
     # --- audio embeddings -------------------------------------------------
     # Filled by: a future `embedding` stage (permissive encoder only).

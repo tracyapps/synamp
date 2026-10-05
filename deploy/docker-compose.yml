@@ -9,8 +9,15 @@
 #   the analysis worker             ->  does NOT run here; it runs on the brain
 #                                       machine (M4 Pro). See deploy/README.md.
 #
-#   docker compose --env-file .env up -d                  # library only (works today)
-#   docker compose --env-file .env --profile app up -d    # + brain, web, edge
+# Run it from DSM's Container Manager: Project -> Create, path
+# /volume1/docker/synamp/deploy, "use the existing docker-compose.yml".
+# Updating later = copy the new code over (synamp-sync on the Mac), then
+# Project -> synamp -> Action -> Build. See docs/synamp/FIRST-RUN.md.
+#
+# The services SynAmp builds itself use `pull_policy: build`, so every Build
+# in Container Manager rebuilds them from the copy on the NAS (Docker's cache
+# keeps that quick when nothing changed). Without it, Build reuses the old
+# images and an update never arrives.
 
 name: synamp
 
@@ -42,6 +49,9 @@ services:
       ND_SCANSCHEDULE: ${ND_SCANSCHEDULE:-1h}
       ND_LOGLEVEL: ${ND_LOGLEVEL:-info}
       ND_SESSIONTIMEOUT: 24h
+      # Report real file paths to Subsonic apps (new players), so the brain can match
+      # plays from other apps to analysed tracks. Existing players: see README.
+      ND_SUBSONIC_DEFAULTREPORTREALPATH: "true"
       # Clients choose original on LAN or request maxBitRate on cellular.
       ND_DEFAULTDOWNSAMPLINGFORMAT: opus
       ND_TRANSCODINGCACHESIZE: ${TRANSCODE_CACHE:-1GiB}
@@ -59,10 +69,16 @@ services:
 
   # --- SynAmp brain: playlists, AI wiring, playback session -------------------
   brain:
-    profiles: ["app"]
     build:
-      context: ../apps/brain
+      # The whole apps/ folder, so the image can fingerprint the web code too.
+      context: ../apps
+      dockerfile: brain/Dockerfile
+    pull_policy: build
+    # A tiny init as the first process, so Stop reaches Node straight away.
+    init: true
     restart: unless-stopped
+    # Same owner as your music files, so uploads it writes to incoming/ can be filed.
+    user: "${PUID:-1026}:${PGID:-100}"
     depends_on:
       db:
         condition: service_healthy
@@ -74,18 +90,67 @@ services:
       CORE_URL: http://core:4533
       PLAYLIST_DATA_PATH: /data/playlists.json
       PLAYLIST_API_TOKEN: ${PLAYLIST_API_TOKEN:?set PLAYLIST_API_TOKEN in deploy/.env for the app profile}
+      # Where Navidrome sees the library (its real-path prefix) — same mount as ours.
+      CORE_MUSIC_PATH: /music
+      # Optional Last.fm scrobbling. Leave empty to hide the feature.
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
+      LASTFM_API_SECRET: ${LASTFM_API_SECRET:-}
+      PUBLIC_URL: ${PUBLIC_URL:-}
+      # Contact (email or URL) for MusicBrainz's User-Agent; needed for the missing-tracks list.
+      MUSICBRAINZ_CONTACT: ${MUSICBRAINZ_CONTACT:-}
+      # The analyzer's export, written by the Mac into the share's .synamp/ folder.
+      LIBRARY_SIGNALS_PATH: /shared/library-signals.json
+      # New music waiting to be filed; web uploads land in incoming/_web/. Never the library.
+      INCOMING_PATH: /incoming
+      UPLOAD_MAX_MB: ${UPLOAD_MAX_MB:-2048}
+      # The NAS copy of the code, to tell you when an update is waiting for Build.
+      SOURCE_PATH: /source
     volumes:
+      - ../apps:/source:ro
       - ${MUSIC_PATH:?set MUSIC_PATH in deploy/.env}:/music:ro
+      - ${INCOMING_PATH:-/volume1/music/incoming}:/incoming
+      - ${MUSIC_SHARE:-/volume1/music}/.synamp:/shared:ro
       - ${DATA_DIR:?set DATA_DIR in deploy/.env}/brain:/data
     expose:
       - "3001"
     networks: [synamp]
 
+  # --- librarian: the ONLY service that may change the music files ----------
+  # Starts with the app and waits for work. It changes nothing until you apply a
+  # batch you approved in the web app (renames/moves, and filing new music from
+  # incoming/; journaled, undoable). "Pause file changes" in the Organise panel
+  # holds it without stopping the container. Same image as the brain.
+  librarian:
+    build:
+      context: ../apps
+      dockerfile: brain/Dockerfile
+    pull_policy: build
+    init: true
+    # On Stop it finishes the batch in hand (or leaves at once when idle).
+    stop_grace_period: 2m
+    command: ["node", "--experimental-strip-types", "src/librarian/main.ts"]
+    restart: unless-stopped
+    depends_on: [brain]
+    user: "${PUID:-1026}:${PGID:-100}"
+    environment:
+      # One mount for the whole share, so library/ and incoming/ are on the same
+      # filesystem and filing new music is an instant rename, not a copy.
+      LIBRARIAN_MUSIC_PATH: /share/library
+      LIBRARIAN_INCOMING_PATH: /share/incoming
+      RENAME_JOURNAL_PATH: /share/.synamp/renames.jsonl
+      LIBRARIAN_STATE_DIR: /data
+      SYNAMP_BRAIN_URL: http://brain:3001
+      SYNAMP_BRAIN_TOKEN: ${PLAYLIST_API_TOKEN:?set PLAYLIST_API_TOKEN in deploy/.env}
+    volumes:
+      - ${MUSIC_SHARE:-/volume1/music}:/share          # read-write: this service only
+      - ${DATA_DIR:?set DATA_DIR in deploy/.env}/librarian:/data
+    networks: [synamp]
+
   # --- SynAmp web app ---------------------------------------------------------
   web:
-    profiles: ["app"]
     build:
       context: ../apps/web
+    pull_policy: build
     restart: unless-stopped
     expose:
       - "80"
@@ -93,10 +158,11 @@ services:
 
   # --- edge: single entry point, TLS, routing ---------------------------------
   edge:
-    profiles: ["app"]
     image: caddy:2-alpine
     restart: unless-stopped
-    depends_on: [brain, web, core]
+    # Not on `core`: the edge never talks to Navidrome directly (the brain proxies
+    # /rest), so the app can run before Navidrome's first scan — see FIRST-RUN.md.
+    depends_on: [brain, web]
     ports:
       - "${HTTP_PORT:-8080}:80"
     volumes:

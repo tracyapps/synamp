@@ -1,0 +1,36 @@
+/* Missing-tracks panel. Reuses .listening__toggle and .chip from the other panels. */
+
+.panel.missing { min-height: 0; margin-top: 18px; }
+.missing__body { padding: 4px 24px 22px; border-top: 1px solid var(--hair); }
+.missing__matcher { display: flex; gap: 16px; align-items: center; justify-content: space-between; padding: 14px 0; font-size: 14px; }
+.missing__matcher p { margin: 0; max-width: 80ch; }
+.missing__matcher code, .missing__album code, .missing__found code { font: 12px var(--font-mono); color: var(--accent); }
+.missing__tabs, .missing__sort { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip.is-on { border-color: var(--accent); color: var(--accent); }
+.missing__filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 16px 0; }
+.missing__filters label { min-width: 160px; }
+.missing__album { border-top: 1px solid var(--hair); padding: 14px 0; }
+.missing__album-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.missing__album-head h4 { margin: 0; font: 600 15px var(--font-display); }
+.missing__album-head h4 small { font-weight: 400; color: var(--muted); }
+.missing__album-head .quiet { margin-left: auto; }
+.missing__table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+.missing__table th { text-align: left; font: 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; }
+.missing__table td { padding: 5px 8px; border-top: 1px solid var(--hair); vertical-align: middle; }
+.missing__table .num { font-family: var(--font-mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+.missing__table select, .missing__table input { padding: 5px 7px; font-size: 13px; }
+.missing__table tr.is-ignored td { color: var(--muted); }
+.missing__pages { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 14px; font-size: 13px; color: var(--muted); }
+.missing__found { font-size: 14px; padding-left: 18px; }
+.candidates { list-style: none; padding: 0; margin: 10px 0; }
+.candidates li { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 1px solid var(--hair); font-size: 14px; }
+.candidates small { display: block; color: var(--muted); font-size: 12px; }
+.choose__search { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-top: 8px; }
+.choose__search label { min-width: 180px; }
+@media (max-width: 850px) {
+  .missing__table thead { display: none; }
+  .missing__table tr { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 8px; padding: 6px 0; border-top: 1px solid var(--hair); }
+  .missing__table td { border: none; padding: 2px 0; }
+  .missing__table td:nth-child(n+4) { grid-column: 1 / -1; }
+  .missing__matcher { flex-direction: column; align-items: flex-start; }
+}

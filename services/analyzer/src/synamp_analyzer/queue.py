@@ -83,6 +83,29 @@ class JobQueue:
         self.db.conn.commit()
         return added
 
+    def requeue_incomplete(self, stages: tuple[str, ...]) -> int:
+        """Re-open finished jobs that lack a stage added since they ran.
+
+        This is what makes "adding a stage back-fills automatically" true for
+        tracks that were already DONE: they go back to the queue with their
+        completed stages intact, so only the new stage runs.
+        """
+        rows = self.db.conn.execute(
+            "SELECT track_path, stages_done FROM jobs WHERE state = ?", (JobState.DONE.value,)
+        ).fetchall()
+        now = time.time()
+        reopened = 0
+        for row in rows:
+            done = set(json.loads(row["stages_done"] or "[]"))
+            if set(stages) - done:
+                self.db.conn.execute(
+                    "UPDATE jobs SET state = ?, updated_at = ? WHERE track_path = ?",
+                    (JobState.PENDING.value, now, row["track_path"]),
+                )
+                reopened += 1
+        self.db.conn.commit()
+        return reopened
+
     # -- workers -----------------------------------------------------------
 
     def claim(self) -> Job | None:

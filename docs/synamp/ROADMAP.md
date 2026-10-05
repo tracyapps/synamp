@@ -65,6 +65,31 @@ pass — see Phase 3, but a `beets`/Picard pass may be needed here first).
 
 ---
 
+## Library care — leave the library better than we found it
+
+🎯 An organised, well-named, complete library: see analysis progress, list every
+missing track, tidy names and folders, and import new music — before the big
+analysis pass and Navidrome's first scan, because renames break path-based
+identity. Detailed plan: [`plans/LIBRARY-CARE.md`](plans/LIBRARY-CARE.md).
+
+📦
+1. Track identity that survives renames and retags (audio hash + Chromaprint) and a rename journal.
+2. Library health and analysis progress view.
+3. Missing-tracks list from MusicBrainz release matching — sortable, taggable, self-clearing.
+4. Organise: propose → review → apply, journaled and undoable, librarian-only writes.
+5. Import: web drag-and-drop and an `incoming/` watcher (Dropbox later), checksum-verified.
+6. Discography gaps with links to listen or buy.
+
+✅
+- Renaming or retagging a file keeps its analysis, plays and feedback.
+- Every album with holes appears in the missing list, and re-ripped tracks clear it.
+- No file changes without an approved plan, and every batch can be undone.
+
+⚠️ Writing to the library is the riskiest thing SynAmp does: snapshot first,
+journal everything, never retag silently.
+
+---
+
 ## Phase 2 — The playlist system that scales
 
 🎯 Playlists as good as (better than) the old Winamp experience, at library scale.

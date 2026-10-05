@@ -39,8 +39,9 @@ export ANALYZER_DB_PATH=/tmp/synamp/analyzer.sqlite3
 uv run synamp-analyze sample --count 200       # random subset → a symlink folder
 uv run synamp-analyze scan                     # walk the share, queue new/changed files
 uv run synamp-analyze analyze [--limit N]      # process the queue
-uv run synamp-analyze stats                    # catalog and queue state
+uv run synamp-analyze stats [--json]           # catalog, queue and per-stage progress
 uv run synamp-analyze inspect --limit 3        # dump stored metrics for a few tracks
+uv run synamp-analyze export --out ~/synamp-sample/library-signals.json   # hand results to the brain
 ```
 
 Exit codes: `0` success, `1` at least one job failed, `2` usage error.
@@ -71,6 +72,25 @@ LIBRARY_PATH=~/synamp-sample ANALYZER_DB_PATH=~/synamp-sample/analyzer.sqlite3 \
   to take a 200-file sample, and the worker only ever reads.
 
 ## What this worker currently produces
+
+### Stage `identity` — who a recording is, whatever its name
+
+Runs first, so later stages can be skipped when the audio is already known.
+
+| Field | Meaning |
+|---|---|
+| `audio_hash` | sha256 over the decoded samples (`pcm-mono-int16-sha256/1`). Editing tags or renaming does not change it; changing the audio does. |
+| `fingerprint` | Chromaprint fingerprint from `fpcalc`, which recognises the same recording across formats (MP3 vs FLAC) and feeds MusicBrainz/AcoustID matching. Optional: install with `brew install chromaprint`. Without it the field is null and `fingerprint_status` says `tool_missing`. |
+
+What it buys:
+
+- **Retagged file** (bytes changed, audio didn't): keeps its analysis instead of re-running every stage.
+- **Moved or renamed file** (a vanished path had the same audio): inherits that track's analysis *and its identity*, so the exported ID — and every play, love and playlist removal attached to it — follows the file.
+- **Duplicate copy** (another present file has the same audio): reuses the measurements but stays a separate track; duplicates are findable by `audio_hash`.
+- **Renames SynAmp makes itself** are listed in a rename journal (`RENAME_JOURNAL_PATH`, JSON Lines of library-relative `from`/`to`). `scan` applies it first, so those files are recognised without even being decoded. The librarian (brain `src/librarian/`) writes it; on the NAS it lives at `/volume1/music/.synamp/renames.jsonl`, so on the Mac set `RENAME_JOURNAL_PATH=/Volumes/music/.synamp/renames.jsonl` and run `scan` + `export` after applying a batch.
+- Tracks analysed before this stage existed are re-opened for just this stage on the next `scan` (reported as "need a newly added stage").
+
+The hash is defined over this analyzer's decode, so it is a stable identity on one machine and decoder version — not a cross-application standard.
 
 ### Stage `dsp_core` — the model-free metric block
 
@@ -163,6 +183,80 @@ yet invalidate completed stages automatically. Recompute that stage explicitly:
 ```bash
 uv run synamp-analyze analyze --redo-stage beat
 ```
+
+## Running in the background (controlled from the web app)
+
+Day to day, nobody needs a Terminal: the analyzer runs as a background worker
+and takes its orders from the web app's **Library** strip — **Scan for
+changes** (scan + update the library list), **Start analysis**, **Pause
+analysis**. After the librarian applies a batch, the brain queues a scan +
+export by itself.
+
+```bash
+uv run synamp-analyze install-agent     # macOS, once: run now and at every login (launchd)
+uv run synamp-analyze uninstall-agent   # remove it again
+uv run synamp-analyze worker            # the same thing in the foreground (any OS)
+```
+
+The login item loads `~/SynAmp-data/env.sh` (see `mac-env.example.sh`) and
+logs to `~/SynAmp-data/worker.log`. The worker exports to
+`<share>/.synamp/library-signals.json` (beside the library, where the brain
+reads it; `SYNAMP_EXPORT_PATH` overrides), keeps the Mac awake while
+analysing (`caffeinate`), exports hourly during long runs and at the end,
+and, if the music isn't mounted, tries `SYNAMP_MUSIC_SHARE_URL` (e.g.
+`smb://Syd.local/music`) through Finder with the Keychain password.
+
+## Progress in the web app
+
+Set these and the worker reports progress to the brain, which shows it in the
+web app's **Library** strip (state, tracks done, time left, current file,
+per-stage coverage, unreadable files):
+
+```bash
+export SYNAMP_BRAIN_URL=http://<nas>:8080      # or http://localhost:3001 in development
+export SYNAMP_BRAIN_TOKEN=<PLAYLIST_API_TOKEN>
+```
+
+Reports go every ~15 s during `analyze` and once at the end of `scan` and
+`analyze`. Reporting is best-effort: if the brain is unreachable, analysis
+carries on regardless. If reports stop while a run was in progress (the Mac
+went to sleep), the web app says so after two minutes. Time left is estimated
+from tracks finished in the current run, once at least three have finished.
+
+## Exporting to the brain
+
+`synamp-analyze export` writes `synamp.library-signals/1` JSON — the file the
+brain's smart playlists read through `LIBRARY_SIGNALS_PATH`. It is the contract
+between the two services; the SQLite queue stays private to the worker.
+
+- **Only current values.** A stage's fields are exported only while the job
+  record counts that stage as done. A changed file (reset by `scan`) or a stage
+  cleared with `--redo-stage` has its old values withheld, not served as current.
+- **Null is absence.** Unmeasured values are omitted, never written as 0.
+- **Declared fields only.** `EXPORTED_SIGNALS` in `export.py` names each field
+  and its stage. Tests fail if a stage produces a field that is neither exported
+  nor listed as internal, and the brain's tests fail if an exported name is not
+  in its signal registry.
+- **Stable IDs.** `id` is a hash of the path relative to `LIBRARY_PATH`, so a
+  sample (a symlink mirror of the library) and the full library agree.
+- **Names come from tags** (`tinytag`, MIT; title/artist/album/album artist and
+  duration), marked `metadata_source: "tags"`. Files without a title and artist
+  fall back to the folder layout (`Artist/Album/NN Title.ext`,
+  `metadata_source: "path"`). Tags are cached per file size and modification
+  time, so re-exports don't re-read the share; `--no-tags` skips them entirely.
+  Only tag-sourced names are ever sent to Last.fm.
+- **Album facts for the missing-tracks list:** `track_no`/`disc_no` (from tags,
+  else a leading `07 -` / `1-07` in the filename), `track_total`, `disc_total`,
+  `year`, and `mb_albumid` when the file carries a MusicBrainz release ID.
+- Written atomically (temp file + rename), so a running brain never reads half a file.
+
+```bash
+uv run synamp-analyze export --out ~/synamp-sample/library-signals.json
+LIBRARY_SIGNALS_PATH=~/synamp-sample/library-signals.json pnpm brain:dev
+```
+
+Today that makes tempo, pulse, loudness and microtiming rules work on real music.
+Voice, instrument and mood rules stay "not measured" until those stages exist.
 
 ## Licensing note
 

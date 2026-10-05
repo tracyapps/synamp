@@ -1,0 +1,32 @@
+/* Listening history & Last.fm panel. */
+
+.panel.listening { min-height: 0; margin-top: 18px; }
+.listening__toggle {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 18px 24px;
+  background: none; border: none; color: var(--text); font: 600 17px var(--font-display); text-align: left;
+}
+.listening__toggle span:last-child { color: var(--accent); font: 18px var(--font-mono); }
+.listening__body { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 4px 24px 22px; border-top: 1px solid var(--hair); }
+.listening__body h3 { margin: 18px 0 8px; font: 600 15px var(--font-display); }
+.listening__body p { margin: 0 0 10px; font-size: 14px; }
+.listening__body code { font: 12px var(--font-mono); color: var(--accent); }
+.listening__clients { list-style: none; padding: 0; margin: 0 0 10px; font-size: 14px; }
+.listening__clients li { display: flex; justify-content: space-between; padding: 5px 0; border-top: 1px solid var(--hair); }
+.listening__clients span { font-family: var(--font-mono); color: var(--muted); }
+.listening__stats { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 12px 0; font-size: 14px; }
+.listening__stats div { display: flex; gap: 6px; }
+.listening__stats dt { color: var(--muted); }
+.listening__stats dd { margin: 0; }
+.listening__actions { display: flex; gap: 8px; margin: 10px 0; }
+.listening__message { grid-column: 1 / -1; min-height: 1.2em; color: var(--muted); }
+
+/* An accessible on/off switch: a button with role="switch" and aria-checked. */
+.switch { display: inline-flex; align-items: center; gap: 10px; background: none; border: none; color: var(--text); padding: 4px 0; font-size: 14px; }
+.switch__track { width: 38px; height: 22px; border-radius: 999px; background: #34343c; position: relative; flex: none; }
+.switch__thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--text); }
+.switch.is-on .switch__track { background: var(--accent); }
+.switch.is-on .switch__thumb { left: 19px; background: #17130d; }
+@media (prefers-reduced-motion: no-preference) { .switch__thumb { transition: left .15s ease; } }
+.switch:disabled { opacity: .5; }
+
+@media (max-width: 850px) { .listening__body { grid-template-columns: 1fr; } }

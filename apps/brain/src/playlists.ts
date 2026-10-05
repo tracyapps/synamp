@@ -1,16 +1,24 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomUUID } from "node:crypto";
+import { validatePlan } from "./query/plan.ts";
+import type { QueryPlan } from "./query/plan.ts";
 
 export type TrackRef = { id: string; title: string; artist?: string };
 type BaseNode = { id: string; name: string; parentId: string | null };
 export type PlaylistNode =
   | (BaseNode & { type: "folder" })
   | (BaseNode & { type: "playlist"; tracks: TrackRef[] })
-  | (BaseNode & { type: "rollup"; sourceId: string; mode: "merge" | "shuffle" | "interleave" });
+  | (BaseNode & { type: "rollup"; sourceId: string; mode: "merge" | "shuffle" | "interleave" })
+  /** A saved query: the plan is stored, never the track list, so membership stays live. */
+  | (BaseNode & { type: "smart"; plan: QueryPlan; planHash: string; prompt?: string });
 export type CreateNode =
   | { type: "folder" | "playlist"; name: string; parentId?: string | null }
-  | { type: "rollup"; name: string; parentId?: string | null; sourceId: string; mode: "merge" | "shuffle" | "interleave" };
+  | { type: "rollup"; name: string; parentId?: string | null; sourceId: string; mode: "merge" | "shuffle" | "interleave" }
+  | { type: "smart"; name: string; parentId?: string | null; plan: unknown; prompt?: string };
+
+/** Resolves a smart playlist's plan to its current strict-tier tracks. */
+export type SmartResolver = (plan: QueryPlan, planHash: string, playlistId: string) => TrackRef[];
 
 export class PlaylistError extends Error {
   status: number;
@@ -20,9 +28,11 @@ export class PlaylistError extends Error {
 export class PlaylistStore {
   private nodes: PlaylistNode[];
   private path: string;
+  private resolveSmart?: SmartResolver;
 
-  constructor(path: string) {
+  constructor(path: string, options: { resolveSmart?: SmartResolver } = {}) {
     this.path = path;
+    this.resolveSmart = options.resolveSmart;
     try {
       this.nodes = JSON.parse(readFileSync(path, "utf8")) as PlaylistNode[];
       if (!Array.isArray(this.nodes)) throw new Error("Invalid playlist data");
@@ -70,6 +80,14 @@ export class PlaylistStore {
       this.nodes.push(node);
       try { this.resolve(node.id); } catch (error) { this.nodes.pop(); throw error; }
       this.nodes.pop();
+    } else if (input.type === "smart") {
+      const checked = validatePlan(input.plan);
+      if (!checked.ok) {
+        const first = checked.errors[0];
+        throw new PlaylistError(first ? `Invalid plan at ${first.path}: ${first.message}` : "Invalid plan");
+      }
+      const prompt = typeof input.prompt === "string" ? input.prompt.trim().slice(0, 500) : "";
+      node = { ...base, type: "smart", plan: checked.plan, planHash: checked.hash, ...(prompt ? { prompt } : {}) };
     } else throw new PlaylistError("Invalid node type");
     this.nodes.push(node);
     this.save();
@@ -122,6 +140,10 @@ export class PlaylistStore {
       const node = this.get(nodeId);
       const next = new Set(ancestors).add(nodeId);
       if (node.type === "playlist") return [...node.tracks];
+      if (node.type === "smart") {
+        if (!this.resolveSmart) throw new PlaylistError("Smart playlists need a library source", 503);
+        return this.resolveSmart(node.plan, node.planHash, node.id);
+      }
       const source = node.type === "rollup" ? this.get(node.sourceId) : node;
       const children = source.type === "folder"
         ? this.nodes.filter((item) => item.parentId === source.id)
