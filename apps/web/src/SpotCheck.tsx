@@ -7,21 +7,26 @@ import "./styles/spotcheck.css";
  * track for smart playlists (see apps/brain/src/library/spotcheck.ts).
  */
 
-type Verdict = "right" | "half" | "double" | "wrong" | "skip";
+type Verdict = "right" | "half" | "double" | "other_level" | "wrong" | "no_beat" | "skip";
 type Track = {
   id: string; title: string; artist?: string; album?: string; year?: number; duration_s?: number;
   bpm: number; tempo_confidence: number | null; stream_url: string;
 };
-type Counts = { checked: number; right: number; half: number; double: number; wrong: number; accuracy: number | null };
+type Counts = {
+  checked: number; right: number; half: number; double: number; other_level: number; wrong: number;
+  accuracy: number | null; pulse_found: number | null;
+};
 type Summary = Counts & {
-  skipped: number; confident: Counts; unsure: Counts; corrections: number; analysed_with_tempo: number;
+  skipped: number; no_beat: number; confident: Counts; unsure: Counts; corrections: number; analysed_with_tempo: number;
   recent: Array<{ id: string; verdict: Verdict; measured_bpm: number; tapped_bpm?: number; title?: string; artist?: string; still_applies: boolean }>;
 };
 type View = { track: Track | null; summary: Summary; checked?: { id: string; verdict: Verdict; title?: string } };
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
 
 const VERDICT_TEXT: Record<Verdict, string> = {
-  right: "sounds right", half: "real tempo is half", double: "real tempo is double", wrong: "something else", skip: "skipped",
+  right: "sounds right", half: "real tempo is half", double: "real tempo is double",
+  other_level: "same beat, counted in threes (your tapped tempo is used)", wrong: "something else",
+  no_beat: "no steady beat", skip: "skipped",
 };
 const pct = (n: number | null) => (n === null ? "–" : `${Math.round(n * 100)}%`);
 const bpmText = (n: number) => `${Math.round(n)} BPM`;
@@ -99,7 +104,8 @@ export default function SpotCheck({ request }: { request: Request }) {
 
               <div className="spotcheck__tap">
                 <button type="button" className="spotcheck__tap-button" onClick={tap} aria-describedby={`${id}-tap-hint`}>Tap along</button>
-                <p className="muted" id={`${id}-tap-hint`}>Optional: press it on every beat (or tab to it and press Space). Four taps or more give a tempo.</p>
+                <p className="muted" id={`${id}-tap-hint`}>Optional: press it on every beat (or tab to it and press Space); four taps or more give a tempo.
+                  Tap what you’d nod your head or walk to. In 6/8 and other songs that move in threes, that’s usually the big beat — two per bar in 6/8 — and your tapped tempo is what SynAmp will use.</p>
                 <p className="spotcheck__tapped" role="status">{tapped ? <>Your tempo: <strong>{bpmText(tapped)}</strong> ({taps.length} taps)</> : taps.length ? `${taps.length} ${taps.length === 1 ? "tap" : "taps"}…` : ""}</p>
                 {taps.length > 0 && <button type="button" className="linklike" onClick={() => setTaps([])}>Start tapping over</button>}
               </div>
@@ -110,6 +116,7 @@ export default function SpotCheck({ request }: { request: Request }) {
                 <button type="button" className="quiet" disabled={busy} onClick={() => answer({ verdict: "half" })}>Real tempo is half ({bpmText(t.bpm / 2)})</button>
                 <button type="button" className="quiet" disabled={busy} onClick={() => answer({ verdict: "double" })}>Real tempo is double ({bpmText(t.bpm * 2)})</button>
                 <button type="button" className="quiet" disabled={busy} onClick={() => answer({ verdict: "wrong" })}>Something else</button>
+                <button type="button" className="quiet" disabled={busy} onClick={() => answer({ verdict: "no_beat" })}>No steady beat</button>
                 <button type="button" className="quiet" disabled={busy} onClick={() => answer({ verdict: "skip" })}>Skip this one</button>
               </div>
             </div>
@@ -124,6 +131,9 @@ export default function SpotCheck({ request }: { request: Request }) {
               <div><dt>Checked</dt><dd>{s.checked}</dd></div>
               <div><dt>Right</dt><dd>{pct(s.accuracy)}</dd></div>
               <div><dt>Half / double</dt><dd>{s.half} / {s.double}</dd></div>
+              <div><dt>Counted in threes</dt><dd>{s.other_level}</dd></div>
+              <div><dt>Found the pulse</dt><dd>{pct(s.pulse_found)}</dd></div>
+              <div><dt>No steady beat</dt><dd>{s.no_beat}</dd></div>
               <div><dt>Something else</dt><dd>{s.wrong}</dd></div>
               <div><dt>Tempos corrected</dt><dd>{s.corrections}</dd></div>
             </dl>

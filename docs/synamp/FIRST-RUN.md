@@ -216,7 +216,11 @@ because merges use MusicBrainz's spelling of each artist.
 anything you change later is handled, it just costs Navidrome its play counts
 for those tracks (SynAmp keeps its own).
 
-## 6. Navidrome
+## 6. Navidrome, Tailscale and your apps
+
+The web app walks you through this: open **Listen anywhere** (under the
+Library strip). It checks Navidrome and the apps for you and gives the
+addresses to type. In short:
 
 Open `http://Syd.local:4533`, create the Navidrome admin account, and wait for
 its scan to finish (a few minutes). Then point your phone/desktop apps at

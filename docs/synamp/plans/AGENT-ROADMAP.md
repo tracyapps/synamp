@@ -486,3 +486,17 @@ ignores SIGTERM. Brain now exits on SIGTERM/SIGINT (stores are written
 atomically, nothing to flush); the librarian leaves at once when idle and
 finishes the batch in hand when working (`stop_grace_period: 2m`); both run
 with `init: true`. Measured: brain 18 ms, idle librarian 9 ms.
+
+**Listen anywhere + metre-aware spot-checks (2026-10-04).** Phase 1 as a
+guided checklist (`ListenAnywhere.tsx`, `src/setup.ts`, `GET/POST
+/api/v1/setup`): Navidrome running (live `/ping`), Navidrome account,
+Tailscale on the NAS (its tailnet name → the "Anywhere" address with a Copy
+button), Tailscale on the phone, a Subsonic app (links Navidrome's app list;
+warns off `:4533`), "SynAmp hears your apps" (live: plays reported through the
+proxy, by app), and a Wi-Fi-off test. The owner's first tempo checks raised
+6/8 and non-Western metres: tapping now recognises three-based relations
+(×3, ×⅓, ×1.5, ×⅔ → `other_level`, the tapped tempo is used), "No steady
+beat" (`tempo_confidence: 0`), and the summary adds "found the pulse" (right
+at some metrical level) next to strict accuracy. This is the human evidence
+BEAT-TIMING R4 asks for; the analyzer itself still reports one tempo (R2's
+multiple metrical hypotheses are the real fix). Brain 107/107.

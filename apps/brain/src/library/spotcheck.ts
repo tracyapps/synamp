@@ -26,8 +26,13 @@ export class SpotCheckError extends Error {
   constructor(message: string, status = 400) { super(message); this.status = status; }
 }
 
-/** How the real tempo relates to the measured one. */
-export const VERDICTS = ["right", "half", "double", "wrong", "skip"] as const;
+/**
+ * How the beat you feel relates to the measured one. "other_level" covers the
+ * three-based relations (×3, ×⅓, ×1.5, ×⅔): a 6/8 song tapped on its two big
+ * beats per bar against a measurement of its six eighth notes, and the like.
+ * "no_beat": free time, ambient, rubato — no tempo to trust.
+ */
+export const VERDICTS = ["right", "half", "double", "other_level", "wrong", "no_beat", "skip"] as const;
 export type Verdict = (typeof VERDICTS)[number];
 
 export type Check = {
@@ -51,6 +56,7 @@ export function verdictFromTap(measured: number, tapped: number): Verdict {
   if (close(tapped, measured)) return "right";
   if (close(tapped, measured / 2)) return "half";
   if (close(tapped, measured * 2)) return "double";
+  if ([3, 1 / 3, 1.5, 2 / 3].some((ratio) => close(tapped, measured * ratio))) return "other_level";
   return "wrong";
 }
 
@@ -138,7 +144,7 @@ export class SpotChecks {
     if (!check) return null;
     if (check.verdict === "half") return round1(check.measured_bpm / 2);
     if (check.verdict === "double") return round1(check.measured_bpm * 2);
-    if (check.verdict === "wrong" && check.tapped_bpm) return check.tapped_bpm;
+    if ((check.verdict === "wrong" || check.verdict === "other_level") && check.tapped_bpm) return check.tapped_bpm;
     return null;
   }
 
@@ -150,8 +156,12 @@ export class SpotChecks {
     const tracks = library.tracks.map((track) => {
       const check = this.state.checks[track.id] ? this.current(track) : undefined;
       if (!check || check.verdict === "skip") return track;
+      if (check.verdict === "no_beat") {
+        changed = true; // keep the number, but nothing should trust it
+        return { ...track, signals: { ...track.signals, tempo_confidence: 0 } };
+      }
       const bpm = this.corrected(track);
-      if (check.verdict === "wrong" && bpm === null) return track; // wrong, but we don't know the right value
+      if ((check.verdict === "wrong" || check.verdict === "other_level") && bpm === null) return track; // we don't know the right value
       changed = true;
       return { ...track, signals: { ...track.signals, ...(bpm !== null ? { bpm } : {}), tempo_confidence: 1 } };
     });
@@ -162,17 +172,21 @@ export class SpotChecks {
 
   summary(library: Library) {
     const tracks = new Map(library.tracks.map((track) => [track.id, track]));
-    const answered = Object.entries(this.state.checks).filter(([, check]) => check.verdict !== "skip");
+    // Accuracy is about songs that have a beat to measure.
+    const answered = Object.entries(this.state.checks).filter(([, check]) => check.verdict !== "skip" && check.verdict !== "no_beat");
     const count = (list: Array<[string, Check]>) => {
-      const by = { right: 0, half: 0, double: 0, wrong: 0 };
+      const by = { right: 0, half: 0, double: 0, other_level: 0, wrong: 0, no_beat: 0 };
       for (const [, check] of list) by[check.verdict as keyof typeof by]++;
       const total = list.length;
-      return { checked: total, ...by, accuracy: total ? by.right / total : null };
+      // "Right at some level" = the measurement found the pulse, maybe at a different count.
+      const related = by.right + by.half + by.double + by.other_level;
+      return { checked: total, ...by, accuracy: total ? by.right / total : null, pulse_found: total ? related / total : null };
     };
     const analysed = library.tracks.filter((track) => bpmOf(track) !== null).length;
     return {
       ...count(answered),
       skipped: Object.values(this.state.checks).filter((check) => check.verdict === "skip").length,
+      no_beat: Object.values(this.state.checks).filter((check) => check.verdict === "no_beat").length,
       confident: count(answered.filter(([, c]) => (c.confidence ?? 0) >= CONFIDENT)),
       unsure: count(answered.filter(([, c]) => (c.confidence ?? 0) < CONFIDENT)),
       corrections: library.tracks.filter((track) => this.state.checks[track.id] && this.corrected(track) !== null).length,

@@ -36,6 +36,7 @@ import { LastfmClient, LastfmError } from "./lastfm/client.ts";
 import { RuntimeSettings, SettingsError } from "./settings.ts";
 import { VersionCheck } from "./version.ts";
 import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
+import { otherAppPlays, pingCore, SetupError, SetupStore } from "./setup.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
 import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
 import { groupAlbums } from "./library/albums.ts";
@@ -74,6 +75,8 @@ const mbClient = () => (musicbrainz ??= new MusicBrainz({ contact: runtime.music
 const organise = new OrganiseStore(join(dataDir, "organise.json"));
 /** Moved files keep working before the analyzer re-exports (see PathOverlay). */
 const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
+/** "Listen anywhere": the Phase 1 checklist (Navidrome, Tailscale, apps). */
+const setup = new SetupStore(join(dataDir, "setup.json"));
 /** Tempo checks you made in "Check the measurements": answers and corrections. */
 const spotChecks = new SpotChecks(join(dataDir, "spotchecks.json"));
 /** As analysed (moved files followed), before your tempo corrections. */
@@ -394,7 +397,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -578,6 +581,15 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // --- this install: version, and whether an update is waiting for Build -------
   if (path === "/api/v1/system" && req.method === "GET") {
     return send(res, 200, { version: versionCheck.view(Date.now(), url.searchParams.has("fresh") ? 0 : 60_000) });
+  }
+
+  // --- listen anywhere: the Phase 1 checklist ------------------------------------
+  if (path === "/api/v1/setup" && (req.method === "GET" || req.method === "POST")) {
+    if (req.method === "POST") setup.update(await body(req));
+    return send(res, 200, {
+      ...setup.state,
+      checks: { navidrome: await pingCore(config.coreUrl), other_apps: otherAppPlays(events.all()) },
+    });
   }
 
   // --- check the measurements (tempo) ----------------------------------------------
@@ -793,7 +805,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
