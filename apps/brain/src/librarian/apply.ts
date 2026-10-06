@@ -4,7 +4,9 @@
  * Rules (LIBRARY-CARE "Principles"):
  *   - Check everything first. A decision whose files moved, vanished or would
  *     overwrite something is refused before a single file is touched.
- *   - Never overwrite. Renames only; nothing is re-encoded or retagged. When a
+ *   - Never overwrite. A copy set aside in `incoming/_duplicates/` that meets
+ *     an earlier set-aside of the same name gets " (2)" added instead.
+ *   - Renames only; nothing is re-encoded or retagged. When a
  *     rename can't cross disks (incoming/ on another mount), the file is copied,
  *     the copy's checksum compared with the original, and only then is the
  *     original removed.
@@ -23,6 +25,7 @@ import { dirname, join, resolve, sep } from "node:path";
 import { reverseMove } from "../library/organise.ts";
 import type { Area, FolderMove, JobDecision, Move } from "../library/organise.ts";
 import { isSafeRelative, JUNK_FILE } from "../library/naming.ts";
+import { SET_ASIDE_FOLDER } from "../library/duplicates.ts";
 
 export type JournalEntry = Record<string, unknown> & { reason: string; batch: string; decision: string; at: number };
 
@@ -83,6 +86,19 @@ function rootOf(ctx: Context, area?: Area): string {
 }
 const where = (ctx: Context, path: string, area?: Area) => inside(rootOf(ctx, area), path);
 const label = (path: string, area?: Area) => (area ? `${area}/${path}` : path);
+const settingAside = (move: Move) => move.to_area === "incoming" && move.to.startsWith(`${SET_ASIDE_FOLDER}/`);
+
+/** A free name for a set-aside copy: "Song.flac", then "Song (2).flac", "Song (3).flac"… */
+function freeAsideName(ctx: Context, move: Move): Move {
+  const dot = move.to.lastIndexOf(".");
+  const slash = move.to.lastIndexOf("/");
+  const [stem, ext] = dot > slash ? [move.to.slice(0, dot), move.to.slice(dot)] : [move.to, ""];
+  for (let copy = 1; copy < 1000; copy++) {
+    const to = copy === 1 ? move.to : `${stem} (${copy})${ext}`;
+    if (!existsSync(where(ctx, to, move.to_area))) return { ...move, to };
+  }
+  throw new Error(`No free name for “${label(move.to, move.to_area)}”`);
+}
 
 /** Same file under another spelling (case-insensitive disks): a rename, not a collision. */
 function sameFile(a: string, b: string): boolean {
@@ -192,11 +208,15 @@ function filesUnder(root: string, dir: string, keep: Set<string>): string[] {
 function precheck(ctx: Context, decision: JobDecision): string[] {
   const errors: string[] = [];
   const targets = new Set<string>();
+  /** Files an earlier move in this decision takes away (a set-aside making room for the better copy). */
+  const vacated = new Set<string>();
   for (const move of decision.moves) {
     let from: string, to: string;
     try { from = where(ctx, move.from, move.from_area); to = where(ctx, move.to, move.to_area); } catch (error) { errors.push((error as Error).message); continue; }
     if (!isFile(from)) errors.push(`“${label(move.from, move.from_area)}” is no longer there`);
-    else if (existsSync(to) && !sameFile(from, to)) errors.push(`“${label(move.to, move.to_area)}” already exists`);
+    // Set-asides find a free name when they're carried out.
+    else if (!settingAside(move) && existsSync(to) && !sameFile(from, to) && !vacated.has(to)) errors.push(`“${label(move.to, move.to_area)}” already exists`);
+    vacated.add(from);
     if (targets.has(to)) errors.push(`Two files would both become “${label(move.to, move.to_area)}”`);
     targets.add(to);
   }
@@ -226,9 +246,10 @@ export function applyDecision(decision: JobDecision, ctx: Context): DecisionResu
   };
   const touched: Touched = new Map();
   try {
-    for (const move of decision.moves) {
+    for (const planned of decision.moves) {
+      const move = settingAside(planned) ? freeAsideName(ctx, planned) : planned;
       moveOne(ctx, move);
-      record(move, `${verb}: ${decision.title}`);
+      record(move, settingAside(move) && !planned.from_area ? `set aside (a better copy of the same recording stays): ${decision.title}` : `${verb}: ${decision.title}`);
       touch(touched, ctx, move.from, move.from_area);
     }
   } catch (error) {

@@ -260,3 +260,63 @@ test("import across disks: copied, checksum-verified, then the original removed"
     assert.deepEqual(lib.tree(), ["A/B (2000)/01 - Song.mp3"], "no temporary copies left behind");
   } finally { lib.cleanup(); rmSync(incoming, { recursive: true, force: true }); }
 });
+
+test("duplicates: the worse copy is set aside first, the better one takes its place; names never clash; undo puts both back", () => {
+  const lib = library({
+    "Ani DiFranco/Dilate (1996)/02 - Outta Me.flac": "16-bit",
+    "DiFranco, Ani/Dilate (1996)/02 - Outta Me.flac": "24-bit",
+    "DiFranco, Ani/Dilate (1996)/01 - Untouchable Face.mp3": "twin",
+    "Ani DiFranco/Dilate (1996)/01 - Untouchable Face.mp3": "twin",
+  });
+  const incoming = mkdtempSync(join(tmpdir(), "synamp-incoming-"));
+  try {
+    // An earlier set-aside already holds the name: this one gets " (2)".
+    mkdirSync(join(incoming, "_duplicates/DiFranco, Ani/Dilate (1996)"), { recursive: true });
+    writeFileSync(join(incoming, "_duplicates/DiFranco, Ani/Dilate (1996)/01 - Untouchable Face.mp3"), "older set-aside");
+    const decision: JobDecision = {
+      id: "artist:1", title: "Merge “DiFranco, Ani” into “Ani DiFranco”", kind: "artist",
+      moves: [
+        { from: "DiFranco, Ani/Dilate (1996)/01 - Untouchable Face.mp3", to: "_duplicates/DiFranco, Ani/Dilate (1996)/01 - Untouchable Face.mp3", to_area: "incoming", track_id: "t1" },
+        { from: "Ani DiFranco/Dilate (1996)/02 - Outta Me.flac", to: "_duplicates/Ani DiFranco/Dilate (1996)/02 - Outta Me.flac", to_area: "incoming", track_id: "t2" },
+        { from: "DiFranco, Ani/Dilate (1996)/02 - Outta Me.flac", to: "Ani DiFranco/Dilate (1996)/02 - Outta Me.flac", track_id: "t3" },
+      ],
+      folders: [{ from: "DiFranco, Ani", to: "Ani DiFranco" }],
+    };
+    const ctx = { root: lib.root, incoming, batch: "b_d", journal: lib.journal };
+    const result = applyDecision(decision, ctx);
+    assert.equal(result.status, "applied", result.errors.join("; "));
+    assert.deepEqual(lib.tree(), ["Ani DiFranco/Dilate (1996)/01 - Untouchable Face.mp3", "Ani DiFranco/Dilate (1996)/02 - Outta Me.flac"]);
+    assert.equal(lib.read("Ani DiFranco/Dilate (1996)/02 - Outta Me.flac"), "24-bit", "the better copy took the place");
+    assert.equal(readFileSync(join(incoming, "_duplicates/Ani DiFranco/Dilate (1996)/02 - Outta Me.flac"), "utf8"), "16-bit", "set aside, not deleted");
+    assert.equal(readFileSync(join(incoming, "_duplicates/DiFranco, Ani/Dilate (1996)/01 - Untouchable Face (2).mp3"), "utf8"), "twin");
+    assert.equal(readFileSync(join(incoming, "_duplicates/DiFranco, Ani/Dilate (1996)/01 - Untouchable Face.mp3"), "utf8"), "older set-aside", "nothing overwritten");
+    assert.equal(result.moved[0]!.to, "_duplicates/DiFranco, Ani/Dilate (1996)/01 - Untouchable Face (2).mp3", "the report says where it really went");
+    const journal = lib.journalLines();
+    assert.equal(journal[0].target_area, "incoming");
+    assert.equal(journal[0].from, undefined, "set-asides are not library renames for the analyzer");
+    assert.match(journal[0].reason, /^set aside/);
+
+    const undo: JobDecision = { ...decision, folders: [], moves: [...result.moved].reverse().map(reverseMove) };
+    assert.equal(undoDecision(undo, ctx).status, "applied");
+    assert.equal(lib.read("Ani DiFranco/Dilate (1996)/02 - Outta Me.flac"), "16-bit");
+    assert.equal(lib.read("DiFranco, Ani/Dilate (1996)/02 - Outta Me.flac"), "24-bit");
+    assert.equal(lib.read("DiFranco, Ani/Dilate (1996)/01 - Untouchable Face.mp3"), "twin");
+    assert.equal(readFileSync(join(incoming, "_duplicates/DiFranco, Ani/Dilate (1996)/01 - Untouchable Face.mp3"), "utf8"), "older set-aside");
+  } finally { lib.cleanup(); rmSync(incoming, { recursive: true, force: true }); }
+});
+
+test("duplicates: a place is only free when an earlier move in the same decision empties it", () => {
+  const lib = library({ "A/x.mp3": "a", "B/x.mp3": "b" });
+  const incoming = mkdtempSync(join(tmpdir(), "synamp-incoming-"));
+  try {
+    // Wrong order: the move comes before the set-aside that would make room.
+    const decision: JobDecision = { id: "artist:2", title: "Merge", kind: "artist", folders: [], moves: [
+      { from: "B/x.mp3", to: "A/x.mp3" },
+      { from: "A/x.mp3", to: "_duplicates/A/x.mp3", to_area: "incoming" },
+    ] };
+    const result = applyDecision(decision, { root: lib.root, incoming, batch: "b", journal: lib.journal });
+    assert.equal(result.status, "failed");
+    assert.match(result.errors[0]!, /already exists/);
+    assert.deepEqual(lib.tree(), ["A/x.mp3", "B/x.mp3"], "nothing touched");
+  } finally { lib.cleanup(); rmSync(incoming, { recursive: true, force: true }); }
+});

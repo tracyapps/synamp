@@ -109,6 +109,19 @@ class Worker:
         self.stamp = stamp
         self.started_with = stamp()
         self.resume_analysis = False
+        self.current: str | None = None  # the command being worked on
+
+    def activity(self, value: dict | None) -> None:
+        """Tell the web app what the worker is busy with inside a command (None: finished).
+
+        Best effort: a brain that's unreachable or older just doesn't show it.
+        """
+        if not self.current:
+            return
+        try:
+            self.brain.post(f"/api/v1/analyzer/commands/{self.current}/activity", {"activity": value})
+        except BrainError:
+            pass
 
     def code_changed(self) -> bool:
         """A new version of the analyzer is on disk: time to restart into it."""
@@ -145,8 +158,15 @@ class Worker:
 
     # --- doing the work ---------------------------------------------------------------
     def export(self) -> str:
-        with Database(self.cfg.db_path) as db:
-            counts = write_export(db, self.cfg.library_path, self.export_path, progress=self.log)
+        # Usually seconds; after an update that re-reads every file's tags, the better part of an hour —
+        # during which analysis waits, so the web app says so.
+        self.activity({"kind": "export"})
+        try:
+            with Database(self.cfg.db_path) as db:
+                counts = write_export(db, self.cfg.library_path, self.export_path, progress=self.log,
+                                      on_count=lambda done, total: self.activity({"kind": "export", "done": done, "total": total}))
+        finally:
+            self.activity(None)
         return f"library list updated: {counts['exported']:,} tracks"
 
     def scan(self) -> str:
@@ -202,6 +222,7 @@ class Worker:
         if problem:
             return {"status": "failed", "summary": problem}
         started = self.now()
+        self.current = str(command.get("id") or "") or None
         try:
             if action == "scan":
                 status, text = "done", self.scan()
@@ -213,6 +234,8 @@ class Worker:
                 status, text = self.analyze(str(command["id"]))
         except Exception as error:  # report it; the worker itself keeps running
             return {"status": "failed", "summary": f"{type(error).__name__}: {error}"}
+        finally:
+            self.current = None
         return {"status": status, "summary": f"{text} ({(self.now() - started) / 60:.0f} min)" if self.now() - started >= 90 else text}
 
     def report(self, command_id: str, result: dict) -> None:

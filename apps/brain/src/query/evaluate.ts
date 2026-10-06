@@ -50,6 +50,12 @@ export type LibraryTrack = {
   mb_albumid?: string;
   /** Audio embedding for similarity (optional). */
   embedding?: number[];
+  /** A slice of the Chromaprint fingerprint ("cp1:start:base64"), for "same recording?" checks. */
+  fp_sketch?: string;
+  /** Length of the decoded audio (analyzer identity stage), when the tags have none. */
+  audio_duration_s?: number;
+  /** Format, lossless or not, bitrate…: which of two copies is better. */
+  quality?: { format?: string; lossless?: boolean; bitrate_kbps?: number; sample_rate?: number; bit_depth?: number; size_bytes?: number };
 };
 
 export type Library = { version: string; tracks: LibraryTrack[] };

@@ -277,10 +277,10 @@ let planCache: { key: string; plan: Decision[] } | undefined;
 function organisePlan(): Decision[] {
   const lib = currentLibrary();
   const scan = incoming?.scan();
-  const key = `${lib.version}|${albumMatches.revision}|${JSON.stringify(organise.state.settings)}|${scan?.scanned_at ?? 0}`;
+  const key = `${lib.version}|${albumMatches.revision}|${JSON.stringify(organise.state.settings)}|${scan?.scanned_at ?? 0}|${JSON.stringify(organise.choices)}`;
   if (planCache?.key !== key) {
     const imports = scan ? buildImport(scan, lib, organise.state.settings, { incomingRoot: incoming!.root, libraryRoot: config.libraryPath }) : [];
-    planCache = { key, plan: [...imports, ...buildPlan(lib, albumMatches.records, organise.state.settings)] };
+    planCache = { key, plan: [...imports, ...buildPlan(lib, albumMatches.records, organise.state.settings, organise.choices)] };
   }
   return planCache.plan;
 }
@@ -291,20 +291,21 @@ function filterPlan(plan: Decision[], query: URLSearchParams): Decision[] {
   return plan.filter((decision) => {
     if (kind !== "all" && decision.kind !== kind) return false;
     const current = organise.statusOf(decision);
-    if (status === "conflict" ? !decision.conflicts.length : status !== "all" && current.status !== status) return false;
+    if (status === "conflict" ? !decision.conflicts.length : status === "duplicates" ? !decision.duplicates?.length : status !== "all" && current.status !== status) return false;
     return !q || decision.title.toLowerCase().includes(q) || decision.preview.some((p) => p.from.toLowerCase().includes(q) || p.to.toLowerCase().includes(q));
   });
 }
 const LIBRARIAN_ONLINE_MS = 90_000;
 function organiseView(query: URLSearchParams) {
   const plan = organisePlan();
-  const summary = { total: plan.length, proposed: 0, approved: 0, skipped: 0, conflicts: 0, changed: 0, artist: 0, album: 0, import: 0, approved_moves: 0 };
+  const summary = { total: plan.length, proposed: 0, approved: 0, skipped: 0, conflicts: 0, changed: 0, artist: 0, album: 0, import: 0, approved_moves: 0, set_aside: 0 };
   for (const decision of plan) {
     const { status, changed } = organise.statusOf(decision);
     summary[status]++;
     summary[decision.kind]++;
     if (changed) summary.changed++;
     if (decision.conflicts.length) summary.conflicts++;
+    summary.set_aside += decision.duplicates?.length ?? 0;
     if (status === "approved" && !decision.conflicts.length) summary.approved_moves += decision.moves.length;
   }
   const matching = filterPlan(plan, query);
@@ -318,7 +319,7 @@ function organiseView(query: URLSearchParams) {
     offset,
     decisions: matching.slice(offset, offset + limit).map(({ moves, folders: _folders, ...decision }) => ({
       ...decision, ...organise.statusOf(decision as Decision), move_count: moves.length,
-      moves: moves.slice(0, 40).map(({ from, to }) => ({ from, to })),
+      moves: moves.slice(0, 40).map(({ from, to, to_area }) => ({ from, to, ...(to_area ? { to_area } : {}) })),
     })),
     batches: organise.state.batches.slice(0, 10).map((batch) => ({
       ...batch,
@@ -639,6 +640,15 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   }
   if (path === "/api/v1/organise/settings" && req.method === "POST") {
     organise.setSettings(await body(req));
+    return send(res, 200, organiseView(url.searchParams));
+  }
+  if (path === "/api/v1/organise/keep" && req.method === "POST") {
+    // "Keep this one instead" on a pair of duplicate copies.
+    const input = await body(req);
+    const found = organisePlan().flatMap((d) => d.duplicates ?? []).find((p) => p.pair === input.pair);
+    if (!found) throw new OrganiseError("That pair of copies isn't in the plan any more", 404);
+    if (input.keep !== null && input.keep !== found.keep.id && input.keep !== found.aside.id) throw new OrganiseError("keep must be one of the two copies");
+    organise.choose(input.pair, input.keep);
     return send(res, 200, organiseView(url.searchParams));
   }
   if (path === "/api/v1/organise/pause" && req.method === "POST") {

@@ -38,6 +38,7 @@ import time
 from pathlib import Path, PurePosixPath
 
 from . import __version__
+from .fpsketch import sketch as fingerprint_sketch
 from .store import Database
 
 try:  # tag reading is optional at runtime: a missing package degrades to path names
@@ -135,6 +136,11 @@ def read_tags(path: Path) -> dict:
     year = _year(tag.year)
     if year:
         out["year"] = year
+    # Audio quality, used to pick the better of two copies of one recording.
+    for key, value, low, high in (("bitrate_kbps", tag.bitrate, 1, 100_000), ("sample_rate", tag.samplerate, 1000, 1_000_000),
+                                  ("bit_depth", getattr(tag, "bitdepth", None), 1, 64)):
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and low <= value <= high:
+            out[key] = round(float(value)) if key != "bitrate_kbps" else round(float(value), 1)
     other = getattr(tag, "other", None) or {}
     for key, values in other.items():
         normal = key.lower().replace(" ", "_")
@@ -146,7 +152,7 @@ def read_tags(path: Path) -> dict:
 
 
 _MBID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-TAG_CACHE_VERSION = 2
+TAG_CACHE_VERSION = 3  # 3: bitrate, sample rate, bit depth
 
 
 def _year(value: object) -> int | None:
@@ -164,6 +170,31 @@ def number_from_filename(relative: PurePosixPath) -> dict:
     if match.group(1):
         out["disc_no"] = int(match.group(1))
     return out if 0 < out["track_no"] < 1000 else {}
+
+
+LOSSLESS_FORMATS = {"flac", "wav", "aif", "aiff", "ape", "wv", "alac", "dsf", "dff"}
+LOSSY_FORMATS = {"mp3", "aac", "ogg", "oga", "opus", "wma", "mp2", "mpc"}
+# An .m4a can be AAC (lossy) or ALAC (lossless); ALAC of CD audio runs far above any AAC encode.
+M4A_LOSSLESS_KBPS = 500
+
+
+def quality(relative: PurePosixPath, tags: dict, size_bytes: int | None) -> dict:
+    """Format, lossless or not, bitrate, sample rate, bit depth, size — whatever is known."""
+    fmt = relative.suffix.lower().lstrip(".")
+    out: dict = {"format": fmt}
+    bitrate = tags.get("bitrate_kbps")
+    if fmt in LOSSLESS_FORMATS:
+        out["lossless"] = True
+    elif fmt in LOSSY_FORMATS:
+        out["lossless"] = False
+    elif fmt in ("m4a", "mp4", "m4b") and isinstance(bitrate, (int, float)):
+        out["lossless"] = bitrate >= M4A_LOSSLESS_KBPS
+    for key in ("bitrate_kbps", "sample_rate", "bit_depth"):
+        if key in tags:
+            out[key] = tags[key]
+    if isinstance(size_bytes, int) and size_bytes > 0:
+        out["size_bytes"] = size_bytes
+    return out
 
 
 def describe(relative: PurePosixPath, tags: dict) -> dict:
@@ -188,7 +219,8 @@ _COMMIT_EVERY = 250
 _REPORT_EVERY_S = 10.0
 
 
-def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: int = TAG_READ_WORKERS) -> dict[str, dict]:
+def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: int = TAG_READ_WORKERS,
+                        on_count=None) -> dict[str, dict]:
     """Tags for every present file: from the cache when unchanged, else read.
 
     Reading is network-bound over a share (one open and a few small reads per
@@ -220,6 +252,8 @@ def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: 
             progress(text)
 
     say(f"export: reading tags from {len(todo):,} files ({len(cached):,} already known), {workers} at a time")
+    if on_count is not None:
+        on_count(0, len(todo))
     started = last_report = time.time()
     done = 0
     pool = ThreadPoolExecutor(max_workers=max(1, workers))
@@ -248,6 +282,8 @@ def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: 
                 left = (len(todo) - done) / rate if rate > 0 else 0
                 when = f"~{left / 60:.0f} min left" if left >= 90 else f"~{left:.0f} s left"
                 say(f"export: tags {done:,} / {len(todo):,} ({100 * done / len(todo):.0f}%), {rate:.0f} files/s, {when}")
+                if on_count is not None:
+                    on_count(done, len(todo))
     finally:
         # Ctrl-C or an error: keep what was read, and don't wait for the queued files.
         db.conn.commit()
@@ -256,7 +292,7 @@ def _read_tags_parallel(db: Database, rows, root: Path, progress=None, workers: 
 
 
 def build_export(db: Database, library_root: Path, read_file_tags: bool = True, progress=None,
-                 workers: int = TAG_READ_WORKERS) -> dict:
+                 workers: int = TAG_READ_WORKERS, on_count=None) -> dict:
     """The export document, as a plain dict."""
     root = library_root.expanduser()
     if read_file_tags:
@@ -272,7 +308,7 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True, 
         """
     ).fetchall()
 
-    tag_cache = _read_tags_parallel(db, rows, root, progress, workers) if read_file_tags else {}
+    tag_cache = _read_tags_parallel(db, rows, root, progress, workers, on_count) if read_file_tags else {}
     tracks: list[dict] = []
     counts = {"catalog": len(rows), "exported": 0, "missing_on_disk": 0, "outside_root": 0,
               "no_results": 0, "withheld_stale": 0, "failed": 0, "tagged": 0}
@@ -340,6 +376,10 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True, 
             **status,
             **({"aliases": aliases} if aliases else {}),
             **({"audio_hash": payload["audio_hash"]} if "identity" in current & stored and payload.get("audio_hash") else {}),
+            # A slice of the Chromaprint fingerprint: "same recording, maybe another format?" (fpsketch.py).
+            **({"fp_sketch": sketched} if "identity" in current & stored and (sketched := fingerprint_sketch(payload.get("fingerprint"))) else {}),
+            **({"audio_duration_s": payload["audio_duration_s"]} if "identity" in current & stored and _finite(payload.get("audio_duration_s")) else {}),
+            "quality": quality(relative, tags, row["size_bytes"]),
             "stages_done": sorted(current & stored),
             "signals": signals,
         }
@@ -364,9 +404,9 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True, 
 
 
 def write_export(db: Database, library_root: Path, out: Path, read_file_tags: bool = True, progress=None,
-                 workers: int = TAG_READ_WORKERS) -> dict:
+                 workers: int = TAG_READ_WORKERS, on_count=None) -> dict:
     """Write atomically (temp file + rename) so the brain never reads half a file."""
-    document = build_export(db, library_root, read_file_tags, progress, workers)
+    document = build_export(db, library_root, read_file_tags, progress, workers, on_count)
     out = out.expanduser()
     out.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix=f".{out.name}.", suffix=".tmp", dir=out.parent)

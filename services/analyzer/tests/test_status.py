@@ -66,7 +66,8 @@ def test_snapshot_counts_stage_coverage_and_failures(tmp_path: Path) -> None:
     assert snap["queue"]["pending"] + snap["queue"]["failed"] == 1
     assert snap["stages"] == {"identity": 2, "dsp_core": 2, "beat": 2}
     assert snap["fully_analysed"] == 2
-    assert snap["fingerprints"].get("tool_missing", 0) + snap["fingerprints"].get("measured", 0) == 2
+    # tool_missing without fpcalc; measured or failed (very short synthetic audio) with it.
+    assert sum(snap["fingerprints"].values()) == 2
     if snap["recent_failures"]:
         assert snap["recent_failures"][0]["path"] == "A/broken.flac", "paths are shown relative to the library"
 

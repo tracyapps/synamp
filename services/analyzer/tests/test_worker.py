@@ -177,3 +177,42 @@ def test_fingerprints_are_filled_in_once_chromaprint_is_installed(tmp_path: Path
         result = load_result(db, track)
         assert (result.fingerprint, result.fingerprint_status) == ("AQAAfake", "measured")
         assert pipeline.backfill_fingerprints(db, progress=lambda *_: None) == 0, "only once"
+
+
+def test_export_tells_the_web_app_how_far_it_is(tmp_path: Path) -> None:
+    cfg, _music = library(tmp_path)
+    brain = FakeBrain([{"id": "a_000000000009", "action": "update"}])
+    sent: list[dict | None] = []
+    original = brain.post
+
+    def post(path: str, body: dict) -> dict:
+        if path.endswith("/activity"):
+            assert path == "/api/v1/analyzer/commands/a_000000000009/activity"
+            sent.append(body["activity"])
+            return {}
+        return original(path, body)
+
+    brain.post = post  # type: ignore[method-assign]
+    worker, _lines = make(cfg, brain)
+    assert worker.once() == "done"
+    assert sent[0] == {"kind": "export"}
+    assert {"kind": "export", "done": 0, "total": 3} in sent, "tags to read: announced with the count"
+    assert {"kind": "export", "done": 3, "total": 3} in sent
+    assert sent[-1] is None, "cleared when the export is done"
+    assert worker.current is None
+
+
+def test_activity_never_stops_the_work_when_the_brain_is_old_or_away(tmp_path: Path) -> None:
+    cfg, _music = library(tmp_path)
+    brain = FakeBrain([{"id": "a_00000000000a", "action": "export"}])
+    original = brain.post
+
+    def post(path: str, body: dict) -> dict:
+        if path.endswith("/activity"):
+            raise BrainError("the brain answered HTTP 404")
+        return original(path, body)
+
+    brain.post = post  # type: ignore[method-assign]
+    worker, _lines = make(cfg, brain)
+    assert worker.once() == "done"
+    assert brain.reports["a_00000000000a"]["status"] == "done"
