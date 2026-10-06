@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Player from "./Player";
 import type { SessionView } from "./Player";
 import Playlists from "./Playlists";
@@ -21,6 +21,10 @@ import Icon from "./ui/Icon";
 import type { IconName } from "./ui/Icon";
 import { ScreenHead } from "./ui/kit";
 import logo from "./assets/synamp-logo.svg";
+import { visualsSupported } from "./visuals/support";
+
+// The visuals (and MilkDrop's presets) load only when first opened.
+const Visuals = lazy(() => import("./visuals/Visuals"));
 
 /*
  * The app shell: top bar, side navigation, one screen at a time, and the player
@@ -62,6 +66,9 @@ export default function App() {
   const [error, setError] = useState("");
   const [session, setSession] = useState<SessionView | null>(null);
   const [station, setStation] = useState<Station | null>(null);
+  const [visuals, setVisuals] = useState(false);
+  const canShowVisuals = useMemo(visualsSupported, []);
+  const openVisuals = canShowVisuals ? () => setVisuals(true) : undefined;
   const headingId = "screen-title";
   const firstRender = useRef(true);
   const { call, download, upload } = useMemo(() => makeApi(token), [token]);
@@ -182,8 +189,9 @@ export default function App() {
           {body}
         </main>
       </div>
-      {station && <RadioBar station={station} onStop={() => setStation(null)} />}
-      <Player request={call} session={session} onSession={setSession} away={!!station}
+      {station && <RadioBar station={station} onStop={() => setStation(null)} onVisuals={openVisuals} />}
+      {visuals && <Suspense fallback={null}><Visuals open={visuals} onClose={() => setVisuals(false)} /></Suspense>}
+      <Player request={call} session={session} onSession={setSession} away={!!station} onVisuals={openVisuals}
         playlistName={(id) => nodes.find((node) => node.id === id)?.name}
         onChanged={() => { refreshNodes().catch(() => undefined); }} />
     </div>

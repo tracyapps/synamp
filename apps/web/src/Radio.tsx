@@ -3,6 +3,7 @@ import type { Request } from "./api";
 import { useDebounced } from "./Library";
 import Icon from "./ui/Icon";
 import { ScreenHead } from "./ui/kit";
+import { setActiveAudio } from "./visuals/audio-graph";
 import "./styles/radio.css";
 
 /*
@@ -129,7 +130,7 @@ export default function Radio({ request, headingId, current, onPlay }: {
 }
 
 /** The player bar while a station is on. */
-export function RadioBar({ station, onStop }: { station: Station; onStop: () => void }) {
+export function RadioBar({ station, onStop, onVisuals }: { station: Station; onStop: () => void; onVisuals?: () => void }) {
   const audio = useRef<HTMLAudioElement>(null);
   const [paused, setPaused] = useState(true);
   const [status, setStatus] = useState("Tuning in…");
@@ -139,7 +140,7 @@ export function RadioBar({ station, onStop }: { station: Station; onStop: () => 
     setStatus("Tuning in…");
     el.src = station.listen_url;
     el.play().catch(() => setStatus("Press play to start — the browser blocked autoplay."));
-    return () => { el.pause(); el.removeAttribute("src"); el.load(); };
+    return () => { el.pause(); el.removeAttribute("src"); el.load(); setActiveAudio(null); };
   }, [station.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const toggle = () => {
     const el = audio.current!;
@@ -149,7 +150,7 @@ export function RadioBar({ station, onStop }: { station: Station; onStop: () => 
   };
   return (
     <section className="player player--radio" aria-label="Radio player">
-      <audio ref={audio} onPlaying={() => { setPaused(false); setStatus(""); }} onWaiting={() => setStatus("Buffering…")}
+      <audio ref={audio} onPlaying={() => { setPaused(false); setStatus(""); setActiveAudio(audio.current); }} onWaiting={() => setStatus("Buffering…")}
         onError={() => { if (audio.current?.getAttribute("src")) { setPaused(true); setStatus("This station isn’t playing right now. Try another."); } }} />
       <div className="player__now">
         <span className="player__cover player__cover--radio" aria-hidden="true">{initials(station.name)}</span>
@@ -163,6 +164,7 @@ export function RadioBar({ station, onStop }: { station: Station; onStop: () => 
       </div>
       <div className="player__right">
         <p className="player__status" role="status">{status}</p>
+        {onVisuals && <button type="button" className="btn btn--quiet btn--sm" onClick={onVisuals}><Icon name="smart" />Visuals</button>}
         {station.homepage && <a className="btn btn--quiet btn--sm" href={station.homepage} target="_blank" rel="noopener noreferrer">Website<span className="visually-hidden"> (opens in a new tab)</span></a>}
         <button type="button" className="btn btn--ghost btn--sm" onClick={onStop}><Icon name="queue" />Back to your music</button>
       </div>

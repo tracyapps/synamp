@@ -83,7 +83,7 @@ next: yes
 goal: The fun stuff: world radio and visuals that dance with the music.
 - [x] Thousands of radio stations by country, genre and mood
 - [ ] Radio stations in your playlists, right next to your own music
-- [ ] Milkdrop-style visualizers, back again
+- [x] Milkdrop-style visualizers, back again
 
 ## Gapless, crossfade and DJ mode
 id: dj
@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-06 — MilkDrop visuals are back, dancing to your music or the radio, with a gentler mode that’s on by default
 - 2026-10-06 — World radio: search thousands of stations by name, country or kind, and keep your favourites
 - 2026-10-06 — Bring your playlists across from iTunes, Music, Winamp and other players — folders too
 - 2026-10-06 — Your SynAmp playlists show up in your phone apps, and stay up to date by themselves

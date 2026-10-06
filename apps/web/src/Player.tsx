@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import "./styles/player.css";
 import { newId } from "./ids";
 import Icon from "./ui/Icon";
+import { setActiveAudio } from "./visuals/audio-graph";
 
 /*
  * The player is a thin client. It reports what physically happened — started,
@@ -23,8 +24,10 @@ const clock = (seconds: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
-export default function Player({ request, session, onSession, playlistName, onChanged, away = false }: {
+export default function Player({ request, session, onSession, playlistName, onChanged, away = false, onVisuals }: {
   request: Request;
+  /** Opens the MilkDrop visuals; absent when this browser can't show them. */
+  onVisuals?: () => void;
   /** Something else (the radio) has the player bar: pause, and stay out of sight. */
   away?: boolean;
   session: SessionView | null;
@@ -90,6 +93,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
 
   const onPlaying = () => {
     setPaused(false);
+    setActiveAudio(audio.current);
     if (current && started.current !== current.entry_id) {
       started.current = current.entry_id;
       report(entryBody("start", { duration_ms: durationMs() }));
@@ -184,6 +188,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
             onChange={(event) => { if (audio.current) audio.current.currentTime = Number(event.target.value); }} />
           <span aria-hidden="true">{clock(duration)}</span>
         </label>
+        {onVisuals && <button type="button" className="btn btn--quiet btn--sm" onClick={onVisuals}><Icon name="smart" />Visuals</button>}
         <button type="button" className="btn btn--ghost btn--sm player__queue-toggle" aria-expanded={showQueue} aria-controls={queueId} onClick={() => setShowQueue(!showQueue)}>
           <Icon name="queue" />{showQueue ? "Hide queue" : "Up next"}
         </button>
