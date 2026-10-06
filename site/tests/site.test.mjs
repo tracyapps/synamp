@@ -92,6 +92,17 @@ test("contact: needs the basics; sends the message with topic and version", with
   assert.match(sent[0].body.subject, /\[SynAmp · Bug report\] Undo/);
   assert.match(sent[0].body.text, /SynAmp version: c3a19f/);
   assert.equal(sent[0].body.reply_to, "ada@example.com");
+  assert.match(sent[0].body.text, /Product news: no/);
+}));
+
+test("contact: ticking product news joins the audience; leaving it doesn't", withResend(async (sent) => {
+  process.env.RESEND_AUDIENCE_ID = "aud_1";
+  await call(contact, { name: "Ada", email: "ada@example.com", subject: "Hi", message: "Hello", updates: "yes" });
+  assert.match(sent[0].url, /audiences\/aud_1\/contacts/);
+  assert.match(sent[1].body.text, /Product news: yes/);
+  sent.length = 0;
+  await call(contact, { name: "Ada", email: "ada@example.com", subject: "Hi", message: "Hello" });
+  assert.equal(sent.length, 1, "no audience call without the tick");
 }));
 
 test("forms: not set up yet → a clear failure, not a crash", async () => {

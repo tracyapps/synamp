@@ -14,8 +14,9 @@
   .form-card .grid { gap: 20px; }
   @media (max-width: 860px) { .contact-grid { grid-template-columns: 1fr; } }
   .form-card form { display: grid; gap: 18px; }
-  .form-card form > .grid { gap: 18px; }
+  .form-card form > .grid { gap: 18px; align-items: start; }
   .form-card form .between { margin-top: 6px !important; }
+  .fineprint { margin: 0; font-size: 0.75rem; line-height: 1.5; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -125,20 +126,18 @@
             <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off">
           </div>
 
-          <div class="field">
-            <label class="check" for="cf-consent">
-              <input type="checkbox" id="cf-consent" name="consent" required>
-              <span>Use my email only to reply to this message. *</span>
-            </label>
-            <span class="error" hidden>Please tick this box so a reply can be sent.</span>
-          </div>
+          <label class="check" for="cf-updates">
+            <input type="checkbox" id="cf-updates" name="updates" value="yes" aria-describedby="cf-updates-note">
+            <span>Send me news about product updates and releases<span aria-hidden="true">†</span></span>
+          </label>
 
           <p class="form-status" data-form-status hidden role="status"></p>
 
           <div class="between" style="margin-top:24px">
-            <p class="hint" style="margin:0">Have screenshots? Mention it, and you can attach them to the reply.</p>
+            <p class="fineprint">Have screenshots? Mention it, and you can attach them to the reply.</p>
             <button class="btn btn--primary btn--lg" type="submit">Send message</button>
           </div>
+          <p class="fineprint" id="cf-updates-note"><span aria-hidden="true">†</span> We will never sell your email or spam you with messages. Leave the box unticked and your email is only used to reply.</p>
         </form>
       </div>
     </div>
