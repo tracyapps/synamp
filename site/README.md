@@ -45,8 +45,11 @@ rebuilds the site. Each phase's badge (Done / In progress / Next / Planned) and
 the counts work themselves out from the ticks. Write it for listeners, not
 developers.
 
-Vercel only rebuilds when something in `site/` changed (see `ignoreCommand` in
-`vercel.json`), so app-only commits don't use up builds.
+Vercel only rebuilds when something in `site/` changed since the last
+deployment that went out (`scripts/skip-build.sh`, the "Ignored Build Step"), so
+app-only commits don't use up builds. A skipped build shows up in Vercel as
+**Canceled** — that's this, not an error. The very first deployment and manual
+redeploys always build.
 
 ## Put it online (one time)
 
