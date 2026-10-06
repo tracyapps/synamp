@@ -22,3 +22,7 @@
 .update a { color: var(--accent); }
 .update a:focus-visible, .update button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .update__steps { margin: 4px 0 10px; padding-left: 22px; font-size: 14px; line-height: 1.6; }
+
+/* Playback on this device */
+.playback { display: grid; gap: 6px; max-width: 560px; }
+.playback__hint { margin: 0 0 10px; font-size: 0.875rem; }

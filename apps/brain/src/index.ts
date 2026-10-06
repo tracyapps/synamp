@@ -43,7 +43,7 @@ import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
 import { otherAppPlays, pingCore, SetupError, SetupStore } from "./setup.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
 import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
-import { groupAlbums } from "./library/albums.ts";
+import { albumFolder, groupAlbums } from "./library/albums.ts";
 import { ImportError, matchPlaylists, parsePlaylistFile } from "./library/playlist-import.ts";
 import type { MatchedPlaylist } from "./library/playlist-import.ts";
 import { albumTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
@@ -314,7 +314,8 @@ function sessionView(session: Session) {
     queue: session.queue.map((entry) => {
       const track = byId.get(entry.track_id);
       const playable = !!(track?.path && resolveInside(config.libraryPath, track.path));
-      return { ...entry, playable, ...(playable ? { stream_url: signer.url(entry.track_id) } : {}) };
+      // The album folder lets the player play an album straight through instead of crossfading inside it.
+      return { ...entry, playable, ...(playable ? { stream_url: signer.url(entry.track_id), album_key: albumFolder(track!.path!) } : {}) };
     }),
   };
 }

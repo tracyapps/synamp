@@ -15,6 +15,7 @@ import Settings from "./Settings";
 import { UpdateNotice, VersionBadge } from "./Updates";
 import SpotCheck from "./SpotCheck";
 import ListenAnywhere from "./ListenAnywhere";
+import PlaybackSettings from "./PlaybackSettings";
 import { newId } from "./ids";
 import { AccessError, makeApi } from "./api";
 import Icon from "./ui/Icon";
@@ -160,6 +161,7 @@ export default function App() {
     case "settings":
       body = <div className="screen">
         <ScreenHead id={headingId} eyebrow="System" title="Settings"><p>Everything you can change without touching a config file.</p></ScreenHead>
+        <PlaybackSettings />
         <Settings request={call} startOpen />
       </div>;
       break;

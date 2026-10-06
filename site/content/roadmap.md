@@ -90,8 +90,8 @@ id: dj
 number: 5
 short: DJ mode
 goal: Seamless listening, with party-grade transitions.
-- [ ] Gapless albums: no silence between tracks
-- [ ] Crossfade, set to your taste
+- [~] Gapless albums: no silence between tracks
+- [x] Crossfade, set to your taste
 - [ ] DJ mode: songs matched by tempo and key so mixes flow
 - [ ] Skip mid-song and it blends instead of cutting
 
@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-06 — Crossfade between songs (albums still play straight through), a volume control, and the next song ready before this one ends
 - 2026-10-06 — MilkDrop visuals are back, dancing to your music or the radio, with a gentler mode that’s on by default
 - 2026-10-06 — World radio: search thousands of stations by name, country or kind, and keep your favourites
 - 2026-10-06 — Bring your playlists across from iTunes, Music, Winamp and other players — folders too

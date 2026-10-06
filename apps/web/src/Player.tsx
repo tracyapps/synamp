@@ -3,6 +3,7 @@ import "./styles/player.css";
 import { newId } from "./ids";
 import Icon from "./ui/Icon";
 import { setActiveAudio } from "./visuals/audio-graph";
+import { usePrefs, writePrefs } from "./playback-prefs";
 
 /*
  * The player is a thin client. It reports what physically happened — started,
@@ -14,6 +15,8 @@ export type QueueEntry = {
   entry_id: string; track_id: string; title: string; artist?: string;
   source?: { playlist_id: string; plan_hash?: string; rank: number };
   playable: boolean; stream_url?: string;
+  /** The album folder, so albums can play straight through. */
+  album_key?: string;
 };
 export type SessionView = { id: string; queue: QueueEntry[]; index: number; state: "idle" | "playing" | "paused" };
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
@@ -36,12 +39,27 @@ export default function Player({ request, session, onSession, playlistName, onCh
   /** Called after feedback that can change a playlist's contents (remove/restore). */
   onChanged: () => void;
 }) {
-  const audio = useRef<HTMLAudioElement>(null);
+  /*
+   * Two decks, like a DJ: the live one plays the current song while the other
+   * lines up the next, so the next song starts at once (no gap while it loads)
+   * or fades in over the end of this one (crossfade). The brain still decides
+   * what each report means; the decks only change when sound starts.
+   */
+  const deckA = useRef<HTMLAudioElement>(null);
+  const deckB = useRef<HTMLAudioElement>(null);
+  const decks = [deckA, deckB];
+  const live = useRef(0);
+  const deckEntry = useRef<[string | null, string | null]>([null, null]);
+  const el = () => decks[live.current]!.current;
+  const spare = () => decks[1 - live.current]!.current;
+  const fade = useRef<{ frame: number; from: HTMLAudioElement; to: HTMLAudioElement } | null>(null);
+  const endedFor = useRef("");        // entry whose "ended" we've already reported (a crossfade reports early)
   const played = useRef(0);           // seconds actually listened to (seeks excluded)
   const last = useRef(0);             // last playhead position, to tell listening from seeking
   const started = useRef<string>(""); // entry we've already reported "start" for
   const heartbeat = useRef(0);
   const wantPlay = useRef(false);
+  const prefs = usePrefs();
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [paused, setPaused] = useState(true);
@@ -51,6 +69,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const [askWhy, setAskWhy] = useState(false);
   const queueId = useId();
   const current = session ? session.queue[session.index] : undefined;
+  const upNext = session ? session.queue[session.index + 1] : undefined;
 
   /** Send a report; one retry on a network failure, with the same id so the brain dedupes it. */
   async function report(body: Record<string, unknown>) {
@@ -61,26 +80,65 @@ export default function Player({ request, session, onSession, playlistName, onCh
       try { onSession((await send()).session); } catch (again) { setStatus((again as Error).message); }
     }
   }
+  const reportFor = (entryId: string | undefined, type: string, extra: Record<string, unknown> = {}) =>
+    report({ event_id: newId(), report: { type, entry_id: entryId, ...extra } });
   const playedMs = () => Math.round(played.current * 1000);
-  const durationMs = () => (audio.current && Number.isFinite(audio.current.duration) ? Math.round(audio.current.duration * 1000) : undefined);
+  const durationMs = () => { const a = el(); return a && Number.isFinite(a.duration) ? Math.round(a.duration * 1000) : undefined; };
+  const clear = (deck: HTMLAudioElement | null, index: number) => {
+    if (!deck) return;
+    deck.pause(); deck.removeAttribute("src"); deck.load();
+    deckEntry.current[index] = null;
+  };
+  const stopFade = (finish = true) => {
+    const running = fade.current;
+    if (!running) return;
+    cancelAnimationFrame(running.frame);
+    fade.current = null;
+    if (finish) { running.from.pause(); running.to.volume = prefs.volume; }
+  };
 
-  // Load the current entry whenever it changes.
+  // Volume follows the setting (a fade in progress sets its own levels).
+  useEffect(() => { if (!fade.current) { for (const deck of decks) if (deck.current) deck.current.volume = prefs.volume; } }, [prefs.volume]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The current entry changed: either the spare deck already has it (it's
+  // fading in, or lined up), or load it on the live deck.
   useEffect(() => {
-    const el = audio.current;
-    if (!el) return;
     played.current = 0; last.current = 0; heartbeat.current = 0;
-    setPosition(0); setDuration(0); setAskWhy(false);
-    if (!current?.playable || !current.stream_url) { el.removeAttribute("src"); el.load(); return; }
-    el.src = current.stream_url;
-    if (wantPlay.current) el.play().catch(() => setStatus("Press play to start — the browser blocked autoplay."));
+    setPosition(0); setAskWhy(false);
+    const spareIndex = 1 - live.current;
+    if (current && deckEntry.current[spareIndex] === current.entry_id && spare()?.getAttribute("src")) {
+      live.current = spareIndex;
+      const deck = el()!;
+      setDuration(Number.isFinite(deck.duration) ? deck.duration : 0);
+      if (!fade.current) clear(spare(), 1 - live.current);
+      if (!deck.paused) {
+        setPaused(false);
+        setActiveAudio(deck);
+        if (started.current !== current.entry_id) { started.current = current.entry_id; reportFor(current.entry_id, "start", { duration_ms: durationMs() }); }
+      } else if (wantPlay.current) deck.play().catch(() => setStatus("Press play to start — the browser blocked autoplay."));
+      return;
+    }
+    stopFade();
+    clear(spare(), spareIndex);
+    const deck = el();
+    if (!deck) return;
+    setDuration(0);
+    if (!current?.playable || !current.stream_url) { clear(deck, live.current); return; }
+    deck.src = current.stream_url;
+    deck.volume = prefs.volume;
+    deckEntry.current[live.current] = current.entry_id;
+    if (wantPlay.current) deck.play().catch(() => setStatus("Press play to start — the browser blocked autoplay."));
   }, [current?.entry_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (away && audio.current && !audio.current.paused) { audio.current.pause(); report({ event_id: newId(), report: { type: "pause", entry_id: current?.entry_id } }); }
+    if (away && el() && !el()!.paused) { stopFade(); el()!.pause(); reportFor(current?.entry_id, "pause"); }
   }, [away]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => () => stopFade(false), []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!session || !session.queue.length) return (
     <section className="player player--idle" aria-label="Player" hidden={away}>
+      <audio ref={deckA} /><audio ref={deckB} />
       <div className="player__now">
         <span className="player__cover" aria-hidden="true" />
         <div className="player__text"><p className="player__title">Nothing playing</p><p className="player__meta">Press Play on an album or a playlist.</p></div>
@@ -90,45 +148,110 @@ export default function Player({ request, session, onSession, playlistName, onCh
 
   const entryBody = (type: string, extra: Record<string, unknown> = {}) =>
     ({ event_id: newId(), report: { type, entry_id: current?.entry_id, ...extra } });
+  const isLive = (event: { currentTarget: HTMLAudioElement }) => event.currentTarget === el();
+  /** Crossfade into the next song, unless it's the next track of the same album (albums play straight through). */
+  const fadeSeconds = () => {
+    if (!prefs.crossfade || !upNext) return 0;
+    if (prefs.albumsStraight && current?.album_key && current.album_key === upNext.album_key) return 0;
+    return prefs.crossfade;
+  };
 
-  const onPlaying = () => {
+  const onPlaying = (event: React.SyntheticEvent<HTMLAudioElement>) => {
+    const index = event.currentTarget === deckA.current ? 0 : 1;
+    if (deckEntry.current[index] !== current?.entry_id) return; // the next song, fading in: reported once it's current
     setPaused(false);
-    setActiveAudio(audio.current);
+    setActiveAudio(event.currentTarget);
     if (current && started.current !== current.entry_id) {
       started.current = current.entry_id;
       report(entryBody("start", { duration_ms: durationMs() }));
     } else report(entryBody("resume"));
   };
-  const onTime = () => {
-    const el = audio.current!;
-    const delta = el.currentTime - last.current;
+  const onTime = (event: React.SyntheticEvent<HTMLAudioElement>) => {
+    if (!isLive(event)) return;
+    const deck = event.currentTarget;
+    const delta = deck.currentTime - last.current;
     if (delta > 0 && delta < 1.5) played.current += delta; // normal playback, not a jump
-    last.current = el.currentTime;
-    setPosition(el.currentTime);
+    last.current = deck.currentTime;
+    setPosition(deck.currentTime);
     if (played.current - heartbeat.current >= 10) {
       heartbeat.current = played.current;
       report(entryBody("progress", { played_ms: playedMs() }));
     }
+    if (!Number.isFinite(deck.duration) || deck.paused || fade.current) return;
+    const left = deck.duration - deck.currentTime;
+    const spareIndex = 1 - live.current;
+    const other = spare();
+    // Line up the next song 20 seconds early so it can start at once.
+    if (upNext?.playable && upNext.stream_url && other && left < Math.max(20, fadeSeconds() + 8) && deckEntry.current[spareIndex] !== upNext.entry_id) {
+      other.preload = "auto";
+      other.src = upNext.stream_url;
+      other.volume = prefs.volume;
+      deckEntry.current[spareIndex] = upNext.entry_id;
+      other.load();
+    }
+    const seconds = fadeSeconds();
+    if (seconds > 0 && other && deckEntry.current[spareIndex] === upNext?.entry_id && left <= seconds && current) {
+      // Equal-power crossfade: the sum sounds steady, not dipping in the middle.
+      const begin = performance.now();
+      const span = Math.max(0.5, Math.min(seconds, left)) * 1000;
+      other.volume = 0;
+      other.currentTime = 0;
+      other.play().catch(() => undefined);
+      const step = () => {
+        const t = Math.min(1, (performance.now() - begin) / span);
+        deck.volume = prefs.volume * Math.cos((t * Math.PI) / 2);
+        other.volume = prefs.volume * Math.sin((t * Math.PI) / 2);
+        if (t < 1) fade.current!.frame = requestAnimationFrame(step);
+        else { deck.pause(); fade.current = null; }
+      };
+      fade.current = { frame: requestAnimationFrame(step), from: deck, to: other };
+      // The song played to its end as far as listening goes: report it now so the brain moves on.
+      endedFor.current = current.entry_id;
+      wantPlay.current = true;
+      report(entryBody("ended", { played_ms: playedMs(), duration_ms: durationMs() }));
+    }
   };
-  const onSeeked = () => {
-    const el = audio.current!;
-    report(entryBody("seek", { from_ms: Math.round(last.current * 1000), to_ms: Math.round(el.currentTime * 1000) }));
-    last.current = el.currentTime;
+  const onEnded = (event: React.SyntheticEvent<HTMLAudioElement>) => {
+    const index = event.currentTarget === deckA.current ? 0 : 1;
+    const entryId = deckEntry.current[index];
+    if (!entryId || entryId === endedFor.current) return; // already reported when the crossfade began
+    endedFor.current = entryId;
+    wantPlay.current = true;
+    // No crossfade: start the lined-up next song straight away, before the brain answers.
+    const other = spare();
+    if (upNext && other && deckEntry.current[1 - live.current] === upNext.entry_id) {
+      other.volume = prefs.volume;
+      other.play().catch(() => undefined);
+    }
+    reportFor(entryId, "ended", { played_ms: playedMs(), duration_ms: durationMs() });
+  };
+  const onSeeked = (event: React.SyntheticEvent<HTMLAudioElement>) => {
+    if (!isLive(event)) return;
+    const deck = event.currentTarget;
+    report(entryBody("seek", { from_ms: Math.round(last.current * 1000), to_ms: Math.round(deck.currentTime * 1000) }));
+    last.current = deck.currentTime;
   };
 
   const toggle = () => {
-    const el = audio.current!;
+    const deck = el()!;
     if (!current?.playable) return;
-    if (el.paused) { wantPlay.current = true; el.play().catch((cause) => setStatus(String(cause))); }
-    else { el.pause(); report(entryBody("pause")); }
+    if (deck.paused) { wantPlay.current = true; deck.play().catch((cause) => setStatus(String(cause))); }
+    else { stopFade(); deck.pause(); wantPlay.current = false; report(entryBody("pause")); }
   };
-  const next = () => { wantPlay.current = !audio.current?.paused || wantPlay.current; report(entryBody("skip", { played_ms: playedMs(), duration_ms: durationMs() })); };
+  const next = () => {
+    wantPlay.current = !el()?.paused || wantPlay.current;
+    stopFade();
+    report(entryBody("skip", { played_ms: playedMs(), duration_ms: durationMs() }));
+  };
   const previous = () => {
-    if (played.current > 3 && audio.current) { audio.current.currentTime = 0; last.current = 0; }
+    stopFade();
+    const deck = el();
+    if (played.current > 3 && deck) { deck.currentTime = 0; last.current = 0; }
     report({ event_id: newId(), report: { type: "previous", entry_id: current?.entry_id, played_ms: playedMs() } });
   };
   const jump = (index: number) => {
     wantPlay.current = true;
+    stopFade();
     report({ event_id: newId(), report: { type: "jump", index, entry_id: current?.entry_id, played_ms: playedMs() } });
   };
 
@@ -161,10 +284,12 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const from = current?.source ? playlistName(current.source.playlist_id) : undefined;
   return (
     <section className="player" aria-label="Player" hidden={away}>
-      <audio ref={audio} preload="metadata" onPlaying={onPlaying} onPause={() => setPaused(true)} onTimeUpdate={onTime} onSeeked={onSeeked}
-        onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
-        onEnded={() => { wantPlay.current = true; report(entryBody("ended", { played_ms: playedMs(), duration_ms: durationMs() })); }}
-        onError={() => { if (current?.playable) report(entryBody("error", { message: audio.current?.error?.message || "playback failed" })); }} />
+      {[deckA, deckB].map((deck, index) => (
+        <audio key={index} ref={deck} preload="metadata" onPlaying={onPlaying} onTimeUpdate={onTime} onSeeked={onSeeked} onEnded={onEnded}
+          onPause={(event) => { if (isLive(event) && !fade.current) setPaused(true); }}
+          onLoadedMetadata={(event) => { if (isLive(event)) setDuration(event.currentTarget.duration); }}
+          onError={(event) => { if (isLive(event) && current?.playable) report(entryBody("error", { message: event.currentTarget.error?.message || "playback failed" })); }} />
+      ))}
       <div className="player__now">
         <span className="player__cover" aria-hidden="true" />
         <div className="player__text">
@@ -185,9 +310,12 @@ export default function Player({ request, session, onSession, playlistName, onCh
           <span aria-hidden="true">{clock(position)}</span>
           <input type="range" min={0} max={duration || 0} step={1} value={Math.min(position, duration || 0)} disabled={!duration}
             aria-valuetext={`${clock(position)} of ${clock(duration)}`}
-            onChange={(event) => { if (audio.current) audio.current.currentTime = Number(event.target.value); }} />
+            onChange={(event) => { const deck = el(); if (deck) { stopFade(); deck.currentTime = Number(event.target.value); } }} />
           <span aria-hidden="true">{clock(duration)}</span>
         </label>
+        <label className="player__volume"><span className="visually-hidden">Volume</span>
+          <input type="range" className="range" min={0} max={1} step={0.05} value={prefs.volume} style={{ ["--range-p" as string]: `${Math.round(prefs.volume * 100)}%` }}
+            aria-valuetext={`${Math.round(prefs.volume * 100)}%`} onChange={(event) => writePrefs({ volume: Number(event.target.value) })} /></label>
         {onVisuals && <button type="button" className="btn btn--quiet btn--sm" onClick={onVisuals}><Icon name="smart" />Visuals</button>}
         <button type="button" className="btn btn--ghost btn--sm player__queue-toggle" aria-expanded={showQueue} aria-controls={queueId} onClick={() => setShowQueue(!showQueue)}>
           <Icon name="queue" />{showQueue ? "Hide queue" : "Up next"}

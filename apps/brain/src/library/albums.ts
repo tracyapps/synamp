@@ -41,6 +41,13 @@ export function discFromFolder(path: string): number | undefined {
   return match ? Number(match[1]) : undefined;
 }
 
+/** The album folder a track sits in, with "CD2"/"Disc 2" sub-folders folded into it. */
+export function albumFolder(path: string): string {
+  let folder = posix.dirname(path);
+  if (DISC_FOLDER.test(posix.basename(folder))) folder = posix.dirname(folder);
+  return folder;
+}
+
 export function groupAlbums(library: Library): AlbumUnit[] {
   const folders = new Map<string, LibraryTrack[]>();
   for (const track of library.tracks) {

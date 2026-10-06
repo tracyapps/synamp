@@ -58,3 +58,6 @@
   .player__seek { max-width: none; }
   .player__status { margin-left: 0; flex-basis: 100%; }
 }
+.player__volume { width: 96px; flex: none; }
+.player__volume .range { display: block; }
+@media (max-width: 820px) { .player__volume { display: none; } }
