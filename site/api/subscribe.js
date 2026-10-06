@@ -17,7 +17,8 @@ export default async function handler(req, res) {
         `${email} joined the early-access list.`,
         `Has a NAS or home server: ${hasServer ? "yes" : "not ticked"}`,
         `Signed up from: ${source}`,
-        listed ? "Added to your Resend audience." : "",
+        process.env.RESEND_SEGMENT_ID || process.env.RESEND_AUDIENCE_ID
+          ? (listed ? "Added to your Resend news list." : "Couldn't add them to your Resend news list — see the Vercel logs.") : "",
         "",
         "Reply to this email to write to them directly.",
       ].filter((line) => line !== null).join("\n"),

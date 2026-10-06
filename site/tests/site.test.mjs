@@ -49,7 +49,7 @@ function withResend(fn) {
     const original = globalThis.fetch;
     process.env.RESEND_API_KEY = "re_test"; process.env.NOTIFY_EMAIL = "me@example.com";
     globalThis.fetch = async (url, init) => { sent.push({ url, body: JSON.parse(init.body) }); return new Response("{}", { status: 200 }); };
-    try { await fn(sent); } finally { globalThis.fetch = original; delete process.env.RESEND_API_KEY; delete process.env.NOTIFY_EMAIL; delete process.env.RESEND_AUDIENCE_ID; }
+    try { await fn(sent); } finally { globalThis.fetch = original; delete process.env.RESEND_API_KEY; delete process.env.NOTIFY_EMAIL; delete process.env.RESEND_AUDIENCE_ID; delete process.env.RESEND_SEGMENT_ID; }
   };
 }
 
@@ -63,12 +63,28 @@ test("subscribe: emails you the signup, reply goes to them", withResend(async (s
   assert.match(sent[0].body.text, /NAS or home server: yes/);
 }));
 
-test("subscribe: adds to the audience when one is set", withResend(async (sent) => {
-  process.env.RESEND_AUDIENCE_ID = "aud_1";
+test("subscribe: adds a new contact straight into the segment", withResend(async (sent) => {
+  process.env.RESEND_SEGMENT_ID = "seg_1";
   await call(subscribe, { email: "fan@example.com" });
-  assert.match(sent[0].url, /audiences\/aud_1\/contacts/);
-  assert.equal(sent.length, 2);
+  assert.match(sent[0].url, /\/contacts$/);
+  assert.deepEqual(sent[0].body.segments, [{ id: "seg_1" }]);
+  assert.match(sent[1].body.text, /Added to your Resend news list/);
 }));
+
+test("subscribe: someone already in contacts is added to the segment instead", async () => {
+  const sent = [];
+  const original = globalThis.fetch;
+  process.env.RESEND_API_KEY = "re_test"; process.env.NOTIFY_EMAIL = "me@example.com"; process.env.RESEND_SEGMENT_ID = "seg_1";
+  globalThis.fetch = async (url, init) => {
+    sent.push(url);
+    if (url.endsWith("/contacts")) return new Response('{"name":"validation_error"}', { status: 422 });
+    return new Response("{}", { status: 200 });
+  };
+  try {
+    await call(subscribe, { email: "fan@example.com" });
+    assert.match(sent[1], /contacts\/fan%40example\.com\/segments\/seg_1$/);
+  } finally { globalThis.fetch = original; delete process.env.RESEND_API_KEY; delete process.env.NOTIFY_EMAIL; delete process.env.RESEND_SEGMENT_ID; }
+});
 
 test("subscribe: bad email refused; bots get a polite nothing", withResend(async (sent) => {
   assert.equal((await call(subscribe, { email: "nope" })).status, 400);
@@ -98,7 +114,7 @@ test("contact: needs the basics; sends the message with topic and version", with
 test("contact: ticking product news joins the audience; leaving it doesn't", withResend(async (sent) => {
   process.env.RESEND_AUDIENCE_ID = "aud_1";
   await call(contact, { name: "Ada", email: "ada@example.com", subject: "Hi", message: "Hello", updates: "yes" });
-  assert.match(sent[0].url, /audiences\/aud_1\/contacts/);
+  assert.deepEqual(sent[0].body.segments, [{ id: "aud_1" }], "an audience ID still works");
   assert.match(sent[1].body.text, /Product news: yes/);
   sent.length = 0;
   await call(contact, { name: "Ada", email: "ada@example.com", subject: "Hi", message: "Hello" });

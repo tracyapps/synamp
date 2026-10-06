@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         `From: ${name} <${email}>`,
         `Topic: ${topic}${urgency ? ` · urgency: ${urgency}` : ""}`,
         version ? `SynAmp version: ${version}` : "",
-        `Product news: ${wantsNews ? `yes, please${listed ? " (added to your Resend audience)" : ""}` : "no — only reply to this message"}`,
+        `Product news: ${wantsNews ? `yes, please${listed ? " (added to your Resend news list)" : process.env.RESEND_SEGMENT_ID || process.env.RESEND_AUDIENCE_ID ? " (couldn't add them to your Resend news list — see the Vercel logs)" : ""}` : "no — only reply to this message"}`,
         "",
         message,
         "",

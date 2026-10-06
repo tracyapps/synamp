@@ -69,7 +69,7 @@ The early-access and contact forms email each submission to you. Nothing is
 stored on the site.
 
 1. Make a free account at resend.com with the inbox you want submissions in.
-2. Resend → **API Keys** → create one (sending access is enough).
+2. Resend → **API Keys** → create one with **Full access** (a "Sending access" key can send email but can't add people to your news list).
 3. Vercel project → Settings → **Environment Variables** (Production and
    Preview):
 
@@ -87,9 +87,12 @@ notification emails need. Pressing **Reply** answers the person directly.
 
 Optional, later:
 
-- **`RESEND_AUDIENCE_ID`** — make an Audience in Resend and add its ID; every
-  early-access signup is also added there, so you can send the one "it's ready"
-  email from Resend when the time comes.
+- **`RESEND_SEGMENT_ID`** — in Resend → Contacts, make a segment (e.g.
+  "SynAmp news") and add its ID. Early-access signups, and contact-form senders
+  who tick "send me news", are added to it, so you can send updates from Resend
+  (Broadcasts) when the time comes. If a signup can't be added, the email you get
+  says so and the reason is in Vercel → Logs. (`RESEND_AUDIENCE_ID` still works
+  for older accounts.)
 - **Verify `synamp.app` in Resend** (it gives you a few DNS records), then set
   `MAIL_FROM` to e.g. `SynAmp <hello@synamp.app>`.
 - **Receive mail at hello@synamp.app** — most registrars offer free email

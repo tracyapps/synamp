@@ -10,8 +10,10 @@
  *   MAIL_FROM           optional — defaults to "SynAmp <onboarding@resend.dev>",
  *                       which works without setting up your domain, but can
  *                       only send to the email your Resend account uses.
- *   RESEND_AUDIENCE_ID  optional — also add early-access emails to a Resend
- *                       audience, so you can send the "it's ready" email later.
+ *   RESEND_SEGMENT_ID   optional — add early-access signups (and contact-form
+ *                       senders who tick "send me news") to this Resend segment,
+ *                       so you can send them updates later. RESEND_AUDIENCE_ID
+ *                       works too, for accounts that still have audiences.
  */
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -80,14 +82,39 @@ export async function sendEmail({ subject, text, replyTo }) {
   }
 }
 
+/**
+ * Add someone to your Resend contacts and the list (segment) you send news to.
+ * Resend now keeps one set of contacts with segments inside it; older accounts
+ * had "audiences". Either ID works here: RESEND_SEGMENT_ID or RESEND_AUDIENCE_ID.
+ * Returns true when they're on the list. Never throws — a failed add must not
+ * lose the message itself; the reason goes to the function log.
+ */
 export async function addToAudience(email) {
   const key = process.env.RESEND_API_KEY;
-  const audience = process.env.RESEND_AUDIENCE_ID;
-  if (!key || !audience) return false;
-  const response = await fetch(`https://api.resend.com/audiences/${encodeURIComponent(audience)}/contacts`, {
+  const list = process.env.RESEND_SEGMENT_ID || process.env.RESEND_AUDIENCE_ID;
+  if (!key || !list) return false;
+  const call = (path, body) => fetch(`https://api.resend.com${path}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ email, unsubscribed: false }),
+    body: JSON.stringify(body ?? {}),
   });
-  return response.ok;
+  const notes = [];
+  try {
+    // 1. A new contact, already in the segment.
+    let response = await call("/contacts", { email, unsubscribed: false, segments: [{ id: list }] });
+    if (response.ok) return true;
+    notes.push(`create ${response.status}: ${(await response.text()).slice(0, 200)}`);
+    // 2. Already a contact (e.g. they wrote before): just add them to the segment.
+    response = await call(`/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(list)}`);
+    if (response.ok) return true;
+    notes.push(`add to segment ${response.status}: ${(await response.text()).slice(0, 200)}`);
+    // 3. An older account that still has audiences.
+    response = await call(`/audiences/${encodeURIComponent(list)}/contacts`, { email, unsubscribed: false });
+    if (response.ok) return true;
+    notes.push(`audience ${response.status}: ${(await response.text()).slice(0, 200)}`);
+  } catch (error) {
+    notes.push(error.message);
+  }
+  console.error("Couldn't add to the Resend list:", notes.join(" | "));
+  return false;
 }
