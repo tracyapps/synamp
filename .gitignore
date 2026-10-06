@@ -20,3 +20,5 @@ deploy/.env
 deploy/data/
 apps/brain/data/
 design/
+# Files Claude hands over in chat (previews, renders) — kept locally, not in the repo
+Claude outputs/
