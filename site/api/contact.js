@@ -33,6 +33,6 @@ export default async function handler(req, res) {
     return reply(req, res, 200, "Thanks — your message is on its way. You'll usually hear back within a few days.");
   } catch (error) {
     console.error("contact:", error.message);
-    return reply(req, res, 502, "That didn't send.");
+    return reply(req, res, 502, "That didn't send.", error.reason || "error");
   }
 }

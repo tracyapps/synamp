@@ -41,12 +41,12 @@ export function looksLikeABot(form) {
 }
 
 /** Answer in the way the browser asked: JSON for the page's script, a page for a plain form post. */
-export function reply(req, res, status, message) {
+export function reply(req, res, status, message, reason) {
   const wantsJson = String(req.headers.accept || "").includes("application/json");
   if (wantsJson) {
     res.statusCode = status;
     res.setHeader("content-type", "application/json; charset=utf-8");
-    res.end(JSON.stringify(status < 400 ? { ok: true, message } : { ok: false, error: message }));
+    res.end(JSON.stringify(status < 400 ? { ok: true, message } : { ok: false, error: message, ...(reason ? { reason } : {}) }));
     return;
   }
   res.statusCode = 303;
@@ -57,7 +57,9 @@ export function reply(req, res, status, message) {
 export async function sendEmail({ subject, text, replyTo }) {
   const key = process.env.RESEND_API_KEY;
   const to = process.env.NOTIFY_EMAIL;
-  if (!key || !to) throw new Error("The form isn't set up yet (RESEND_API_KEY and NOTIFY_EMAIL).");
+  if (!key || !to) {
+    throw Object.assign(new Error("RESEND_API_KEY or NOTIFY_EMAIL is missing in this deployment (add them in Vercel, then redeploy)."), { reason: "not_configured" });
+  }
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -69,7 +71,13 @@ export async function sendEmail({ subject, text, replyTo }) {
       ...(replyTo ? { reply_to: replyTo } : {}),
     }),
   });
-  if (!response.ok) throw new Error(`Resend answered ${response.status}: ${(await response.text()).slice(0, 300)}`);
+  if (!response.ok) {
+    const body = await response.text();
+    let name = "";
+    try { name = JSON.parse(body).name || ""; } catch { /* not JSON */ }
+    // The full answer goes to the function log (Vercel → Logs); the browser only gets a short code.
+    throw Object.assign(new Error(`Resend answered ${response.status}: ${body.slice(0, 400)}`), { reason: `resend_${response.status}${name ? `_${name}` : ""}` });
+  }
 }
 
 export async function addToAudience(email) {

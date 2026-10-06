@@ -125,10 +125,13 @@
             <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off">
           </div>
 
-          <label class="check">
-            <input type="checkbox" name="consent" required>
-            <span>Use my email only to reply to this message. *</span>
-          </label>
+          <div class="field">
+            <label class="check" for="cf-consent">
+              <input type="checkbox" id="cf-consent" name="consent" required>
+              <span>Use my email only to reply to this message. *</span>
+            </label>
+            <span class="error" hidden>Please tick this box so a reply can be sent.</span>
+          </div>
 
           <p class="form-status" data-form-status hidden role="status"></p>
 

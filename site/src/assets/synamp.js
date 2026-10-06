@@ -160,7 +160,13 @@
         });
         if (!ok) {
           e.preventDefault();
-          say("Please fix the highlighted fields and try again.", "error");
+          // Name the fields, so nobody has to hunt for a red outline.
+          var names = $$("[aria-invalid='true']", form).map(function (field) {
+            var label = field.id && $("label[for='" + field.id + "']", form);
+            var text = (label ? label.textContent : field.name || "").replace(/\*/g, "").trim();
+            return text.length > 40 ? "the tick box" : text;
+          }).filter(Boolean);
+          say("Please check " + (names.length ? names.join(", ") : "the highlighted fields") + ", then send again.", "error");
           return;
         }
         if (!form.hasAttribute("data-ajax") || !window.fetch) return; // let the browser send it the ordinary way

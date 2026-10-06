@@ -26,6 +26,6 @@ export default async function handler(req, res) {
     return reply(req, res, 200, "Thank you — you're on the list. One email when SynAmp is ready, nothing else.");
   } catch (error) {
     console.error("subscribe:", error.message);
-    return reply(req, res, 502, "That didn't send.");
+    return reply(req, res, 502, "That didn't send.", error.reason || "error");
   }
 }
