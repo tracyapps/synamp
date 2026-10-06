@@ -1,8 +1,8 @@
 /* ============================================================================
-   SynAmp Spectrum — design system, layer 2: components
-   Buttons · chips · forms · cards · meters · tabs · accordion · tables ·
-   toast · modal · tooltip · search · empty · callouts · timeline
-   Requires synamp.css (tokens) first.
+   SynAmp Spectrum — components, as used by the app.
+   A copy of site/src/assets/synamp-ui.css (layer 2 of the design system),
+   minus the marketing-only parts (icon cards, roadmap timeline, swatches).
+   Change both together: the site's components page is the visual reference.
    ========================================================================== */
 
 /* ---------------------------------------------------------------------------
@@ -186,23 +186,6 @@
 .card p { color: var(--muted); font-size: 0.9375rem; }
 .card p + p { margin-top: var(--s-3); }
 
-/* Icon cards — the icon box hangs over the top edge, centred, elevated. */
-.card--icon { padding-top: calc(var(--card-pad) + 46px); }
-.card--icon > .card__icon {
-  position: absolute; top: -20px; left: var(--card-pad); margin: 0;
-  width: 58px; height: 58px;
-  background: linear-gradient(180deg, var(--surface-2), var(--surface));
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  z-index: 1;
-}
-.card--icon > .card__icon svg { width: 27px; height: 27px; }
-.card--icon h3, .card--icon h4 { margin: 0 0 var(--s-3); }
-@media (max-width: 640px) {
-  .card--icon { padding-top: calc(var(--card-pad) + 40px); }
-  .card--icon > .card__icon { top: -16px; width: 52px; height: 52px; }
-  .card--icon > .card__icon svg { width: 24px; height: 24px; }
-}
 
 .panel { background: var(--well); border: 1px solid var(--border); border-radius: var(--r-lg); }
 .panel__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); padding: var(--s-4) var(--s-5); }
@@ -404,37 +387,3 @@ dialog.modal[open] { animation: modal-in var(--dur-3) var(--ease-out); }
 .search .input { padding-left: 42px; height: 48px; }
 .search > svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--faint); pointer-events: none; }
 .search kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
-
-/* ---------------------------------------------------------------------------
-   TIMELINE (roadmap)
-   -------------------------------------------------------------------------- */
-.timeline { position: relative; }
-.timeline__rail { position: absolute; left: 19px; top: 6px; bottom: 6px; width: 2px; background: var(--border); }
-.phase { position: relative; padding-left: 58px; padding-bottom: var(--s-7); }
-.phase:last-child { padding-bottom: 0; }
-.phase__node {
-  position: absolute; left: 0; top: 2px; width: 40px; height: 40px; border-radius: 50%;
-  display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border-strong);
-  font: 500 0.8125rem var(--font-mono); color: var(--muted);
-}
-.phase[data-state="done"] .phase__node { background: rgba(0, 230, 118, 0.14); border-color: var(--success); color: var(--success); }
-.phase[data-state="active"] .phase__node { background: rgba(255, 205, 0, 0.16); border-color: var(--gold); color: var(--gold); box-shadow: 0 0 0 5px rgba(255, 205, 0, 0.09); }
-.phase[data-state="next"] .phase__node { border-color: var(--lavender); color: var(--lavender-ink); }
-.phase__head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
-.phase__head h2, .phase__head h3 { margin: 0; }
-.phase__goal { color: #d4d8e4; margin-bottom: var(--s-4); max-width: 62ch; }
-.phase__list { display: grid; gap: 8px; }
-.phase__list li { position: relative; padding-left: 24px; color: var(--muted); font-size: 0.9375rem; }
-.phase__list li::before { content: ""; position: absolute; left: 4px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); opacity: 0.75; }
-.phase__list li[data-kind="risk"]::before { background: var(--warn); }
-.phase__list li[data-kind="done"]::before { background: var(--success); }
-@media (max-width: 640px) { .phase { padding-left: 44px; } .timeline__rail { left: 15px; } .phase__node { width: 32px; height: 32px; font-size: 0.6875rem; } }
-
-/* ---------------------------------------------------------------------------
-   SPECTRUM SWATCHES
-   -------------------------------------------------------------------------- */
-.swatch { border-radius: var(--r-sm); overflow: hidden; border: 1px solid var(--border); }
-.swatch__chip { height: 72px; }
-.swatch__meta { padding: 10px 12px; background: var(--surface); }
-.swatch__name { font: 500 0.75rem var(--font-mono); letter-spacing: 0.06em; }
-.swatch__hex { font: 400 0.6875rem var(--font-mono); color: var(--muted); text-transform: uppercase; }

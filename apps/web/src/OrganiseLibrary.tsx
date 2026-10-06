@@ -76,7 +76,7 @@ function Moves({ decision }: { decision: Decision }) {
   const id = useId();
   return (
     <div className="organise__moves">
-      <button type="button" className="quiet" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
+      <button type="button" className="btn btn--ghost btn--sm" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
         {open ? "Hide" : "Show"} {n(decision.move_count)} file {decision.move_count === 1 ? "move" : "moves"}
       </button>
       {open && <div id={id}>
@@ -111,10 +111,10 @@ function Duplicates({ decision, keep }: { decision: Decision; keep: (pair: strin
                 {pair.how === "recording" && pair.chosen_by !== "you" && <> Same recording by its fingerprint, but not identical audio — if one is a remaster or another edition, pick the one you want.</>}</dd>
             </dl>
             <div className="organise__dupe-actions">
-              <button type="button" className="quiet" aria-describedby={`why-${pair.pair}`} onClick={() => keep(pair.pair, pair.aside.id)}>
+              <button type="button" className="btn btn--ghost btn--sm" aria-describedby={`why-${pair.pair}`} onClick={() => keep(pair.pair, pair.aside.id)}>
                 Keep the other copy instead<span className="visually-hidden">: {pair.aside.path}</span>
               </button>
-              {pair.chosen_by === "you" && <button type="button" className="quiet" onClick={() => keep(pair.pair, null)}>Go back to SynAmp’s pick</button>}
+              {pair.chosen_by === "you" && <button type="button" className="btn btn--ghost btn--sm" onClick={() => keep(pair.pair, null)}>Go back to SynAmp’s pick</button>}
             </div>
           </li>
         ))}
@@ -174,14 +174,14 @@ function SettingsForm({ settings, save }: { settings: Settings; save: (next: Set
         <label>Compilations folder
           <input value={draft.compilations_folder} onChange={(e) => setDraft({ ...draft, compilations_folder: e.target.value })} placeholder="leave empty to keep compilations where they are" />
         </label>
-        <button className="quiet">Save settings</button>
+        <button className="btn btn--ghost btn--sm">Save settings</button>
       </form>
     </details>
   );
 }
 
-export default function OrganiseLibrary({ request, upload }: { request: Request; upload: Upload }) {
-  const [open, setOpen] = useState(false);
+export default function OrganiseLibrary({ request, upload, startOpen = false }: { request: Request; upload: Upload; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   const [view, setView] = useState<View | null>(null);
   const [kind, setKind] = useState<"all" | "artist" | "album" | "import">("all");
   const [status, setStatus] = useState<"all" | Status | "conflict" | "duplicates">("proposed");
@@ -217,10 +217,10 @@ export default function OrganiseLibrary({ request, upload }: { request: Request;
 
   return (
     <section className="panel organise" aria-labelledby={`${ids}-title`}>
-      <button type="button" className="listening__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <h2 className="panel__toggle-heading"><button type="button" className="listening__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span id={`${ids}-title`}>Organise the library{s ? ` — ${n(s.total)} ${s.total === 1 ? "proposal" : "proposals"}, ${n(s.approved)} approved` : ""}</span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
-      </button>
+      </button></h2>
       {open && <div className="organise__body">
         {!view ? <p className="muted">Loading…</p> : <>
           <div className="organise__intro">
@@ -273,26 +273,26 @@ export default function OrganiseLibrary({ request, upload }: { request: Request;
 
           {view.matching > 0 && <div className="organise__bulk" role="group" aria-label={`All ${view.matching} shown`}>
             <span className="muted">{n(view.matching)} shown:</span>
-            <button type="button" className="quiet" onClick={() => reviewShown("approved")}>Approve all</button>
-            <button type="button" className="quiet" onClick={() => reviewShown("skipped")}>Skip all</button>
-            <button type="button" className="quiet" onClick={() => reviewShown("proposed")}>Decide later</button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => reviewShown("approved")}>Approve all</button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => reviewShown("skipped")}>Skip all</button>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={() => reviewShown("proposed")}>Decide later</button>
           </div>}
 
           {view.decisions.length === 0
             ? <p className="muted">{s!.total ? "Nothing matches these filters." : "Nothing to propose — the library already follows the naming settings (or hasn’t been exported yet)."}</p>
             : view.decisions.map((decision) => <DecisionCard key={decision.id} decision={decision} review={review} keep={keep} />)}
           {view.matching > PAGE && <nav className="missing__pages" aria-label="Pages">
-            <button type="button" className="quiet" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE))}>Previous</button>
+            <button type="button" className="btn btn--ghost btn--sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE))}>Previous</button>
             <span>{n(offset + 1)}–{n(Math.min(offset + PAGE, view.matching))} of {n(view.matching)}</span>
-            <button type="button" className="quiet" disabled={offset + PAGE >= view.matching} onClick={() => setOffset(offset + PAGE)}>Next</button>
+            <button type="button" className="btn btn--ghost btn--sm" disabled={offset + PAGE >= view.matching} onClick={() => setOffset(offset + PAGE)}>Next</button>
           </nav>}
 
           <div className="organise__apply">
             {view.busy ? <p>The librarian is working on a batch — progress is shown at the top of this panel.</p> : confirming === "apply" ? <>
               <p><strong>Apply {n(s!.approved)} approved {s!.approved === 1 ? "change" : "changes"}?</strong> This renames or moves {n(s!.approved_moves)} music files, plus the artwork beside them. It can be undone from the list below.</p>
-              <button type="button" className="primary" onClick={() => { setConfirming(null); send("/organise/apply", {}, "Sent to the librarian."); }}>Yes, apply</button>
-              <button type="button" className="quiet" onClick={() => setConfirming(null)}>Cancel</button>
-            </> : <button type="button" className="primary" disabled={!s!.approved} onClick={() => setConfirming("apply")}>
+              <button type="button" className="btn btn--primary" onClick={() => { setConfirming(null); send("/organise/apply", {}, "Sent to the librarian."); }}>Yes, apply</button>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setConfirming(null)}>Cancel</button>
+            </> : <button type="button" className="btn btn--primary" disabled={!s!.approved} onClick={() => setConfirming("apply")}>
               Apply {n(s!.approved)} approved {s!.approved === 1 ? "change" : "changes"}…
             </button>}
           </div>
@@ -309,9 +309,9 @@ export default function OrganiseLibrary({ request, upload }: { request: Request;
                   {problems.length > 0 && <ul>{problems.map((d) => <li key={d.id}>{d.title}: {[...(d.errors ?? []), ...(d.notes ?? []), ...(d.undo?.errors ?? [])].join("; ")}</li>)}</ul>}
                   {batch.id === latestUndoable?.id && !view.busy && (confirming === batch.id ? <>
                     <span>Put these files back where they were?</span>
-                    <button type="button" className="primary" onClick={() => { setConfirming(null); send("/organise/undo", { batch: batch.id }, "Undo sent to the librarian."); }}>Yes, undo</button>
-                    <button type="button" className="quiet" onClick={() => setConfirming(null)}>Cancel</button>
-                  </> : <button type="button" className="quiet" onClick={() => setConfirming(batch.id)}>Undo this batch…</button>)}
+                    <button type="button" className="btn btn--primary" onClick={() => { setConfirming(null); send("/organise/undo", { batch: batch.id }, "Undo sent to the librarian."); }}>Yes, undo</button>
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => setConfirming(null)}>Cancel</button>
+                  </> : <button type="button" className="btn btn--ghost btn--sm" onClick={() => setConfirming(batch.id)}>Undo this batch…</button>)}
                 </div>
               );
             })}

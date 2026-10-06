@@ -66,13 +66,13 @@ function ChooseArtist({ request, artistKey, name, initial, onDone }: { request: 
         <ul className="candidates">{candidates.map((c) => (
           <li key={c.id}><span><strong>{c.name}</strong>{c.disambiguation ? ` (${c.disambiguation})` : ""}
             <small>{[c.type, c.country, `match ${c.score}%`].filter(Boolean).join(" · ")}</small></span>
-            <button type="button" className="quiet" disabled={busy} onClick={() => pick(c.id)}>This one</button></li>
+            <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => pick(c.id)}>This one</button></li>
         ))}</ul>
       )}
       <form className="choose__search" onSubmit={search}>
         <label>Search MusicBrainz for<input value={query} onChange={(e) => setQuery(e.target.value)} /></label>
-        <button className="quiet" disabled={busy}>Search</button>
-        <button type="button" className="quiet" disabled={busy} onClick={() => pick(null)}>Not on MusicBrainz — skip</button>
+        <button className="btn btn--ghost btn--sm" disabled={busy}>Search</button>
+        <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => pick(null)}>Not on MusicBrainz — skip</button>
       </form>
     </div>
   );
@@ -110,8 +110,8 @@ function Following({ request, onChanged }: { request: Request; onChanged: (messa
   );
 }
 
-export default function DiscographyGaps({ request }: { request: Request }) {
-  const [open, setOpen] = useState(false);
+export default function DiscographyGaps({ request, startOpen = false }: { request: Request; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   const [report, setReport] = useState<Report | null>(null);
   const [tab, setTab] = useState<"gaps" | "fresh" | "review" | "follow">("gaps");
   const [query, setQuery] = useState("");
@@ -152,10 +152,10 @@ export default function DiscographyGaps({ request }: { request: Request }) {
 
   return (
     <section className="panel gaps" aria-labelledby={`${ids}-title`}>
-      <button type="button" className="listening__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <h2 className="panel__toggle-heading"><button type="button" className="listening__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span id={`${ids}-title`}>Discography gaps{s ? ` — ${n(s.gaps)} albums you don’t have${s.fresh ? `, ${n(s.fresh)} new` : ""}` : ""}</span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
-      </button>
+      </button></h2>
       {open && <div className="gaps__body">
         {!report ? <p className="muted">Loading…</p> : <>
           <div className="missing__matcher" role="status">
@@ -163,8 +163,8 @@ export default function DiscographyGaps({ request }: { request: Request }) {
               : checking ? <p>{c!.state === "waiting" ? `MusicBrainz is busy — waiting to retry (${c!.last_error}).` : `Looking up discographies — ${n(s!.waiting)} artists to go.`}{c!.current && <> Now: <strong>{c!.current}</strong></>}</p>
               : <p>Following {n(s!.followed)} artists · {n(s!.matched)} looked up · {n(s!.with_gaps)} with albums you don’t have{s!.waiting > 0 && <> · {n(s!.waiting)} not looked up yet</>}. Each artist is checked again monthly for new releases.</p>}
             {c!.contact_set && (checking
-              ? <button type="button" className="quiet" onClick={() => act("/discography/check", { action: "pause" })}>Pause</button>
-              : s!.waiting > 0 && <button type="button" className="primary" onClick={() => act("/discography/check", { action: "start" })}>{s!.checked ? "Look up the rest" : "Start looking up"}</button>)}
+              ? <button type="button" className="btn btn--ghost btn--sm" onClick={() => act("/discography/check", { action: "pause" })}>Pause</button>
+              : s!.waiting > 0 && <button type="button" className="btn btn--primary" onClick={() => act("/discography/check", { action: "start" })}>{s!.checked ? "Look up the rest" : "Start looking up"}</button>)}
           </div>
 
           <div className="missing__tabs" role="group" aria-label="Show">
@@ -197,16 +197,16 @@ export default function DiscographyGaps({ request }: { request: Request }) {
                   <div className="missing__album-head">
                     <h4>{artist.name}{artist.disambiguation ? <small> ({artist.disambiguation})</small> : null}</h4>
                     <span className="muted">you have {n(artist.have)} of {n(artist.total)}</span>
-                    <button type="button" className="quiet" aria-expanded={choosing === artist.key} onClick={() => setChoosing(choosing === artist.key ? null : artist.key)}>Wrong artist?</button>
+                    <button type="button" className="btn btn--ghost btn--sm" aria-expanded={choosing === artist.key} onClick={() => setChoosing(choosing === artist.key ? null : artist.key)}>Wrong artist?</button>
                   </div>
                   {choosing === artist.key && <ChooseArtist request={request} artistKey={artist.key} name={artist.name} initial={[]} onDone={(text) => { setChoosing(null); setMessage(text); load(); }} />}
                   <ul className="gaps__list">{artist.gaps.map((gap) => <GapRow key={gap.id} gap={gap} artist={artist.mb_name ?? artist.name} onNote={note} />)}</ul>
                 </div>
               ))}
             {pages > 1 && <nav className="missing__pages" aria-label="Pages">
-              <button type="button" className="quiet" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button>
+              <button type="button" className="btn btn--ghost btn--sm" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button>
               <span>Page {page + 1} of {pages} · {n(artists.length)} artists</span>
-              <button type="button" className="quiet" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Next</button>
+              <button type="button" className="btn btn--ghost btn--sm" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Next</button>
             </nav>}
           </>}
 

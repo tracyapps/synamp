@@ -1,7 +1,6 @@
 /* Missing-tracks panel. Reuses .listening__toggle and .chip from the other panels. */
 
-.panel.missing { min-height: 0; margin-top: 18px; }
-.missing__body { padding: 4px 24px 22px; border-top: 1px solid var(--hair); }
+.missing__body { padding: 4px 20px 20px; }
 .missing__matcher { display: flex; gap: 16px; align-items: center; justify-content: space-between; padding: 14px 0; font-size: 14px; }
 .missing__matcher p { margin: 0; max-width: 80ch; }
 .missing__matcher code, .missing__album code, .missing__found code { font: 12px var(--font-mono); color: var(--accent); }
@@ -11,7 +10,7 @@
 .missing__filters label { min-width: 160px; }
 .missing__album { border-top: 1px solid var(--hair); padding: 14px 0; }
 .missing__album-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
-.missing__album-head h4 { margin: 0; font: 600 15px var(--font-display); }
+.missing__album-head h4 { margin: 0; font: 400 15px var(--font-display); }
 .missing__album-head h4 small { font-weight: 400; color: var(--muted); }
 .missing__album-head .quiet { margin-left: auto; }
 .missing__table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }

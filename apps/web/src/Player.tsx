@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import "./styles/player.css";
 import { newId } from "./ids";
+import Icon from "./ui/Icon";
 
 /*
  * The player is a thin client. It reports what physically happened — started,
@@ -69,7 +70,14 @@ export default function Player({ request, session, onSession, playlistName, onCh
     if (wantPlay.current) el.play().catch(() => setStatus("Press play to start — the browser blocked autoplay."));
   }, [current?.entry_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!session || !session.queue.length) return null;
+  if (!session || !session.queue.length) return (
+    <section className="player player--idle" aria-label="Player">
+      <div className="player__now">
+        <span className="player__cover" aria-hidden="true" />
+        <div className="player__text"><p className="player__title">Nothing playing</p><p className="player__meta">Press Play on an album or a playlist.</p></div>
+      </div>
+    </section>
+  );
 
   const entryBody = (type: string, extra: Record<string, unknown> = {}) =>
     ({ event_id: newId(), report: { type, entry_id: current?.entry_id, ...extra } });
@@ -148,16 +156,20 @@ export default function Player({ request, session, onSession, playlistName, onCh
         onEnded={() => { wantPlay.current = true; report(entryBody("ended", { played_ms: playedMs(), duration_ms: durationMs() })); }}
         onError={() => { if (current?.playable) report(entryBody("error", { message: audio.current?.error?.message || "playback failed" })); }} />
       <div className="player__now">
-        {finished ? <p className="player__title">End of queue</p> : <>
-          <p className="player__title">{current?.title}<span>{current?.artist}</span></p>
-          <p className="player__meta">{session.index + 1} of {session.queue.length}{from ? ` · from ${from}` : ""}</p>
-          {current && !current.playable && <p className="player__note">No audio file for this track. Entries from the synthetic sample have no file; analyzer exports do.</p>}
-        </>}
+        <span className="player__cover" aria-hidden="true" />
+        <div className="player__text">
+          {finished ? <p className="player__title">End of queue</p> : <>
+            <p className="player__title">{current?.title}</p>
+            <p className="player__meta">{current?.artist ? `${current.artist} · ` : ""}{session.index + 1} of {session.queue.length}{from ? ` · from ${from}` : ""}</p>
+          </>}
+        </div>
       </div>
       <div className="player__transport">
-        <button type="button" onClick={previous} aria-label="Previous track" disabled={finished && session.index === 0}>⏮</button>
-        <button type="button" className="player__play" onClick={toggle} aria-label={paused ? "Play" : "Pause"} disabled={!current?.playable}>{paused ? "▶" : "⏸"}</button>
-        <button type="button" onClick={next} aria-label="Skip to next track" disabled={finished}>⏭</button>
+        <button type="button" className="player__btn" onClick={previous} aria-label="Previous track" disabled={finished && session.index === 0}><Icon name="previous" /></button>
+        <button type="button" className="player__btn player__play" onClick={toggle} aria-label={paused ? "Play" : "Pause"} disabled={!current?.playable}><Icon name={paused ? "play" : "pause"} size={20} /></button>
+        <button type="button" className="player__btn" onClick={next} aria-label="Skip to next track" disabled={finished}><Icon name="next" /></button>
+      </div>
+      <div className="player__right">
         <label className="player__seek">
           <span className="visually-hidden">Seek</span>
           <span aria-hidden="true">{clock(position)}</span>
@@ -166,30 +178,31 @@ export default function Player({ request, session, onSession, playlistName, onCh
             onChange={(event) => { if (audio.current) audio.current.currentTime = Number(event.target.value); }} />
           <span aria-hidden="true">{clock(duration)}</span>
         </label>
+        <button type="button" className="btn btn--ghost btn--sm player__queue-toggle" aria-expanded={showQueue} aria-controls={queueId} onClick={() => setShowQueue(!showQueue)}>
+          <Icon name="queue" />{showQueue ? "Hide queue" : "Up next"}
+        </button>
       </div>
+      {current && !current.playable && !finished && <p className="player__note">No audio file for this track yet. It plays once the analyzer has listed it.</p>}
       {current && !finished && (
         <div className="player__feedback" role="group" aria-label="Tell SynAmp what you think of this track">
-          <button type="button" onClick={() => feedback("love")}>♥ Love</button>
-          <button type="button" aria-expanded={askWhy} onClick={() => setAskWhy(!askWhy)}>Not for this</button>
-          {current.source && <button type="button" onClick={() => feedback("remove")}>Remove from {from ?? "playlist"}</button>}
+          <button type="button" className="chip" onClick={() => feedback("love")}><Icon name="heart" size={15} />Love</button>
+          <button type="button" className="chip" aria-expanded={askWhy} onClick={() => setAskWhy(!askWhy)}>Not for this</button>
+          {current.source && <button type="button" className="chip" onClick={() => feedback("remove")}>Remove from {from ?? "playlist"}</button>}
           {askWhy && (
             <div className="player__why" role="group" aria-label="Why? (optional)">
-              <button type="button" onClick={() => feedback("thumb_down", { reason: "wrong_energy" })}>Wrong energy</button>
-              <button type="button" onClick={() => feedback("thumb_down", { reason: "wrong_vibe" })}>Wrong vibe</button>
-              <button type="button" onClick={() => feedback("thumb_down")}>Just not this</button>
+              <button type="button" className="chip" onClick={() => feedback("thumb_down", { reason: "wrong_energy" })}>Wrong energy</button>
+              <button type="button" className="chip" onClick={() => feedback("thumb_down", { reason: "wrong_vibe" })}>Wrong vibe</button>
+              <button type="button" className="chip" onClick={() => feedback("thumb_down")}>Just not this</button>
               <span className="muted">Skipping on its own only counts for right now.</span>
             </div>
           )}
+          <p className="player__status" role="status">{status}{undo && <> <button type="button" className="linklike" onClick={restore}>Undo</button></>}</p>
         </div>
       )}
-      <p className="player__status" role="status">{status}{undo && <> <button type="button" className="linklike" onClick={restore}>Undo</button></>}</p>
-      <button type="button" className="quiet player__queue-toggle" aria-expanded={showQueue} aria-controls={queueId} onClick={() => setShowQueue(!showQueue)}>
-        {showQueue ? "Hide queue" : "Up next"}
-      </button>
-      <ol id={queueId} hidden={!showQueue} className="player__queue">
+      <ol id={queueId} hidden={!showQueue} className="player__queue" aria-label="Queue">
         {session.queue.map((entry, index) => (
           <li key={entry.entry_id} aria-current={index === session.index ? "true" : undefined}>
-            <button type="button" onClick={() => jump(index)}>{entry.title}<small>{entry.artist ?? ""}{entry.playable ? "" : " · no file"}</small></button>
+            <button type="button" onClick={() => jump(index)}><span className="player__queue-n" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><span>{entry.title}<small>{entry.artist ?? ""}{entry.playable ? "" : " · no file yet"}</small></span></button>
           </li>
         ))}
       </ol>

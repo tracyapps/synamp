@@ -1,11 +1,10 @@
-/* Settings panel. The toggle reuses .listening__toggle; on/off switches use .switch (listening.css). */
+/* Settings panel. The toggle reuses .listening__toggle; on/off switches use .switch (app.css). */
 
-.panel.settings { min-height: 0; margin-top: 18px; }
-.settings__body { padding: 4px 24px 22px; border-top: 1px solid var(--hair); }
+.settings__body { padding: 4px 20px 20px; }
 .settings__body form { max-width: 640px; }
 .settings__intro { margin: 14px 0 4px; font-size: 14px; }
 .settings__group { border: 0; margin: 18px 0 0; padding: 0; display: grid; gap: 6px; }
-.settings__group legend { font: 600 15px var(--font-display); color: var(--text); padding: 0; margin-bottom: 8px; }
+.settings__group legend { font: 400 15px var(--font-display); color: var(--text); padding: 0; margin-bottom: 8px; }
 .settings__group label { margin-top: 8px; }
 .settings__group .quiet { justify-self: start; margin-top: 4px; }
 .settings__hint { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
@@ -17,8 +16,8 @@
 .settings__group > p { margin: 0; font-size: 14px; }
 
 /* "An update is ready to install" — top of the page, until it's built. */
-.update { margin: 0 0 18px; padding: 16px 20px; border: 1px solid var(--accent); border-radius: 8px; background: rgba(232, 168, 56, .08); }
-.update h2 { margin: 0 0 6px; font: 600 16px var(--font-display); }
+.update { margin: 0 0 18px; padding: 16px 20px; border: 1px solid var(--accent); border-radius: 8px; background: rgba(255, 205, 0, .08); }
+.update h2 { margin: 0 0 6px; font: 400 16px var(--font-display); }
 .update p { margin: 0 0 8px; font-size: 14px; }
 .update a { color: var(--accent); }
 .update a:focus-visible, .update button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

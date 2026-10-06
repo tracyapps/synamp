@@ -27,8 +27,8 @@ const ORIGIN_TEXT: Record<Origin, string> = {
   unset: "Not set.",
 };
 
-export default function Settings({ request }: { request: Request }) {
-  const [open, setOpen] = useState(false);
+export default function Settings({ request, startOpen = false }: { request: Request; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   const [view, setView] = useState<View | null>(null);
   const [contact, setContact] = useState("");
   const [publicUrl, setPublicUrl] = useState("");
@@ -82,10 +82,10 @@ export default function Settings({ request }: { request: Request }) {
 
   return (
     <section className="panel settings" aria-labelledby={`${id}-title`}>
-      <button type="button" className="listening__toggle" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => setOpen(!open)}>
+      <h2 className="panel__toggle-heading"><button type="button" className="listening__toggle" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => setOpen(!open)}>
         <span id={`${id}-title`}>Settings</span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
-      </button>
+      </button></h2>
       {open && <div className="settings__body" id={`${id}-body`}>
         {!s ? <p className="muted">{problem || "Loading…"}</p> : (
           <form onSubmit={submit} noValidate>
@@ -123,7 +123,7 @@ export default function Settings({ request }: { request: Request }) {
                 {hint("lastfm_api_secret", s.lastfm_api_secret ? "Leave empty to keep it." : "")}
               </p>
               {(s.origins.lastfm_api_key === "app" || s.origins.lastfm_api_secret === "app") &&
-                <button type="button" className="quiet" disabled={busy}
+                <button type="button" className="btn btn--ghost btn--sm" disabled={busy}
                   onClick={() => save({ lastfm_api_key: "", lastfm_api_secret: "" }, "Removed the Last.fm key and secret saved here.")}>
                   Remove the saved key and secret
                 </button>}
@@ -148,7 +148,7 @@ export default function Settings({ request }: { request: Request }) {
             <AboutInstall request={request} />
 
             <div className="settings__actions">
-              <button type="submit" className="primary" disabled={busy}>{busy ? "Saving…" : "Save settings"}</button>
+              <button type="submit" className="btn btn--primary" disabled={busy}>{busy ? "Saving…" : "Save settings"}</button>
             </div>
             <p className={problem ? "alert settings__problem" : "settings__problem"} role="alert">{problem}</p>
             <p className="muted" role="status">{message}</p>

@@ -38,8 +38,8 @@ function tappedBpm(taps: number[]): number | null {
   return median > 0 ? 60_000 / median : null;
 }
 
-export default function SpotCheck({ request }: { request: Request }) {
-  const [open, setOpen] = useState(false);
+export default function SpotCheck({ request, startOpen = false }: { request: Request; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   const [view, setView] = useState<View | null>(null);
   const [taps, setTaps] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
@@ -86,10 +86,10 @@ export default function SpotCheck({ request }: { request: Request }) {
   const startAt = t?.duration_s && t.duration_s > 120 ? 45 : 0; // skip the intro, where the beat often hasn't started
   return (
     <section className="panel spotcheck" aria-labelledby={`${id}-title`}>
-      <button type="button" className="listening__toggle" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => setOpen(!open)}>
+      <h2 className="panel__toggle-heading"><button type="button" className="listening__toggle" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => setOpen(!open)}>
         <span id={`${id}-title`}>Check the measurements{s && s.checked ? ` — ${s.checked} checked, ${pct(s.accuracy)} right` : ""}</span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
-      </button>
+      </button></h2>
       {open && <div className="spotcheck__body" id={`${id}-body`}>
         <p className="spotcheck__intro">Listen to a random analysed track and say whether its tempo is right. A few minutes of this tells us how far to trust the measurements — and every answer fixes that track for smart playlists.</p>
         {!view ? <p className="muted">{message || "Loading…"}</p> : <>
@@ -111,13 +111,13 @@ export default function SpotCheck({ request }: { request: Request }) {
               </div>
 
               <div className="spotcheck__answers" role="group" aria-label="Is the measured tempo right?">
-                {tapped && <button type="button" className="primary" disabled={busy} onClick={() => answer({ tapped_bpm: Math.round(tapped * 10) / 10 })}>Use my tapped tempo ({bpmText(tapped)})</button>}
-                <button type="button" className={tapped ? "quiet" : "primary"} disabled={busy} onClick={() => answer({ verdict: "right" })}>Sounds right</button>
-                <button type="button" className="quiet" disabled={busy} onClick={() => answer({ verdict: "half" })}>Real tempo is half ({bpmText(t.bpm / 2)})</button>
-                <button type="button" className="quiet" disabled={busy} onClick={() => answer({ verdict: "double" })}>Real tempo is double ({bpmText(t.bpm * 2)})</button>
-                <button type="button" className="quiet" disabled={busy} onClick={() => answer({ verdict: "wrong" })}>Something else</button>
-                <button type="button" className="quiet" disabled={busy} onClick={() => answer({ verdict: "no_beat" })}>No steady beat</button>
-                <button type="button" className="quiet" disabled={busy} onClick={() => answer({ verdict: "skip" })}>Skip this one</button>
+                {tapped && <button type="button" className="btn btn--primary" disabled={busy} onClick={() => answer({ tapped_bpm: Math.round(tapped * 10) / 10 })}>Use my tapped tempo ({bpmText(tapped)})</button>}
+                <button type="button" className={tapped ? "btn btn--ghost" : "btn btn--primary"} disabled={busy} onClick={() => answer({ verdict: "right" })}>Sounds right</button>
+                <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => answer({ verdict: "half" })}>Real tempo is half ({bpmText(t.bpm / 2)})</button>
+                <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => answer({ verdict: "double" })}>Real tempo is double ({bpmText(t.bpm * 2)})</button>
+                <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => answer({ verdict: "wrong" })}>Something else</button>
+                <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => answer({ verdict: "no_beat" })}>No steady beat</button>
+                <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => answer({ verdict: "skip" })}>Skip this one</button>
               </div>
             </div>
           ) : (

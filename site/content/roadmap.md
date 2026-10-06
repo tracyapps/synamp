@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-06 — The app gets its new look: a menu down the side, a player that stays at the bottom, and easier-to-read text
 - 2026-10-05 — The library page explains when analysis is waiting on a library update, instead of looking stuck
 - 2026-10-05 — Second copies of the same song: keep the better one, set the other aside (never deleted)
 - 2026-10-04 — "Listen anywhere" checklist: set up private access from your phone, step by step

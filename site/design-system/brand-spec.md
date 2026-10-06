@@ -25,7 +25,7 @@ tints and states. The app token file is delivered as `assets/tokens.css`.
 | `--bg` | `#212637` | `oklch(0.272 0.033 271.5)` | Brand slate — the page ground |
 | `--surface` | `#2a3145` | `oklch(0.316 0.037 269.3)` | Raised panels and cards |
 | `--fg` | `#f1f1f1` | `oklch(0.958 0 89.9)` | Primary ink |
-| `--muted` | `#9aa1b8` | `oklch(0.711 0.034 272.1)` | Labels, secondary copy |
+| `--muted` | `#a4abc1` | `oklch(0.743 0.033 271.6)` | Labels, secondary copy |
 | `--border` | `rgba(255,255,255,.10)` | `oklch(1 0 0 / 0.10)` | Hairline structure |
 | `--accent` | `#ffcd00` | `oklch(0.867 0.177 90.8)` | Gold signal — the one action colour |
 

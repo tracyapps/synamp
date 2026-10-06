@@ -22,7 +22,7 @@
 
   /* Ink */
   --fg: #f1f1f1;             /* oklch(0.958 0 89.9) */
-  --muted: #9aa1b8;          /* 5.84:1 on slate · 7.50:1 on ink */
+  --muted: #a4abc1;          /* 6.57:1 on slate · 5.65:1 on surface · 4.72:1 on surface-2 */
   --faint: #848ca6;          /* quiet text: 5.77:1 on ink, 4.5:1 on slate */
   --placeholder: #8b93aa;    /* 4.90:1 on slate · input placeholders */
   --on-gold: #1a1503;        /* oklch(0.197 0.034 95.3) */

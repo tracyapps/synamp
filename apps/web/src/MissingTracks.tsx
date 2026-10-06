@@ -34,7 +34,7 @@ function CandidateList({ candidates, onPick }: { candidates: Candidate[]; onPick
           <span><strong>{c.title}</strong> — {c.artist}
             <small>{[c.date?.slice(0, 4), c.country, c.formats.join(" + "), `${c.track_count} tracks`, c.disambiguation].filter(Boolean).join(" · ")}</small>
           </span>
-          <button type="button" className="quiet" onClick={() => onPick(c.id)}>This one</button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => onPick(c.id)}>This one</button>
         </li>
       ))}
     </ul>
@@ -68,8 +68,8 @@ function ChooseEdition({ request, albumKey, title, artist, initial, onDone }: {
         <span id={`${formId}-l`} className="muted">Search MusicBrainz:</span>
         <label>Album<input value={q.title} onChange={(e) => setQ({ ...q, title: e.target.value })} /></label>
         <label>Artist<input value={q.artist} onChange={(e) => setQ({ ...q, artist: e.target.value })} /></label>
-        <button className="quiet" disabled={busy}>Search</button>
-        <button type="button" className="quiet" disabled={busy} onClick={() => pick(null)}>Not on MusicBrainz — skip it</button>
+        <button className="btn btn--ghost btn--sm" disabled={busy}>Search</button>
+        <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => pick(null)}>Not on MusicBrainz — skip it</button>
       </form>
     </div>
   );
@@ -98,8 +98,8 @@ function TrackRow({ row, save }: { row: Row; save: (id: string, change: Partial<
   );
 }
 
-export default function MissingTracks({ request, download }: { request: Request; download: (path: string, filename: string) => Promise<void> }) {
-  const [open, setOpen] = useState(false);
+export default function MissingTracks({ request, download, startOpen = false }: { request: Request; download: (path: string, filename: string) => Promise<void>; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   const [report, setReport] = useState<Report | null>(null);
   const [tab, setTab] = useState<"missing" | "review" | "found">("missing");
   const [query, setQuery] = useState("");
@@ -163,10 +163,10 @@ export default function MissingTracks({ request, download }: { request: Request;
 
   return (
     <section className="panel missing" aria-labelledby={`${ids}-title`}>
-      <button type="button" className="listening__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <h2 className="panel__toggle-heading"><button type="button" className="listening__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span id={`${ids}-title`}>Missing tracks{s ? ` — ${n(s.missing_tracks)} in ${n(s.with_gaps)} albums` : ""}</span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
-      </button>
+      </button></h2>
       {open && <div className="missing__body">
         {!report ? <p className="muted">Loading…</p> : <>
           <div className="missing__matcher" role="status">
@@ -180,8 +180,8 @@ export default function MissingTracks({ request, download }: { request: Request;
                 {m!.waiting > 0 && <> · {n(m!.waiting)} not checked yet</>}. MusicBrainz allows about one request a second, so a full library takes a few hours in the background.</p>
             )}
             {m!.contact_set && (matching
-              ? <button type="button" className="quiet" onClick={() => matcherAction("pause")}>Pause</button>
-              : m!.waiting > 0 && <button type="button" className="primary" onClick={() => matcherAction("start")}>{s!.checked ? "Check the rest" : "Start checking"}</button>)}
+              ? <button type="button" className="btn btn--ghost btn--sm" onClick={() => matcherAction("pause")}>Pause</button>
+              : m!.waiting > 0 && <button type="button" className="btn btn--primary" onClick={() => matcherAction("start")}>{s!.checked ? "Check the rest" : "Start checking"}</button>)}
           </div>
 
           <div className="missing__tabs" role="group" aria-label="Show">
@@ -200,7 +200,7 @@ export default function MissingTracks({ request, download }: { request: Request;
               {allTags.length > 0 && <label>Tag<select value={tag} onChange={(e) => { setTag(e.target.value); setPage(0); }}>
                 <option value="">Any</option>{allTags.map((t) => <option key={t}>{t}</option>)}</select></label>}
               <div className="missing__sort" role="group" aria-label="Sort albums by">{sortButton("artist", "Artist")}{sortButton("album", "Album")}{sortButton("gaps", "Most missing")}</div>
-              <button type="button" className="quiet" onClick={() => download("/missing.csv", "synamp-missing-tracks.csv").catch((c) => setMessage((c as Error).message))}>Download CSV</button>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => download("/missing.csv", "synamp-missing-tracks.csv").catch((c) => setMessage((c as Error).message))}>Download CSV</button>
             </div>
             {shown.length === 0 ? <p className="muted">{report.rows.length ? "Nothing matches these filters." : "No gaps found yet."}</p> : shown.map((group) => {
               const first = group[0]!;
@@ -209,7 +209,7 @@ export default function MissingTracks({ request, download }: { request: Request;
                   <div className="missing__album-head">
                     <h4>{first.artist} — {first.album}{first.year ? ` (${first.year})` : ""}{first.edition ? <small> [{first.edition}]</small> : null}</h4>
                     <span className="muted">have {first.album_have} of {first.album_total} · <code>{first.album_key}</code></span>
-                    <button type="button" className="quiet" aria-expanded={editing === first.album_key} onClick={() => setEditing(editing === first.album_key ? null : first.album_key)}>Wrong edition?</button>
+                    <button type="button" className="btn btn--ghost btn--sm" aria-expanded={editing === first.album_key} onClick={() => setEditing(editing === first.album_key ? null : first.album_key)}>Wrong edition?</button>
                   </div>
                   {editing === first.album_key && <EditionLoader request={request} albumKey={first.album_key} onDone={(text) => { setEditing(null); setMessage(text); load(); }} />}
                   <table className="missing__table">
@@ -221,9 +221,9 @@ export default function MissingTracks({ request, download }: { request: Request;
               );
             })}
             {pages > 1 && <nav className="missing__pages" aria-label="Pages">
-              <button type="button" className="quiet" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button>
+              <button type="button" className="btn btn--ghost btn--sm" disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button>
               <span>Page {page + 1} of {pages} · {n(albums.length)} albums</span>
-              <button type="button" className="quiet" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Next</button>
+              <button type="button" className="btn btn--ghost btn--sm" disabled={page + 1 >= pages} onClick={() => setPage(page + 1)}>Next</button>
             </nav>}
           </>}
 
