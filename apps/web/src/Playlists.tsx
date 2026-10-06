@@ -9,6 +9,8 @@ import Icon from "./ui/Icon";
 import type { IconName } from "./ui/Icon";
 import { EmptyState, ScreenHead } from "./ui/kit";
 import PhonePlaylists from "./PhonePlaylists";
+import ImportPlaylists from "./ImportPlaylists";
+import type { RawUpload } from "./ImportPlaylists";
 import "./styles/playlists.css";
 
 export type Track = { id: string; title: string; artist?: string };
@@ -36,8 +38,9 @@ function tree(nodes: PlaylistNode[], parentId: string | null, depth = 0): Array<
 }
 
 /** The Playlists screen: describe a playlist, and the folders/playlists/roll-ups workshop. */
-export default function Playlists({ request, nodes, loading, refreshNodes, play, headingId }: {
+export default function Playlists({ request, upload, nodes, loading, refreshNodes, play, headingId }: {
   request: Request;
+  upload: RawUpload;
   nodes: PlaylistNode[];
   loading: boolean;
   refreshNodes: () => Promise<PlaylistNode[]>;
@@ -182,6 +185,7 @@ export default function Playlists({ request, nodes, loading, refreshNodes, play,
           </> : <EmptyState icon="playlists" title="Select a playlist">Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole folder into one live list.</EmptyState>}
         </section>
       </div>
+      <ImportPlaylists request={request} upload={upload} onImported={() => { refreshNodes().catch(() => undefined); }} />
       <PhonePlaylists request={request} />
     </div>
   );

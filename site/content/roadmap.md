@@ -34,7 +34,7 @@ goal: Play your own music anywhere — phone, car, computer — so a streaming s
 - [x] Your whole library, streaming from your own server
 - [x] A guided checklist to listen away from home, privately, with no port forwarding
 - [~] Lock-screen controls, background play and CarPlay through phone apps you already know
-- [ ] Bring your existing playlists across
+- [x] Bring your existing playlists across
 - [ ] Lighter streams on mobile data, full quality at home
 
 ## Library care
@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-06 — Bring your playlists across from iTunes, Music, Winamp and other players — folders too
 - 2026-10-06 — Your SynAmp playlists show up in your phone apps, and stay up to date by themselves
 - 2026-10-06 — Shuffle a whole folder of playlists with one button
 - 2026-10-06 — Browse and search your albums and songs, play them, and add songs to playlists by name

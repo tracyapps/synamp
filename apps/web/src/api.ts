@@ -42,10 +42,10 @@ export function makeApi(token: string) {
     URL.revokeObjectURL(url);
   }
 
-  /** A raw file upload (PUT), with the access token. */
-  async function upload(path: string, body: Blob, headers: Record<string, string> = {}) {
+  /** A raw file upload (PUT unless told otherwise), with the access token. */
+  async function upload(path: string, body: Blob, headers: Record<string, string> = {}, method = "PUT") {
     const response = await fetch(`/api/v1${path}`, {
-      method: "PUT", body,
+      method, body,
       headers: { "content-type": "application/octet-stream", ...headers, ...auth() },
     });
     const data = await response.json().catch(() => ({}));

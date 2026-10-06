@@ -119,7 +119,7 @@ export default function App() {
       </div>;
       break;
     case "playlists":
-      body = <Playlists request={call} nodes={nodes} loading={loading} refreshNodes={refreshNodes} play={play} headingId={headingId} />;
+      body = <Playlists request={call} upload={upload} nodes={nodes} loading={loading} refreshNodes={refreshNodes} play={play} headingId={headingId} />;
       break;
     case "care":
       body = <div className="screen">

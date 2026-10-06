@@ -42,6 +42,8 @@ import { otherAppPlays, pingCore, SetupError, SetupStore } from "./setup.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
 import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
 import { groupAlbums } from "./library/albums.ts";
+import { ImportError, matchPlaylists, parsePlaylistFile } from "./library/playlist-import.ts";
+import type { MatchedPlaylist } from "./library/playlist-import.ts";
 import { albumTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
 import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
@@ -95,6 +97,60 @@ function sendPhonePlaylists() {
   return phonePlaylists.sync(phoneSources(), currentLibrary().version, (relative) => library.idForPath(relative) ?? trackIdForPath(relative));
 }
 let phoneTimer: NodeJS.Timeout | undefined;
+
+// --- bringing old playlists across: read + match now, create on "Import" -------
+const pendingImports = new Map<string, { at: number; source: string; playlists: MatchedPlaylist[] }>();
+async function rawText(req: IncomingMessage, limit: number): Promise<string> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += (chunk as Buffer).length;
+    if (size > limit) throw new ImportError(`That file is over ${Math.round(limit / 1048576)} MB`, 413);
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+function importSummary(id: string) {
+  const pending = pendingImports.get(id)!;
+  return {
+    import_id: id, source: pending.source,
+    playlists: pending.playlists.map((item) => ({
+      key: item.key, name: item.name, total: item.total, found: item.tracks.length, missing: item.missing.slice(0, 200), missing_count: item.missing.length,
+      ...(item.parent ? { parent: item.parent } : {}), ...(item.folder ? { folder: true } : {}), ...(item.smart ? { smart: true } : {}),
+    })),
+  };
+}
+/** Make the chosen playlists (and their iTunes folders) inside a new folder. */
+function createImported(id: string, keys: unknown, folderName: unknown) {
+  const pending = pendingImports.get(id);
+  if (!pending) throw new ImportError("That import has expired — choose the file again", 410);
+  if (!Array.isArray(keys) || !keys.length) throw new ImportError("Choose at least one playlist");
+  const chosen = new Set(keys.map(String));
+  const name = typeof folderName === "string" && folderName.trim() ? folderName.trim().slice(0, 120) : "";
+  const root = name ? playlists.create({ type: "folder", name, parentId: null }).id : null;
+  const made = new Map<string, string>();
+  let lists = 0, songs = 0;
+  const byKey = new Map(pending.playlists.map((item) => [item.key, item]));
+  /** Its nearest chosen folder, so the iTunes folder structure carries over. */
+  const parentOf = (item: MatchedPlaylist): string | null => {
+    let parent = item.parent ? byKey.get(item.parent) : undefined;
+    while (parent && !chosen.has(parent.key)) parent = parent.parent ? byKey.get(parent.parent) : undefined;
+    return parent ? ensure(parent) : root;
+  };
+  const ensure = (item: MatchedPlaylist): string => {
+    const existing = made.get(item.key);
+    if (existing) return existing;
+    const parentId = parentOf(item);
+    const node = playlists.create({ type: item.folder ? "folder" : "playlist", name: item.name, parentId });
+    made.set(item.key, node.id);
+    if (!item.folder) { playlists.addTracks(node.id, item.tracks); lists++; songs += item.tracks.length; }
+    return node.id;
+  };
+  for (const item of pending.playlists) if (chosen.has(item.key)) ensure(item);
+  playlistsChanged();
+  return { created: lists, songs, folder_id: root };
+}
+setInterval(() => { for (const [id, item] of pendingImports) if (Date.now() - item.at > 60 * 60_000) pendingImports.delete(id); }, 10 * 60_000).unref();
 /** After a change, send soon (changes usually come in bursts); never while signed out or switched off. */
 function playlistsChanged(delayMs = 15_000) {
   if (!phonePlaylists.signedIn || !phonePlaylists.state.auto) return;
@@ -858,6 +914,18 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     playlistsChanged();
     return send(res, 200, { deleted: true });
   }
+  // --- bringing old playlists across -------------------------------------------------
+  if (path === "/api/v1/playlists/import" && req.method === "POST") {
+    const filename = url.searchParams.get("filename") ?? "";
+    const parsed = parsePlaylistFile(await rawText(req, 300 * 1048576), filename);
+    const id = randomBytes(9).toString("base64url");
+    pendingImports.set(id, { at: Date.now(), source: filename, playlists: matchPlaylists(parsed, currentLibrary()) });
+    return send(res, 200, importSummary(id));
+  }
+  if (path === "/api/v1/playlists/import/create" && req.method === "POST") {
+    const input = await body(req);
+    return send(res, 201, createImported(String(input.import_id ?? ""), input.keys, input.folder_name));
+  }
   // --- your playlists in your phone apps -----------------------------------------
   if (path === "/api/v1/phone-playlists" && req.method === "GET") return send(res, 200, phonePlaylists.view());
   if (path === "/api/v1/phone-playlists/sign-in" && req.method === "POST") {
@@ -898,7 +966,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError || error instanceof SyncError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
