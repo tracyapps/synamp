@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import Describe, { ResultView } from "./Describe";
 import type { Evaluation } from "./Describe";
 import Player from "./Player";
@@ -194,7 +195,9 @@ export default function App() {
   }
 
   return (
-    <div className="shell">
+    <>
+      <Analytics />
+      <div className="shell">
       <header className="shell__head"><span className="wordmark">SynAmp</span><span className="tagline">Playlist workshop</span></header>
       <main>
         <div className="intro"><p className="eyebrow">Phase 2 · first slice</p><h1>Build your listening day.</h1>
@@ -252,6 +255,7 @@ export default function App() {
           playlistName={(id) => nodes.find((node) => node.id === id)?.name}
           onChanged={() => { if (selectedId) onSelect(selectedId).catch(() => undefined); }} />
       </main>
-    </div>
+      </div>
+    </>
   );
 }
