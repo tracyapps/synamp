@@ -1,0 +1,104 @@
+/*
+ * SynAmp — app design tokens (v2 "Spectrum")
+ * Drop-in replacement for apps/web/src/styles/tokens.css.
+ *
+ * The old file named --text / --accent / --hair and knew one amber. This one
+ * keeps those names as aliases so existing components keep working, and adds
+ * the full spectrum. One gold signal; the spectrum is the amp light and the
+ * visualizer, nothing else.
+ */
+:root {
+  /* Ground + surfaces */
+  --ink: #0e0e10;
+  --bg: #212637;            /* brand slate (was #0e0e10) */
+  --bg-deep: #191d29;
+  --surface: #2a3145;       /* was #16161a */
+  --surface-2: #343d54;
+  --surface-3: #414b66;
+  --well: #14161f;
+  --well-2: #1a1c26;
+
+  /* Ink */
+  --fg: #f1f1f1;
+  --text: var(--fg);        /* legacy alias */
+  --muted: #9aa1b8;         /* was #8a8a94 */
+  --faint: #6e7690;
+  --placeholder: #8b93aa;
+  --on-gold: #1a1503;
+
+  /* Signal */
+  --gold: #ffcd00;
+  --gold-hi: #ffdb4d;
+  --gold-lo: #e0b400;
+  --accent: var(--gold);    /* legacy alias */
+  --accent-ink: var(--on-gold);
+  --coral: #ff4a47;
+  --lavender: #ab51ff;
+  --violet: #5216b3;
+
+  /* Semantic — *-ink variants are AA-safe text colours */
+  --success: #00e676;
+  --warn: #ffb020;
+  --danger: #ff5c57;
+  --danger-ink: #ff8a86;
+  --info: #3b6bff;
+  --lavender-ink: #c9a6ff;
+
+  /* Spectrum ramp */
+  --sp-berry: #aa006c;
+  --sp-pink: #f6004f;
+  --sp-coral: #ff4a47;
+  --sp-orange: #e86b14;
+  --sp-gold: #ffcd00;
+  --sp-lime: #defc1a;
+  --sp-green: #00e676;
+  --sp-cyan: #00e6e8;
+  --sp-blue: #3b6bff;
+  --sp-violet: #5216b3;
+  --spectrum: linear-gradient(90deg, var(--sp-berry), var(--sp-pink), var(--sp-coral), var(--sp-orange), var(--sp-gold), var(--sp-lime), var(--sp-green), var(--sp-cyan), var(--sp-blue), var(--sp-violet));
+
+  /* Structure */
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --hair: var(--border);    /* legacy alias */
+  --glass: rgba(14, 14, 16, 0.66);
+  --ghost: rgba(255, 255, 255, 0.05);
+  --ghost-hi: rgba(255, 255, 255, 0.1);
+
+  /* Type */
+  --font-display: "Momo Trust Display", "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Space Grotesk", "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: var(--font-sans);
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Space · radii · motion */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px; --s-5: 24px;
+  --s-6: 32px; --s-7: 48px; --s-8: 64px;
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 20px; --r-pill: 999px;
+  --dur-1: 120ms; --dur-2: 200ms; --dur-3: 320ms; --dur-4: 520ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+::selection { background: var(--gold); color: var(--on-gold); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

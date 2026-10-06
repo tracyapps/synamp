@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- include:head title="Roadmap — SynAmp" path="/roadmap" description="What's done, what's being built right now, and what comes next for SynAmp — updated every time the code changes." -->
+<style>
+  .rm-nav { position: sticky; top: var(--header-h); z-index: 40; background: var(--glass); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
+  .rm-nav__inner { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0; }
+  .rm-nav a { flex: none; padding: 7px 14px; border-radius: var(--r-pill); font: 500 0.8125rem var(--font-mono); color: var(--muted); border: 1px solid var(--border); }
+  .rm-nav a:hover { color: var(--fg); border-color: var(--border-strong); background: var(--ghost); }
+  .swim { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .swim .card h4 { margin-bottom: 6px; }
+  .swim .card p { font-size: 0.875rem; }
+  .swim--5 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .legend-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 28px; }
+  .legend-bar .metric__label { margin-bottom: 8px; }
+  @media (max-width: 700px) { .legend-bar { grid-template-columns: 1fr 1fr; } }
+  .shipped-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: clamp(24px, 5vw, 64px); align-items: start; }
+  @media (max-width: 860px) { .shipped-wrap { grid-template-columns: 1fr; } }
+  .rm-key { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 18px; font-size: 0.875rem; color: var(--muted); }
+  .rm-key li { position: relative; padding-left: 22px; }
+  .rm-key li::before { content: ""; position: absolute; left: 4px; top: 7px; width: 7px; height: 7px; border-radius: 50%; }
+  .rm-key .k-done::before { content: "✓"; top: -1px; left: 2px; width: auto; height: auto; color: var(--success); font-weight: 700; }
+  .rm-key .k-doing::before { background: var(--gold); box-shadow: 0 0 0 3px rgba(255, 205, 0, 0.22); }
+  .rm-key .k-todo::before { border: 1.5px solid var(--muted); }
+</style>
+</head>
+<body>
+<!-- include:header active="roadmap" over="gradient" -->
+
+<main id="main">
+  <section class="page-hero" aria-labelledby="rm-title">
+    <div class="wrap">
+      <p class="eyebrow"><span class="amp amp--short"></span>Roadmap</p>
+      <h1 id="rm-title">Off the subscriptions first, then the <em>fun part.</em></h1>
+      <p class="lede">Step one is simple: play your own music anywhere, so a streaming subscription becomes optional. Everything after that is the stuff no other music app does. This page updates itself whenever SynAmp changes — last on {{roadmap.updated}}.</p>
+      <!-- roadmap:summary -->
+      <ul class="rm-key" aria-label="Key">
+        <li class="k-done">Done</li>
+        <li class="k-doing">Being built now</li>
+        <li class="k-todo">Not started yet</li>
+      </ul>
+    </div>
+  </section>
+
+  <nav class="rm-nav" aria-label="Jump to a phase">
+    <div class="wrap rm-nav__inner">
+      <!-- roadmap:jump -->
+    </div>
+  </nav>
+
+  <section class="section" aria-label="Phases">
+    <div class="wrap">
+      <div class="timeline">
+        <span class="timeline__rail" aria-hidden="true"></span>
+        <!-- roadmap:phases -->
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--deep" aria-labelledby="shipped-title">
+    <div class="wrap shipped-wrap">
+      <div class="section-head reveal" style="margin-bottom:0">
+        <span class="eyebrow"><span class="amp amp--short"></span>Recently shipped</span>
+        <h2 id="shipped-title">Small steps, often.</h2>
+        <p>The newest pieces, as they land.</p>
+      </div>
+      <!-- roadmap:shipped -->
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="promise-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow"><span class="amp amp--short"></span>What won't change</span>
+        <h2 id="promise-title">Promises that come with every phase.</h2>
+        <p>Features will come and go on this list. These won't.</p>
+      </div>
+      <div class="swim swim--5">
+        <article class="card reveal"><h3 class="h4">Your files, your call</h3><p>SynAmp suggests; you decide. Nothing in your library changes until you approve it, and every change can be undone.</p></article>
+        <article class="card reveal"><h3 class="h4">Private by default</h3><p>It runs in your home, on your hardware. No account to make, no tracking, and nothing about your listening leaves the house unless you ask.</p></article>
+        <article class="card reveal"><h3 class="h4">Honest playlists</h3><p>Every song shows why it's there. When SynAmp isn't sure — say, whether a track has piano — it tells you instead of guessing.</p></article>
+        <article class="card reveal"><h3 class="h4">Works with what you have</h3><p>Keep using the phone and car apps you like. SynAmp fits around them instead of asking you to switch.</p></article>
+        <article class="card reveal"><h3 class="h4">For everyone</h3><p>Usable with a keyboard, a screen reader or a phone, with motion and sound that never surprise you.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--deep" aria-labelledby="follow-title">
+    <div class="wrap center">
+      <h2 id="follow-title">Want to follow along?</h2>
+      <p class="lede" style="margin:18px auto 0">Get one email when SynAmp is ready to install, or ask a question about anything on this page.</p>
+      <div class="cluster" style="justify-content:center;margin-top:28px">
+        <a class="btn btn--primary btn--lg" href="/coming-soon" data-open-dialog="early-access">Get early access</a>
+        <a class="btn btn--ghost btn--lg" href="/contact">Ask a question</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- include:early-access -->
+<!-- include:footer -->
+<script src="/assets/synamp.js" defer></script>
+</body>
+</html>

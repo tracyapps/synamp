@@ -1,0 +1,13 @@
+<div class="field">
+  <label for="{{prefix}}-email">Email</label>
+  <input class="input" id="{{prefix}}-email" name="email" type="email" required placeholder="you@example.com" autocomplete="email" aria-describedby="{{prefix}}-email-error">
+  <span class="error" id="{{prefix}}-email-error" hidden>Please enter an email address, like name@example.com.</span>
+</div>
+<label class="check" style="margin-top:16px">
+  <input type="checkbox" name="has_server" value="yes"> <span>I have a NAS or home server I'd run it on</span>
+</label>
+<div class="hp" aria-hidden="true">
+  <label for="{{prefix}}-website">Leave this empty</label>
+  <input id="{{prefix}}-website" name="website" type="text" tabindex="-1" autocomplete="off">
+</div>
+<input type="hidden" name="source" value="{{source}}">
