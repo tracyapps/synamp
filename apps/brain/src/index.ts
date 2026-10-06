@@ -92,7 +92,8 @@ const phonePlaylists = new PlaylistSync(join(dataDir, "phone-playlists.json"), {
 function phoneSources(): SyncSource[] {
   const nodes = playlists.list();
   return nodes.filter((node) => node.type !== "folder").flatMap((node) => {
-    try { return [{ id: node.id, name: syncName(nodes, node.id), trackIds: playlists.resolve(node.id).map((track) => library.canonicalId(track.id)) }]; }
+    // Radio stations stay in SynAmp: Subsonic playlists only hold songs.
+    try { return [{ id: node.id, name: syncName(nodes, node.id), trackIds: playlists.resolve(node.id).filter((track) => !track.id.startsWith("radio:")).map((track) => library.canonicalId(track.id)) }]; }
     catch { return []; } // e.g. a smart playlist while the library list is missing
   });
 }
@@ -346,6 +347,8 @@ function sessionView(session: Session) {
   return {
     ...session,
     queue: session.queue.map((entry) => {
+      // A radio station saved in a playlist: always "playable", never ends by itself.
+      if (entry.track_id.startsWith("radio:")) return { ...entry, playable: true, live: true, stream_url: radioListenUrl(entry.track_id.slice(6)) };
       const track = byId.get(entry.track_id);
       const playable = !!(track?.path && resolveInside(config.libraryPath, track.path));
       // The album folder lets the player play an album straight through instead of crossfading inside it.

@@ -28,3 +28,5 @@
   .station__actions { grid-column: 2; }
   .radio__country { flex: 1 1 100%; }
 }
+.radio__said { min-height: 1.4em; margin: 0 0 6px; font-size: 0.875rem; color: var(--muted); }
+.player__live { justify-self: start; }

@@ -19,6 +19,8 @@ export type QueueEntry = {
   album_key?: string;
   /** A party guest asked for it. */
   requested_by?: string;
+  /** A radio station saved in a playlist: plays until you skip. */
+  live?: boolean;
 };
 export type SessionView = { id: string; queue: QueueEntry[]; index: number; state: "idle" | "playing" | "paused" };
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
@@ -201,7 +203,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
     const spareIndex = 1 - live.current;
     const other = spare();
     // Line up the next song 20 seconds early so it can start at once.
-    if (upNext?.playable && upNext.stream_url && other && left < Math.max(20, fadeSeconds() + 8) && deckEntry.current[spareIndex] !== upNext.entry_id) {
+    if (upNext?.playable && upNext.stream_url && !upNext.live && other && left < Math.max(20, fadeSeconds() + 8) && deckEntry.current[spareIndex] !== upNext.entry_id) {
       other.preload = "auto";
       other.src = upNext.stream_url;
       other.volume = prefs.volume;
@@ -336,6 +338,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
         <button type="button" className="player__btn" onClick={next} aria-label="Skip to next track" disabled={finished}><Icon name="next" /></button>
       </div>
       <div className="player__right">
+        {current?.live ? <span className="badge badge--live player__live"><span className="status-dot status-dot--live" aria-hidden="true" />Live radio</span> : (
         <label className="player__seek">
           <span className="visually-hidden">Seek</span>
           <span aria-hidden="true">{clock(position)}</span>
@@ -343,7 +346,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
             aria-valuetext={`${clock(position)} of ${clock(duration)}`}
             onChange={(event) => { const deck = el(); if (deck) { stopFade(); deck.currentTime = Number(event.target.value); } }} />
           <span aria-hidden="true">{clock(duration)}</span>
-        </label>
+        </label>)}
         <label className="player__volume"><span className="visually-hidden">Volume</span>
           <input type="range" className="range" min={0} max={1} step={0.05} value={prefs.volume} style={{ ["--range-p" as string]: `${Math.round(prefs.volume * 100)}%` }}
             aria-valuetext={`${Math.round(prefs.volume * 100)}%`} onChange={(event) => writePrefs({ volume: Number(event.target.value) })} /></label>

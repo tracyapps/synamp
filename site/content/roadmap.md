@@ -82,7 +82,7 @@ short: Radio & visualizers
 next: yes
 goal: The fun stuff: world radio and visuals that dance with the music.
 - [x] Thousands of radio stations by country, genre and mood
-- [ ] Radio stations in your playlists, right next to your own music
+- [x] Radio stations in your playlists, right next to your own music
 - [x] Milkdrop-style visualizers, back again
 
 ## Gapless, crossfade and DJ mode
@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-06 — Put radio stations in your playlists, right next to your own music
 - 2026-10-06 — Party mode: guests scan a code to ask for songs and vote, a big “now playing” screen for the TV, and every request waits for your yes
 - 2026-10-06 — SynAmp’s own player works from your lock screen, headphone buttons and keyboard media keys
 - 2026-10-06 — Crossfade between songs (albums still play straight through), a volume control, and the next song ready before this one ends

@@ -4,6 +4,8 @@ import { useDebounced } from "./Library";
 import Icon from "./ui/Icon";
 import { ScreenHead } from "./ui/kit";
 import { setActiveAudio } from "./visuals/audio-graph";
+import { AddToPlaylist } from "./Library";
+import type { PlaylistNode } from "./Playlists";
 import "./styles/radio.css";
 
 /*
@@ -24,8 +26,9 @@ export const stationMeta = (station: Station) =>
 
 const initials = (name: string) => name.replace(/[^\p{L}\p{N} ]/gu, "").split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]!.toUpperCase()).join("") || "FM";
 
-function StationRow({ station, playing, favourite, onPlay, onFavourite }: {
+function StationRow({ station, playing, favourite, onPlay, onFavourite, request, playlists, say }: {
   station: Station; playing: boolean; favourite: boolean; onPlay: () => void; onFavourite: () => void;
+  request: Request; playlists: PlaylistNode[]; say: (text: string) => void;
 }) {
   return (
     <li className={`station ${playing ? "is-playing" : ""}`}>
@@ -40,14 +43,17 @@ function StationRow({ station, playing, favourite, onPlay, onFavourite }: {
           aria-label={`Keep ${station.name} in your stations`} title={favourite ? "In your stations" : "Add to your stations"}>
           <Icon name="heart" />
         </button>
+        <AddToPlaylist request={request} playlists={playlists} onAdded={say}
+          track={{ id: `radio:${station.id}`, title: station.name, artist: "Radio" }} />
       </div>
     </li>
   );
 }
 
-export default function Radio({ request, headingId, current, onPlay }: {
-  request: Request; headingId: string; current: Station | null; onPlay: (station: Station) => void;
+export default function Radio({ request, headingId, current, onPlay, playlists }: {
+  request: Request; headingId: string; current: Station | null; onPlay: (station: Station) => void; playlists: PlaylistNode[];
 }) {
+  const [said, setSaid] = useState("");
   const [favourites, setFavourites] = useState<Station[]>([]);
   const [moods, setMoods] = useState<Record<string, string>>({});
   const [countries, setCountries] = useState<Country[]>([]);
@@ -78,7 +84,7 @@ export default function Radio({ request, headingId, current, onPlay }: {
   const toggleFavourite = (station: Station) => request<{ favourites: Station[] }>(isFavourite(station) ? "/radio/favourites/remove" : "/radio/favourites",
     { method: "POST", body: JSON.stringify({ id: station.id }) }).then((result) => setFavourites(result.favourites)).catch((cause) => setError((cause as Error).message));
   const row = (station: Station) => <StationRow key={station.id} station={station} playing={current?.id === station.id} favourite={isFavourite(station)}
-    onPlay={() => onPlay(station)} onFavourite={() => toggleFavourite(station)} />;
+    onPlay={() => onPlay(station)} onFavourite={() => toggleFavourite(station)} request={request} playlists={playlists} say={setSaid} />;
   const filtered = !!(q || tag || country);
   const countryName = countries.find((item) => item.code === country)?.name;
   const moodName = Object.entries(moods).find(([, value]) => value === tag)?.[0];
@@ -119,6 +125,7 @@ export default function Radio({ request, headingId, current, onPlay }: {
             ))}
           </div>
           <p className="muted radio__note">Kinds are the tags stations give themselves, so a few may surprise you.</p>
+          <p className="radio__said" role="status">{said}</p>
           {error && <p className="alert" role="alert">{error}</p>}
           {stations === null ? <p className="muted" role="status">Finding stations…</p>
             : stations.length === 0 ? <p className="muted" role="status">No stations found{q ? ` called “${q}”` : ""}. Try fewer words, or another country.</p>

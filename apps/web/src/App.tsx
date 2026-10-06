@@ -137,7 +137,7 @@ export default function App() {
       body = <Playlists request={call} upload={upload} nodes={nodes} loading={loading} refreshNodes={refreshNodes} play={play} headingId={headingId} />;
       break;
     case "radio":
-      body = <Radio request={call} headingId={headingId} current={station} onPlay={setStation} />;
+      body = <Radio request={call} headingId={headingId} current={station} onPlay={setStation} playlists={nodes} />;
       break;
     case "party":
       body = <PartyHost request={call} headingId={headingId} onSession={setSession} />;
