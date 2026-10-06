@@ -1,0 +1,30 @@
+/* Radio screen + the radio player bar. */
+
+.radio__country { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.radio__country .select { width: auto; max-width: 220px; }
+.radio__moods { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.radio__note { margin: 8px 0 14px; font-size: 0.8125rem; }
+
+.stations { list-style: none; margin: 0; padding: 0; }
+.station { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); }
+.station:first-child { border-top: 0; }
+.station__badge, .player__cover--radio {
+  width: 44px; height: 44px; border-radius: var(--r-sm); display: grid; place-items: center; flex: none;
+  font: 500 0.875rem var(--font-mono); letter-spacing: 0.04em; color: var(--fg);
+  background: radial-gradient(90% 120% at 15% 10%, rgba(171, 81, 255, 0.55), transparent 60%), radial-gradient(90% 120% at 90% 100%, rgba(0, 230, 232, 0.35), transparent 60%), var(--surface-2);
+}
+.station.is-playing .station__badge { box-shadow: 0 0 0 2px var(--gold); }
+.station__text { min-width: 0; }
+.station__name { margin: 0; font-weight: 500; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.station__live { font-size: 0.6875rem; padding: 2px 8px; }
+.station__meta { margin: 0; font-size: 0.8125rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.station__actions { display: flex; gap: 6px; align-items: center; }
+.station__actions [aria-pressed="true"] { color: var(--coral); }
+.station__actions [aria-pressed="true"] svg path { fill: currentColor; }
+
+.player--radio .player__status { margin: 0; }
+@media (max-width: 640px) {
+  .station { grid-template-columns: 40px minmax(0, 1fr); }
+  .station__actions { grid-column: 2; }
+  .radio__country { flex: 1 1 100%; }
+}

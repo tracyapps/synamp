@@ -31,6 +31,8 @@ import { POLICY_VERSION } from "./session/events.ts";
 import type { ListeningEvent } from "./session/events.ts";
 import { relativeFromReported, trackIdForPath } from "./subsonic/identity.ts";
 import { createSubsonicProxy } from "./subsonic/proxy.ts";
+import { MOODS, Radio, RadioError } from "./radio/radio.ts";
+import type { Station } from "./radio/radio.ts";
 import { PlaylistSync, SyncError, syncName } from "./subsonic/playlist-sync.ts";
 import type { SyncSource } from "./subsonic/playlist-sync.ts";
 import type { CapturedPlay } from "./subsonic/proxy.ts";
@@ -97,6 +99,15 @@ function sendPhonePlaylists() {
   return phonePlaylists.sync(phoneSources(), currentLibrary().version, (relative) => library.idForPath(relative) ?? trackIdForPath(relative));
 }
 let phoneTimer: NodeJS.Timeout | undefined;
+
+// --- world radio --------------------------------------------------------------------
+const radio = new Radio(join(dataDir, "radio.json"));
+/** A signed, expiring link the <audio> element can play (it can't send the access token). */
+function radioListenUrl(id: string): string {
+  const signed = signer.url(`radio:${id}`);
+  return `/api/v1/listen/radio/${encodeURIComponent(id)}${signed.slice(signed.indexOf("?"))}`;
+}
+const withListen = (station: Station) => ({ ...station, listen_url: radioListenUrl(station.id) });
 
 // --- bringing old playlists across: read + match now, create on "Import" -------
 const pendingImports = new Map<string, { at: number; source: string; playlists: MatchedPlaylist[] }>();
@@ -480,7 +491,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -502,6 +513,14 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const file = track?.path ? resolveInside(config.libraryPath, track.path) : null;
     if (!file) return send(res, 404, { error: "no audio file for this track" });
     return sendFile(req, res, file);
+  }
+  const radioListen = path.match(/^\/api\/v1\/listen\/radio\/([^/]+)$/);
+  if (radioListen && (req.method === "GET" || req.method === "HEAD")) {
+    const id = decodeURIComponent(radioListen[1]!);
+    if (!signer.verify(`radio:${id}`, url.searchParams.get("exp"), url.searchParams.get("sig"))) return send(res, 403, { error: "invalid or expired stream link" });
+    const station = await radio.station(id);
+    if (req.method === "GET") radio.countClick(id);
+    return radio.relay(req, res, station);
   }
   if (path === "/api/v1/session" && req.method === "GET") return send(res, 200, { session: sessionView(sessions.get()) });
   if (path === "/api/v1/session/queue" && req.method === "POST") {
@@ -914,6 +933,22 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     playlistsChanged();
     return send(res, 200, { deleted: true });
   }
+  // --- world radio --------------------------------------------------------------------
+  if (path === "/api/v1/radio" && req.method === "GET") return send(res, 200, { favourites: radio.favourites.map(withListen), moods: MOODS });
+  if (path === "/api/v1/radio/search" && req.method === "GET") {
+    const q = url.searchParams;
+    const stations = await radio.search({ q: q.get("q") ?? "", tag: q.get("tag") ?? "", country: q.get("country") ?? "", offset: Number(q.get("offset") ?? 0) });
+    return send(res, 200, { stations: stations.map(withListen) });
+  }
+  if (path === "/api/v1/radio/countries" && req.method === "GET") return send(res, 200, { countries: await radio.countries() });
+  if (path === "/api/v1/radio/favourites" && req.method === "POST") {
+    radio.addFavourite((await body(req)).id);
+    return send(res, 200, { favourites: radio.favourites.map(withListen) });
+  }
+  if (path === "/api/v1/radio/favourites/remove" && req.method === "POST") {
+    radio.removeFavourite((await body(req)).id);
+    return send(res, 200, { favourites: radio.favourites.map(withListen) });
+  }
   // --- bringing old playlists across -------------------------------------------------
   if (path === "/api/v1/playlists/import" && req.method === "POST") {
     const filename = url.searchParams.get("filename") ?? "";
@@ -966,7 +1001,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);

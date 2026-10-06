@@ -3,6 +3,8 @@ import Player from "./Player";
 import type { SessionView } from "./Player";
 import Playlists from "./Playlists";
 import Library from "./Library";
+import Radio, { RadioBar } from "./Radio";
+import type { Station } from "./Radio";
 import type { PlaylistNode } from "./Playlists";
 import Listening from "./Listening";
 import LibraryHealth from "./LibraryHealth";
@@ -26,11 +28,12 @@ import logo from "./assets/synamp-logo.svg";
  * so the browser's Back button and bookmarks work.
  */
 
-type ScreenId = "library" | "playlists" | "care" | "brain" | "anywhere" | "settings";
+type ScreenId = "library" | "playlists" | "radio" | "care" | "brain" | "anywhere" | "settings";
 const NAV: Array<{ group: string; items: Array<{ id: ScreenId; label: string; icon: IconName }> }> = [
   { group: "Listen", items: [
     { id: "library", label: "Library", icon: "library" },
     { id: "playlists", label: "Playlists", icon: "playlists" },
+    { id: "radio", label: "Radio", icon: "radio" },
   ] },
   { group: "Understand", items: [
     { id: "brain", label: "The Brain", icon: "brain" },
@@ -58,6 +61,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [session, setSession] = useState<SessionView | null>(null);
+  const [station, setStation] = useState<Station | null>(null);
   const headingId = "screen-title";
   const firstRender = useRef(true);
   const { call, download, upload } = useMemo(() => makeApi(token), [token]);
@@ -94,6 +98,7 @@ export default function App() {
   /** Queue something (a playlist, an album, some tracks) and show it in the player. */
   const play = useCallback(async (body: Record<string, unknown>) => {
     const result = await call<{ session: SessionView }>("/session/queue", { method: "POST", body: JSON.stringify({ event_id: newId(), ...body }) });
+    setStation(null);
     setSession(result.session);
   }, [call]);
 
@@ -120,6 +125,9 @@ export default function App() {
       break;
     case "playlists":
       body = <Playlists request={call} upload={upload} nodes={nodes} loading={loading} refreshNodes={refreshNodes} play={play} headingId={headingId} />;
+      break;
+    case "radio":
+      body = <Radio request={call} headingId={headingId} current={station} onPlay={setStation} />;
       break;
     case "care":
       body = <div className="screen">
@@ -174,7 +182,8 @@ export default function App() {
           {body}
         </main>
       </div>
-      <Player request={call} session={session} onSession={setSession}
+      {station && <RadioBar station={station} onStop={() => setStation(null)} />}
+      <Player request={call} session={session} onSession={setSession} away={!!station}
         playlistName={(id) => nodes.find((node) => node.id === id)?.name}
         onChanged={() => { refreshNodes().catch(() => undefined); }} />
     </div>

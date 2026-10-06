@@ -23,8 +23,10 @@ const clock = (seconds: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
-export default function Player({ request, session, onSession, playlistName, onChanged }: {
+export default function Player({ request, session, onSession, playlistName, onChanged, away = false }: {
   request: Request;
+  /** Something else (the radio) has the player bar: pause, and stay out of sight. */
+  away?: boolean;
   session: SessionView | null;
   onSession: (session: SessionView) => void;
   playlistName: (id: string) => string | undefined;
@@ -70,8 +72,12 @@ export default function Player({ request, session, onSession, playlistName, onCh
     if (wantPlay.current) el.play().catch(() => setStatus("Press play to start — the browser blocked autoplay."));
   }, [current?.entry_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (away && audio.current && !audio.current.paused) { audio.current.pause(); report({ event_id: newId(), report: { type: "pause", entry_id: current?.entry_id } }); }
+  }, [away]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!session || !session.queue.length) return (
-    <section className="player player--idle" aria-label="Player">
+    <section className="player player--idle" aria-label="Player" hidden={away}>
       <div className="player__now">
         <span className="player__cover" aria-hidden="true" />
         <div className="player__text"><p className="player__title">Nothing playing</p><p className="player__meta">Press Play on an album or a playlist.</p></div>
@@ -150,7 +156,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const finished = session.index >= session.queue.length;
   const from = current?.source ? playlistName(current.source.playlist_id) : undefined;
   return (
-    <section className="player" aria-label="Player">
+    <section className="player" aria-label="Player" hidden={away}>
       <audio ref={audio} preload="metadata" onPlaying={onPlaying} onPause={() => setPaused(true)} onTimeUpdate={onTime} onSeeked={onSeeked}
         onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)}
         onEnded={() => { wantPlay.current = true; report(entryBody("ended", { played_ms: playedMs(), duration_ms: durationMs() })); }}
