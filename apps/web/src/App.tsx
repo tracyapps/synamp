@@ -22,7 +22,8 @@ import { AccessError, makeApi } from "./api";
 import Icon from "./ui/Icon";
 import type { IconName } from "./ui/Icon";
 import { ScreenHead } from "./ui/kit";
-import logo from "./assets/synamp-logo.svg";
+import mark from "./assets/synamp-mark.svg";
+import wordmark from "./assets/synamp-wordmark.svg";
 import { visualsSupported } from "./visuals/support";
 
 // The visuals (and MilkDrop's presets) load only when first opened.
@@ -73,7 +74,7 @@ export default function App() {
   const canShowVisuals = useMemo(visualsSupported, []);
   const openVisuals = canShowVisuals ? () => setVisuals(true) : undefined;
   const headingId = "screen-title";
-  const firstRender = useRef(true);
+  const shownScreen = useRef<ScreenId>(screen);
   const { call, download, upload } = useMemo(() => makeApi(token), [token]);
 
   // Follow the hash; move focus to the new screen's heading so keyboard and
@@ -85,7 +86,9 @@ export default function App() {
   }, []);
   useEffect(() => {
     document.title = `${TITLES[screen]} — SynAmp`;
-    if (firstRender.current) { firstRender.current = false; return; }
+    // Only when the screen actually changes (not on first load, and not on React's dev-mode double run).
+    if (shownScreen.current === screen) return;
+    shownScreen.current = screen;
     window.scrollTo(0, 0);
     document.getElementById(headingId)?.focus();
   }, [screen]);
@@ -176,7 +179,7 @@ export default function App() {
     <div className="app">
       <a className="skip-link" href="#main" onClick={(event) => { event.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to content</a>
       <header className="app__bar">
-        <a className="app__brand" href="#/library"><img src={logo} alt="SynAmp" width={115} height={28} /></a>
+        <a className="app__brand" href="#/library" aria-label="SynAmp, go to Library"><img className="brand-mark app__mark" src={mark} alt="" width={34} height={34} /><img className="app__wordmark" src={wordmark} alt="" width={81} height={22} /></a>
         <div className="app__bar-right"><VersionBadge request={call} /></div>
       </header>
       <div className="app__layout">

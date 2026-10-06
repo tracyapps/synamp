@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useDebounced } from "../Library";
 import Icon from "../ui/Icon";
-import logo from "../assets/synamp-logo.svg";
+import mark from "../assets/synamp-mark.svg";
+import wordmark from "../assets/synamp-wordmark.svg";
 import { partyCall, spaced } from "./shared";
 import type { PartyView } from "./shared";
 import "../styles/party.css";
@@ -53,7 +54,7 @@ export default function PartyGuest({ code }: { code: string }) {
 
   return (
     <div className="guest">
-      <header className="guest__bar"><img src={logo} alt="SynAmp" width={115} height={28} /><span className="badge badge--live"><span className="status-dot status-dot--live" aria-hidden="true" />Party {spaced(code)}</span></header>
+      <header className="guest__bar"><span className="brand" role="img" aria-label="SynAmp"><img className="brand-mark" src={mark} alt="" width={30} height={30} /><img src={wordmark} alt="" width={74} height={20} /></span><span className="badge badge--live"><span className="status-dot status-dot--live" aria-hidden="true" />Party {spaced(code)}</span></header>
       <main className="guest__main" id="main">
         <h1 className="guest__title">Ask for a song</h1>
         {gone ? <div className="callout callout--warn" role="alert"><span className="callout__icon"><Icon name="warn" size={22} /></span><div><h2 className="callout__title">Can’t find this party</h2><p>{gone}. Check the code with the host.</p></div></div> : <>

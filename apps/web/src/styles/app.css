@@ -23,8 +23,17 @@
   background: var(--glass-solid); border-bottom: 1px solid var(--border);
   -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
 }
-.app__brand { display: inline-flex; align-items: center; border-radius: var(--r-sm); }
-.app__brand img { height: 28px; width: auto; display: block; }
+.app__brand { display: inline-flex; align-items: center; gap: 6px; border-radius: var(--r-sm); }
+.app__brand img { display: block; width: auto; }
+/* The logomark: tilted, with a thin light edge; in a link it straightens up on hover and keyboard focus. */
+.brand-mark {
+  transform: rotate(-9deg);
+  filter: drop-shadow(-1px 0px 0px rgba(255, 255, 255, 0.55));
+  transition: transform var(--dur-3) var(--ease-out);
+}
+a:hover > .brand-mark, a:focus-visible > .brand-mark { transform: rotate(0deg); }
+.app__mark { height: 34px; } /* 1.2 × the 28px mark in the old combined logo */
+.app__wordmark { height: 22px; }
 .app__bar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .app__bar-right .badge { white-space: nowrap; }
 
@@ -164,3 +173,5 @@ label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) { letter-s
 /* Fields read in the body face even when they sit inside a (mono) label. */
 .input, .select, .textarea { font-family: var(--font-sans); font-weight: 400; letter-spacing: normal; }
 .btn { text-decoration: none; }
+.brand { display: inline-flex; align-items: center; gap: 6px; }
+.brand img { display: block; width: auto; }

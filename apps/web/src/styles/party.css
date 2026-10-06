@@ -29,7 +29,8 @@
 /* Guest (phone) */
 .guest { min-height: 100vh; background: var(--bg); }
 .guest__bar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; background: var(--glass-solid); border-bottom: 1px solid var(--border); }
-.guest__bar img { height: 26px; width: auto; }
+.guest__bar .brand-mark { height: 30px; }
+.guest__bar .brand img:last-child { height: 20px; }
 .guest__main { max-width: 640px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 16px; }
 .guest__title { margin: 4px 0 0; font-size: 2rem; }
 .guest__now, .guest__ask, .guest__main > .section-card { padding: 18px; }
@@ -45,7 +46,8 @@
 /* TV */
 .tv { min-height: 100vh; padding: 3vh 4vw; background: radial-gradient(80% 60% at 20% 10%, rgba(82, 22, 179, 0.35), transparent 60%), radial-gradient(70% 60% at 90% 90%, rgba(255, 74, 71, 0.18), transparent 60%), var(--ink); position: relative; overflow: hidden; }
 .tv__amp { position: absolute; left: 0; right: 0; top: 0; height: 6px; border-radius: 0; }
-.tv__bar img { height: 4vh; min-height: 28px; width: auto; }
+.tv__bar .brand-mark { height: 5vh; min-height: 34px; }
+.tv__bar .brand img:last-child { height: 3.4vh; min-height: 23px; }
 .tv__grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 5vw; margin-top: 6vh; align-items: start; }
 .tv__now .eyebrow { font-size: clamp(0.9rem, 1.2vw, 1.4rem); }
 .tv__song { margin: 1vh 0 0; font-size: clamp(2.5rem, 6vw, 7rem); line-height: 1.02; }

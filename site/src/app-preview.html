@@ -5,7 +5,9 @@
 <style>
   .app { border: 1px solid var(--border-strong); border-radius: var(--r-lg); background: var(--ink); overflow: hidden; box-shadow: var(--shadow-lg); }
   .app__bar { display: flex; align-items: center; gap: 18px; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--well-2); }
-  .app__bar img { height: 22px; }
+  .app__logo { display: inline-flex; align-items: center; gap: 6px; }
+  .app__logo img { width: auto; height: 22px; }
+  .app__logo .nav__mark { height: 34px; transform: rotate(-9deg); filter: drop-shadow(-1px 0px 0px rgba(255, 255, 255, 0.55)); }
   .app__tabs { display: flex; gap: 2px; overflow-x: auto; margin-left: 8px; }
   .app__tabs button { padding: 8px 13px; border-radius: var(--r-pill); font-size: 0.875rem; color: var(--muted); white-space: nowrap; }
   .app__tabs button:hover { color: var(--fg); background: var(--ghost); }
@@ -64,7 +66,7 @@
       <h2 id="tour-title" class="visually-hidden">App tour</h2>
       <div class="app reveal" data-tabs>
         <div class="app__bar">
-          <img src="/assets/img/synamp-logo.svg" alt="SynAmp">
+          <span class="app__logo" role="img" aria-label="SynAmp"><img class="nav__mark" src="/assets/img/synamp-mark.svg" alt="" width="34" height="34"><img src="/assets/img/synamp-wordmark.svg" alt="" width="81" height="22"></span>
           <div class="app__tabs" role="tablist" aria-label="Screens">
             <button role="tab" aria-selected="true" aria-controls="s-lib">Library</button>
             <button role="tab" aria-selected="false" aria-controls="s-work">Playlists</button>

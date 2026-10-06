@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import logo from "../assets/synamp-logo.svg";
+import mark from "../assets/synamp-mark.svg";
+import wordmark from "../assets/synamp-wordmark.svg";
 import { joinUrl, partyCall, qrSvg, spaced } from "./shared";
 import type { PartyView } from "./shared";
 import "../styles/party.css";
@@ -26,7 +27,7 @@ export default function PartyScreen({ code }: { code: string }) {
   return (
     <main className="tv">
       <span className="amp amp--live tv__amp" aria-hidden="true" />
-      <header className="tv__bar"><img src={logo} alt="SynAmp" width={160} height={39} /></header>
+      <header className="tv__bar"><span className="brand" role="img" aria-label="SynAmp"><img className="brand-mark" src={mark} alt="" width={48} height={48} /><img src={wordmark} alt="" width={118} height={32} /></span></header>
       {gone ? <h1 className="tv__song">This party has ended.</h1> : (
         <div className="tv__grid">
           <section className="tv__now" aria-live="polite">
