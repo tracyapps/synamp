@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- include:head title="Early access — SynAmp" path="/coming-soon" description="SynAmp isn't ready to install yet. Leave your email and you'll get one message when it is." -->
+<style>
+  .hazard { height: 10px; background: repeating-linear-gradient(135deg, var(--gold) 0 14px, var(--ink) 14px 28px); }
+  .soon { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; background: var(--ink); overflow: hidden; }
+  .soon__viz { position: absolute; inset: 0; }
+  .soon__viz canvas { width: 100%; height: 100%; }
+  .soon__scrim { position: absolute; inset: 0; background: radial-gradient(90% 80% at 70% 25%, rgba(14,14,16,0.5), rgba(14,14,16,0.92) 70%); pointer-events: none; }
+  .soon__body { position: relative; z-index: 2; flex: 1; display: flex; align-items: center; padding-top: calc(var(--header-h) + 40px); padding-bottom: 48px; }
+  .soon__grid { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(320px,0.9fr); gap: clamp(32px,5vw,72px); align-items: center; width: 100%; }
+  .soon h1 { font-size: clamp(2.6rem, 1.8rem + 4vw, 5rem); max-width: 14ch; margin-top: 20px; }
+  .status-card { background: rgba(20,22,31,0.78); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid var(--border-strong); border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow-lg); }
+  .status-card h3 { font-size: 1.15rem; margin-bottom: 4px; }
+  .stripe { display: grid; gap: 10px; margin-top: 18px; list-style: none; padding: 0; }
+  .stripe .item { display: grid; grid-template-columns: 14px 1fr auto; gap: 12px; align-items: center; font-size: 0.875rem; color: #d4d8e4; }
+  .soon__foot { position: relative; z-index: 2; }
+  @media (max-width: 900px) { .soon__grid { grid-template-columns: 1fr; gap: 40px; } }
+</style>
+</head>
+<body>
+<div class="hazard" aria-hidden="true"></div>
+
+<!-- include:header active="none" over="hero" -->
+
+<main id="main">
+  <section class="soon" data-visualizer data-mode="layers" data-theme="spectrum" data-loop="partysynapse" aria-label="SynAmp coming soon">
+    <div class="soon__viz"><canvas aria-hidden="true"></canvas></div>
+    <div class="soon__scrim"></div>
+
+    <div class="soon__body">
+      <div class="wrap soon__grid">
+        <div>
+          <span class="badge badge--soon"><span class="status-dot status-dot--soon"></span>Under construction</span>
+          <h1>We're bolting the amps in.</h1>
+          <p class="lede" style="margin-top:22px">SynAmp isn't ready to install yet. The player, the library tools and the Brain are all being built in the open, and the roadmap shows exactly where each piece stands. Leave your email and you'll get one message when it's ready.</p>
+
+          <form action="/api/subscribe" method="post" data-validate data-ajax novalidate style="margin-top:30px;max-width:520px">
+            <!-- include:signup-fields prefix="cs" source="coming-soon page" -->
+            <p class="form-status" data-form-status hidden role="status" style="margin-top:14px"></p>
+            <div class="cluster" style="margin-top:16px">
+              <button class="btn btn--primary btn--lg" type="submit">Notify me</button>
+              <a class="btn btn--ghost btn--lg" href="/roadmap">Follow the roadmap</a>
+            </div>
+            <p class="hint" style="margin-top:14px">One email when it's ready. Never shared, never sold.</p>
+          </form>
+        </div>
+
+        <aside class="status-card">
+          <span class="metric__label">Where things stand</span>
+          <h2 class="h3" style="margin-top:8px">Being built · not released yet</h2>
+          <p class="muted" style="font-size:0.875rem">Tested every day on a real 46,000-song library. Updated {{roadmap.updated}}.</p>
+          <!-- roadmap:status -->
+          <div class="cluster" style="margin-top:22px">
+            <button class="btn btn--ghost btn--sm" type="button" data-viz="play" aria-pressed="false" aria-label="Play sound"><span data-viz-label>Play</span></button>
+            <div class="segmented" role="group" aria-label="Visualizer style"><button type="button" data-viz="mode" data-value="layers" aria-pressed="true">Layers</button><button type="button" data-viz="mode" data-value="radial" aria-pressed="false">Radial</button><button type="button" data-viz="mode" data-value="spectrum" aria-pressed="false">Bars</button></div>
+          </div>
+          <p class="vizbar__note" data-viz-note hidden style="font-size:0.75rem;color:var(--muted);margin-top:12px">The animation is resting because your device asked for less motion or less data. Press play to start it anyway.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--deep">
+    <div class="wrap">
+      <div class="section-head"><span class="eyebrow"><span class="amp amp--short"></span>While you wait</span><h2>Three things to look at right now.</h2></div>
+      <div class="grid grid--3">
+        <a class="card card--interactive" href="/roadmap"><h3>What's coming, in order</h3><p>Every phase, from playing your music anywhere to party mode — with what's done and what's next.</p></a>
+        <a class="card card--interactive" href="/app-preview"><h3>The app, before it ships</h3><p>A tour of the web app: your library, playlists, now playing, library care and settings.</p></a>
+        <a class="card card--interactive" href="/help"><h3>How it all works</h3><p>Plain-language guides to setting up, tidying your library and asking for playlists.</p></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- include:early-access -->
+<!-- include:footer -->
+
+<div class="hazard" aria-hidden="true"></div>
+<script src="/assets/synamp.js" defer></script>
+<script src="/assets/visualizer.js" defer></script>
+</body>
+</html>

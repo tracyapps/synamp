@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- include:head title="Help centre — SynAmp" path="/help" description="Guides and answers for SynAmp: getting set up, caring for your library, smart playlists and the player." -->
+<style>
+  .docs-head { border-bottom: 1px solid var(--border); background: var(--bg-deep); }
+  .kb { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: start; }
+  .kb__aside { position: sticky; top: calc(var(--header-h) + 24px); display: grid; gap: 8px; }
+  .kb__aside h4 { margin: 18px 0 4px; }
+  .kb__aside a { display: block; padding: 8px 12px; border-radius: var(--r-sm); color: var(--muted); font-size: 0.9375rem; }
+  .kb__aside a:hover, .kb__aside a[aria-current="true"] { color: var(--fg); background: var(--ghost); }
+  .kb__aside a[aria-current="true"] { color: var(--gold); }
+  .kb__filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .kb__list { display: grid; gap: 14px; }
+  .article { display: block; padding: 20px 22px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); transition: transform var(--dur-2) var(--ease), border-color var(--dur-2) var(--ease), background var(--dur-2) var(--ease); }
+  .article:hover { transform: translateY(-2px); border-color: var(--border-strong); background: var(--surface-2); }
+  .article h3 { font-size: 1.2rem; }
+  .article p { color: var(--muted); font-size: 0.9375rem; margin-top: 6px; max-width: 70ch; }
+  .article__meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+  .docs-main h2 { scroll-margin-top: calc(var(--header-h) + 24px); }
+  .toc { background: var(--well); border: 1px solid var(--border); border-radius: var(--r-md); padding: 18px 20px; }
+  .toc a { color: var(--muted); font-size: 0.875rem; }
+  .toc a:hover { color: var(--gold); }
+  @media (max-width: 900px) { .kb { grid-template-columns: 1fr; } .kb__aside { position: static; order: 2; } }
+  .kb__aside .kb__h { font: 500 0.75rem/1 var(--font-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin: 0 0 var(--s-3); }
+  .kb__aside .kb__h ~ .kb__h { margin-top: var(--s-5); }
+  .accordion__body ul, .accordion__body ol { padding-left: 1.25em; display: grid; gap: 8px; }
+  .accordion__body a { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+  .accordion > summary { list-style: none; }
+  .accordion { scroll-margin-top: calc(var(--header-h) + 24px); }
+</style>
+</head>
+<body>
+<!-- include:header active="help" over="gradient" -->
+
+<main id="main">
+  <section class="docs-head section--tight">
+    <div class="wrap">
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span class="sep" aria-hidden="true">/</span><span aria-current="page" style="color:var(--fg)">Help centre</span></nav>
+      <h1 style="margin-top:18px;font-size:clamp(2rem,1.4rem+2.4vw,3.25rem)">How can we help?</h1>
+      <p class="lede">Plain-language guides to setting SynAmp up, looking after your library, and getting playlists you'll love. SynAmp is still being built, so guides for things that aren't ready yet say so. Press <kbd>/</kbd> to search.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap kb">
+      <nav class="kb__aside" aria-label="Help topics">
+        <h2 class="kb__h">Browse</h2>
+        <a href="#getting-started">Getting started</a>
+        <a href="#library">Your library</a>
+        <a href="#playlists">Playlists &amp; the Brain</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#troubleshooting">Troubleshooting</a>
+        <a href="#faq">FAQ</a>
+        <h2 class="kb__h">Popular</h2>
+        <a href="#g-anywhere">Listen away from home</a>
+        <a href="#g-describe">Describe a playlist</a>
+        <a href="#g-tidy">Tidy without fear</a>
+      </nav>
+
+      <div class="docs-main">
+        <div class="toolbar">
+          <label class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+            <input class="input" type="search" data-kb-search placeholder="Search the help centre…" aria-label="Search the help centre" aria-describedby="kb-count">
+            <kbd aria-hidden="true">/</kbd>
+          </label>
+          <span class="count" id="kb-count" data-kb-count aria-live="polite">12 guides</span>
+        </div>
+
+        <div class="kb__filters" role="group" aria-label="Show guides about">
+          <button type="button" class="chip" data-kb-filter="all" aria-pressed="true">Everything</button>
+          <button type="button" class="chip" data-kb-filter="setup" aria-pressed="false">Setting up</button>
+          <button type="button" class="chip" data-kb-filter="library" aria-pressed="false">Library</button>
+          <button type="button" class="chip" data-kb-filter="playlists" aria-pressed="false">Playlists</button>
+          <button type="button" class="chip" data-kb-filter="privacy" aria-pressed="false">Privacy</button>
+          <button type="button" class="chip" data-kb-filter="trouble" aria-pressed="false">Troubleshooting</button>
+        </div>
+
+        <div class="kb__list" data-kb-list>
+          <a class="article" href="#g-need" data-kb-item data-tags="setup" data-keywords="nas server computer mac pc requirements hardware">
+            <h3>What you need</h3>
+            <p>Somewhere your music lives (a NAS or always-on computer), and a Mac or PC for the first listen-through.</p>
+            <div class="article__meta"><span class="tag">Setting up</span><span class="tag">2 min read</span></div>
+          </a>
+          <a class="article" href="#g-anywhere" data-kb-item data-tags="setup,trouble" data-keywords="remote away from home phone cellular tailscale private network">
+            <h3>Listen away from home, privately</h3>
+            <p>A short checklist sets up a private connection between your server and your phone — no router changes, nothing open to the internet.</p>
+            <div class="article__meta"><span class="tag">Setting up</span><span class="tag">4 min read</span></div>
+          </a>
+          <a class="article" href="#g-phone" data-kb-item data-tags="setup" data-keywords="phone car carplay android auto app subsonic lock screen offline">
+            <h3>Use the phone and car apps you like</h3>
+            <p>SynAmp works with many existing music apps, so you get lock-screen controls, CarPlay and offline listening right away.</p>
+            <div class="article__meta"><span class="tag">Setting up</span><span class="tag">3 min read</span></div>
+          </a>
+          <a class="article" href="#g-listen" data-kb-item data-tags="library" data-keywords="analysis analyse first listen progress days pause resume">
+            <h3>The first listen-through</h3>
+            <p>SynAmp listens to every song once. For a big library that takes days — and you can pause it any time.</p>
+            <div class="article__meta"><span class="tag">Library</span><span class="tag">3 min read</span></div>
+          </a>
+          <a class="article" href="#g-tidy" data-kb-item data-tags="library" data-keywords="rename organise tidy folders names approve undo">
+            <h3>Tidy names and folders without fear</h3>
+            <p>SynAmp suggests changes; you approve them; anything can be undone.</p>
+            <div class="article__meta"><span class="tag">Library</span><span class="tag">3 min read</span></div>
+          </a>
+          <a class="article" href="#g-missing" data-kb-item data-tags="library" data-keywords="missing tracks incomplete albums discography gaps buy">
+            <h3>Find missing tracks and albums</h3>
+            <p>See every album with songs missing, and albums you don't have yet from artists you love.</p>
+            <div class="article__meta"><span class="tag">Library</span><span class="tag">2 min read</span></div>
+          </a>
+          <a class="article" href="#g-copies" data-kb-item data-tags="library" data-keywords="duplicates copies same song better quality set aside">
+            <h3>Second copies of the same song</h3>
+            <p>Keep the better copy and set the other aside. Nothing is ever deleted.</p>
+            <div class="article__meta"><span class="tag">Library</span><span class="tag">2 min read</span></div>
+          </a>
+          <a class="article" href="#g-add" data-kb-item data-tags="library" data-keywords="add import new music drag drop upload incoming">
+            <h3>Add new music</h3>
+            <p>Drag it in, check where it'll go, approve.</p>
+            <div class="article__meta"><span class="tag">Library</span><span class="tag">2 min read</span></div>
+          </a>
+          <a class="article" href="#g-describe" data-kb-item data-tags="playlists" data-keywords="smart playlist describe words brain why no piano no words tempo">
+            <h3>Describe a playlist in your own words</h3>
+            <p>Ask for &ldquo;something to focus to, no words&rdquo; and see why every song made it in.</p>
+            <div class="article__meta"><span class="tag">Playlists</span><span class="tag">3 min read</span></div>
+          </a>
+          <a class="article" href="#g-learn" data-kb-item data-tags="playlists" data-keywords="love skip remove learn feedback taste">
+            <h3>How SynAmp learns what you like</h3>
+            <p>Love, skip and remove — and why an accidental skip doesn't count against a song.</p>
+            <div class="article__meta"><span class="tag">Playlists</span><span class="tag">2 min read</span></div>
+          </a>
+          <a class="article" href="#g-privacy" data-kb-item data-tags="privacy" data-keywords="privacy data tracking internet musicbrainz last.fm scrobble">
+            <h3>What leaves your house (almost nothing)</h3>
+            <p>SynAmp runs at home. Here's the short list of things that ever talk to the internet, and how to turn them off.</p>
+            <div class="article__meta"><span class="tag">Privacy</span><span class="tag">2 min read</span></div>
+          </a>
+          <a class="article" href="#t-stuck" data-kb-item data-tags="trouble,library" data-keywords="stuck stopped analysis not moving paused asleep">
+            <h3>Analysis looks stuck</h3>
+            <p>Usually it's updating the library list, or the computer doing the listening is asleep.</p>
+            <div class="article__meta"><span class="tag">Troubleshooting</span><span class="tag">2 min read</span></div>
+          </a>
+        </div>
+
+        <div class="empty" data-kb-empty hidden>
+          <div class="empty__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg></div>
+          <h3>No guides match that</h3>
+          <p>Try a simpler word, or send a question — missing guides get written.</p>
+          <a class="btn btn--ghost" href="/contact" style="margin-top:16px">Ask a question</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GUIDES ============ -->
+  <section class="section section--deep" id="getting-started" aria-labelledby="gs-title">
+    <div class="wrap">
+      <div class="section-head reveal"><span class="eyebrow"><span class="amp amp--short"></span>Getting started</span><h2 id="gs-title">From zero to playing.</h2><p>SynAmp isn't ready to install yet. These guides describe how setup works today on the first test system, and will be fleshed out step by step before launch.</p></div>
+      <details class="accordion" id="g-need" open>
+        <summary>What you need<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <ul>
+            <li><strong>Somewhere your music lives.</strong> A NAS (like a Synology) or any always-on computer at home. It doesn't need to be powerful.</li>
+            <li><strong>A Mac or PC for the first listen-through.</strong> Listening to every song takes real computing power, so SynAmp does it on your computer rather than slowing your server down. It only needs to be on while it works, and it picks up where it left off.</li>
+            <li><strong>Optional: a music app on your phone.</strong> See <a href="#g-phone">Use the phone and car apps you like</a>.</li>
+          </ul>
+        </div>
+      </details>
+      <details class="accordion" id="g-anywhere">
+        <summary>Listen away from home, privately<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <p>SynAmp includes a &ldquo;Listen anywhere&rdquo; checklist that walks you through it one tick at a time:</p>
+          <ol>
+            <li>Install <strong>Tailscale</strong> — a free app that makes a private network just for your own devices — on your server and your phone.</li>
+            <li>SynAmp shows your private &ldquo;anywhere&rdquo; address with a copy button. Paste it into your phone's music app.</li>
+            <li>Turn off Wi-Fi on your phone and press play. If music comes through on mobile data, you're done.</li>
+          </ol>
+          <p>Nothing on your router changes, and your music is never open to the public internet.</p>
+        </div>
+      </details>
+      <details class="accordion" id="g-phone">
+        <summary>Use the phone and car apps you like<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <p>SynAmp speaks the same language as a family of existing music apps (they're usually described as &ldquo;Subsonic&rdquo; apps). That means lock-screen controls, background play, CarPlay or Android Auto, and offline downloads work from day one — no SynAmp phone app needed.</p>
+          <p>When an app asks for a server address, use your SynAmp address (the one from the checklist). That way SynAmp hears what you play, and your smart playlists can learn from it.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="section" id="library" aria-labelledby="lib-title">
+    <div class="wrap">
+      <div class="section-head reveal"><span class="eyebrow"><span class="amp amp--short"></span>Your library</span><h2 id="lib-title">Leave it better than you found it.</h2></div>
+      <details class="accordion" id="g-listen">
+        <summary>The first listen-through<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <p>Before SynAmp can build &ldquo;sounds like&rdquo; playlists, it listens to each song once and notes things like tempo, energy and loudness. A library of tens of thousands of songs takes days, not hours.</p>
+          <ul>
+            <li>The Library page shows how far along it is and roughly how long is left.</li>
+            <li>Press <strong>Pause analysis</strong> whenever you need your computer back. It carries on later from where it stopped.</li>
+            <li>You don't have to wait: smart playlists get better as more songs are done.</li>
+          </ul>
+          <p>Want to check its work? <strong>Check the measurements</strong> plays a random song and lets you tap along to the beat.</p>
+        </div>
+      </details>
+      <details class="accordion" id="g-tidy">
+        <summary>Tidy names and folders without fear<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <p>SynAmp suggests tidier names — merging &ldquo;Brubeck, Dave&rdquo; into &ldquo;Dave Brubeck&rdquo;, adding the year to album folders, numbering tracks — and shows you a before-and-after for each one.</p>
+          <ol>
+            <li>Approve the suggestions you like, skip the rest.</li>
+            <li>Press <strong>Apply</strong>. Only approved changes happen.</li>
+            <li>Changed your mind? <strong>Undo</strong> puts every file back exactly where it was.</li>
+          </ol>
+          <p>Your plays, likes and analysis follow each song to its new name. <strong>Pause file changes</strong> stops SynAmp touching your files at all until you switch it back on.</p>
+        </div>
+      </details>
+      <details class="accordion" id="g-missing">
+        <summary>Find missing tracks and albums<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <p>SynAmp compares your albums with MusicBrainz, the free, community-run music encyclopedia, and lists every album that's missing songs. You can sort and tag the list, and it clears itself as you add the missing tracks.</p>
+          <p><strong>Discography gaps</strong> goes further: follow an artist and see the albums of theirs you don't have yet, with links to listen or buy.</p>
+        </div>
+      </details>
+      <details class="accordion" id="g-copies">
+        <summary>Second copies of the same song<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <p>When tidying brings two copies of the same recording together, SynAmp keeps the better one (lossless over compressed, then higher quality, then better song details) and moves the other into a <strong>_duplicates</strong> folder next to your incoming music. Nothing is deleted.</p>
+          <p>Remasters can look alike, so every pair has a <strong>Keep the other copy instead</strong> button. If SynAmp isn't certain two files are the same recording, it leaves them both and asks you.</p>
+        </div>
+      </details>
+      <details class="accordion" id="g-add">
+        <summary>Add new music<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <p>Drag files or folders onto SynAmp, or copy them into the <strong>incoming</strong> folder on your server. SynAmp works out where each album belongs, shows you, and files it once you approve. Copies are checked to make sure every file arrived intact.</p>
+          <p class="note">Coming later: adding music straight from Dropbox.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="section section--deep" id="playlists" aria-labelledby="pl-title">
+    <div class="wrap">
+      <div class="section-head reveal"><span class="eyebrow"><span class="amp amp--short"></span>Playlists &amp; the Brain</span><h2 id="pl-title">Ask for what you want to hear.</h2></div>
+      <details class="accordion" id="g-describe">
+        <summary>Describe a playlist in your own words<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <p>Type something like <em>&ldquo;upbeat, under 130 bpm, nothing too loud&rdquo;</em> and SynAmp turns it into a playlist. Each song shows the reasons it was picked.</p>
+          <p>When SynAmp hasn't measured something yet — say, whether a song has piano — it won't guess. Those songs appear separately as &ldquo;not measured yet&rdquo;, so a &ldquo;no piano&rdquo; playlist never sneaks one in.</p>
+          <p>Smart playlists stay up to date by themselves: add an album and matching songs appear without you doing anything.</p>
+          <p class="note">Coming as the Brain grows: &ldquo;no words&rdquo; and instrument detection, &ldquo;sounds like these two songs&rdquo;, moods and lyrics. See the <a href="/roadmap#brain">roadmap</a>.</p>
+        </div>
+      </details>
+      <details class="accordion" id="g-learn">
+        <summary>How SynAmp learns what you like<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <ul>
+            <li><strong>Love</strong> a song to see more like it.</li>
+            <li><strong>Skip</strong> early and it counts as &ldquo;not now&rdquo;. Jumping around in a song, an error, or a phone call interrupting never counts against it.</li>
+            <li><strong>Remove</strong> a song from a playlist and it stays out of <em>that</em> playlist. It's not banned everywhere — and &ldquo;Removed by you&rdquo; lets you bring it back.</li>
+          </ul>
+          <p>Plays from your phone apps count too, when they use your SynAmp address.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="section" id="privacy" aria-labelledby="pv-title">
+    <div class="wrap">
+      <div class="section-head reveal"><span class="eyebrow"><span class="amp amp--short"></span>Privacy</span><h2 id="pv-title">Your listening stays yours.</h2></div>
+      <details class="accordion" id="g-privacy" open>
+        <summary>What leaves your house (almost nothing)<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <p>SynAmp runs on your own hardware. There's no SynAmp account, no tracking, and no ads. The only things that ever reach the internet are:</p>
+          <ul>
+            <li><strong>Album lookups on MusicBrainz</strong> — artist and album names, to find missing tracks. Nothing about you or what you play.</li>
+            <li><strong>Last.fm, only if you connect it</strong> — your plays, sent to your own Last.fm profile. Leave it off and nothing is sent.</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="section section--deep" id="troubleshooting" aria-labelledby="ts-title">
+    <div class="wrap">
+      <div class="section-head reveal"><span class="eyebrow"><span class="amp amp--short"></span>Troubleshooting</span><h2 id="ts-title">When something's off.</h2></div>
+      <details class="accordion" id="t-stuck">
+        <summary>Analysis looks stuck<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body">
+          <ul>
+            <li><strong>It may be updating the library list.</strong> Every so often analysis pauses to share its results; after an update this can take a while. The Library page says when this is happening, and analysis carries on by itself.</li>
+            <li><strong>The computer may be asleep</strong>, or no longer connected to your server. Wake it, check your music folder is still connected, and it carries on from where it stopped.</li>
+          </ul>
+        </div>
+      </details>
+      <details class="accordion" id="t-stutter">
+        <summary>Music stutters away from home<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body"><p>Streaming from home depends on your home internet's <em>upload</em> speed, which is often much slower than download. Many phone apps have a &ldquo;streaming quality&rdquo; setting — try a lower one on mobile data. Automatic lighter streams away from home are on the <a href="/roadmap#listen-anywhere">roadmap</a>.</p></div>
+      </details>
+      <details class="accordion" id="t-plays">
+        <summary>Plays from my phone app don't show up<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
+        <div class="accordion__body"><p>Check the app is using your SynAmp address, not your music server's own address. The &ldquo;Listen anywhere&rdquo; checklist has a live &ldquo;SynAmp hears your apps&rdquo; step that shows which apps it's hearing from.</p></div>
+      </details>
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-title">
+    <div class="wrap">
+      <div class="section-head reveal"><span class="eyebrow"><span class="amp amp--short"></span>FAQ</span><h2 id="faq-title">Straight answers.</h2></div>
+      <details class="accordion"><summary>Is SynAmp available yet?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>Not yet. It's being built in the open and tested on a real 46,000-song library. <a href="/coming-soon">Join the early-access list</a> for one email when it's ready, and follow along on the <a href="/roadmap">roadmap</a>.</p></div></details>
+      <details class="accordion"><summary>Do I need a NAS?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>No. Any computer that's always on at home will do — a mini PC or an old laptop, for example. A NAS is just what SynAmp is being tested on.</p></div></details>
+      <details class="accordion"><summary>Will it mess with my files?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>Only when you say so. SynAmp suggests changes and waits for your approval, every change can be undone, and nothing is ever deleted.</p></div></details>
+      <details class="accordion"><summary>Do I need a SynAmp app on my phone?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>No. SynAmp works with many existing music apps, so your phone, car and computer can play your library from day one. A SynAmp app only happens if those leave a real gap.</p></div></details>
+      <details class="accordion"><summary>Is it a subscription?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>No, and it won't be. Getting away from renting your own music is the whole point.</p></div></details>
+    </div>
+  </section>
+
+  <section class="section section--deep" aria-labelledby="stuck-title">
+    <div class="wrap center">
+      <h2 id="stuck-title">Still stuck?</h2>
+      <p class="lede" style="margin:18px auto 0">The help centre grows from real questions. Send one in — good questions often become new guides.</p>
+      <div class="cluster" style="justify-content:center;margin-top:28px">
+        <a class="btn btn--primary btn--lg" href="/contact">Ask a question</a>
+        <a class="btn btn--ghost btn--lg" href="/contact#bug">Report a bug</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+
+<!-- include:early-access -->
+<!-- include:footer -->
+<script src="/assets/synamp.js" defer></script>
+</body>
+</html>

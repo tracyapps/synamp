@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- include:head title="Design system — SynAmp" path="/components" description="SynAmp's design system: colours, type, components and accessibility, shared by this site and the app." -->
+<style>
+  .ds-nav { position: sticky; top: var(--header-h); z-index: 40; background: var(--glass); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-bottom: 1px solid var(--border); }
+  .ds-nav__inner { display: flex; gap: 8px; overflow-x: auto; padding: 11px 0; }
+  .ds-nav a { flex: none; padding: 6px 13px; border-radius: var(--r-pill); font: 500 0.75rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border: 1px solid transparent; }
+  .ds-nav a:hover { color: var(--fg); border-color: var(--border); background: var(--ghost); }
+  .ds-block { padding-block: clamp(48px, 6vw, 88px); border-bottom: 1px solid var(--border); }
+  .ds-block > .wrap > h2 { margin-bottom: 8px; }
+  .ds-block > .wrap > p.ds-intro { color: var(--muted); max-width: 68ch; margin-bottom: 34px; }
+  .spec { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .spec .swatch__chip { height: 62px; }
+  .type-row { display: grid; grid-template-columns: 160px minmax(0,1fr); gap: 24px; align-items: baseline; padding: 18px 0; border-top: 1px solid var(--border); }
+  .type-row:first-child { border-top: 0; }
+  .type-row .meta { font: 400 0.75rem var(--font-mono); color: var(--muted); }
+  .demo { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  .demo + .demo { margin-top: 18px; }
+  .demo-label { width: 100%; font: 500 0.6875rem var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 24px; }
+  .panel-demo { border: 1px solid var(--border); border-radius: var(--r-md); padding: 22px; background: var(--surface); }
+  @media (max-width: 720px) { .type-row { grid-template-columns: 1fr; gap: 8px; } .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<!-- include:header active="none" over="gradient" -->
+
+<main id="main">
+  <section class="page-hero">
+    <div class="wrap">
+      <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span class="sep">/</span><span aria-current="page" style="color:var(--fg)">Design system</span></nav>
+      <p class="eyebrow" style="margin-top:18px"><span class="amp amp--short"></span>SynAmp Spectrum · v1</p>
+      <h1>The design system, in one page.</h1>
+      <p class="lede">Tokens, type, colour and every component the marketing site and the app share. One gold signal, one spectrum, on a deep slate ground — with AA contrast enforced throughout.</p>
+    </div>
+  </section>
+
+  <nav class="ds-nav" aria-label="Design system sections">
+    <div class="wrap ds-nav__inner">
+      <a href="#tokens">Tokens</a><a href="#colour">Colour</a><a href="#type">Typography</a><a href="#buttons">Buttons</a>
+      <a href="#forms">Forms</a><a href="#chips">Chips</a><a href="#cards">Cards</a><a href="#data">Data &amp; meters</a>
+      <a href="#nav">Tabs &amp; accordion</a><a href="#feedback">Feedback</a><a href="#logo">Logo</a><a href="#accessibility">Accessibility</a>
+    </div>
+  </nav>
+
+  <!-- COLOUR -->
+  <section class="ds-block" id="colour">
+    <div class="wrap">
+      <h2>Colour</h2>
+      <p class="ds-intro">Four layers: neutrals carry 70–90% of the pixels, one gold signal, a semantic set, and the spectrum — the brand's single decorative asset, reserved for the amp light and the visualizer.</p>
+
+      <h3 style="margin:24px 0 14px;font-size:1.1rem">Ground &amp; surfaces</h3>
+      <div class="spec">
+        <div class="swatch"><div class="swatch__chip" style="background:#0e0e10"></div><div class="swatch__meta"><div class="swatch__name">--ink</div><div class="swatch__hex">#0E0E10 · 0.165 L</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#212637"></div><div class="swatch__meta"><div class="swatch__name">--bg</div><div class="swatch__hex">#212637 · brand slate</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#14161f"></div><div class="swatch__meta"><div class="swatch__name">--well</div><div class="swatch__hex">#14161F</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#2a3145"></div><div class="swatch__meta"><div class="swatch__name">--surface</div><div class="swatch__hex">#2A3145</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#343d54"></div><div class="swatch__meta"><div class="swatch__name">--surface-2</div><div class="swatch__hex">#343D54</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#414b66"></div><div class="swatch__meta"><div class="swatch__name">--surface-3</div><div class="swatch__hex">#414B66</div></div></div>
+      </div>
+
+      <h3 style="margin:32px 0 14px;font-size:1.1rem">Signal &amp; ink</h3>
+      <div class="spec">
+        <div class="swatch"><div class="swatch__chip" style="background:#f1f1f1"></div><div class="swatch__meta"><div class="swatch__name">--fg</div><div class="swatch__hex">#F1F1F1 · 13.3:1 on slate</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#9aa1b8"></div><div class="swatch__meta"><div class="swatch__name">--muted</div><div class="swatch__hex">#9AA1B8 · 5.84:1</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#6e7690"></div><div class="swatch__meta"><div class="swatch__name">--faint</div><div class="swatch__hex">#6E7690 · decorative only</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#ffcd00"></div><div class="swatch__meta"><div class="swatch__name">--gold <em style="font-style:normal;color:var(--muted)">accent</em></div><div class="swatch__hex">#FFCD00 · 10.0:1</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#ff4a47"></div><div class="swatch__meta"><div class="swatch__name">--coral</div><div class="swatch__hex">#FF4A47 · 4.53:1</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#5216b3"></div><div class="swatch__meta"><div class="swatch__name">--violet</div><div class="swatch__hex">#5216B3 · fills only</div></div></div>
+      </div>
+
+      <h3 style="margin:32px 0 14px;font-size:1.1rem">The spectrum</h3>
+      <div style="height:56px;border-radius:var(--r-md);background-image:var(--spectrum);border:1px solid var(--border)"></div>
+      <div class="spec" style="margin-top:14px">
+        <div class="swatch"><div class="swatch__chip" style="background:#aa006c;height:40px"></div><div class="swatch__meta"><div class="swatch__hex">--sp-berry</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#f6004f;height:40px"></div><div class="swatch__meta"><div class="swatch__hex">--sp-pink</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#ff4a47;height:40px"></div><div class="swatch__meta"><div class="swatch__hex">--sp-coral</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#e86b14;height:40px"></div><div class="swatch__meta"><div class="swatch__hex">--sp-orange</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#ffcd00;height:40px"></div><div class="swatch__meta"><div class="swatch__hex">--sp-gold</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#defc1a;height:40px"></div><div class="swatch__meta"><div class="swatch__hex">--sp-lime</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#00e676;height:40px"></div><div class="swatch__meta"><div class="swatch__hex">--sp-green</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#00e6e8;height:40px"></div><div class="swatch__meta"><div class="swatch__hex">--sp-cyan</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#3b6bff;height:40px"></div><div class="swatch__meta"><div class="swatch__hex">--sp-blue</div></div></div>
+        <div class="swatch"><div class="swatch__chip" style="background:#5216b3;height:40px"></div><div class="swatch__meta"><div class="swatch__hex">--sp-violet</div></div></div>
+      </div>
+      <div class="callout callout--gold" style="margin-top:24px"><span class="callout__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span><div><h3 class="h4">Accent discipline</h3><p>At most two visible uses of gold per screen — typically one eyebrow and one primary action. The spectrum appears only in the amp light and the visualizer, never as a page wash or on body text.</p></div></div>
+    </div>
+  </section>
+
+  <!-- TOKENS -->
+  <section class="ds-block" id="tokens">
+    <div class="wrap">
+      <h2>Tokens</h2>
+      <p class="ds-intro">Spacing is a 4px scale; radii run 4 → 20px; motion uses two easings and four durations and collapses under reduced-motion.</p>
+      <div class="grid-2">
+        <div class="panel-demo">
+          <p class="eyebrow kicker--muted">Spacing</p>
+          <div style="display:grid;gap:8px;margin-top:14px">
+            <div class="demo"><span class="mono muted" style="width:64px">--s-2 · 8</span><span style="height:8px;width:8px;background:var(--gold);border-radius:2px"></span></div>
+            <div class="demo"><span class="mono muted" style="width:64px">--s-4 · 16</span><span style="height:16px;width:16px;background:var(--gold);border-radius:2px"></span></div>
+            <div class="demo"><span class="mono muted" style="width:64px">--s-5 · 24</span><span style="height:24px;width:24px;background:var(--gold);border-radius:2px"></span></div>
+            <div class="demo"><span class="mono muted" style="width:64px">--s-6 · 32</span><span style="height:32px;width:32px;background:var(--gold);border-radius:2px"></span></div>
+            <div class="demo"><span class="mono muted" style="width:64px">--s-7 · 48</span><span style="height:48px;width:48px;background:var(--gold);border-radius:2px"></span></div>
+          </div>
+        </div>
+        <div class="panel-demo">
+          <p class="eyebrow kicker--muted">Radii &amp; elevation</p>
+          <div class="demo" style="margin-top:14px"><span style="width:64px;height:44px;background:var(--surface-2);border-radius:4px;display:grid;place-items:center" class="mono muted">4</span><span style="width:64px;height:44px;background:var(--surface-2);border-radius:8px;display:grid;place-items:center" class="mono muted">8</span><span style="width:64px;height:44px;background:var(--surface-2);border-radius:12px;display:grid;place-items:center" class="mono muted">12</span><span style="width:64px;height:44px;background:var(--surface-2);border-radius:20px;display:grid;place-items:center" class="mono muted">20</span><span style="width:64px;height:44px;background:var(--surface-2);border-radius:999px;display:grid;place-items:center" class="mono muted">pill</span></div>
+          <p class="mono muted" style="margin-top:16px;font-size:0.75rem">--dur-1 120ms · --dur-2 200ms · --dur-3 320ms · --dur-4 520ms</p>
+          <p class="mono muted" style="font-size:0.75rem">--ease cubic-bezier(.2,0,0,1)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TYPE -->
+  <section class="ds-block" id="type">
+    <div class="wrap">
+      <h2>Typography</h2>
+      <p class="ds-intro">Momo Trust Display for headlines (single 400 weight — hierarchy comes from size and colour), Space Grotesk for body and UI, JetBrains Mono for labels, values and ledgers.</p>
+      <div class="type-row"><div class="meta">Display · Momo Trust Display · clamp 40–72</div><div style="font-family:var(--font-display);font-size:clamp(2rem,4vw,3.5rem);line-height:1.05">Make your library sing</div></div>
+      <div class="type-row"><div class="meta">H2 · Momo · 28–44</div><div style="font-family:var(--font-display);font-size:1.9rem">Off the subscriptions first</div></div>
+      <div class="type-row"><div class="meta">H3 · Momo · 21–26</div><div style="font-family:var(--font-display);font-size:1.4rem">Describe what you want to hear</div></div>
+      <div class="type-row"><div class="meta">Lede · Space Grotesk · 17–22</div><div class="lede">A self-hosted music system that understands your library as sound, not just tags.</div></div>
+      <div class="type-row"><div class="meta">Body · Space Grotesk · 16 / 1.6</div><div style="max-width:60ch;color:var(--muted)">Body copy sits between 50 and 75 characters per line. Space Grotesk keeps the geometric, gently quirky character of the old brand while staying highly legible at UI sizes.</div></div>
+      <div class="type-row"><div class="meta">Eyebrow · JetBrains Mono · caps · +0.18em</div><div class="eyebrow">Self-hosted · AI playlists</div></div>
+      <div class="type-row"><div class="meta">Small · mono · +0.02em</div><div class="mono" style="font-size:0.8125rem;color:var(--muted)">BPM 128 · key A min · energy 0.62</div></div>
+      <div class="type-row"><div class="meta">ALL CAPS · tracking required</div><div style="font-family:var(--font-sans);font-weight:600;font-size:0.8125rem;letter-spacing:0.08em;text-transform:uppercase">Library care &amp; integrity</div></div>
+      <div class="callout" style="margin-top:24px"><span class="callout__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span><div><h3 class="h4">Type rules</h3><p>ALL CAPS always carries +0.06em or more. Latin display tightens to −0.02em; CJK stays at 0 tracking with line-height 1.3–1.4, including cover titles. Never fake italics — Momo has one weight and no oblique, so emphasis is colour and weight.</p></div></div>
+    </div>
+  </section>
+
+  <!-- BUTTONS -->
+  <section class="ds-block" id="buttons">
+    <div class="wrap">
+      <h2>Buttons</h2>
+      <p class="ds-intro">One primary action per viewport. Hover moves the background, never the label toward the background. Minimum touch target is 44px.</p>
+      <div class="demo"><span class="demo-label">Variants</span>
+        <button class="btn btn--primary">Get SynAmp</button>
+        <button class="btn">Secondary</button>
+        <button class="btn btn--ghost">Ghost</button>
+        <button class="btn btn--quiet">Quiet</button>
+        <button class="btn btn--danger">Remove</button>
+        <button class="btn" disabled>Disabled</button>
+      </div>
+      <div class="demo"><span class="demo-label">Sizes</span>
+        <button class="btn btn--primary btn--sm">Small · 36</button>
+        <button class="btn btn--primary">Default · 44</button>
+        <button class="btn btn--primary btn--lg">Large · 52</button>
+      </div>
+      <div class="demo"><span class="demo-label">With icon</span>
+        <button class="btn btn--primary"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5Z"/></svg>Play all</button>
+        <button class="btn btn--ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add to playlist</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FORMS -->
+  <section class="ds-block" id="forms">
+    <div class="wrap">
+      <h2>Forms</h2>
+      <p class="ds-intro">Every control defines focus-visible and error states. Labels are mono, uppercase and tracked; hints use muted ink, errors use the AA-safe danger ink with an icon.</p>
+      <div class="grid-2">
+        <div class="panel-demo stack">
+          <div class="field"><label for="d1">Text input</label><input class="input" id="d1" placeholder="Afternoon focus"></div>
+          <div class="field"><label for="d2">With hint</label><input class="input" id="d2" value="http://syd.local:8080"><span class="hint">Point your phone here — not Navidrome's own port.</span></div>
+          <div class="field"><label for="d3">Error state</label><input class="input" id="d3" value="" aria-invalid="true" placeholder="you@example.com"><span class="error"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Please enter a valid email address.</span></div>
+          <div class="field"><label for="d4">Select</label><select class="select" id="d4"><option>Merge | shuffle | interleave | weighted</option><option>Roll-up</option><option>Smart playlist</option></select></div>
+          <div class="field"><label for="d5">Textarea</label><textarea class="textarea" id="d5" placeholder="ambient focus, no words, no piano…"></textarea></div>
+        </div>
+        <div class="panel-demo stack">
+          <label class="check"><input type="checkbox" checked><span>Auto-scan after organising</span></label>
+          <label class="check"><input type="checkbox"><span>Keep a copy when merging duplicates</span></label>
+          <div class="cluster" style="gap:22px">
+            <label class="check"><input type="radio" name="rg" checked><span>Strict</span></label>
+            <label class="check"><input type="radio" name="rg"><span>Relaxed</span></label>
+          </div>
+          <label class="switch"><input type="checkbox" checked><span>Pause file changes</span></label>
+          <div class="field"><label for="d6">Volume</label><input class="range" id="d6" type="range" min="0" max="100" value="55"></div>
+          <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg><input class="input" type="search" placeholder="Search the library…"><kbd>/</kbd></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHIPS -->
+  <section class="ds-block" id="chips">
+    <div class="wrap">
+      <h2>Chips, tags &amp; badges</h2>
+      <p class="ds-intro">Chips filter and toggle; tags label; badges carry status. The same vocabulary runs from the marketing site to the app.</p>
+      <div class="demo"><span class="demo-label">Chips &amp; filters</span>
+        <button class="chip is-active" aria-pressed="true">All (550)</button>
+        <button class="chip">Artist merges (10)</button>
+        <button class="chip">Albums (540)</button>
+        <span class="chip chip--static"><span class="chip__dot"></span>Upbeat</span>
+      </div>
+      <div class="demo"><span class="demo-label">Tags</span><span class="tag">Merge</span><span class="tag">Setup</span><span class="tag">5 min read</span><span class="tag">Roll-up</span></div>
+      <div class="demo"><span class="demo-label">Badges</span>
+        <span class="badge badge--live"><span class="status-dot status-dot--live"></span>Done</span>
+        <span class="badge badge--soon"><span class="status-dot status-dot--soon"></span>In progress</span>
+        <span class="badge badge--next"><span class="status-dot status-dot--next"></span>Next</span>
+        <span class="badge badge--muted">Planned</span>
+      </div>
+      <div class="demo"><span class="demo-label">Segmented</span>
+        <div class="segmented" role="group" aria-label="Example style picker"><button type="button" aria-pressed="true">Bars</button><button type="button" aria-pressed="false">Wave</button><button type="button" aria-pressed="false">Radial</button><button type="button" aria-pressed="false">Layers</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CARDS -->
+  <section class="ds-block" id="cards">
+    <div class="wrap">
+      <h2>Cards, panels &amp; callouts</h2>
+      <p class="ds-intro">Cards group; panels expose a head and body; callouts carry a single note. No coloured left-border tiles — structure comes from borders and surface steps.</p>
+      <div class="grid-3">
+        <article class="card card--icon card--interactive"><div class="card__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/></svg></div><h3 style="margin:12px 0 8px">The Brain</h3><p>Ask in plain language and see exactly why each track made the cut.</p></article>
+        <article class="card"><span class="metric__label">Feature card</span><h3 style="margin:12px 0 8px">Roll-ups</h3><p>Shuffle a whole branch of playlists, recursively.</p><div class="cluster" style="margin-top:16px"><button class="btn btn--sm btn--ghost">Open</button></div></article>
+        <article class="card card--well"><span class="metric__label">Well</span><h3 style="margin:12px 0 8px">Now playing</h3><p>Recessed surface for persistent chrome and inputs.</p></article>
+      </div>
+      <div class="grid-2" style="margin-top:24px">
+        <div class="panel"><div class="panel__head"><h4>Panel head</h4><span class="mono" style="font-size:0.75rem;color:var(--muted)">0 nodes</span></div><div class="panel__body" style="border-top:1px solid var(--border)"><p class="muted">Panel body content sits below a hairline divider.</p></div></div>
+        <div class="stack">
+          <div class="callout callout--gold"><span class="callout__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span><div><h3 class="h4">Gold callout</h3><p>For the one thing the reader must not miss on a page.</p></div></div>
+          <div class="callout callout--warn"><span class="callout__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></span><div><h3 class="h4">Warning</h3><p>This proposal can't be applied as it stands.</p></div></div>
+          <div class="callout callout--danger"><span class="callout__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg></span><div><h3 class="h4">Danger</h3><p>Writing to the library is the riskiest thing SynAmp does.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DATA -->
+  <section class="ds-block" id="data">
+    <div class="wrap">
+      <h2>Data &amp; meters</h2>
+      <p class="ds-intro">Progress always shows filled encoding, never an empty outline. Metrics lead with the number; tables are dense but readable.</p>
+      <div class="grid-3">
+        <div class="metric"><span class="metric__label">Analysed</span><span class="metric__value">5,548</span><span class="metric__delta metric__delta--up">▲ 1,204 this week</span></div>
+        <div class="metric"><span class="metric__label">Unreadable</span><span class="metric__value">1</span><span class="metric__delta metric__delta--down">▼ 2 resolved</span></div>
+        <div class="metric"><span class="metric__label">Subscriptions after P1</span><span class="metric__value">0</span></div>
+      </div>
+      <div class="grid-2" style="margin-top:24px">
+        <div class="panel-demo">
+          <div class="between" style="margin-bottom:12px"><span class="metric__label">Analysing your library</span><span class="mono" style="font-size:0.75rem;color:var(--muted)">12%</span></div>
+          <div class="meter meter--spectrum meter--lg"><span class="meter__fill" style="--value:12%"></span></div>
+          <div class="meter" style="margin-top:12px"><span class="meter__fill" style="--value:68%"></span></div>
+          <div class="legend" style="margin-top:16px"><span><i style="background:var(--gold)"></i>Analysed</span><span><i style="background:var(--surface-3)"></i>Queued</span><span><i style="background:var(--success)"></i>Verified</span></div>
+        </div>
+        <div class="panel-demo">
+          <table class="table"><thead><tr><th>Track</th><th>BPM</th><th class="num">Energy</th></tr></thead><tbody>
+            <tr><td>Dreams</td><td>121</td><td class="num">0.48</td></tr>
+            <tr><td>Weightless</td><td>78</td><td class="num">0.21</td></tr>
+            <tr><td>Teardrop</td><td>77</td><td class="num">0.36</td></tr>
+            <tr><td>Svefn-g-englar</td><td>—</td><td class="num">—</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TABS & ACCORDION -->
+  <section class="ds-block" id="nav">
+    <div class="wrap">
+      <h2>Tabs, accordion &amp; timeline</h2>
+      <p class="ds-intro">Tabs switch peer views; accordions collapse long docs; the timeline renders the roadmap.</p>
+      <div class="grid-2">
+        <div class="panel-demo">
+          <div data-tabs>
+            <div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true">Overview</button><button class="tab" role="tab" aria-selected="false">Details</button><button class="tab" role="tab" aria-selected="false">History</button></div>
+            <div class="tabpanel" role="tabpanel"><p class="muted">Overview panel content.</p></div>
+            <div class="tabpanel" role="tabpanel" hidden><p class="muted">Details panel content.</p></div>
+            <div class="tabpanel" role="tabpanel" hidden><p class="muted">History panel content.</p></div>
+          </div>
+        </div>
+        <div>
+          <div class="accordion"><summary>Accordion item<div class="acc-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></summary><div class="accordion__body"><p>Collapsed by default, opened by the reader.</p></div></div>
+          <div class="accordion" open><summary>Open item<div class="acc-icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></summary><div class="accordion__body"><p>Shown expanded.</p></div></div>
+          <div class="timeline" style="margin-top:24px"><span class="timeline__rail"></span>
+            <div class="phase" data-state="done" style="padding-bottom:24px"><span class="phase__node">0</span><div class="phase__head"><h3 class="h4">Foundations</h3></div><p class="muted" style="font-size:0.875rem">Done</p></div>
+            <div class="phase" data-state="active" style="padding-bottom:0"><span class="phase__node">1</span><div class="phase__head"><h3 class="h4">Cancel the subscriptions</h3></div><p class="muted" style="font-size:0.875rem">In progress</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="rows" style="margin-top:24px">
+        <div class="row"><span class="tag">Merge</span><div><div class="row__title">Dave Brubeck</div><div class="row__meta">2 folders · 16 tracks</div></div><button class="btn btn--sm">Approve</button></div>
+        <div class="row"><span class="tag">Album</span><div><div class="row__title">Rumours (Deluxe)</div><div class="row__meta">Fleetwood Mac · 1977</div></div><button class="btn btn--sm btn--quiet">Skip</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEEDBACK -->
+  <section class="ds-block" id="feedback">
+    <div class="wrap">
+      <h2>Feedback &amp; overlays</h2>
+      <p class="ds-intro">Toasts confirm, dialogs interrupt, tooltips explain, empty states direct. All of them are keyboard reachable and announce politely.</p>
+      <div class="demo">
+        <button class="btn btn--primary" onclick="window.synampToast('Visualizer live','Radial · aurora theme','success')">Success toast</button>
+        <button class="btn" onclick="window.synampToast('Nothing changed','The batch was paused before it started.','')">Info toast</button>
+        <button class="btn btn--danger" onclick="window.synampToast('Duplicate blocked','Keep one copy to continue.','error')">Error toast</button>
+        <button class="btn btn--ghost" data-open-dialog="ds-modal">Open dialog</button>
+        <span class="tip" data-tip="Tracked, not guessed" tabindex="0" style="border-bottom:1px dotted var(--border-strong);cursor:help">Tooltip target</span>
+      </div>
+      <div class="grid-2" style="margin-top:24px">
+        <div class="empty" style="border:1px solid var(--border);border-radius:var(--r-lg);background:var(--surface)">
+          <div class="empty__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+          <h3>Select a playlist</h3>
+          <p>Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole branch into one live list.</p>
+          <button class="btn btn--ghost" style="margin-top:16px">Create playlist</button>
+        </div>
+        <div class="panel-demo">
+          <p class="eyebrow kicker--muted">Skeleton &amp; inline code</p>
+          <div class="stack" style="margin-top:14px"><span class="skeleton" style="width:70%"></span><span class="skeleton" style="width:90%"></span><span class="skeleton" style="width:50%"></span></div>
+          <p style="margin-top:18px">Run <code>synamp-sync</code>, then press <kbd>⌘</kbd> <kbd>K</kbd> to search.</p>
+          <p class="note" style="margin-top:14px">A quiet note for secondary information.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGO -->
+  <section class="ds-block" id="logo">
+    <div class="wrap">
+      <h2>Logo</h2>
+      <p class="ds-intro">A spectrum brain with a music note, beside a coral-to-gold wordmark. The mark and the wordmark are separate files (<code>synamp-mark.svg</code>, <code>synamp-wordmark.svg</code>) so either can change on its own; <code>synamp-logo.svg</code> is the two together. Use the mark alone for favicons and app tiles.</p>
+      <div class="grid-2">
+        <div class="panel-demo center" style="display:grid;place-items:center;min-height:160px;background:var(--ink)"><img src="/assets/img/synamp-logo.svg" alt="SynAmp horizontal logo" style="max-width:320px"></div>
+        <div class="grid grid--2">
+          <div class="panel-demo center" style="display:grid;place-items:center;background:var(--ink)"><img src="/assets/img/synamp-mark.svg" alt="SynAmp icon" style="width:96px"></div>
+          <div class="panel-demo center" style="display:grid;place-items:center;background:var(--surface-2)"><img src="/assets/img/synamp-mark.svg" alt="SynAmp icon on a lighter slate" style="width:96px"></div>
+        </div>
+      </div>
+      <ul class="phase__list" style="margin-top:24px;max-width:70ch">
+        <li>Clear space: <code>x</code> on all sides, where <code>x</code> is one quarter of the icon height.</li>
+        <li>Minimum size: icon 16px; horizontal lockup 120px wide.</li>
+        <li>On busy photography, use the icon over a scrim — never place the wordmark directly on a mid-tone image.</li>
+        <li>Never recolour the brain. The wordmark may run solid ink for single-colour embossing.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ACCESSIBILITY -->
+  <section class="ds-block" id="accessibility" style="border-bottom:0">
+    <div class="wrap">
+      <h2>Accessibility</h2>
+      <p class="ds-intro">Accessibility is a gate, not a feature. Contrast, focus, motion and touch targets are enforced in the tokens themselves.</p>
+      <table class="table" style="max-width:820px">
+        <caption>Contrast against the dark ground — WCAG 2.1 AA requires 4.5:1 for body text and 3:1 for large text and UI.</caption>
+        <thead><tr><th>Pair</th><th class="num">Ratio</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td>--fg #F1F1F1 on --bg #212637</td><td class="num">13.3:1</td><td><span class="badge badge--live">AAA</span></td></tr>
+          <tr><td>--muted #9AA1B8 on --bg</td><td class="num">5.84:1</td><td><span class="badge badge--live">AA</span></td></tr>
+          <tr><td>--gold #FFCD00 on --ink #0E0E10</td><td class="num">12.8:1</td><td><span class="badge badge--live">AAA</span></td></tr>
+          <tr><td>--on-gold on --gold (button text)</td><td class="num">12.8:1</td><td><span class="badge badge--live">AAA</span></td></tr>
+          <tr><td>--coral #FF4A47 on --bg</td><td class="num">4.53:1</td><td><span class="badge badge--soon">AA · large</span></td></tr>
+          <tr><td>--faint #6E7690 on --bg</td><td class="num">3.33:1</td><td><span class="badge badge--muted">Decorative only</span></td></tr>
+        </tbody>
+      </table>
+      <div class="grid-2" style="margin-top:28px">
+        <div class="card"><h4>Focus &amp; keyboard</h4><p>Every focusable element shows a 2px gold focus ring with a 2px offset. The full journey — nav, tabs, accordions, forms, dialogs — is keyboard operable; dialogs trap focus natively and close on Escape.</p></div>
+        <div class="card"><h4>Motion &amp; data</h4><p>The visualizer never autoplays sound, and stays still under <code>prefers-reduced-motion</code>, Save-Data or a slow connection, with an explicit opt-in. All transitions collapse to near-zero under reduced-motion.</p></div>
+        <div class="card"><h4>Targets &amp; text</h4><p>Interactive targets are 44px minimum. Body text never drops below 15px on mobile; nothing relies on colour alone — status always pairs a dot with a word.</p></div>
+        <div class="card"><h4>Structure</h4><p>Landmarks, a skip link, table captions, labelled inputs, descriptive alt text and <code>aria-selected</code>/<code>aria-current</code> state keep the page legible to assistive tech.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog class="modal" id="ds-modal" aria-labelledby="ds-modal-title">
+  <button class="modal__close" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  <div class="modal__head"><span class="badge badge--soon"><span class="status-dot status-dot--soon"></span>Under construction</span><h3 id="ds-modal-title" style="margin-top:14px">SynAmp is nearly ready.</h3></div>
+  <div class="modal__body"><p class="muted">Dialogs use the native <code>&lt;dialog&gt;</code> element, so focus management and Escape come for free.</p></div>
+  <div class="modal__foot"><button class="btn btn--quiet" data-close>Close</button></div>
+</dialog>
+
+<!-- include:early-access -->
+<!-- include:footer -->
+<script src="/assets/synamp.js" defer></script>
+</body>
+</html>

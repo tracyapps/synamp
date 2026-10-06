@@ -1,0 +1,16 @@
+<dialog class="modal" id="early-access" aria-labelledby="ea-title">
+  <button class="modal__close" type="button" data-close aria-label="Close"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  <div class="modal__head">
+    <span class="badge badge--soon"><span class="status-dot status-dot--soon"></span>Under construction</span>
+    <h2 id="ea-title" class="h3" style="margin-top:14px">Be first to hear when it's ready.</h2>
+    <p class="muted" style="margin-top:8px;font-size:0.9375rem">SynAmp isn't ready to install yet. Leave your email and you'll get one message when it is. Nothing else, and it's never shared.</p>
+  </div>
+  <form class="modal__body" id="ea-form" action="/api/subscribe" method="post" data-validate data-ajax novalidate>
+    <!-- include:signup-fields prefix="ea" source="popup" -->
+    <p class="form-status" data-form-status hidden role="status" style="margin-top:14px"></p>
+  </form>
+  <div class="modal__foot">
+    <button class="btn btn--quiet" type="button" data-close>Not now</button>
+    <button class="btn btn--primary" type="submit" form="ea-form">Notify me</button>
+  </div>
+</dialog>
