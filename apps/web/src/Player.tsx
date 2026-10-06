@@ -136,6 +136,23 @@ export default function Player({ request, session, onSession, playlistName, onCh
 
   useEffect(() => () => stopFade(false), []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Lock screen, headphone buttons and media keys (Media Session API).
+  const controls = useRef<{ toggle?: () => void; next?: () => void; previous?: () => void; seek?: (seconds: number) => void }>({});
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    const media = navigator.mediaSession;
+    if (!current || away) { media.metadata = null; return; }
+    media.metadata = new MediaMetadata({ title: current.title, artist: current.artist ?? "", album: "SynAmp" });
+    const handlers: Array<[MediaSessionAction, MediaSessionActionHandler]> = [
+      ["play", () => controls.current.toggle?.()], ["pause", () => controls.current.toggle?.()],
+      ["nexttrack", () => controls.current.next?.()], ["previoustrack", () => controls.current.previous?.()],
+      ["seekto", (details) => { if (details.seekTime !== undefined) controls.current.seek?.(details.seekTime); }],
+    ];
+    for (const [action, handler] of handlers) { try { media.setActionHandler(action, handler); } catch { /* not supported here */ } }
+    return () => { for (const [action] of handlers) { try { media.setActionHandler(action, null); } catch { /* ignore */ } } };
+  }, [current?.entry_id, away]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = away ? "none" : paused ? "paused" : "playing"; }, [paused, away]);
+
   if (!session || !session.queue.length) return (
     <section className="player player--idle" aria-label="Player" hidden={away}>
       <audio ref={deckA} /><audio ref={deckB} />
@@ -239,9 +256,20 @@ export default function Player({ request, session, onSession, playlistName, onCh
     else { stopFade(); deck.pause(); wantPlay.current = false; report(entryBody("pause")); }
   };
   const next = () => {
-    wantPlay.current = !el()?.paused || wantPlay.current;
+    const deck = el();
+    wantPlay.current = !deck?.paused || wantPlay.current;
     stopFade();
-    report(entryBody("skip", { played_ms: playedMs(), duration_ms: durationMs() }));
+    const body = entryBody("skip", { played_ms: playedMs(), duration_ms: durationMs() });
+    // With crossfade on, a skip dips out over half a second instead of cutting.
+    if (!prefs.crossfade || !deck || deck.paused) { report(body); return; }
+    const begin = performance.now();
+    const step = () => {
+      const t = Math.min(1, (performance.now() - begin) / 500);
+      deck.volume = prefs.volume * (1 - t);
+      if (t < 1) requestAnimationFrame(step);
+      else { deck.pause(); deck.volume = prefs.volume; report(body); }
+    };
+    requestAnimationFrame(step);
   };
   const previous = () => {
     stopFade();
@@ -254,6 +282,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
     stopFade();
     report({ event_id: newId(), report: { type: "jump", index, entry_id: current?.entry_id, played_ms: playedMs() } });
   };
+  controls.current = { toggle, next, previous, seek: (seconds) => { const deck = el(); if (deck) { stopFade(); deck.currentTime = seconds; } } };
 
   async function feedback(signal: "love" | "thumb_down" | "remove" | "restore", extra: Record<string, unknown> = {}, target = current) {
     if (!target) return;

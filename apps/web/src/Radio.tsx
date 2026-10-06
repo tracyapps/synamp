@@ -142,12 +142,21 @@ export function RadioBar({ station, onStop, onVisuals }: { station: Station; onS
     el.play().catch(() => setStatus("Press play to start — the browser blocked autoplay."));
     return () => { el.pause(); el.removeAttribute("src"); el.load(); setActiveAudio(null); };
   }, [station.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({ title: station.name, artist: "Radio", album: station.country ?? "" });
+    const onAction = () => toggleRef.current();
+    for (const action of ["play", "pause", "stop"] as MediaSessionAction[]) { try { navigator.mediaSession.setActionHandler(action, onAction); } catch { /* unsupported */ } }
+    return () => { for (const action of ["play", "pause", "stop"] as MediaSessionAction[]) { try { navigator.mediaSession.setActionHandler(action, null); } catch { /* ignore */ } } };
+  }, [station.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const toggleRef = useRef(() => {});
   const toggle = () => {
     const el = audio.current!;
     // Live radio can't pause: stop drops the stream, play starts it again from now.
     if (el.paused) { el.src = station.listen_url; el.play().catch((cause) => setStatus(String(cause))); }
     else { el.pause(); el.removeAttribute("src"); el.load(); setPaused(true); setStatus("Stopped."); }
   };
+  toggleRef.current = toggle;
   return (
     <section className="player player--radio" aria-label="Radio player">
       <audio ref={audio} onPlaying={() => { setPaused(false); setStatus(""); setActiveAudio(audio.current); }} onWaiting={() => setStatus("Buffering…")}
