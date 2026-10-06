@@ -29,14 +29,14 @@ function Address({ label, value, onCopied }: { label: string; value: string; onC
     <div className="anywhere__address">
       <span className="anywhere__address-label">{label}</span>
       <code>{value}</code>
-      <button type="button" className="quiet" aria-label={`Copy ${label.toLowerCase()} address`}
+      <button type="button" className="btn btn--ghost btn--sm" aria-label={`Copy ${label.toLowerCase()} address`}
         onClick={() => navigator.clipboard?.writeText(value).then(() => onCopied(`Copied ${value}`), () => onCopied("Couldn’t copy — select the address and copy it instead."))}>Copy</button>
     </div>
   );
 }
 
-export default function ListenAnywhere({ request }: { request: Request }) {
-  const [open, setOpen] = useState(false);
+export default function ListenAnywhere({ request, startOpen = false }: { request: Request; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   const [setup, setSetup] = useState<Setup | null>(null);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
@@ -90,10 +90,10 @@ export default function ListenAnywhere({ request }: { request: Request }) {
 
   return (
     <section className="panel anywhere" aria-labelledby={`${id}-title`}>
-      <button type="button" className="listening__toggle" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => setOpen(!open)}>
+      <h2 className="panel__toggle-heading"><button type="button" className="listening__toggle" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => setOpen(!open)}>
         <span id={`${id}-title`}>Listen anywhere{setup ? ` — ${count} of ${total} steps done` : ""}</span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
-      </button>
+      </button></h2>
       {open && <div className="anywhere__body" id={`${id}-body`}>
         <p className="anywhere__intro">Your music on your phone and laptop, at home and away, in a proper music app with lock-screen controls. This is the step that lets you cancel a streaming subscription. Nothing here changes your music files.</p>
         {!setup ? <p className="muted">{problem || "Loading…"}</p> : <>
@@ -118,7 +118,7 @@ export default function ListenAnywhere({ request }: { request: Request }) {
                 <div className="anywhere__name-row">
                   <input id={`${id}-ts`} type="text" spellCheck={false} autoCapitalize="none" value={name} placeholder="e.g. syd or syd.tail1234.ts.net"
                     onChange={(e) => setName(e.target.value)} aria-describedby={`${id}-ts-hint`} />
-                  <button type="submit" className="quiet">Save</button>
+                  <button type="submit" className="btn btn--ghost btn--sm">Save</button>
                 </div>
                 <p className="muted" id={`${id}-ts-hint`}>It’s listed in the Tailscale app on any of your devices, and at <NewTab href="https://login.tailscale.com/admin/machines">login.tailscale.com/admin/machines</NewTab>. SynAmp uses it to show the address for when you’re away.</p>
               </form>

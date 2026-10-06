@@ -34,7 +34,7 @@ goal: Play your own music anywhere — phone, car, computer — so a streaming s
 - [x] Your whole library, streaming from your own server
 - [x] A guided checklist to listen away from home, privately, with no port forwarding
 - [~] Lock-screen controls, background play and CarPlay through phone apps you already know
-- [ ] Bring your existing playlists across
+- [x] Bring your existing playlists across
 - [ ] Lighter streams on mobile data, full quality at home
 
 ## Library care
@@ -59,8 +59,8 @@ short: Playlists
 goal: Playlists as good as the old Winamp days — better, even — for a library of any size.
 - [x] Describe a playlist in plain words and get it, with a reason for every song
 - [x] Folders for your playlists
-- [ ] Playlists of playlists: shuffle a whole folder at once
-- [ ] Your SynAmp playlists show up in your phone apps
+- [x] Playlists of playlists: shuffle a whole folder at once
+- [x] Your SynAmp playlists show up in your phone apps
 - [ ] Smooth scrolling through a hundred thousand songs
 
 ## The Brain
@@ -81,28 +81,28 @@ number: 4
 short: Radio & visualizers
 next: yes
 goal: The fun stuff: world radio and visuals that dance with the music.
-- [ ] Thousands of radio stations by country, genre and mood
-- [ ] Radio stations in your playlists, right next to your own music
-- [ ] Milkdrop-style visualizers, back again
+- [x] Thousands of radio stations by country, genre and mood
+- [x] Radio stations in your playlists, right next to your own music
+- [x] Milkdrop-style visualizers, back again
 
 ## Gapless, crossfade and DJ mode
 id: dj
 number: 5
 short: DJ mode
 goal: Seamless listening, with party-grade transitions.
-- [ ] Gapless albums: no silence between tracks
-- [ ] Crossfade, set to your taste
+- [~] Gapless albums: no silence between tracks
+- [x] Crossfade, set to your taste
 - [ ] DJ mode: songs matched by tempo and key so mixes flow
-- [ ] Skip mid-song and it blends instead of cutting
+- [~] Skip mid-song and it blends instead of cutting
 
 ## Party tools
 id: party
 number: 6
 short: Party tools
 goal: Host a party where friends request songs from their phones.
-- [ ] Guests scan a QR code and request songs (and vote)
-- [ ] A big-screen "now playing" display for the TV or an old iPad
-- [ ] You stay in charge of the queue
+- [x] Guests scan a QR code and request songs (and vote)
+- [x] A big-screen "now playing" display for the TV or an old iPad
+- [x] You stay in charge of the queue
 
 ## Apps and sharing
 id: apps
@@ -114,6 +114,17 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-06 — Put radio stations in your playlists, right next to your own music
+- 2026-10-06 — Party mode: guests scan a code to ask for songs and vote, a big “now playing” screen for the TV, and every request waits for your yes
+- 2026-10-06 — SynAmp’s own player works from your lock screen, headphone buttons and keyboard media keys
+- 2026-10-06 — Crossfade between songs (albums still play straight through), a volume control, and the next song ready before this one ends
+- 2026-10-06 — MilkDrop visuals are back, dancing to your music or the radio, with a gentler mode that’s on by default
+- 2026-10-06 — World radio: search thousands of stations by name, country or kind, and keep your favourites
+- 2026-10-06 — Bring your playlists across from iTunes, Music, Winamp and other players — folders too
+- 2026-10-06 — Your SynAmp playlists show up in your phone apps, and stay up to date by themselves
+- 2026-10-06 — Shuffle a whole folder of playlists with one button
+- 2026-10-06 — Browse and search your albums and songs, play them, and add songs to playlists by name
+- 2026-10-06 — The app gets its new look: a menu down the side, a player that stays at the bottom, and easier-to-read text
 - 2026-10-05 — The library page explains when analysis is waiting on a library update, instead of looking stuck
 - 2026-10-05 — Second copies of the same song: keep the better one, set the other aside (never deleted)
 - 2026-10-04 — "Listen anywhere" checklist: set up private access from your phone, step by step

@@ -111,6 +111,21 @@ export class PlaylistStore {
     return structuredClone(node);
   }
 
+  /** Many tracks at once (an imported playlist): one save, not one per track. */
+  addTracks(id: string, input: TrackRef[]): PlaylistNode {
+    const node = this.get(id);
+    if (node.type !== "playlist") throw new PlaylistError("Tracks can only be added to playlists");
+    for (const track of input) {
+      const trackId = typeof track.id === "string" ? track.id.trim() : "";
+      const title = typeof track.title === "string" ? track.title.trim() : "";
+      if (!trackId || !title || trackId.length > 256 || title.length > 256) continue;
+      const artist = typeof track.artist === "string" ? track.artist.trim().slice(0, 256) : "";
+      node.tracks.push({ id: trackId, title, ...(artist ? { artist } : {}) });
+    }
+    this.save();
+    return structuredClone(node);
+  }
+
   removeTrack(id: string, index: number): PlaylistNode {
     const node = this.get(id);
     if (node.type !== "playlist") throw new PlaylistError("Tracks can only be removed from playlists");

@@ -93,14 +93,25 @@ export function AboutInstall({ request }: { request: Request }) {
         <p>Version <code>{version.running.short}</code>, built {when(version.running.built_at)}.</p>
         <p className="settings__hint">
           {version.copy === "same" ? "Up to date with the copy on the NAS."
-            : version.copy === "waiting" ? "A newer copy is on the NAS, waiting to be built — see the notice at the top of the page."
+            : version.copy === "waiting" ? "A newer copy is on the NAS, waiting to be built — see the notice on the Library screen."
             : "Can’t see the copy on the NAS to compare (the brain has no read-only view of apps/)."}
         </p>
       </>}
       <p className="settings__hint">To update: copy the new version to the NAS (<code>synamp-sync</code> on the Mac), then:</p>
       <BuildSteps />
-      <div><button type="button" className="quiet" disabled={checking} onClick={checkNow}>{checking ? "Checking…" : "Check for an update"}</button>
+      <div><button type="button" className="btn btn--ghost btn--sm" disabled={checking} onClick={checkNow}>{checking ? "Checking…" : "Check for an update"}</button>
         <span className="settings__hint" role="status"> {said}</span></div>
     </fieldset>
   );
+}
+
+/** The running version, always in the top bar; turns into "Update ready" when one is waiting. */
+export function VersionBadge({ request }: { request: Request }) {
+  const { version } = useVersion(request);
+  if (!version) return null;
+  if (version.copy === "waiting") {
+    return <a className="badge badge--soon version-badge" href="#/settings"><span className="status-dot status-dot--soon" aria-hidden="true" />Update ready</a>;
+  }
+  if (!version.running) return <span className="badge badge--muted" title="Not built by Container Manager">Development copy</span>;
+  return <span className="badge badge--muted" title={`Built ${when(version.running.built_at)}`}>Version {version.running.short}</span>;
 }

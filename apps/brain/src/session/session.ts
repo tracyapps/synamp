@@ -25,6 +25,8 @@ export type QueueEntry = {
   title: string;
   artist?: string;
   source?: { playlist_id: string; plan_hash?: string; rank: number };
+  /** A party guest asked for it (their name, if they gave one). */
+  requested_by?: string;
 };
 
 export type Session = {
@@ -147,6 +149,29 @@ export class SessionStore {
       this.record(`${reportId}:exposure:${entry.source?.rank ?? entry.entry_id}`, "exposure", entry, { detail: { policy: "deterministic_rank" } });
     }
     this.record(`${reportId}:queued`, "exposure", this.session.queue[this.session.index]!, { detail: { queued: this.session.queue.length } });
+    this.save();
+    return this.get();
+  }
+
+  /**
+   * Put tracks right after the current one (or at the end of a finished
+   * queue, where they become current). The rest of the queue is untouched.
+   */
+  playNext(reportId: string, tracks: Array<{ id: string; title: string; artist?: string; requested_by?: string }>, options: { afterRequests?: boolean } = {}): Session {
+    if (typeof reportId !== "string" || !/^[A-Za-z0-9_:-]{8,120}$/.test(reportId)) throw new SessionError("event_id must be 8–120 URL-safe characters");
+    if (this.log.has(`${reportId}:next`)) return this.get();
+    if (!tracks.length) throw new SessionError("Nothing to add");
+    const entries: QueueEntry[] = tracks.slice(0, 200).map((track) => ({
+      entry_id: randomUUID(), track_id: track.id, title: track.title,
+      ...(track.artist ? { artist: track.artist } : {}), ...(track.requested_by ? { requested_by: track.requested_by.slice(0, 40) } : {}),
+    }));
+    let at = this.session.index >= this.session.queue.length ? this.session.queue.length : this.session.index + 1;
+    // Party requests line up behind the ones already waiting, first come first served.
+    if (options.afterRequests) while (at < this.session.queue.length && this.session.queue[at]!.requested_by !== undefined) at++;
+    this.session.queue.splice(at, 0, ...entries);
+    if (this.session.queue.length > 2000) this.session.queue.length = 2000;
+    entries.forEach((entry, offset) => this.record(`${reportId}:next:${offset}`, "exposure", entry, { detail: { policy: "play_next" } }));
+    this.log.append({ id: `${reportId}:next`, ts: Date.now(), signal: "receipt", track_id: entries[0]!.track_id, scope: "none", session_id: this.session.id, source: "server", policy_version: POLICY_VERSION });
     this.save();
     return this.get();
   }

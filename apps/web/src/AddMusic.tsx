@@ -125,8 +125,8 @@ export default function AddMusic({ upload, incoming, maxMb, onUploaded, onRescan
       >
         <p>Drag album folders or music files here — they’re copied, your originals stay put.</p>
         <div className="addmusic__buttons">
-          <button type="button" className="quiet" disabled={busy} onClick={() => filesInput.current?.click()}>Choose files…</button>
-          <button type="button" className="quiet" disabled={busy} onClick={() => folderInput.current?.click()}>Choose a folder…</button>
+          <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => filesInput.current?.click()}>Choose files…</button>
+          <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => folderInput.current?.click()}>Choose a folder…</button>
         </div>
         <input ref={filesInput} type="file" multiple hidden accept="audio/*,.flac,.m4a,.cue,.log,image/*" onChange={(e) => { send(pickedFromInput(e.target.files)); e.target.value = ""; }} />
         {/* @ts-expect-error webkitdirectory is a real (non-standard) attribute every current browser supports */}

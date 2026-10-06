@@ -1,13 +1,12 @@
 /* Discography gaps. Reuses the missing-tracks layout (.missing__*) and .chip. */
 
-.panel.gaps { min-height: 0; margin-top: 18px; }
-.gaps__body { padding: 4px 24px 22px; border-top: 1px solid var(--hair); }
+.gaps__body { padding: 4px 20px 20px; }
 .gaps__list { list-style: none; margin: 8px 0 0; padding: 0; }
 .gaps__item { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; padding: 10px 0; border-top: 1px solid var(--hair); font-size: 14px; }
 .gaps__item.is-ignored { opacity: .6; }
 .gaps__title { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .gaps__title .muted { font-size: 13px; }
-.gaps__badge { font: 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: #17130d; background: var(--accent); border-radius: 4px; padding: 1px 6px; }
+.gaps__badge { font: 11px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--on-gold); background: var(--accent); border-radius: 4px; padding: 1px 6px; }
 .gaps__choice { display: flex; gap: 8px; }
 .gaps__links { grid-column: 1 / -1; margin: 0; font-size: 13px; }
 .gaps__links a { color: var(--accent); }

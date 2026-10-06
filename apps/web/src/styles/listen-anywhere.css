@@ -1,19 +1,18 @@
 /* "Listen anywhere" checklist. The toggle reuses .listening__toggle; ticks reuse .organise__check. */
 
-.panel.anywhere { min-height: 0; margin-bottom: 18px; }
-.anywhere__body { padding: 4px 24px 22px; border-top: 1px solid var(--hair); }
+.anywhere__body { padding: 4px 20px 20px; }
 .anywhere__intro { margin: 14px 0; font-size: 14px; color: var(--muted); max-width: 760px; }
 .anywhere__all-done { margin: 0 0 12px; padding: 10px 14px; border: 1px solid var(--accent); border-radius: 6px; }
 .anywhere__steps { margin: 0; padding-left: 24px; display: grid; gap: 4px; max-width: 760px; }
 .anywhere__steps > li { padding: 12px 0 14px; border-top: 1px solid var(--hair); }
-.anywhere__steps > li::marker { font: 600 15px var(--font-display); color: var(--accent); }
+.anywhere__steps > li::marker { font: 400 15px var(--font-display); color: var(--accent); }
 .anywhere__steps p { margin: 6px 0; font-size: 14px; line-height: 1.5; }
 .anywhere__steps .muted { font-size: 13px; }
 .anywhere__steps a { color: var(--accent); }
 .anywhere__steps a:focus-visible, .anywhere__steps button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .anywhere__steps code { font: 12px var(--font-mono); color: var(--accent); }
 .anywhere__step-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; }
-.anywhere__step-head h3 { margin: 0; font: 600 15px var(--font-display); }
+.anywhere__step-head h3 { margin: 0; font: 400 15px var(--font-display); }
 .anywhere__state { font-size: 13px; color: var(--muted); white-space: nowrap; }
 .anywhere__state.is-done { color: var(--text); }
 .anywhere__state.is-done span { color: var(--accent); }

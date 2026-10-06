@@ -174,6 +174,7 @@ export class Scrobbler {
     const out: Candidate[] = [];
     for (const event of events) {
       if (!this.inPeriod(event.ts) || sent.has(event.id) || this.state.refused[event.id]) continue;
+      if (event.track_id.startsWith("radio:")) continue; // a radio station in a playlist isn't a song to scrobble
       const candidate = candidateFor(event, tracks);
       if (candidate) out.push(candidate);
     }

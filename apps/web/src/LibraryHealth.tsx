@@ -132,7 +132,7 @@ export default function LibraryHealth({ request }: { request: Request }) {
           <progress className="health__bar" max={a.catalog.present || 1} value={a.fully_analysed}
             aria-label={`Fully analysed: ${n(a.fully_analysed)} of ${n(a.catalog.present)} tracks`} />
         )}
-        <button type="button" className="quiet" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(!open)}>
+        <button type="button" className="btn btn--ghost btn--sm" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(!open)}>
           {open ? "Hide details" : "Details"}
         </button>
       </div>
@@ -219,11 +219,11 @@ function AnalyzerControls({ control, act, message }: { control: Control; act: (p
           aria-label={`Library list update: ${listProgress(running.activity)}`} />
       ) : null}
       <div className="health__buttons" role="group" aria-label="Analyzer">
-        <button type="button" className="quiet" disabled={busy}
+        <button type="button" className="btn btn--ghost btn--sm" disabled={busy}
           onClick={() => act("/analyzer/request", { action: "update" }, "Asked the analyzer to look for changes.")}>Scan for changes</button>
         {analysing
-          ? <button type="button" className="quiet" disabled={!!running?.stop} onClick={() => act("/analyzer/stop", {}, "Pausing after the current track.")}>Pause analysis</button>
-          : <button type="button" className="primary" disabled={busy && !analysing}
+          ? <button type="button" className="btn btn--ghost btn--sm" disabled={!!running?.stop} onClick={() => act("/analyzer/stop", {}, "Pausing after the current track.")}>Pause analysis</button>
+          : <button type="button" className="btn btn--primary" disabled={busy && !analysing}
             onClick={() => act("/analyzer/request", { action: "analyze" }, "Analysis will start in a moment. It keeps the Mac awake while it works.")}>Start analysis</button>}
         {control.queued.length > 0 && <span className="muted">{control.queued.length} waiting</span>}
       </div>

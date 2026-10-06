@@ -1,167 +1,143 @@
 /*
- * SynAmp design tokens — shared by the web app and the roadmap artifact.
- * One accent. Hierarchy comes from type and space, not colour.
+ * SynAmp — app design tokens (v2 "Spectrum")
+ *
+ * Mirrors site/src/assets/synamp.css section 1 (the design system's contract is
+ * site/design-system/DESIGN.md). Legacy v1 names (--text, --accent, --hair) are
+ * kept as aliases. One gold signal; the spectrum is the amp light and the
+ * visualizer, nothing else.
+ *
+ * Contrast (WCAG 2.x, measured):
+ *   --muted  #a4abc1  6.57:1 on --bg · 5.65:1 on --surface · 4.72:1 on --surface-2
+ *   --faint  #848ca6  icons, rules and other non-text only on raised surfaces
+ *                     (3.87:1 on --surface); text only on --bg or darker.
  */
 :root {
-  --bg: #0e0e10;
-  --surface: #16161a;
-  --text: #ececec;
-  --muted: #8a8a94;
-  --accent: #e0a33e; /* LCD amber */
-  --hair: rgba(255, 255, 255, 0.08);
+  /* Ground + surfaces */
+  --ink: #0e0e10;
+  --bg: #212637;            /* brand slate */
+  --bg-deep: #191d29;
+  --surface: #2a3145;
+  --surface-2: #343d54;
+  --surface-3: #414b66;
+  --well: #14161f;          /* input wells, sidebars */
+  --well-2: #1a1c26;
 
-  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Space Grotesk", "IBM Plex Sans", system-ui, sans-serif;
+  /* Ink */
+  --fg: #f1f1f1;
+  --text: var(--fg);        /* legacy alias */
+  --muted: #a4abc1;         /* was #9aa1b8: 4.20:1 on --surface-2 failed AA */
+  --faint: #848ca6;
+  --placeholder: #8b93aa;
+  --on-gold: #1a1503;
+  --on-coral: #1a0b0b;
+
+  /* Signal */
+  --gold: #ffcd00;
+  --gold-hi: #ffdb4d;
+  --gold-lo: #e0b400;
+  --gold-wash: rgba(255, 205, 0, 0.12);
+  --accent: var(--gold);    /* legacy alias */
+  --accent-ink: var(--on-gold);
+  --coral: #ff4a47;
+  --coral-hi: #ff6e6b;
+  --lavender: #ab51ff;
+  --violet: #5216b3;
+
+  /* Semantic — *-ink variants are the AA-safe text colours */
+  --success: #00e676;
+  --success-ink: #8ff0bd;
+  --warn: #ffb020;
+  --warn-ink: #ffd27a;      /* 9.5:1 on --surface */
+  --danger: #ff5c57;
+  --danger-ink: #ff8a86;
+  --info: #3b6bff;
+  --info-ink: #a9bfff;
+  --lavender-ink: #c9a6ff;
+
+  /* Spectrum ramp — the amp light + visualizer only */
+  --sp-berry: #aa006c;
+  --sp-pink: #f6004f;
+  --sp-coral: #ff4a47;
+  --sp-orange: #e86b14;
+  --sp-gold: #ffcd00;
+  --sp-lime: #defc1a;
+  --sp-green: #00e676;
+  --sp-cyan: #00e6e8;
+  --sp-blue: #3b6bff;
+  --sp-violet: #5216b3;
+  --spectrum: linear-gradient(90deg, var(--sp-berry), var(--sp-pink), var(--sp-coral), var(--sp-orange), var(--sp-gold), var(--sp-lime), var(--sp-green), var(--sp-cyan), var(--sp-blue), var(--sp-violet));
+
+  /* Hairlines + glass */
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --hair: var(--border);    /* legacy alias */
+  --glass: rgba(14, 14, 16, 0.66);
+  --glass-solid: rgba(20, 22, 31, 0.94);
+  --ghost: rgba(255, 255, 255, 0.05);
+  --ghost-hi: rgba(255, 255, 255, 0.1);
+
+  /* Type — Momo Trust Display has one weight (400): hierarchy is size + colour */
+  --font-display: "Momo Trust Display", "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Space Grotesk", "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-body: var(--font-sans);
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Space · radii · elevation · motion */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px; --s-5: 24px;
+  --s-6: 32px; --s-7: 48px; --s-8: 64px;
+  --r-xs: 4px; --r-sm: 8px; --r-md: 12px; --r-lg: 20px; --r-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.38);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.48);
+  --shadow-glow: 0 12px 40px rgba(255, 205, 0, 0.18);
+  --dur-1: 120ms; --dur-2: 200ms; --dur-3: 320ms; --dur-4: 520ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: dark;
+  accent-color: var(--gold);
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body {
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
   margin: 0;
   background: var(--bg);
-  color: var(--text);
+  color: var(--fg);
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
-
-.shell {
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 40px 96px;
-}
-
-.shell__head {
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  padding: 40px 0 22px;
-  border-bottom: 1px solid var(--hair);
-}
-
-.wordmark {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.tagline {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.shell__body {
-  padding-top: 72px;
-}
-
-h1 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(34px, 5vw, 56px);
-  line-height: 1.04;
-  letter-spacing: -0.028em;
-  margin: 0;
-  max-width: 18ch;
-}
-
-.lede {
-  max-width: 62ch;
-  font-size: 18px;
-  line-height: 1.55;
-  color: #cfcfd5;
-  margin: 22px 0 0;
-}
-
-.status {
-  margin-top: 56px;
-  padding-top: 26px;
-  border-top: 1px solid var(--hair);
-}
-
-.status__line {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  color: var(--muted);
-  margin: 0;
-}
-
-.status__line--good {
-  color: var(--accent);
-}
-
-.status__line--bad {
-  color: #d9705f;
-}
-
-.status__detail {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: #63636d;
-  margin: 10px 0 0;
-}
-
-button, input, select { font: inherit; }
+:where(button, input, select, textarea) { font: inherit; color: inherit; }
 button { cursor: pointer; }
-.shell { max-width: 1440px; }
-.shell__head { justify-content: space-between; }
-.intro { padding: 48px 0 34px; max-width: 800px; }
-.intro p:last-child { color: var(--muted); max-width: 64ch; margin: 18px 0 0; }
-.eyebrow { color: var(--accent); font: 11px var(--font-mono); letter-spacing: .18em; text-transform: uppercase; margin: 0 0 10px; }
-.workspace { display: grid; grid-template-columns: minmax(275px, 340px) minmax(0, 1fr); gap: 18px; align-items: start; }
-.panel { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; min-height: 520px; }
-.sidebar { padding: 20px 0; }
-.detail { padding: 28px 32px; }
-.panel__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.sidebar .panel__head { padding: 0 20px 18px; }
-.panel__head h2, .panel__head h3, .create-form h3, .track-form h3 { margin: 0; font: 600 18px var(--font-display); }
-.panel__head span { color: var(--muted); font: 12px var(--font-mono); white-space: nowrap; }
-.detail .panel__head h2 { font-size: 29px; }
-.muted { color: var(--muted); font-size: 14px; }
-.sidebar > .muted { padding: 0 20px; }
-.tree { max-height: 340px; overflow: auto; border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
-.tree__item { width: 100%; background: none; border: 0; color: var(--text); display: flex; gap: 11px; align-items: center; text-align: left; padding: 10px 14px; font-size: 14px; }
-.tree__item:hover, .tree__item.is-selected { background: rgba(224,163,62,.12); }
-.tree__item.is-selected { color: var(--accent); }
-.tree__icon { color: var(--accent); width: 15px; flex: none; }
-.create-form { border-top: 1px solid var(--hair); margin-top: 22px; padding: 20px 20px 0; display: grid; gap: 14px; }
-.create-form h3 { margin-bottom: 4px; }
-label { display: grid; gap: 5px; color: var(--muted); font: 12px var(--font-mono); }
-input, select { width: 100%; padding: 10px 11px; background: #101014; border: 1px solid #34343c; border-radius: 6px; color: var(--text); outline: none; }
-input:focus, select:focus { border-color: var(--accent); }
-input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.primary { background: var(--accent); color: #17130d; border: none; border-radius: 6px; padding: 11px 15px; font-weight: 700; }
-.primary:hover { filter: brightness(1.1); }
-.quiet { background: transparent; color: var(--muted); border: 1px solid var(--hair); border-radius: 5px; padding: 6px 9px; font-size: 12px; }
-.quiet:hover { color: var(--text); border-color: var(--muted); }
-.track-form { margin: 32px 0; padding: 22px; background: #111115; border: 1px solid var(--hair); border-radius: 8px; }
-.track-form .muted { margin: 8px 0 16px; }
-.track-fields { display: grid; grid-template-columns: 1fr 1.3fr 1fr auto; gap: 10px; align-items: end; }
-.results { margin-top: 28px; border-top: 1px solid var(--hair); padding-top: 23px; }
-.results ol { list-style: none; padding: 0; margin: 14px 0 0; }
-.results li { display: flex; gap: 16px; align-items: center; border-top: 1px solid var(--hair); padding: 9px 0; }
-.track-number { color: #62626c; font: 12px var(--font-mono); width: 25px; }
-.track-title { flex: 1; font-size: 14px; }
-.track-title small { display: block; color: var(--muted); font-size: 12px; }
-.empty { margin: 100px auto; text-align: center; max-width: 330px; color: var(--muted); }
-.empty > span { font-size: 48px; color: var(--accent); }
-.empty h2 { color: var(--text); margin-bottom: 8px; }
-.alert { color: #e9aea4; background: #3b2424; border: 1px solid #693333; padding: 12px 16px; border-radius: 6px; }
-.token-form { display: flex; align-items: end; gap: 10px; max-width: 480px; margin-bottom: 20px; }
-.token-form label { flex: 1; }
-.token-form button { background: var(--accent); border: none; border-radius: 6px; padding: 10px; }
-@media (max-width: 850px) { .workspace { grid-template-columns: 1fr; } .panel { min-height: 0; } .track-fields { grid-template-columns: 1fr 1fr; } }
-@media (max-width: 520px) { .shell { padding: 0 18px 60px; } .detail { padding: 20px; } .track-fields { grid-template-columns: 1fr; } .intro { padding-top: 32px; } }
-
-/* Anything given a display value in CSS would otherwise ignore the hidden attribute. */
+img, svg { max-width: 100%; }
 [hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+::selection { background: var(--gold); color: var(--on-gold); }
+
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 400; line-height: 1.15; letter-spacing: -0.01em; }
+/* Momo has no italic: emphasis is colour. */
+h1 em, h2 em, h3 em { font-style: normal; color: var(--gold); }
+
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font: 500 0.6875rem/1.4 var(--font-mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin: 0 0 8px; }
+
+/* The amp light — the brand's one decorative motif. Always aria-hidden. */
+.amp { display: block; height: 4px; border-radius: var(--r-pill); background-image: var(--spectrum); background-size: 200% 100%; width: 100%; }
+.amp--live { animation: amp-slide 8s linear infinite; }
+.amp--short { width: 56px; }
+@keyframes amp-slide { to { background-position: 200% 0; } }
+
+.cluster { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: center; }
+.between { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); flex-wrap: wrap; }
+.stack { display: grid; gap: var(--s-4); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

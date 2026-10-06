@@ -96,7 +96,7 @@ export function ResultView({ result, labels, onRestore }: { result: Evaluation; 
           <summary>Removed by you ({result.hidden.length})</summary>
           <ul>{result.hidden.map((track) => (
             <li key={track.id}>{track.title}{track.artist ? <small> · {track.artist}</small> : null}
-              <button type="button" className="quiet" onClick={() => onRestore(track.id)}>Restore</button></li>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => onRestore(track.id)}>Restore</button></li>
           ))}</ul>
         </details>
       )}
@@ -104,7 +104,7 @@ export function ResultView({ result, labels, onRestore }: { result: Evaluation; 
         <section className="near-miss" aria-labelledby={`${nearId}-h`}>
           <h4 id={`${nearId}-h`}>Near misses <span>({result.near_miss.length})</span></h4>
           <p className="muted">These break exactly one of your rules, narrowly or because it hasn’t been measured. They are never mixed into the list above.</p>
-          <button type="button" className="quiet" aria-expanded={showNear} aria-controls={nearId} onClick={() => setShowNear(!showNear)}>
+          <button type="button" className="btn btn--ghost btn--sm" aria-expanded={showNear} aria-controls={nearId} onClick={() => setShowNear(!showNear)}>
             {showNear ? "Hide near misses" : "Show near misses"}
           </button>
           <div id={nearId} hidden={!showNear}><TrackList tracks={result.near_miss} nearMiss /></div>
@@ -154,7 +154,7 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
           placeholder="e.g. I need to focus. no words, no piano, nothing too slow" aria-describedby={`${promptId}-hint`} />
         <p id={`${promptId}-hint`} className="muted">“No …” rules are strict: a track is only included when it has been measured and passes.</p>
         <div className="describe__actions">
-          <button className="primary" disabled={busy || !prompt.trim()}>{busy ? "Working…" : "Preview"}</button>
+          <button className="btn btn--primary" disabled={busy || !prompt.trim()}>{busy ? "Working…" : "Preview"}</button>
           <span className="muted">Try:</span>
           {EXAMPLES.map((example) => (
             <button type="button" key={example} className="chip" onClick={() => { setPrompt(example); setName(""); preview(undefined, example); }}>{example}</button>
@@ -184,7 +184,7 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
             <ResultView result={draft.preview} labels={labels} />
             <div className="describe__save">
               <label>Playlist name<input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} /></label>
-              <button className="primary" onClick={save} disabled={busy}>Save as smart playlist</button>
+              <button className="btn btn--primary" onClick={save} disabled={busy}>Save as smart playlist</button>
               <p className="muted">Saves the rules, not the tracks — newly analysed music joins automatically.</p>
             </div>
           </>}

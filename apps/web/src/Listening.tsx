@@ -16,8 +16,8 @@ type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
 
 const when = (ms?: number | null) => (ms ? new Date(ms).toLocaleString() : "never");
 
-export default function Listening({ request }: { request: Request }) {
-  const [open, setOpen] = useState(false);
+export default function Listening({ request, startOpen = false }: { request: Request; startOpen?: boolean }) {
+  const [open, setOpen] = useState(startOpen);
   const [status, setStatus] = useState<Status | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -47,10 +47,10 @@ export default function Listening({ request }: { request: Request }) {
   const clients = Object.entries(status?.other_apps.by_client ?? {}).sort((a, b) => b[1] - a[1]);
   return (
     <section className="panel listening" aria-labelledby={titleId}>
-      <button type="button" className="listening__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <h2 className="panel__toggle-heading"><button type="button" className="listening__toggle" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span id={titleId}>Listening history &amp; Last.fm</span>
         <span aria-hidden="true">{open ? "−" : "+"}</span>
-      </button>
+      </button></h2>
       {open && <div className="listening__body">
         <div>
           <h3>Plays from your other apps</h3>
@@ -69,7 +69,7 @@ export default function Listening({ request }: { request: Request }) {
             <p className="muted">Off. To offer it, add a Last.fm API key and shared secret under <strong>Settings</strong> (below), then come back here.</p>
           ) : !lf.connected ? <>
             <p className="muted">Send what you play — here and in your other apps — to your Last.fm profile.</p>
-            <button type="button" className="primary" disabled={busy} onClick={() => act("/lastfm/connect")}>Connect Last.fm</button>
+            <button type="button" className="btn btn--primary" disabled={busy} onClick={() => act("/lastfm/connect")}>Connect Last.fm</button>
           </> : <>
             <p>Connected as <strong>{lf.user}</strong></p>
             <button type="button" role="switch" aria-checked={lf.enabled} className={`switch ${lf.enabled ? "is-on" : ""}`} disabled={busy}
@@ -87,8 +87,8 @@ export default function Listening({ request }: { request: Request }) {
               <ul>{lf.refused.map((item) => <li key={item.event_id}>{item.message}</li>)}</ul></details>}
             {lf.last_error && <p className="muted">Last problem: {lf.last_error}</p>}
             <div className="listening__actions">
-              <button type="button" className="quiet" disabled={busy || !lf.enabled} onClick={() => act("/lastfm/flush", {}, "Sent what was waiting.")}>Send now</button>
-              <button type="button" className="quiet" disabled={busy} onClick={() => act("/lastfm/disconnect", {}, "Disconnected from Last.fm.")}>Disconnect</button>
+              <button type="button" className="btn btn--ghost btn--sm" disabled={busy || !lf.enabled} onClick={() => act("/lastfm/flush", {}, "Sent what was waiting.")}>Send now</button>
+              <button type="button" className="btn btn--ghost btn--sm" disabled={busy} onClick={() => act("/lastfm/disconnect", {}, "Disconnected from Last.fm.")}>Disconnect</button>
             </div>
             <p className="muted">If you also linked Last.fm inside Navidrome, unlink it there — otherwise plays from your other apps are scrobbled twice.</p>
           </>}

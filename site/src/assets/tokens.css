@@ -21,7 +21,7 @@
   /* Ink */
   --fg: #f1f1f1;
   --text: var(--fg);        /* legacy alias */
-  --muted: #9aa1b8;         /* was #8a8a94 */
+  --muted: #a4abc1;         /* was #8a8a94; #9aa1b8 failed AA on --surface-2 */
   --faint: #6e7690;
   --placeholder: #8b93aa;
   --on-gold: #1a1503;

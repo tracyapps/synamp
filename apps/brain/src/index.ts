@@ -31,6 +31,11 @@ import { POLICY_VERSION } from "./session/events.ts";
 import type { ListeningEvent } from "./session/events.ts";
 import { relativeFromReported, trackIdForPath } from "./subsonic/identity.ts";
 import { createSubsonicProxy } from "./subsonic/proxy.ts";
+import { MOODS, Radio, RadioError } from "./radio/radio.ts";
+import { guestKey, PartyError, PartyStore, RateLimit } from "./party/party.ts";
+import type { Station } from "./radio/radio.ts";
+import { PlaylistSync, SyncError, syncName } from "./subsonic/playlist-sync.ts";
+import type { SyncSource } from "./subsonic/playlist-sync.ts";
 import type { CapturedPlay } from "./subsonic/proxy.ts";
 import { LastfmClient, LastfmError } from "./lastfm/client.ts";
 import { RuntimeSettings, SettingsError } from "./settings.ts";
@@ -39,7 +44,10 @@ import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
 import { otherAppPlays, pingCore, SetupError, SetupStore } from "./setup.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
 import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
-import { groupAlbums } from "./library/albums.ts";
+import { albumFolder, groupAlbums } from "./library/albums.ts";
+import { ImportError, matchPlaylists, parsePlaylistFile } from "./library/playlist-import.ts";
+import type { MatchedPlaylist } from "./library/playlist-import.ts";
+import { albumTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
 import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
 import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay } from "./library/organise.ts";
@@ -77,6 +85,126 @@ const organise = new OrganiseStore(join(dataDir, "organise.json"));
 const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
 /** "Listen anywhere": the Phase 1 checklist (Navidrome, Tailscale, apps). */
 const setup = new SetupStore(join(dataDir, "setup.json"));
+
+// --- your playlists in your phone apps (Navidrome) ------------------------------
+const phonePlaylists = new PlaylistSync(join(dataDir, "phone-playlists.json"), { coreUrl: config.coreUrl, coreMusicPath: config.coreMusicPath });
+/** Every playlist, roll-up and smart playlist, with its current tracks. Folders only lend their names. */
+function phoneSources(): SyncSource[] {
+  const nodes = playlists.list();
+  return nodes.filter((node) => node.type !== "folder").flatMap((node) => {
+    // Radio stations stay in SynAmp: Subsonic playlists only hold songs.
+    try { return [{ id: node.id, name: syncName(nodes, node.id), trackIds: playlists.resolve(node.id).filter((track) => !track.id.startsWith("radio:")).map((track) => library.canonicalId(track.id)) }]; }
+    catch { return []; } // e.g. a smart playlist while the library list is missing
+  });
+}
+function sendPhonePlaylists() {
+  return phonePlaylists.sync(phoneSources(), currentLibrary().version, (relative) => library.idForPath(relative) ?? trackIdForPath(relative));
+}
+let phoneTimer: NodeJS.Timeout | undefined;
+
+// --- party mode ---------------------------------------------------------------------
+const party = new PartyStore(join(dataDir, "party.json"));
+const partySearchLimit = new RateLimit(40);
+const partyWriteLimit = new RateLimit(20);
+const clientAddress = (req: IncomingMessage) => String(req.headers["x-forwarded-for"] ?? "").split(",")[0]!.trim() || req.socket.remoteAddress || "?";
+/** What everyone at the party can see: now playing, the next few, and the requests. */
+function partyGuestView(code: string, guest?: string) {
+  const p = party.forCode(code);
+  const s = sessions.get();
+  const now = s.queue[s.index];
+  const brief = (entry: { title: string; artist?: string; requested_by?: string }) => ({ title: entry.title, ...(entry.artist ? { artist: entry.artist } : {}), ...(entry.requested_by ? { requested_by: entry.requested_by } : {}) });
+  return {
+    code: p.code, auto_add: p.auto_add,
+    now: now ? { ...brief(now), playing: s.state === "playing" } : null,
+    next: s.queue.slice(s.index + 1, s.index + 6).map(brief),
+    requests: party.guestRequests(guest),
+  };
+}
+function partyHostView() {
+  const p = party.party;
+  return {
+    party: p ? { code: p.code, started_at: p.started_at, auto_add: p.auto_add } : null,
+    requests: p ? party.waiting().map(({ guest, votes, ...item }) => ({ ...item, votes: votes.length })) : [],
+    address: runtime.publicUrl || "",
+  };
+}
+/** Queue a request: "Play next" from the host, or behind the other requests when they add themselves. */
+function queueRequest(request: { id: string; track_id: string; title: string; artist?: string; name?: string }, afterRequests: boolean) {
+  const session = sessions.playNext(`party-${request.id}`, [{ id: request.track_id, title: request.title, ...(request.artist ? { artist: request.artist } : {}), requested_by: request.name || "a guest" }], { afterRequests });
+  party.decide(request.id, "queued");
+  return session;
+}
+
+// --- world radio --------------------------------------------------------------------
+const radio = new Radio(join(dataDir, "radio.json"));
+/** A signed, expiring link the <audio> element can play (it can't send the access token). */
+function radioListenUrl(id: string): string {
+  const signed = signer.url(`radio:${id}`);
+  return `/api/v1/listen/radio/${encodeURIComponent(id)}${signed.slice(signed.indexOf("?"))}`;
+}
+const withListen = (station: Station) => ({ ...station, listen_url: radioListenUrl(station.id) });
+
+// --- bringing old playlists across: read + match now, create on "Import" -------
+const pendingImports = new Map<string, { at: number; source: string; playlists: MatchedPlaylist[] }>();
+async function rawText(req: IncomingMessage, limit: number): Promise<string> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += (chunk as Buffer).length;
+    if (size > limit) throw new ImportError(`That file is over ${Math.round(limit / 1048576)} MB`, 413);
+    chunks.push(chunk as Buffer);
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+function importSummary(id: string) {
+  const pending = pendingImports.get(id)!;
+  return {
+    import_id: id, source: pending.source,
+    playlists: pending.playlists.map((item) => ({
+      key: item.key, name: item.name, total: item.total, found: item.tracks.length, missing: item.missing.slice(0, 200), missing_count: item.missing.length,
+      ...(item.parent ? { parent: item.parent } : {}), ...(item.folder ? { folder: true } : {}), ...(item.smart ? { smart: true } : {}),
+    })),
+  };
+}
+/** Make the chosen playlists (and their iTunes folders) inside a new folder. */
+function createImported(id: string, keys: unknown, folderName: unknown) {
+  const pending = pendingImports.get(id);
+  if (!pending) throw new ImportError("That import has expired — choose the file again", 410);
+  if (!Array.isArray(keys) || !keys.length) throw new ImportError("Choose at least one playlist");
+  const chosen = new Set(keys.map(String));
+  const name = typeof folderName === "string" && folderName.trim() ? folderName.trim().slice(0, 120) : "";
+  const root = name ? playlists.create({ type: "folder", name, parentId: null }).id : null;
+  const made = new Map<string, string>();
+  let lists = 0, songs = 0;
+  const byKey = new Map(pending.playlists.map((item) => [item.key, item]));
+  /** Its nearest chosen folder, so the iTunes folder structure carries over. */
+  const parentOf = (item: MatchedPlaylist): string | null => {
+    let parent = item.parent ? byKey.get(item.parent) : undefined;
+    while (parent && !chosen.has(parent.key)) parent = parent.parent ? byKey.get(parent.parent) : undefined;
+    return parent ? ensure(parent) : root;
+  };
+  const ensure = (item: MatchedPlaylist): string => {
+    const existing = made.get(item.key);
+    if (existing) return existing;
+    const parentId = parentOf(item);
+    const node = playlists.create({ type: item.folder ? "folder" : "playlist", name: item.name, parentId });
+    made.set(item.key, node.id);
+    if (!item.folder) { playlists.addTracks(node.id, item.tracks); lists++; songs += item.tracks.length; }
+    return node.id;
+  };
+  for (const item of pending.playlists) if (chosen.has(item.key)) ensure(item);
+  playlistsChanged();
+  return { created: lists, songs, folder_id: root };
+}
+setInterval(() => { for (const [id, item] of pendingImports) if (Date.now() - item.at > 60 * 60_000) pendingImports.delete(id); }, 10 * 60_000).unref();
+/** After a change, send soon (changes usually come in bursts); never while signed out or switched off. */
+function playlistsChanged(delayMs = 15_000) {
+  if (!phonePlaylists.signedIn || !phonePlaylists.state.auto) return;
+  clearTimeout(phoneTimer);
+  phoneTimer = setTimeout(() => { sendPhonePlaylists()?.catch((error) => console.warn(`phone playlists: ${(error as Error).message}`)); }, delayMs);
+}
+// Smart playlists change as the library does, so send them every half hour too.
+setInterval(() => playlistsChanged(0), 30 * 60_000).unref();
 /** Tempo checks you made in "Check the measurements": answers and corrections. */
 const spotChecks = new SpotChecks(join(dataDir, "spotchecks.json"));
 /** As analysed (moved files followed), before your tempo corrections. */
@@ -219,9 +347,12 @@ function sessionView(session: Session) {
   return {
     ...session,
     queue: session.queue.map((entry) => {
+      // A radio station saved in a playlist: always "playable", never ends by itself.
+      if (entry.track_id.startsWith("radio:")) return { ...entry, playable: true, live: true, stream_url: radioListenUrl(entry.track_id.slice(6)) };
       const track = byId.get(entry.track_id);
       const playable = !!(track?.path && resolveInside(config.libraryPath, track.path));
-      return { ...entry, playable, ...(playable ? { stream_url: signer.url(entry.track_id) } : {}) };
+      // The album folder lets the player play an album straight through instead of crossfading inside it.
+      return { ...entry, playable, ...(playable ? { stream_url: signer.url(entry.track_id), album_key: albumFolder(track!.path!) } : {}) };
     }),
   };
 }
@@ -398,7 +529,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -421,16 +552,41 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (!file) return send(res, 404, { error: "no audio file for this track" });
     return sendFile(req, res, file);
   }
+  const radioListen = path.match(/^\/api\/v1\/listen\/radio\/([^/]+)$/);
+  if (radioListen && (req.method === "GET" || req.method === "HEAD")) {
+    const id = decodeURIComponent(radioListen[1]!);
+    if (!signer.verify(`radio:${id}`, url.searchParams.get("exp"), url.searchParams.get("sig"))) return send(res, 403, { error: "invalid or expired stream link" });
+    const station = await radio.station(id);
+    if (req.method === "GET") radio.countClick(id);
+    return radio.relay(req, res, station);
+  }
   if (path === "/api/v1/session" && req.method === "GET") return send(res, 200, { session: sessionView(sessions.get()) });
   if (path === "/api/v1/session/queue" && req.method === "POST") {
     const input = await body(req);
-    if (typeof input.playlist_id !== "string") throw new SessionError("playlist_id is required");
+    const shuffle = input.shuffle === true;
+    const order = <T,>(tracks: T[]) => (shuffle ? shuffled(tracks) : tracks);
+    const ref = (track: { id: string; title: string; artist?: string }): TrackRef => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) });
+    // An album, or some songs picked from the library: no playlist behind them.
+    if (typeof input.album_key === "string") {
+      const { tracks } = albumTracks(currentLibrary(), input.album_key);
+      const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks.map(ref)), undefined, Number(input.start_index ?? 0));
+      return send(res, 200, { session: sessionView(session) });
+    }
+    if (Array.isArray(input.track_ids)) {
+      const lib = currentLibrary();
+      const byId = new Map(lib.tracks.map((track) => [track.id, track]));
+      const tracks = input.track_ids.slice(0, 2000).map((id) => byId.get(library.canonicalId(String(id)))).filter((track) => track !== undefined).map(ref);
+      const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks), undefined, Number(input.start_index ?? 0));
+      return send(res, 200, { session: sessionView(session) });
+    }
+    if (typeof input.playlist_id !== "string") throw new SessionError("playlist_id, album_key or track_ids is required");
     const node = playlists.list().find((item) => item.id === input.playlist_id);
     if (!node) throw new PlaylistError("Playlist node not found", 404);
     // A snapshot: later membership changes do not touch what is queued.
-    const tracks = playlists.resolve(node.id);
+    // Shuffle works on anything, folders included: every playlist inside, mixed together.
+    const tracks = order(playlists.resolve(node.id));
     const session = sessions.replaceQueue(String(input.event_id ?? ""), tracks,
-      { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, Number(input.start_index ?? 0));
+      { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, shuffle ? 0 : Number(input.start_index ?? 0));
     return send(res, 200, { session: sessionView(session) });
   }
   if (path === "/api/v1/session/report" && req.method === "POST") {
@@ -447,7 +603,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       const node = playlists.list().find((item) => item.id === input.playlist_id);
       if (node?.type === "playlist") {
         const index = node.tracks.findIndex((track) => track.id === input.track_id);
-        if (index >= 0) playlists.removeTrack(node.id, index);
+        if (index >= 0) { playlists.removeTrack(node.id, index); playlistsChanged(); }
       }
     }
     return send(res, result.duplicate ? 200 : 201, { event: result.event, duplicate: result.duplicate });
@@ -456,6 +612,18 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/analysis/progress" && req.method === "POST") {
     const progress = analysisStatus.record(await body(req));
     return send(res, 202, { received: progress.received_at });
+  }
+  // --- browsing the library ----------------------------------------------------
+  if (path === "/api/v1/library/albums" && req.method === "GET") {
+    const q = url.searchParams;
+    return send(res, 200, listAlbums(currentLibrary(), { q: q.get("q") ?? "", sort: q.get("sort") ?? "", offset: Number(q.get("offset") ?? 0), limit: Number(q.get("limit") ?? 60) }));
+  }
+  if (path === "/api/v1/library/album" && req.method === "GET") {
+    const { album, tracks } = albumTracks(currentLibrary(), url.searchParams.get("key") ?? "");
+    return send(res, 200, { album, tracks: tracks.map(trackSummary) });
+  }
+  if (path === "/api/v1/library/search" && req.method === "GET") {
+    return send(res, 200, searchTracks(currentLibrary(), url.searchParams.get("q") ?? "", Number(url.searchParams.get("limit") ?? 50)));
   }
   if (path === "/api/v1/library/health" && req.method === "GET") {
     return send(res, 200, { analysis: analysisStatus.view(), library: libraryStats(currentLibrary()) });
@@ -781,20 +949,119 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return send(res, 200, { nodes: playlists.list() });
   }
   if (path === "/api/v1/playlists" && req.method === "POST") {
-    return send(res, 201, { node: playlists.create((await body(req)) as CreateNode) });
+    const node = playlists.create((await body(req)) as CreateNode);
+    playlistsChanged();
+    return send(res, 201, { node });
   }
   if (resolvePath && req.method === "GET") {
     return send(res, 200, { tracks: playlists.resolve(resolvePath[1]!) });
   }
   if (tracksPath && req.method === "POST") {
-    return send(res, 201, { node: playlists.addTrack(tracksPath[1]!, (await body(req)) as TrackRef) });
+    const node = playlists.addTrack(tracksPath[1]!, (await body(req)) as TrackRef);
+    playlistsChanged();
+    return send(res, 201, { node });
   }
   if (trackPath && req.method === "DELETE") {
-    return send(res, 200, { node: playlists.removeTrack(trackPath[1]!, Number(trackPath[2])) });
+    const node = playlists.removeTrack(trackPath[1]!, Number(trackPath[2]));
+    playlistsChanged();
+    return send(res, 200, { node });
   }
   if (nodePath && req.method === "DELETE") {
     playlists.delete(nodePath[1]!);
+    playlistsChanged();
     return send(res, 200, { deleted: true });
+  }
+  // --- party mode: guests (the code is the key) -----------------------------------------
+  const partyPath = path.match(/^\/api\/v1\/party\/([A-Za-z0-9]{4,12})(\/search|\/request|\/vote)?$/);
+  if (partyPath) {
+    const [, code, action] = partyPath;
+    const guestHeader = req.headers["x-party-guest"];
+    const guest = guestHeader ? guestKey(String(guestHeader)) : undefined;
+    if (!action && req.method === "GET") return send(res, 200, partyGuestView(code!, guest));
+    if (action === "/search" && req.method === "GET") {
+      party.forCode(code!);
+      partySearchLimit.check(clientAddress(req));
+      const found = searchTracks(currentLibrary(), url.searchParams.get("q") ?? "", 15);
+      return send(res, 200, { tracks: found.tracks.map(({ id, title, artist, album }) => ({ id, title, ...(artist ? { artist } : {}), ...(album ? { album } : {}) })) });
+    }
+    if (action === "/request" && req.method === "POST") {
+      if (!guest) throw new PartyError("Reload the party page and try again");
+      partyWriteLimit.check(clientAddress(req));
+      const input = await body(req, 4_000);
+      const track = currentLibrary().tracks.find((item) => item.id === input.track_id && item.path);
+      if (!track) throw new PartyError("That song can't be played right now", 404);
+      const request = party.request(code!, guest, track, input.name);
+      if (party.party?.auto_add && request.status === "waiting") queueRequest(request, true);
+      return send(res, 201, partyGuestView(code!, guest));
+    }
+    if (action === "/vote" && req.method === "POST") {
+      if (!guest) throw new PartyError("Reload the party page and try again");
+      partyWriteLimit.check(clientAddress(req));
+      party.vote(code!, guest, (await body(req, 4_000)).request_id);
+      return send(res, 200, partyGuestView(code!, guest));
+    }
+  }
+  // --- party mode: the host --------------------------------------------------------------
+  if (path === "/api/v1/party-host" && req.method === "GET") return send(res, 200, partyHostView());
+  if (path === "/api/v1/party-host/start" && req.method === "POST") { party.start((await body(req)).auto_add === true); return send(res, 200, partyHostView()); }
+  if (path === "/api/v1/party-host/end" && req.method === "POST") { party.end(); return send(res, 200, partyHostView()); }
+  if (path === "/api/v1/party-host/settings" && req.method === "POST") { party.setAutoAdd((await body(req)).auto_add); return send(res, 200, partyHostView()); }
+  if ((path === "/api/v1/party-host/play-next" || path === "/api/v1/party-host/dismiss") && req.method === "POST") {
+    const id = String((await body(req)).id ?? "");
+    const request = party.waiting().find((item) => item.id === id);
+    if (!request) throw new PartyError("That request isn't waiting any more", 404);
+    if (path.endsWith("/dismiss")) party.decide(id, "dismissed");
+    else return send(res, 200, { ...partyHostView(), session: sessionView(queueRequest(request, false)) });
+    return send(res, 200, partyHostView());
+  }
+  // --- world radio --------------------------------------------------------------------
+  if (path === "/api/v1/radio" && req.method === "GET") return send(res, 200, { favourites: radio.favourites.map(withListen), moods: MOODS });
+  if (path === "/api/v1/radio/search" && req.method === "GET") {
+    const q = url.searchParams;
+    const stations = await radio.search({ q: q.get("q") ?? "", tag: q.get("tag") ?? "", country: q.get("country") ?? "", offset: Number(q.get("offset") ?? 0) });
+    return send(res, 200, { stations: stations.map(withListen) });
+  }
+  if (path === "/api/v1/radio/countries" && req.method === "GET") return send(res, 200, { countries: await radio.countries() });
+  if (path === "/api/v1/radio/favourites" && req.method === "POST") {
+    radio.addFavourite((await body(req)).id);
+    return send(res, 200, { favourites: radio.favourites.map(withListen) });
+  }
+  if (path === "/api/v1/radio/favourites/remove" && req.method === "POST") {
+    radio.removeFavourite((await body(req)).id);
+    return send(res, 200, { favourites: radio.favourites.map(withListen) });
+  }
+  // --- bringing old playlists across -------------------------------------------------
+  if (path === "/api/v1/playlists/import" && req.method === "POST") {
+    const filename = url.searchParams.get("filename") ?? "";
+    const parsed = parsePlaylistFile(await rawText(req, 300 * 1048576), filename);
+    const id = randomBytes(9).toString("base64url");
+    pendingImports.set(id, { at: Date.now(), source: filename, playlists: matchPlaylists(parsed, currentLibrary()) });
+    return send(res, 200, importSummary(id));
+  }
+  if (path === "/api/v1/playlists/import/create" && req.method === "POST") {
+    const input = await body(req);
+    return send(res, 201, createImported(String(input.import_id ?? ""), input.keys, input.folder_name));
+  }
+  // --- your playlists in your phone apps -----------------------------------------
+  if (path === "/api/v1/phone-playlists" && req.method === "GET") return send(res, 200, phonePlaylists.view());
+  if (path === "/api/v1/phone-playlists/sign-in" && req.method === "POST") {
+    const input = await body(req);
+    await phonePlaylists.signIn(input.user, input.password);
+    await sendPhonePlaylists();
+    return send(res, 200, phonePlaylists.view());
+  }
+  if (path === "/api/v1/phone-playlists/sign-out" && req.method === "POST") {
+    phonePlaylists.signOut();
+    return send(res, 200, phonePlaylists.view());
+  }
+  if (path === "/api/v1/phone-playlists/settings" && req.method === "POST") {
+    phonePlaylists.setAuto((await body(req)).auto);
+    playlistsChanged(0);
+    return send(res, 200, phonePlaylists.view());
+  }
+  if (path === "/api/v1/phone-playlists/send" && req.method === "POST") {
+    await sendPhonePlaylists();
+    return send(res, 200, phonePlaylists.view());
   }
 
   switch (path) {
@@ -815,7 +1082,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);

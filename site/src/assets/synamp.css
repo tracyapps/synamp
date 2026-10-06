@@ -22,7 +22,7 @@
 
   /* Ink */
   --fg: #f1f1f1;             /* oklch(0.958 0 89.9) */
-  --muted: #9aa1b8;          /* 5.84:1 on slate · 7.50:1 on ink */
+  --muted: #a4abc1;          /* 6.57:1 on slate · 5.65:1 on surface · 4.72:1 on surface-2 */
   --faint: #848ca6;          /* quiet text: 5.77:1 on ink, 4.5:1 on slate */
   --placeholder: #8b93aa;    /* 4.90:1 on slate · input placeholders */
   --on-gold: #1a1503;        /* oklch(0.197 0.034 95.3) */
@@ -376,11 +376,19 @@ small { font-size: 0.8125rem; }
    -------------------------------------------------------------------------- */
 /* Logo: the mark and the wordmark are separate files, so either can change on its own. */
 .nav__brand { gap: 8px; }
-.nav__brand .nav__mark { height: 36px; width: auto; }
+/* The logomark: tilted, with a thin light edge; it straightens up on hover and keyboard focus. */
+.nav__brand .nav__mark, .footer-brand__logo .footer-brand__mark {
+  width: auto; transform: rotate(-9deg);
+  filter: drop-shadow(-1px 0px 0px rgba(255, 255, 255, 0.55));
+  transition: transform var(--dur-3) var(--ease-out);
+}
+.nav__brand .nav__mark { height: 43px; } /* 1.2 × 36px */
+.nav__brand:hover .nav__mark, .nav__brand:focus-visible .nav__mark,
+.footer-brand__logo:hover .footer-brand__mark, .footer-brand__logo:focus-visible .footer-brand__mark { transform: rotate(0deg); }
 .nav__brand .nav__wordmark { height: 26px; width: auto; }
 .footer-brand__logo { display: inline-flex; align-items: center; gap: 10px; margin-bottom: var(--s-3); }
 .footer-brand__logo img { margin: 0; }
-.footer-brand__logo img:first-child { height: 40px; }
+.footer-brand__logo img:first-child { height: 48px; } /* 1.2 × 40px */
 .footer-brand__logo img:last-child { height: 30px; }
 .footer-grid .footer-brand__logo { display: inline-flex; padding: 0; }
 

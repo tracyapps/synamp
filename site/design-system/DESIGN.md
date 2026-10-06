@@ -31,7 +31,7 @@ are aliased, so nothing breaks on day one:
 | `--bg #0e0e10` | `--bg #212637` (slate) + `--ink #0e0e10` (well) | the ground gets lighter and more colourful; near-black becomes the deepest well |
 | `--surface #16161a` | `--surface #2a3145` | raised slate |
 | `--text #ececec` | `--fg #f1f1f1` (alias `--text` kept) | |
-| `--muted #8a8a94` | `--muted #9aa1b8` | now 5.84:1 on slate |
+| `--muted #8a8a94` | `--muted #a4abc1` | 6.57:1 on slate, 4.72:1 on `--surface-2` (the first v2 value, #9aa1b8, was 4.2:1 there) |
 | `--accent #e0a33e` | `--accent #ffcd00` (alias kept) | amber → the logo's gold |
 | `--hair` | `--border` (alias kept) | |
 | — | `--coral`, `--lavender`, `--violet`, `--spectrum`, `--sp-*` | new brand hues |
