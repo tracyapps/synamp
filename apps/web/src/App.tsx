@@ -4,6 +4,7 @@ import type { SessionView } from "./Player";
 import Playlists from "./Playlists";
 import Library from "./Library";
 import Radio, { RadioBar } from "./Radio";
+import PartyHost from "./party/PartyHost";
 import type { Station } from "./Radio";
 import type { PlaylistNode } from "./Playlists";
 import Listening from "./Listening";
@@ -33,12 +34,13 @@ const Visuals = lazy(() => import("./visuals/Visuals"));
  * so the browser's Back button and bookmarks work.
  */
 
-type ScreenId = "library" | "playlists" | "radio" | "care" | "brain" | "anywhere" | "settings";
+type ScreenId = "library" | "playlists" | "radio" | "party" | "care" | "brain" | "anywhere" | "settings";
 const NAV: Array<{ group: string; items: Array<{ id: ScreenId; label: string; icon: IconName }> }> = [
   { group: "Listen", items: [
     { id: "library", label: "Library", icon: "library" },
     { id: "playlists", label: "Playlists", icon: "playlists" },
     { id: "radio", label: "Radio", icon: "radio" },
+    { id: "party", label: "Party", icon: "phone" },
   ] },
   { group: "Understand", items: [
     { id: "brain", label: "The Brain", icon: "brain" },
@@ -136,6 +138,9 @@ export default function App() {
       break;
     case "radio":
       body = <Radio request={call} headingId={headingId} current={station} onPlay={setStation} />;
+      break;
+    case "party":
+      body = <PartyHost request={call} headingId={headingId} onSession={setSession} />;
       break;
     case "care":
       body = <div className="screen">

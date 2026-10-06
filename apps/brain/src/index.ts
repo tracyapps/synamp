@@ -32,6 +32,7 @@ import type { ListeningEvent } from "./session/events.ts";
 import { relativeFromReported, trackIdForPath } from "./subsonic/identity.ts";
 import { createSubsonicProxy } from "./subsonic/proxy.ts";
 import { MOODS, Radio, RadioError } from "./radio/radio.ts";
+import { guestKey, PartyError, PartyStore, RateLimit } from "./party/party.ts";
 import type { Station } from "./radio/radio.ts";
 import { PlaylistSync, SyncError, syncName } from "./subsonic/playlist-sync.ts";
 import type { SyncSource } from "./subsonic/playlist-sync.ts";
@@ -99,6 +100,39 @@ function sendPhonePlaylists() {
   return phonePlaylists.sync(phoneSources(), currentLibrary().version, (relative) => library.idForPath(relative) ?? trackIdForPath(relative));
 }
 let phoneTimer: NodeJS.Timeout | undefined;
+
+// --- party mode ---------------------------------------------------------------------
+const party = new PartyStore(join(dataDir, "party.json"));
+const partySearchLimit = new RateLimit(40);
+const partyWriteLimit = new RateLimit(20);
+const clientAddress = (req: IncomingMessage) => String(req.headers["x-forwarded-for"] ?? "").split(",")[0]!.trim() || req.socket.remoteAddress || "?";
+/** What everyone at the party can see: now playing, the next few, and the requests. */
+function partyGuestView(code: string, guest?: string) {
+  const p = party.forCode(code);
+  const s = sessions.get();
+  const now = s.queue[s.index];
+  const brief = (entry: { title: string; artist?: string; requested_by?: string }) => ({ title: entry.title, ...(entry.artist ? { artist: entry.artist } : {}), ...(entry.requested_by ? { requested_by: entry.requested_by } : {}) });
+  return {
+    code: p.code, auto_add: p.auto_add,
+    now: now ? { ...brief(now), playing: s.state === "playing" } : null,
+    next: s.queue.slice(s.index + 1, s.index + 6).map(brief),
+    requests: party.guestRequests(guest),
+  };
+}
+function partyHostView() {
+  const p = party.party;
+  return {
+    party: p ? { code: p.code, started_at: p.started_at, auto_add: p.auto_add } : null,
+    requests: p ? party.waiting().map(({ guest, votes, ...item }) => ({ ...item, votes: votes.length })) : [],
+    address: runtime.publicUrl || "",
+  };
+}
+/** Queue a request: "Play next" from the host, or behind the other requests when they add themselves. */
+function queueRequest(request: { id: string; track_id: string; title: string; artist?: string; name?: string }, afterRequests: boolean) {
+  const session = sessions.playNext(`party-${request.id}`, [{ id: request.track_id, title: request.title, ...(request.artist ? { artist: request.artist } : {}), requested_by: request.name || "a guest" }], { afterRequests });
+  party.decide(request.id, "queued");
+  return session;
+}
 
 // --- world radio --------------------------------------------------------------------
 const radio = new Radio(join(dataDir, "radio.json"));
@@ -492,7 +526,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -934,6 +968,49 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     playlistsChanged();
     return send(res, 200, { deleted: true });
   }
+  // --- party mode: guests (the code is the key) -----------------------------------------
+  const partyPath = path.match(/^\/api\/v1\/party\/([A-Za-z0-9]{4,12})(\/search|\/request|\/vote)?$/);
+  if (partyPath) {
+    const [, code, action] = partyPath;
+    const guestHeader = req.headers["x-party-guest"];
+    const guest = guestHeader ? guestKey(String(guestHeader)) : undefined;
+    if (!action && req.method === "GET") return send(res, 200, partyGuestView(code!, guest));
+    if (action === "/search" && req.method === "GET") {
+      party.forCode(code!);
+      partySearchLimit.check(clientAddress(req));
+      const found = searchTracks(currentLibrary(), url.searchParams.get("q") ?? "", 15);
+      return send(res, 200, { tracks: found.tracks.map(({ id, title, artist, album }) => ({ id, title, ...(artist ? { artist } : {}), ...(album ? { album } : {}) })) });
+    }
+    if (action === "/request" && req.method === "POST") {
+      if (!guest) throw new PartyError("Reload the party page and try again");
+      partyWriteLimit.check(clientAddress(req));
+      const input = await body(req, 4_000);
+      const track = currentLibrary().tracks.find((item) => item.id === input.track_id && item.path);
+      if (!track) throw new PartyError("That song can't be played right now", 404);
+      const request = party.request(code!, guest, track, input.name);
+      if (party.party?.auto_add && request.status === "waiting") queueRequest(request, true);
+      return send(res, 201, partyGuestView(code!, guest));
+    }
+    if (action === "/vote" && req.method === "POST") {
+      if (!guest) throw new PartyError("Reload the party page and try again");
+      partyWriteLimit.check(clientAddress(req));
+      party.vote(code!, guest, (await body(req, 4_000)).request_id);
+      return send(res, 200, partyGuestView(code!, guest));
+    }
+  }
+  // --- party mode: the host --------------------------------------------------------------
+  if (path === "/api/v1/party-host" && req.method === "GET") return send(res, 200, partyHostView());
+  if (path === "/api/v1/party-host/start" && req.method === "POST") { party.start((await body(req)).auto_add === true); return send(res, 200, partyHostView()); }
+  if (path === "/api/v1/party-host/end" && req.method === "POST") { party.end(); return send(res, 200, partyHostView()); }
+  if (path === "/api/v1/party-host/settings" && req.method === "POST") { party.setAutoAdd((await body(req)).auto_add); return send(res, 200, partyHostView()); }
+  if ((path === "/api/v1/party-host/play-next" || path === "/api/v1/party-host/dismiss") && req.method === "POST") {
+    const id = String((await body(req)).id ?? "");
+    const request = party.waiting().find((item) => item.id === id);
+    if (!request) throw new PartyError("That request isn't waiting any more", 404);
+    if (path.endsWith("/dismiss")) party.decide(id, "dismissed");
+    else return send(res, 200, { ...partyHostView(), session: sessionView(queueRequest(request, false)) });
+    return send(res, 200, partyHostView());
+  }
   // --- world radio --------------------------------------------------------------------
   if (path === "/api/v1/radio" && req.method === "GET") return send(res, 200, { favourites: radio.favourites.map(withListen), moods: MOODS });
   if (path === "/api/v1/radio/search" && req.method === "GET") {
@@ -1002,7 +1079,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);

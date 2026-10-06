@@ -100,9 +100,9 @@ id: party
 number: 6
 short: Party tools
 goal: Host a party where friends request songs from their phones.
-- [ ] Guests scan a QR code and request songs (and vote)
-- [ ] A big-screen "now playing" display for the TV or an old iPad
-- [ ] You stay in charge of the queue
+- [x] Guests scan a QR code and request songs (and vote)
+- [x] A big-screen "now playing" display for the TV or an old iPad
+- [x] You stay in charge of the queue
 
 ## Apps and sharing
 id: apps
@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-06 — Party mode: guests scan a code to ask for songs and vote, a big “now playing” screen for the TV, and every request waits for your yes
 - 2026-10-06 — SynAmp’s own player works from your lock screen, headphone buttons and keyboard media keys
 - 2026-10-06 — Crossfade between songs (albums still play straight through), a volume control, and the next song ready before this one ends
 - 2026-10-06 — MilkDrop visuals are back, dancing to your music or the radio, with a gentler mode that’s on by default

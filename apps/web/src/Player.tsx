@@ -17,6 +17,8 @@ export type QueueEntry = {
   playable: boolean; stream_url?: string;
   /** The album folder, so albums can play straight through. */
   album_key?: string;
+  /** A party guest asked for it. */
+  requested_by?: string;
 };
 export type SessionView = { id: string; queue: QueueEntry[]; index: number; state: "idle" | "playing" | "paused" };
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
@@ -324,7 +326,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
         <div className="player__text">
           {finished ? <p className="player__title">End of queue</p> : <>
             <p className="player__title">{current?.title}</p>
-            <p className="player__meta">{current?.artist ? `${current.artist} · ` : ""}{session.index + 1} of {session.queue.length}{from ? ` · from ${from}` : ""}</p>
+            <p className="player__meta">{current?.artist ? `${current.artist} · ` : ""}{session.index + 1} of {session.queue.length}{from ? ` · from ${from}` : ""}{current?.requested_by ? ` · asked for by ${current.requested_by}` : ""}</p>
           </>}
         </div>
       </div>
