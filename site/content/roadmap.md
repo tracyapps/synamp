@@ -60,7 +60,7 @@ goal: Playlists as good as the old Winamp days — better, even — for a librar
 - [x] Describe a playlist in plain words and get it, with a reason for every song
 - [x] Folders for your playlists
 - [x] Playlists of playlists: shuffle a whole folder at once
-- [ ] Your SynAmp playlists show up in your phone apps
+- [x] Your SynAmp playlists show up in your phone apps
 - [ ] Smooth scrolling through a hundred thousand songs
 
 ## The Brain
@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-06 — Your SynAmp playlists show up in your phone apps, and stay up to date by themselves
 - 2026-10-06 — Shuffle a whole folder of playlists with one button
 - 2026-10-06 — Browse and search your albums and songs, play them, and add songs to playlists by name
 - 2026-10-06 — The app gets its new look: a menu down the side, a player that stays at the bottom, and easier-to-read text

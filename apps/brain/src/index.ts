@@ -31,6 +31,8 @@ import { POLICY_VERSION } from "./session/events.ts";
 import type { ListeningEvent } from "./session/events.ts";
 import { relativeFromReported, trackIdForPath } from "./subsonic/identity.ts";
 import { createSubsonicProxy } from "./subsonic/proxy.ts";
+import { PlaylistSync, SyncError, syncName } from "./subsonic/playlist-sync.ts";
+import type { SyncSource } from "./subsonic/playlist-sync.ts";
 import type { CapturedPlay } from "./subsonic/proxy.ts";
 import { LastfmClient, LastfmError } from "./lastfm/client.ts";
 import { RuntimeSettings, SettingsError } from "./settings.ts";
@@ -78,6 +80,29 @@ const organise = new OrganiseStore(join(dataDir, "organise.json"));
 const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
 /** "Listen anywhere": the Phase 1 checklist (Navidrome, Tailscale, apps). */
 const setup = new SetupStore(join(dataDir, "setup.json"));
+
+// --- your playlists in your phone apps (Navidrome) ------------------------------
+const phonePlaylists = new PlaylistSync(join(dataDir, "phone-playlists.json"), { coreUrl: config.coreUrl, coreMusicPath: config.coreMusicPath });
+/** Every playlist, roll-up and smart playlist, with its current tracks. Folders only lend their names. */
+function phoneSources(): SyncSource[] {
+  const nodes = playlists.list();
+  return nodes.filter((node) => node.type !== "folder").flatMap((node) => {
+    try { return [{ id: node.id, name: syncName(nodes, node.id), trackIds: playlists.resolve(node.id).map((track) => library.canonicalId(track.id)) }]; }
+    catch { return []; } // e.g. a smart playlist while the library list is missing
+  });
+}
+function sendPhonePlaylists() {
+  return phonePlaylists.sync(phoneSources(), currentLibrary().version, (relative) => library.idForPath(relative) ?? trackIdForPath(relative));
+}
+let phoneTimer: NodeJS.Timeout | undefined;
+/** After a change, send soon (changes usually come in bursts); never while signed out or switched off. */
+function playlistsChanged(delayMs = 15_000) {
+  if (!phonePlaylists.signedIn || !phonePlaylists.state.auto) return;
+  clearTimeout(phoneTimer);
+  phoneTimer = setTimeout(() => { sendPhonePlaylists()?.catch((error) => console.warn(`phone playlists: ${(error as Error).message}`)); }, delayMs);
+}
+// Smart playlists change as the library does, so send them every half hour too.
+setInterval(() => playlistsChanged(0), 30 * 60_000).unref();
 /** Tempo checks you made in "Check the measurements": answers and corrections. */
 const spotChecks = new SpotChecks(join(dataDir, "spotchecks.json"));
 /** As analysed (moved files followed), before your tempo corrections. */
@@ -399,7 +424,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -465,7 +490,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       const node = playlists.list().find((item) => item.id === input.playlist_id);
       if (node?.type === "playlist") {
         const index = node.tracks.findIndex((track) => track.id === input.track_id);
-        if (index >= 0) playlists.removeTrack(node.id, index);
+        if (index >= 0) { playlists.removeTrack(node.id, index); playlistsChanged(); }
       }
     }
     return send(res, result.duplicate ? 200 : 201, { event: result.event, duplicate: result.duplicate });
@@ -811,20 +836,48 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return send(res, 200, { nodes: playlists.list() });
   }
   if (path === "/api/v1/playlists" && req.method === "POST") {
-    return send(res, 201, { node: playlists.create((await body(req)) as CreateNode) });
+    const node = playlists.create((await body(req)) as CreateNode);
+    playlistsChanged();
+    return send(res, 201, { node });
   }
   if (resolvePath && req.method === "GET") {
     return send(res, 200, { tracks: playlists.resolve(resolvePath[1]!) });
   }
   if (tracksPath && req.method === "POST") {
-    return send(res, 201, { node: playlists.addTrack(tracksPath[1]!, (await body(req)) as TrackRef) });
+    const node = playlists.addTrack(tracksPath[1]!, (await body(req)) as TrackRef);
+    playlistsChanged();
+    return send(res, 201, { node });
   }
   if (trackPath && req.method === "DELETE") {
-    return send(res, 200, { node: playlists.removeTrack(trackPath[1]!, Number(trackPath[2])) });
+    const node = playlists.removeTrack(trackPath[1]!, Number(trackPath[2]));
+    playlistsChanged();
+    return send(res, 200, { node });
   }
   if (nodePath && req.method === "DELETE") {
     playlists.delete(nodePath[1]!);
+    playlistsChanged();
     return send(res, 200, { deleted: true });
+  }
+  // --- your playlists in your phone apps -----------------------------------------
+  if (path === "/api/v1/phone-playlists" && req.method === "GET") return send(res, 200, phonePlaylists.view());
+  if (path === "/api/v1/phone-playlists/sign-in" && req.method === "POST") {
+    const input = await body(req);
+    await phonePlaylists.signIn(input.user, input.password);
+    await sendPhonePlaylists();
+    return send(res, 200, phonePlaylists.view());
+  }
+  if (path === "/api/v1/phone-playlists/sign-out" && req.method === "POST") {
+    phonePlaylists.signOut();
+    return send(res, 200, phonePlaylists.view());
+  }
+  if (path === "/api/v1/phone-playlists/settings" && req.method === "POST") {
+    phonePlaylists.setAuto((await body(req)).auto);
+    playlistsChanged(0);
+    return send(res, 200, phonePlaylists.view());
+  }
+  if (path === "/api/v1/phone-playlists/send" && req.method === "POST") {
+    await sendPhonePlaylists();
+    return send(res, 200, phonePlaylists.view());
   }
 
   switch (path) {
@@ -845,7 +898,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError || error instanceof SyncError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);

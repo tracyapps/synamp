@@ -8,6 +8,7 @@ import type { Request } from "./api";
 import Icon from "./ui/Icon";
 import type { IconName } from "./ui/Icon";
 import { EmptyState, ScreenHead } from "./ui/kit";
+import PhonePlaylists from "./PhonePlaylists";
 import "./styles/playlists.css";
 
 export type Track = { id: string; title: string; artist?: string };
@@ -181,6 +182,7 @@ export default function Playlists({ request, nodes, loading, refreshNodes, play,
           </> : <EmptyState icon="playlists" title="Select a playlist">Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole folder into one live list.</EmptyState>}
         </section>
       </div>
+      <PhonePlaylists request={request} />
     </div>
   );
 }
