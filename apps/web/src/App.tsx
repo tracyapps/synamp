@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Player from "./Player";
 import type { SessionView } from "./Player";
 import Playlists from "./Playlists";
+import Library from "./Library";
 import type { PlaylistNode } from "./Playlists";
 import Listening from "./Listening";
 import LibraryHealth from "./LibraryHealth";
@@ -111,9 +112,10 @@ export default function App() {
   switch (screen) {
     case "library":
       body = <div className="screen">
-        <ScreenHead id={headingId} eyebrow="Listen" title="Library"><p>How big your library is, and how far SynAmp has got listening to it.</p></ScreenHead>
+        <ScreenHead id={headingId} eyebrow="Listen" title="Library"><p>Everything you own, by album. Search, play, or add songs to a playlist.</p></ScreenHead>
         <UpdateNotice request={call} />
         <LibraryHealth request={call} />
+        <Library request={call} play={play} playlists={nodes} />
       </div>;
       break;
     case "playlists":

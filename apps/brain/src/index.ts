@@ -40,6 +40,7 @@ import { otherAppPlays, pingCore, SetupError, SetupStore } from "./setup.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
 import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
 import { groupAlbums } from "./library/albums.ts";
+import { albumTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
 import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
 import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay } from "./library/organise.ts";
@@ -424,13 +425,30 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/session" && req.method === "GET") return send(res, 200, { session: sessionView(sessions.get()) });
   if (path === "/api/v1/session/queue" && req.method === "POST") {
     const input = await body(req);
-    if (typeof input.playlist_id !== "string") throw new SessionError("playlist_id is required");
+    const shuffle = input.shuffle === true;
+    const order = <T,>(tracks: T[]) => (shuffle ? shuffled(tracks) : tracks);
+    const ref = (track: { id: string; title: string; artist?: string }): TrackRef => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) });
+    // An album, or some songs picked from the library: no playlist behind them.
+    if (typeof input.album_key === "string") {
+      const { tracks } = albumTracks(currentLibrary(), input.album_key);
+      const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks.map(ref)), undefined, Number(input.start_index ?? 0));
+      return send(res, 200, { session: sessionView(session) });
+    }
+    if (Array.isArray(input.track_ids)) {
+      const lib = currentLibrary();
+      const byId = new Map(lib.tracks.map((track) => [track.id, track]));
+      const tracks = input.track_ids.slice(0, 2000).map((id) => byId.get(library.canonicalId(String(id)))).filter((track) => track !== undefined).map(ref);
+      const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks), undefined, Number(input.start_index ?? 0));
+      return send(res, 200, { session: sessionView(session) });
+    }
+    if (typeof input.playlist_id !== "string") throw new SessionError("playlist_id, album_key or track_ids is required");
     const node = playlists.list().find((item) => item.id === input.playlist_id);
     if (!node) throw new PlaylistError("Playlist node not found", 404);
     // A snapshot: later membership changes do not touch what is queued.
-    const tracks = playlists.resolve(node.id);
+    // Shuffle works on anything, folders included: every playlist inside, mixed together.
+    const tracks = order(playlists.resolve(node.id));
     const session = sessions.replaceQueue(String(input.event_id ?? ""), tracks,
-      { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, Number(input.start_index ?? 0));
+      { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, shuffle ? 0 : Number(input.start_index ?? 0));
     return send(res, 200, { session: sessionView(session) });
   }
   if (path === "/api/v1/session/report" && req.method === "POST") {
@@ -456,6 +474,18 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/analysis/progress" && req.method === "POST") {
     const progress = analysisStatus.record(await body(req));
     return send(res, 202, { received: progress.received_at });
+  }
+  // --- browsing the library ----------------------------------------------------
+  if (path === "/api/v1/library/albums" && req.method === "GET") {
+    const q = url.searchParams;
+    return send(res, 200, listAlbums(currentLibrary(), { q: q.get("q") ?? "", sort: q.get("sort") ?? "", offset: Number(q.get("offset") ?? 0), limit: Number(q.get("limit") ?? 60) }));
+  }
+  if (path === "/api/v1/library/album" && req.method === "GET") {
+    const { album, tracks } = albumTracks(currentLibrary(), url.searchParams.get("key") ?? "");
+    return send(res, 200, { album, tracks: tracks.map(trackSummary) });
+  }
+  if (path === "/api/v1/library/search" && req.method === "GET") {
+    return send(res, 200, searchTracks(currentLibrary(), url.searchParams.get("q") ?? "", Number(url.searchParams.get("limit") ?? 50)));
   }
   if (path === "/api/v1/library/health" && req.method === "GET") {
     return send(res, 200, { analysis: analysisStatus.view(), library: libraryStats(currentLibrary()) });
@@ -815,7 +845,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);

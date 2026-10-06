@@ -108,7 +108,7 @@ html, body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
-button, input, select, textarea { font: inherit; color: inherit; }
+:where(button, input, select, textarea) { font: inherit; color: inherit; }
 button { cursor: pointer; }
 img, svg { max-width: 100%; }
 [hidden] { display: none !important; }

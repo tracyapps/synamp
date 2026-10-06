@@ -59,7 +59,7 @@ short: Playlists
 goal: Playlists as good as the old Winamp days — better, even — for a library of any size.
 - [x] Describe a playlist in plain words and get it, with a reason for every song
 - [x] Folders for your playlists
-- [ ] Playlists of playlists: shuffle a whole folder at once
+- [x] Playlists of playlists: shuffle a whole folder at once
 - [ ] Your SynAmp playlists show up in your phone apps
 - [ ] Smooth scrolling through a hundred thousand songs
 
@@ -114,6 +114,8 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-06 — Shuffle a whole folder of playlists with one button
+- 2026-10-06 — Browse and search your albums and songs, play them, and add songs to playlists by name
 - 2026-10-06 — The app gets its new look: a menu down the side, a player that stays at the bottom, and easier-to-read text
 - 2026-10-05 — The library page explains when analysis is waiting on a library update, instead of looking stuck
 - 2026-10-05 — Second copies of the same song: keep the better one, set the other aside (never deleted)

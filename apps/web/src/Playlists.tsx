@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
+import { useDebounced } from "./Library";
+import type { TrackSummary } from "./Library";
 import Describe, { ResultView } from "./Describe";
 import type { Evaluation } from "./Describe";
 import { newId } from "./ids";
@@ -50,9 +52,6 @@ export default function Playlists({ request, nodes, loading, refreshNodes, play,
   const [parentId, setParentId] = useState("");
   const [sourceId, setSourceId] = useState("");
   const [mode, setMode] = useState<"merge" | "shuffle" | "interleave">("merge");
-  const [trackId, setTrackId] = useState("");
-  const [title, setTitle] = useState("");
-  const [artist, setArtist] = useState("");
   const selected = nodes.find((node) => node.id === selectedId);
   const api = <T,>(path: string, options: RequestInit = {}) => request<T>(`/playlists${path}`, options);
 
@@ -95,13 +94,11 @@ export default function Playlists({ request, nodes, loading, refreshNodes, play,
     } catch (cause) { setError((cause as Error).message); }
   }
 
-  async function addTrack(event: React.FormEvent) {
-    event.preventDefault();
+  async function addTrack(track: TrackSummary) {
     if (!selected) return;
     setError("");
     try {
-      await api(`/${selected.id}/tracks`, { method: "POST", body: JSON.stringify({ id: trackId, title, artist }) });
-      setTrackId(""); setTitle(""); setArtist("");
+      await api(`/${selected.id}/tracks`, { method: "POST", body: JSON.stringify({ id: track.id, title: track.title, artist: track.artist }) });
       await refresh(selected.id);
     } catch (cause) { setError((cause as Error).message); }
   }
@@ -161,14 +158,14 @@ export default function Playlists({ request, nodes, loading, refreshNodes, play,
               <div><p className="eyebrow">{TYPE_NAME[selected.type]}</p><h2 className="section-card__title workshop__name">{selected.name}</h2></div>
               <div className="cluster">
                 <button type="button" className="btn btn--primary" onClick={() => playSelected()}><Icon name="play" />Play</button>
+                <button type="button" className="btn btn--ghost" onClick={() => playSelected(true)}><Icon name="shuffle" />{selected.type === "folder" ? "Shuffle everything inside" : "Shuffle"}</button>
                 <button type="button" className="btn btn--ghost btn--sm" onClick={removeNode}>Delete</button>
               </div>
             </div>
             <div className="section-card__body">
               {selected.type === "rollup" && <p className="muted">{selected.mode === "merge" ? "Merged in order" : selected.mode === "shuffle" ? "Shuffled" : "Interleaved"} · from {nodes.find((node) => node.id === selected.sourceId)?.name ?? "a missing source"}</p>}
-              {selected.type === "playlist" && <form className="track-form" onSubmit={addTrack}><h3>Add a track</h3><p className="muted">Use any unique ID to test playlist logic. Real playback will need a Subsonic song ID; library search is coming next.</p>
-                <div className="track-fields"><label>Track ID<input value={trackId} onChange={(event) => setTrackId(event.target.value)} required /></label><label>Title<input value={title} onChange={(event) => setTitle(event.target.value)} required /></label><label>Artist<input value={artist} onChange={(event) => setArtist(event.target.value)} /></label><button className="btn btn--ghost">Add</button></div></form>}
-              {selected.type === "folder" && <p className="muted">Create lists inside this folder, or use it as a roll-up source.</p>}
+              {selected.type === "playlist" && <SongPicker request={request} onPick={addTrack} />}
+              {selected.type === "folder" && <p className="muted">Play runs every playlist inside, in order; Shuffle mixes them all together, folders inside folders included. To keep a mix like that, make a roll-up of this folder.</p>}
               {selected.type === "smart" && <>
                 {selected.prompt && <p className="muted">From “{selected.prompt}” — membership is recomputed every time you open it.</p>}
                 {explain ? <ResultView result={explain} labels={Object.fromEntries((selected.plan?.constraints ?? []).map((item) => [item.id, item.source_phrase]))}
@@ -184,6 +181,41 @@ export default function Playlists({ request, nodes, loading, refreshNodes, play,
           </> : <EmptyState icon="playlists" title="Select a playlist">Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole folder into one live list.</EmptyState>}
         </section>
       </div>
+    </div>
+  );
+}
+
+/** Find songs in the library and add them to the selected playlist. */
+function SongPicker({ request, onPick }: { request: Request; onPick: (track: TrackSummary) => Promise<void> }) {
+  const [query, setQuery] = useState("");
+  const [found, setFound] = useState<{ total: number; tracks: TrackSummary[] } | null>(null);
+  const [said, setSaid] = useState("");
+  const q = useDebounced(query.trim());
+  const id = useId();
+  useEffect(() => {
+    if (!q) { setFound(null); return; }
+    request<{ total: number; tracks: TrackSummary[] }>(`/library/search?q=${encodeURIComponent(q)}&limit=8`).then(setFound).catch((cause) => setSaid((cause as Error).message));
+  }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className="track-form">
+      <h3>Add songs</h3>
+      <div className="search" style={{ marginTop: 10 }}>
+        <Icon name="search" />
+        <input id={id} className="input" type="search" value={query} onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search your library by song, artist or album" aria-label="Search your library for songs to add" autoComplete="off" />
+      </div>
+      {found && (found.total === 0 ? <p className="muted">No songs match “{q}”.</p> : (
+        <ol className="picker">
+          {found.tracks.map((track) => (
+            <li key={track.id}>
+              <span className="track-title">{track.title}<small>{[track.artist, track.album].filter(Boolean).join(" · ")}</small></span>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => onPick(track).then(() => setSaid(`Added “${track.title}”.`))}>
+                <Icon name="plus" size={16} />Add<span className="visually-hidden"> {track.title}</span></button>
+            </li>
+          ))}
+        </ol>
+      ))}
+      <p className="muted picker__status" role="status">{said}</p>
     </div>
   );
 }
