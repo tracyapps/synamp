@@ -1,4 +1,8 @@
-/** WebGL 2 and Web Audio: what the MilkDrop visuals need. Kept apart so the check doesn't load them. */
+/**
+ * WebGL 2 and Web Audio: what the MilkDrop visuals need. Checked without
+ * making a WebGL context (that costs memory on every page load); if one can't
+ * be made later, the visuals say so when you start them.
+ */
 export function visualsSupported(): boolean {
-  try { return !!document.createElement("canvas").getContext("webgl2") && typeof AudioContext !== "undefined"; } catch { return false; }
+  return typeof window !== "undefined" && "WebGL2RenderingContext" in window && typeof AudioContext !== "undefined";
 }

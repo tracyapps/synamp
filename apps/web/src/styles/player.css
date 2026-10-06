@@ -61,3 +61,8 @@
 .player__volume { width: 96px; flex: none; }
 .player__volume .range { display: block; }
 @media (max-width: 820px) { .player__volume { display: none; } }
+/* On phones the bar stays short: Love / Not for this appear with the queue. */
+@media (max-width: 820px) {
+  .player__feedback { display: none; }
+  .player:has(.player__queue-toggle[aria-expanded="true"]) .player__feedback { display: flex; }
+}
