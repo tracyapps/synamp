@@ -19,3 +19,4 @@ __pycache__
 deploy/.env
 deploy/data/
 apps/brain/data/
+design/
