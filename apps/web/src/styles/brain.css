@@ -1,0 +1,34 @@
+/* "This session" — the epoch learning readout on The Brain screen (BrainSession.tsx).
+   Reuses .listening__toggle for the accordion heading and tokens.css for every
+   colour/space; no new palette entries. */
+
+.brain__body { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding: 4px 20px 20px; }
+.brain__body h3 { margin: 16px 0 8px; font: 400 15px var(--font-display); }
+.brain__body p { margin: 0 0 10px; font-size: 14px; }
+.brain__epoch { color: var(--text); }
+
+.brain__adjustments { list-style: none; padding: 0; margin: 0 0 12px; font-size: 14px; }
+.brain__adjustments > li { padding: 8px 0; border-top: 1px solid var(--hair); }
+.brain__adjustment-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.brain__value { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.brain__value--up { color: var(--success-ink); }
+.brain__value--down { color: var(--danger-ink); }
+.brain__parts { list-style: none; padding: 0; margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.brain__parts li { display: flex; justify-content: space-between; gap: 10px; padding: 1px 0; border: 0; }
+.brain__parts li span:last-child { font-family: var(--font-mono); }
+
+.brain__proposals { list-style: none; padding: 0; margin: 0; }
+.brain__proposals > li { border-top: 1px solid var(--hair); padding: 10px 0; }
+.brain__proposal-text { margin: 0 0 4px; font-size: 14px; }
+.brain__proposal-meta { margin: 0 0 8px; font-size: 12px; color: var(--faint); font-family: var(--font-mono); }
+.brain__proposal-note { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
+.brain__proposal-actions { display: flex; gap: 8px; }
+
+.brain__notes { margin: 0 0 10px; padding-left: 18px; font-size: 13px; color: var(--muted); }
+
+.brain__policy { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; border-top: 1px solid var(--border); padding-top: 14px; font-size: 13px; color: var(--muted); }
+.brain__policy code { font: 12px var(--font-mono); color: var(--accent); }
+.brain__confirm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.brain__message { grid-column: 1 / -1; min-height: 1.2em; margin: 0; color: var(--muted); }
+
+@media (max-width: 850px) { .brain__body { grid-template-columns: 1fr; } }

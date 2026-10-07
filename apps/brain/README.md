@@ -117,8 +117,11 @@ auth stays Navidrome's job. Navidrome's real file path (with
 `ND_SUBSONIC_DEFAULTREPORTREALPATH`) maps to the same ID the analyzer uses —
 `p:` + sha256(library-relative path) — so the same song is the same track
 whichever app played it. Apps report plays but never skips, so these count as a
-small global positive (`played in your other apps`, +0.25, decaying) and never
-as a negative.
+weak positive — never a negative. Under the shipped default (`epoch-v1`) an
+other-app play scores only inside the live epoch (`played in your other apps this
+session`, +0.25, like the other implicit signals), and it reaches across sessions
+only as a proposal once the pattern repeats (≥ 5 epochs across ≥ 3 dates); the
+legacy `heuristic-v1` derivation keeps the older small global boost.
 
 **Last.fm (`src/lastfm/`, optional).** Set `LASTFM_API_KEY` and
 `LASTFM_API_SECRET` to offer it; connect from the web app (Last.fm web auth,
@@ -135,6 +138,34 @@ protected by a one-time state value). Then:
   errors (11, 16, 29, network) with backoff up to an hour; an invalid session
   pauses until you reconnect; other refusals are recorded once and shown.
 - “Now playing” is sent best-effort when a track starts.
+
+## Goal language and session-scoped learning (fast-learning brain)
+
+The fast-learning-brain slice turns goal language into validated plans, and plans into
+adjustments that live and die with the listening session.
+
+| Module | Job |
+|---|---|
+| `intent/lexicon.ts` | **Goal lexicon** — nine EN goals (focus, pump up, dance, calm, sleep, catharsis, nostalgia, drive, chores) as *soft* preference bundles: library-relative bands, arcs, plain-language assumptions, culture notes. Nothing here is hard, and nothing is guessed. |
+| `intent/interpret.ts` | **`interpretGoal()`** — composes the draft parser with the lexicon and classifies the ask: `specific` / `partial` / `contradictory` / `vague` / `impossible`. Every reading passes `validatePlan()`; contradictions return two readings; vague or impossible asks return a few plain-language questions instead of an invented plan. |
+| `learning/` | **Epoch-scoped learning (`epoch-v1`)** — one combined, bounded adjustment with per-part reasons: persistent explicit cells + live-epoch evidence + artist propagation + reliability-weighted centroids. Saturation stays in `evaluate.ts` (`0.15·tanh`). |
+
+**Epochs.** Learning is scoped to a listening *epoch*, derived from the event log: a
+session change, a gap over 30 minutes, or a new local day ends one and starts the
+next (missing session ids are their own bucket; dayparts label the start). Implicit
+signals (skips, replays, full plays, other-app plays) score only inside the live
+epoch — 30 minutes after its last event — and die at its boundary, a hard mask rather
+than decay; explicit signals (love, thumbs, remove) persist. Two early skips in an
+epoch, or “not now”, hide the track for the rest of that epoch. Patterns from closed
+epochs return only as **proposals**, and change nothing until you confirm one.
+Exploration exists but is OFF by default.
+
+**See it.** `GET /api/v1/brain/session` shows the active epoch, hides, proposals,
+reliability notes and per-track adjustments; `POST /api/v1/brain/forget` resets the
+current epoch (an append-only `learning_reset` marker — events are never edited).
+Setting **`listening_policy`** is `epoch-v1` (default) or `legacy-v1`; `legacy-v1` is
+the unchanged `heuristic-v1` path, so switching is a re-derive from the same log,
+never a migration. Details and evidence: `docs/synamp/plans/FAST-LEARNING-BRAIN.md`.
 
 ## Missing tracks (`src/library/`)
 
@@ -219,6 +250,9 @@ State: `discography.json` beside the playlist store.
 | POST | `/api/v1/session/report` | `{event_id, report:{type, entry_id, …}}` → apply a player report (idempotent) |
 | POST | `/api/v1/feedback` | `{event_id, signal: love/thumb_up/thumb_down/remove/restore, track_id, scope, playlist_id?, reason?}` |
 | GET | `/api/v1/events?limit=` | recent listening events, newest first |
+| GET | `/api/v1/brain/session` | the learning readout: listening policy, active epoch (or paused), hides, undecided proposals, reliability notes, per-track adjustments |
+| POST | `/api/v1/brain/forget` | `{scope: "epoch"}` → append a `learning_reset` marker; the event log is never edited, only marked |
+| POST | `/api/v1/brain/proposals` | `{id, action: "accept" \| "dismiss"}` → decide one cross-epoch suggestion |
 | GET/HEAD | `/api/v1/tracks/:id/stream?exp&sig` | audio with range support (signed link; no bearer token) |
 | any | `/rest/*` | Subsonic pass-through to the library core (Navidrome auth); captures scrobbles |
 | GET | `/api/v1/listening` | plays captured from other apps + Last.fm status |

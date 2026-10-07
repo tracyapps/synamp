@@ -14,8 +14,16 @@
 import { appendFileSync, closeSync, fsyncSync, mkdirSync, openSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
 
-/** Bumped whenever the meaning of a signal or its derivation changes. */
-export const POLICY_VERSION = "heuristic-v1";
+/**
+ * Bumped whenever the meaning of a signal or its derivation changes.
+ *
+ * "epoch-v1": the default learning policy is now epoch-scoped (apps/brain/src/learning/**).
+ * Events appended from now on are stamped with it. The v1 rules remain reachable as the
+ * legacy rollback: settings `listening_policy = "legacy-v1"` derives the event log with
+ * `deriveFeedback(..., "heuristic-v1")`. Old events keep the version they were written
+ * under — the log is never rewritten, a policy switch is a re-derive.
+ */
+export const POLICY_VERSION = "epoch-v1";
 
 export type Signal =
   // explicit, intentional
@@ -28,6 +36,8 @@ export type Signal =
   | "interrupted" | "playback_error" | "seek" | "started"
   // bookkeeping: proves a player report was applied, so a retry is recognised
   | "receipt"
+  // user asked the brain to forget this epoch; markers bound epoch evidence
+  | "learning_reset"
   // what was shown, for later debiasing
   | "exposure";
 

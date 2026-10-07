@@ -1,0 +1,16 @@
+{
+  "id": "06-isolation",
+  "kind": "learning",
+  "extends": "05-fast-learning.json",
+  "title": "Isolation — same stream resolved at now+16h (next day): implicit adjustments zero/empty",
+  "now": "+16h",
+  "checks": {
+    "adjust_zero": ["sample-034", "sample-024", "sample-040", "sample-026", "sample-028"],
+    "hides_empty": true,
+    "resolve": {
+      "playlist_id": "pl-lab",
+      "plan_phrase": "60 tracks, between 60 and 180 bpm",
+      "identical_to_baseline": true
+    }
+  }
+}

@@ -73,6 +73,22 @@ test("flagship prompt drafts a valid plan with every exclusion protected", () =>
   assert.ok(plan.assumptions?.some((item) => item.includes("Focus")));
 });
 
+// Arc handling changed in B1: build/cooldown/peak/wave used to be dropped and
+// reported as unsupported asks; they now validate, round-trip, and hash. The
+// only pre-existing arc assertion (above, flat) is unchanged.
+test("sequencing arcs are accepted (no longer dropped as unsupported) and change the hash", () => {
+  const flat = valid(basePlan({ sequencing: { arc: "flat" } }));
+  for (const arc of ["build", "cooldown", "peak", "wave"] as const) {
+    const result = valid(basePlan({ sequencing: { arc } }));
+    assert.equal(result.plan.sequencing?.arc, arc);
+    assert.deepEqual(result.plan.unsupported ?? [], [], `${arc} must not be reported as unsupported`);
+    assert.notEqual(result.hash, flat.hash, `${arc} must hash differently from flat`);
+  }
+  const bad = validatePlan(basePlan({ sequencing: { arc: "zigzag" } }));
+  assert.equal(bad.ok, false);
+  assert.match(JSON.stringify(!bad.ok && bad.errors), /flat, build, cooldown, peak or wave/);
+});
+
 test("negations never reach the encoder-bound text", () => {
   const draft = draftPlan(FLAGSHIP, library);
   for (const banned of ["piano", "words", "slow", "relaxing", "no", "nothing"]) {

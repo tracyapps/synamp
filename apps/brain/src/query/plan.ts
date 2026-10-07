@@ -75,7 +75,7 @@ export type QueryPlan = {
     /** Constraint IDs that may never be loosened without the owner's explicit yes. */
     require_confirmation_for: string[];
   };
-  sequencing?: { arc: "flat" };
+  sequencing?: { arc: "flat" | "build" | "cooldown" | "peak" | "wave" };
   /** Affirmative text for a future text–audio encoder. Negations are stripped. */
   retrieval_text?: string;
   assumptions?: string[];
@@ -417,9 +417,10 @@ export function validatePlan(input: unknown): PlanResult {
     if (!isRecord(input.sequencing)) c.fail("$.sequencing", "Expected an object");
     else {
       c.keys(input.sequencing, "$.sequencing", ["arc"]);
-      if (input.sequencing.arc === "flat") sequencing = { arc: "flat" };
-      else if (["build", "cooldown", "peak", "wave"].includes(input.sequencing.arc as string)) {
-        unsupported.push({ ask: `${String(input.sequencing.arc)} arc`, reason: "Only a flat arc (ranked order) is sequenced today." });
+      // Arcs are accepted here; whether a list is actually re-ordered (and how)
+      // is query/sequence.ts's job, and only over the already-filtered strict list.
+      if (["flat", "build", "cooldown", "peak", "wave"].includes(input.sequencing.arc as string)) {
+        sequencing = { arc: input.sequencing.arc as NonNullable<QueryPlan["sequencing"]>["arc"] };
       } else c.fail("$.sequencing.arc", "Expected flat, build, cooldown, peak or wave");
     }
   }

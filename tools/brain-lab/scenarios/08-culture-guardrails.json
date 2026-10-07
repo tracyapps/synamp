@@ -1,0 +1,21 @@
+{
+  "id": "08-culture-guardrails",
+  "kind": "culture",
+  "title": "Culture guardrails — culture-language prompts stay defensive; outputs pinned exactly as observed",
+  "note": "Seed: C2-bias-review.md §E1 (10 culture prompts + 2 controls; transcript evidence/c2/probe-interpret.out.txt). This scenario pins CURRENT honest behaviour as re-observed at the H4 capture (2026-10-07, post hotfixes H1/H2/H3) — it is a regression pin, NOT a classifier-accuracy claim, and not a statement that these phrases are 'handled' for real use. Defensive assertions: culture spans are never asserted as semantics (only quoted user echo + the 'not understood' assumption), the banned product-copy words (tribal/primitive/exotic) never appear in product-authored text (user echo is expected, must be quoted, and is counted in the evidence), every unparsed span is surfaced in asks, and no prompt dead-ends without an ask.",
+  "banned_words": ["tribal", "primitive", "exotic"],
+  "prompts": [
+    { "slug": "latin-party", "text": "latin party music", "span": "latin", "expect": { "accuracy": "partial", "chosen_index": 0, "labels": ["dance"], "asks": 1 } },
+    { "slug": "tribal-drumming", "text": "tribal drumming", "span": "tribal drumming", "expect": { "accuracy": "impossible", "chosen_index": -1, "labels": [], "asks": 2 } },
+    { "slug": "gypsy-jazz", "text": "gypsy jazz", "span": "gypsy", "expect": { "accuracy": "partial", "chosen_index": 0, "labels": ["what I could parse"], "asks": 1 } },
+    { "slug": "exotic-vibes", "text": "exotic vibes", "span": "exotic", "expect": { "accuracy": "impossible", "chosen_index": -1, "labels": [], "asks": 2 } },
+    { "slug": "ancestors", "text": "music for my ancestors", "span": "ancestors", "expect": { "accuracy": "impossible", "chosen_index": -1, "labels": [], "asks": 2 } },
+    { "slug": "wa-drumming-focus", "text": "west african drumming for focus", "span": "west african drumming", "expect": { "accuracy": "partial", "chosen_index": 0, "labels": ["focus"], "asks": 1 } },
+    { "slug": "sami-yoik", "text": "sami yoik to wind down", "span": "sami yoik", "expect": { "accuracy": "partial", "chosen_index": 0, "labels": ["calm"], "asks": 1 } },
+    { "slug": "indigenous-gym", "text": "indigenous music for the gym", "span": "indigenous", "expect": { "accuracy": "partial", "chosen_index": 0, "labels": ["pump up"], "asks": 1 } },
+    { "slug": "gamelan-study", "text": "gamelan for studying", "span": "gamelan", "expect": { "accuracy": "partial", "chosen_index": 0, "labels": ["focus"], "asks": 1 } },
+    { "slug": "world-music", "text": "play me some world music", "span": "world", "expect": { "accuracy": "impossible", "chosen_index": -1, "labels": [], "asks": 2 } },
+    { "slug": "bangers-control", "text": "fast relaxing bangers", "expect": { "accuracy": "contradictory", "chosen_index": 0, "labels": ["energetic but soft", "literally calm"], "asks": 1 } },
+    { "slug": "focus-control", "text": "I need to focus. no words, no piano, nothing too slow/relaxing.", "expect": { "accuracy": "specific", "chosen_index": 0, "labels": ["focus"], "asks": 0 } }
+  ]
+}

@@ -14,7 +14,7 @@ test("saved values win over the server file; clearing goes back to it; secrets n
   const dir = mkdtempSync(join(tmpdir(), "synamp-settings-"));
   try {
     const path = join(dir, "settings.json");
-    const defaults = { musicbrainzContact: "me@example.org", lastfmApiKey: "", lastfmApiSecret: "", publicUrl: "", uploadMaxMb: 2048 };
+    const defaults = { musicbrainzContact: "me@example.org", lastfmApiKey: "", lastfmApiSecret: "", publicUrl: "", uploadMaxMb: 2048, listeningPolicy: "epoch-v1" as const };
     const settings = new RuntimeSettings(path, defaults);
     const seen: string[][] = [];
     settings.onChange = (changed) => seen.push(changed);
@@ -47,5 +47,29 @@ test("saved values win over the server file; clearing goes back to it; secrets n
     const reloaded = new RuntimeSettings(path, defaults);
     assert.equal(reloaded.lastfmApiSecret, SECRET);
     assert.equal(JSON.parse(readFileSync(path, "utf8")).format, "synamp.settings/1");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("the listening policy starts at epoch-v1, switches to legacy-v1, and rejects anything else", () => {
+  const dir = mkdtempSync(join(tmpdir(), "synamp-settings-policy-"));
+  try {
+    const path = join(dir, "settings.json");
+    const defaults = { musicbrainzContact: "", lastfmApiKey: "", lastfmApiSecret: "", publicUrl: "", uploadMaxMb: 2048, listeningPolicy: "epoch-v1" as const };
+    const settings = new RuntimeSettings(path, defaults);
+    assert.equal(settings.listeningPolicy, "epoch-v1", "default policy is session learning");
+    assert.equal(settings.view().listening_policy, "epoch-v1");
+
+    assert.throws(() => settings.update({ listening_policy: "heuristic-v1" }), /epoch-v1/);
+    assert.throws(() => settings.update({ listening_policy: 3 }), /must be text/);
+    assert.equal(settings.listeningPolicy, "epoch-v1", "a bad value changes nothing");
+
+    assert.deepEqual(settings.update({ listening_policy: "legacy-v1" }), ["listening_policy"]);
+    assert.equal(settings.listeningPolicy, "legacy-v1");
+    assert.equal(settings.view().origins.listening_policy, "app");
+    assert.equal(new RuntimeSettings(path, defaults).listeningPolicy, "legacy-v1", "persisted");
+
+    settings.update({ listening_policy: "" });
+    assert.equal(settings.listeningPolicy, "epoch-v1", "cleared: back to the default");
+    assert.equal(settings.view().origins.listening_policy, "server");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

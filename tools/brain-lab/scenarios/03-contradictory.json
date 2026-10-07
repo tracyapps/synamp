@@ -1,0 +1,9 @@
+{
+  "id": "03-contradictory",
+  "kind": "phrase",
+  "title": "Contradictory request — 'fast relaxing bangers'",
+  "phrase": "fast relaxing bangers",
+  "slug": "contradictory",
+  "intent": { "expect_accuracy": "contradictory" },
+  "pipeline": { "expect_validation": "either" }
+}

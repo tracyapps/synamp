@@ -18,7 +18,9 @@
  * signals with a 30-day half-life, global ones with 180 days.
  *
  * The view is a pure function of the log, so a policy change is a re-derive, and
- * rolling back is switching the function — the events never change.
+ * rolling back is switching the function — the events never change. The returned
+ * `policy_version` label comes from the optional 4th argument (default POLICY_VERSION);
+ * the `listening_policy = "legacy-v1"` rollback passes "heuristic-v1" explicitly.
  */
 
 import { POLICY_VERSION } from "./events.ts";
@@ -96,7 +98,7 @@ const bump = (map: Map<string, Cell>, key: string, label: string, value: number)
   map.set(key, cell);
 };
 
-export function deriveFeedback(events: readonly ListeningEvent[], now = Date.now(), canonical: (id: string) => string = (id) => id): FeedbackView {
+export function deriveFeedback(events: readonly ListeningEvent[], now = Date.now(), canonical: (id: string) => string = (id) => id, policyVersion: string = POLICY_VERSION): FeedbackView {
   const removed = new Map<string, Map<string, boolean>>();
   const global = new Map<string, Cell>();
   const playlist = new Map<string, Cell>();
@@ -162,7 +164,7 @@ export function deriveFeedback(events: readonly ListeningEvent[], now = Date.now
   }
 
   return {
-    policy_version: POLICY_VERSION,
+    policy_version: policyVersion,
     events: count,
     removed(playlistId) {
       const m = removed.get(playlistId);

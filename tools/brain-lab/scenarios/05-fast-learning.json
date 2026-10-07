@@ -1,0 +1,63 @@
+{
+  "id": "05-fast-learning",
+  "kind": "learning",
+  "title": "Fast learning — within-epoch stream reorders the next resolve and hides re-skips",
+  "stream": {
+    "base_ts": "2026-10-06T19:00:00-05:00",
+    "timezone": "America/Chicago",
+    "playlist_id": "pl-lab",
+    "session_id": "sess-lab-1",
+    "plan_hash": "cbe2c4d8f0a94b1e6d3a7c5f9b2e8d4a6f1c3b5e7d9a2c4f6b8e1d3a5c7f9b2e",
+    "events": [
+      { "signal": "exposure", "track": "sample-026", "at": "+0m", "detail": { "policy": "deterministic_rank" } },
+      { "signal": "started", "track": "sample-026", "at": "+0m" },
+      { "signal": "skip_early", "track": "sample-026", "at": "+1m", "play_ms": 18000, "duration_ms": 216000 },
+      { "signal": "started", "track": "sample-028", "at": "+2m" },
+      { "signal": "skip_early", "track": "sample-028", "at": "+3m", "play_ms": 17000, "duration_ms": 257000 },
+      { "signal": "started", "track": "sample-034", "at": "+4m" },
+      { "signal": "full_play", "track": "sample-034", "at": "+8m", "play_ms": 394000, "duration_ms": 394000 },
+      { "signal": "repeat", "track": "sample-034", "at": "+9m" },
+      { "signal": "started", "track": "sample-024", "at": "+10m" },
+      { "signal": "full_play", "track": "sample-024", "at": "+14m", "play_ms": 241000, "duration_ms": 241000 },
+      { "signal": "started", "track": "sample-040", "at": "+15m" },
+      { "signal": "full_play", "track": "sample-040", "at": "+19m", "play_ms": 400000, "duration_ms": 400000 },
+      { "signal": "started", "track": "sample-026", "at": "+20m" },
+      { "signal": "skip_early", "track": "sample-026", "at": "+21m", "play_ms": 15000, "duration_ms": 216000 },
+      { "signal": "started", "track": "sample-028", "at": "+22m" },
+      { "signal": "skip_early", "track": "sample-028", "at": "+23m", "play_ms": 12000, "duration_ms": 257000 },
+      { "signal": "interrupted", "track": "sample-030", "at": "+24m", "play_ms": 40000 }
+    ]
+  },
+  "now": "+29m",
+  "checks": {
+    "adjust_positive": ["sample-034", "sample-024", "sample-040"],
+    "require_parts": true,
+    "negative_parts": ["sample-026", "sample-028"],
+    "skip_hidden": ["sample-026", "sample-028"],
+    "sequence_wave": {
+      "note": "C1-F1 regression (H1 receipt §H1-1): pre-fix, odd measured counts dropped one track and emitted undefined → null in JSON → queue crash; even counts were fine and must stay byte-identical.",
+      "fixture": [
+        { "id": "lab-wave-1", "bpm": 70 },
+        { "id": "lab-wave-2", "bpm": 90 },
+        { "id": "lab-wave-3", "bpm": 110 },
+        { "id": "lab-wave-4", "bpm": 140 },
+        { "id": "lab-wave-5", "bpm": 170 }
+      ],
+      "odd_counts": [1, 3, 5],
+      "even_counts": [2, 4],
+      "expect_orders": {
+        "1": ["lab-wave-1"],
+        "2": ["lab-wave-2", "lab-wave-1"],
+        "3": ["lab-wave-3", "lab-wave-1", "lab-wave-2"],
+        "4": ["lab-wave-3", "lab-wave-1", "lab-wave-4", "lab-wave-2"],
+        "5": ["lab-wave-4", "lab-wave-1", "lab-wave-5", "lab-wave-2", "lab-wave-3"]
+      }
+    },
+    "resolve": {
+      "playlist_id": "pl-lab",
+      "plan_phrase": "60 tracks, between 60 and 180 bpm",
+      "hidden_by_session": ["sample-026", "sample-028"],
+      "improves": ["sample-034", "sample-024", "sample-040"]
+    }
+  }
+}
