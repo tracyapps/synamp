@@ -1,0 +1,9 @@
+### Result
+{"radioFooter":true,"viewport":390,"body":390,"doc":390,"visiblePlayers":1,"footer":{"x":0,"y":331,"width":844,"height":59,"top":331,"right":844,"bottom":390,"left":0}}
+### Ran Playwright code
+```js
+await (async page => { const station={id:"scratch-radio",name:"Scratch radio",listen_url:"http://127.0.0.1:39822/scratch-missing-audio.mp3",tags:["fixture"],country:"Fixture"}; await page.route("**/api/v1/radio/search?**", route=>route.fulfill({contentType:"application/json",body:JSON.stringify({stations:[station]})})); await page.setViewportSize({width:844,height:390}); await page.goto("http://127.0.0.1:39822/#/radio"); await page.getByRole("button",{name:"Play Scratch radio",exact:true}).click(); const radio=page.getByRole("region",{name:"Radio player",exact:true}); await radio.waitFor(); const result=await page.evaluate(()=>({viewport:innerHeight,body:document.body.scrollHeight,doc:document.documentElement.scrollHeight,visiblePlayers:Array.from(document.querySelectorAll(".player")).filter(e=>getComputedStyle(e).display!=="none").length,footer:document.querySelector(".app__footer").getBoundingClientRect().toJSON()})); if(result.body!==390||result.doc!==390||result.visiblePlayers!==1||result.footer.bottom!==390)throw new Error(JSON.stringify(result));await page.getByRole("button",{name:"Back to your music",exact:true}).click(); await page.getByRole("region",{name:"Player",exact:true}).waitFor(); await page.unroute("**/api/v1/radio/search?**"); return {radioFooter:true,...result}; })(page);
+```
+### Page
+- Page URL: http://127.0.0.1:39822/#/radio
+- Page Title: Radio — SynAmp

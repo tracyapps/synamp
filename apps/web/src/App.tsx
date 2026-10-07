@@ -92,7 +92,7 @@ export default function App() {
     // Only when the screen actually changes (not on first load, and not on React's dev-mode double run).
     if (shownScreen.current === screen) return;
     shownScreen.current = screen;
-    window.scrollTo(0, 0);
+    document.getElementById("main")?.scrollTo(0, 0);
     document.getElementById(headingId)?.focus();
   }, [screen]);
 
@@ -140,7 +140,7 @@ export default function App() {
       </div>;
       break;
     case "galaxy":
-      body = <div className="screen galaxy-screen"><h1 id={headingId} tabIndex={-1} className="galaxy-heading">Galaxy</h1><Suspense fallback={<p role="status">Opening Galaxy…</p>}><Galaxy request={call} play={play} playlists={nodes} /></Suspense></div>;
+      body = <div className="screen galaxy-screen"><Suspense fallback={<p role="status">Opening Galaxy…</p>}><Galaxy request={call} play={play} playlists={nodes} /></Suspense></div>;
       break;
     case "playlists":
       body = <Playlists request={call} upload={upload} nodes={nodes} loading={loading} refreshNodes={refreshNodes} play={play} headingId={headingId} />;
@@ -183,14 +183,20 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app${screen === "galaxy" ? " app--galaxy" : ""}`}>
       <a className="skip-link" href="#main" onClick={(event) => { event.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to content</a>
       <header className="app__bar">
-        <a className="app__brand" href="#/library" aria-label="SynAmp, go to Library"><img className="brand-mark app__mark" src={mark} alt="" width={34} height={34} /><img className="app__wordmark" src={wordmark} alt="" width={81} height={22} /></a>
-        <div className="app__bar-right"><VersionBadge request={call} /></div>
+        {screen === "galaxy" ? <>
+          <a className="btn btn--quiet app__back" href="#/library">← <span>Library</span></a>
+          <h1 id={headingId} tabIndex={-1} className="app__workspace-title">Galaxy</h1>
+          <details className="app__workspace-menu"><summary className="btn btn--ghost">Menu</summary><nav aria-label="Galaxy menu">{SCREENS.map(item => <a key={item.id} className="app__nav-link" href={`#/${item.id}`} aria-current={screen === item.id ? "page" : undefined} onClick={event => event.currentTarget.closest("details")?.removeAttribute("open")}><Icon name={item.icon} />{item.label}</a>)}</nav></details>
+        </> : <>
+          <a className="app__brand" href="#/library" aria-label="SynAmp, go to Library"><img className="brand-mark app__mark" src={mark} alt="" width={34} height={34} /><img className="app__wordmark" src={wordmark} alt="" width={81} height={22} /></a>
+          <div className="app__bar-right"><VersionBadge request={call} /></div>
+        </>}
       </header>
       <div className="app__layout">
-        <nav className="app__side" aria-label="SynAmp">
+        {screen !== "galaxy" && <nav className="app__side" aria-label="SynAmp">
           {NAV.map((group) => <div key={group.group} className="app__group" role="group" aria-labelledby={`nav-${group.group}`}>
             <p className="grp" id={`nav-${group.group}`}>{group.group}</p>
             {group.items.map((item) => (
@@ -199,18 +205,20 @@ export default function App() {
               </a>
             ))}
           </div>)}
-        </nav>
+        </nav>}
         <main id="main" className="app__main" tabIndex={-1}>
           {tokenForm}
           {error && <p className="alert" role="alert">{error}</p>}
           {body}
         </main>
       </div>
-      {station && <RadioBar station={station} onStop={() => setStation(null)} onVisuals={openVisuals} />}
-      {visuals && <Suspense fallback={null}><Visuals open={visuals} onClose={() => setVisuals(false)} /></Suspense>}
-      <Player request={call} session={session} onSession={setSession} away={!!station} onVisuals={openVisuals}
+      <div className="app__footer">
+        {station && <RadioBar station={station} onStop={() => setStation(null)} onVisuals={openVisuals} />}
+        <Player request={call} session={session} onSession={setSession} away={!!station} onVisuals={openVisuals}
         playlistName={(id) => nodes.find((node) => node.id === id)?.name}
         onChanged={() => { refreshNodes().catch(() => undefined); }} />
+      </div>
+      {visuals && <Suspense fallback={null}><Visuals open={visuals} onClose={() => setVisuals(false)} /></Suspense>}
     </div>
   );
 }

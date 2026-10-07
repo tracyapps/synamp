@@ -64,6 +64,30 @@ test("sort and pagination are deterministic and bounded", () => {
   assert.throws(() => explore(lib, { types: "planet" }), /type/);
   assert.equal(explore(lib, { types: "" }).total, 0);
 });
+test("every table field sorts globally in both directions before pagination", () => {
+  for (const sort of ["title", "type", "artist", "album_artist", "album", "year", "count", "duration", "genre"]) {
+    for (const direction of ["asc", "desc"]) {
+      const all = explore(lib, { types: "song,album,artist", sort, direction, limit: "200" }).rows;
+      assert.deepEqual(explore(lib, { types: "song,album,artist", sort, direction, offset: "2", limit: "2" }).rows, all.slice(2, 4));
+    }
+  }
+  assert.equal(explore(lib, { types: "song", sort: "album", direction: "asc" }).rows[0]!.key, "c");
+  assert.equal(explore(lib, { types: "song", sort: "album_artist", direction: "desc" }).rows[0]!.key, "d");
+  assert.equal(explore(lib, { types: "song", sort: "genre", direction: "asc" }).rows[0]!.key, "a");
+});
+test("missing dates and durations sort last in either direction", () => {
+  for (const direction of ["asc", "desc"]) {
+    const years = explore(lib, { types: "song", sort: "year", direction }).rows;
+    assert(years.slice(0, 3).every(row => row.year));
+    assert(years.slice(3).every(row => row.year === undefined));
+    const duration = explore(lib, { types: "song", sort: "duration", direction }).rows;
+    assert(duration.slice(0, 2).every(row => row.duration_s));
+    assert(duration.slice(2).every(row => row.duration_s === undefined));
+  }
+  const aggregate = explore(lib, { types: "album,artist", sort: "duration", direction: "asc" }).rows;
+  assert.equal(aggregate[0]!.duration_s, 60);
+  assert(aggregate.filter(row => row.title === "Debut" || row.title === "Björk").every(row => row.duration_s === undefined));
+});
 test("invalid rules fail plainly and never become an unrestricted search", () => {
   assert.throws(() => explore(lib, { rules: "bad" }), /rules/);
   assert.throws(() => explore(lib, { rules: '[{"field":"password","value":"x"}]' }), /field/);

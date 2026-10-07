@@ -1,0 +1,70 @@
+async page => {
+  const assert = (value, message) => { if (!value) throw new Error(message); };
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.reload();
+  await page.getByRole('button', { name: 'Table', exact: true }).click();
+  await page.getByRole('button', { name: 'Columns', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Table columns' });
+  await dialog.getByRole('checkbox', { name: 'Album artist', exact: true }).check();
+  await dialog.getByRole('checkbox', { name: 'Genre', exact: true }).check();
+  await dialog.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.locator('.browse__advanced summary').click();
+  await page.getByRole('checkbox', { name: 'Songs', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Artist credits', exact: true }).check();
+  await page.waitForFunction(() => document.querySelector('.browse [aria-busy]')?.getAttribute('aria-busy') === 'false');
+  await page.locator('.browse__advanced summary').click();
+  const columns = { title: 'Title', type: 'Type', artist: 'Artist / credit', album_artist: 'Album artist', album: 'Album', year: 'Year', count: 'Songs', duration: 'Duration', genre: 'Genre' };
+  const checked = [];
+  for (const [key, label] of Object.entries(columns)) {
+    for (const direction of ['asc', 'desc']) {
+      const [response] = await Promise.all([page.waitForResponse(response => response.url().includes('/library/explore?') && new URL(response.url()).searchParams.get('sort') === key && new URL(response.url()).searchParams.get('direction') === direction), page.locator('thead').getByRole('button', { name: label, exact: true }).click()]);
+      const body = await response.json();
+      assert(response.ok(), 'sort response ' + label);
+      await page.waitForFunction(() => document.querySelector('.browse [aria-busy]')?.getAttribute('aria-busy') === 'false');
+      assert(await page.locator('thead th[data-column="' + key + '"]').getAttribute('aria-sort') === (direction === 'asc' ? 'ascending' : 'descending'), 'aria sort ' + label);
+      const titles = await page.locator('tbody th[scope="row"]').allTextContents();
+      assert(JSON.stringify(titles) === JSON.stringify(body.rows.map(row => row.title)), 'rendered API sort ' + label);
+      checked.push(key + ':' + direction);
+    }
+  }
+  const width = page.getByRole('separator', { name: 'Resize Year column' });
+  await width.scrollIntoViewIfNeeded();
+  const bounds = await width.boundingBox();
+  const before = Number(await width.getAttribute('aria-valuenow'));
+  await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + bounds.width / 2 + 77, bounds.y + bounds.height / 2, { steps: 6 });
+  await page.mouse.up();
+  assert(Number(await width.getAttribute('aria-valuenow')) === before + 77, 'pointer resizing');
+  await width.focus(); await page.keyboard.press('ArrowRight');
+  assert(Number(await width.getAttribute('aria-valuenow')) === before + 87, 'keyboard resizing');
+  await page.getByRole('button', { name: 'Move Type column', exact: true }).dragTo(page.locator('thead th[data-column="artist"]'));
+  let order = await page.locator('thead th').evaluateAll(nodes => nodes.map(node => node.dataset.column));
+  assert(order.indexOf('type') > order.indexOf('artist'), 'native drag reorder');
+  await page.getByRole('button', { name: 'Move Type column', exact: true }).focus(); await page.keyboard.press('ArrowLeft');
+  order = await page.locator('thead th').evaluateAll(nodes => nodes.map(node => node.dataset.column));
+  assert(order.indexOf('type') < order.indexOf('artist'), 'keyboard reorder');
+  await page.getByRole('button', { name: 'Columns', exact: true }).click();
+  await dialog.getByRole('spinbutton', { name: 'Year width in pixels' }).fill('245');
+  await dialog.getByRole('spinbutton', { name: 'Year width in pixels' }).press('Tab');
+  await dialog.getByRole('button', { name: 'Move Year earlier', exact: true }).click();
+  await dialog.getByRole('checkbox', { name: 'Genre', exact: true }).uncheck();
+  await page.keyboard.press('Escape');
+  assert(!await dialog.isVisible(), 'Escape closes settings');
+  const preferences = await page.evaluate(() => JSON.parse(localStorage.getItem('synamp-library-view-v2')));
+  assert(preferences.widths.year === 245, 'manual width commit');
+  await page.reload();
+  await page.locator('table').waitFor();
+  assert(Number(await page.getByRole('separator', { name: 'Resize Year column' }).getAttribute('aria-valuenow')) === 245, 'persisted width');
+  const restored = await page.locator('thead th').evaluateAll(nodes => nodes.map(node => node.dataset.column));
+  assert(JSON.stringify(restored) === JSON.stringify(preferences.order.filter(key => preferences.columns.includes(key))), 'persisted order and visibility');
+  assert(await page.locator('thead th[data-column="genre"]').count() === 0, 'hidden genre persisted');
+  await page.screenshot({ path: 'output/playwright/workspace-table/table-desktop.png' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Columns', exact: true }).click();
+  const rect = await dialog.boundingBox();
+  assert(rect.x >= 0 && rect.x + rect.width <= 390 && rect.y >= 0 && rect.y + rect.height <= 844, 'settings contained on mobile');
+  await page.screenshot({ path: 'output/playwright/workspace-table/table-settings-mobile.png' });
+  await page.keyboard.press('Escape');
+  return { checked, pointerResize: true, keyboardResize: true, nativeDrag: true, keyboardMove: true, widthInput: 245, reloadPersisted: true, mobileSettings: true };
+}

@@ -1,0 +1,17 @@
+{
+  "radioFooter": true,
+  "viewport": 390,
+  "body": 390,
+  "doc": 390,
+  "visiblePlayers": 1,
+  "footer": {
+    "x": 0,
+    "y": 331,
+    "width": 844,
+    "height": 59,
+    "top": 331,
+    "right": 844,
+    "bottom": 390,
+    "left": 0
+  }
+}

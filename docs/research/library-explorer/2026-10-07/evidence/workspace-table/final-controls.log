@@ -1,0 +1,24 @@
+### Result
+{"cardControls":[{"width":1440,"height":1000,"zoomAndCloseReachableWithCard":true},{"width":390,"height":844,"zoomAndCloseReachableWithCard":true},{"width":844,"height":390,"zoomAndCloseReachableWithCard":true}],"settings320":{"width":265,"scrollWidth":265,"rect":{"x":19,"y":20,"width":282,"height":600,"top":20,"right":301,"bottom":620,"left":19}}}
+### Ran Playwright code
+```js
+await (async page => {
+  const results=[];
+  for(const size of [{width:1440,height:1000},{width:390,height:844},{width:844,height:390}]) {
+    await page.setViewportSize(size);await page.goto('http://127.0.0.1:39822/#/galaxy');
+    const planet=page.locator('.galaxy__planet').filter({hasText:'2Pac'});await planet.waitFor();await planet.focus();await page.keyboard.press('Enter');
+    await page.locator('.galaxy__details h3').filter({hasText:'2Pac'}).waitFor();
+    await page.getByRole('button',{name:'Zoom in',exact:true}).click();
+    await page.getByRole('button',{name:'Reset',exact:true}).click();
+    await page.getByRole('button',{name:'Close artist details',exact:true}).click();
+    results.push({...size,zoomAndCloseReachableWithCard:true});
+  }
+  await page.goto('http://127.0.0.1:39822/#/library');await page.setViewportSize({width:320,height:640});
+  await page.getByRole('button',{name:'Table',exact:true}).click();await page.getByRole('button',{name:'Columns',exact:true}).click();
+  const dialog=page.getByRole('dialog',{name:'Table columns'});const geometry=await dialog.evaluate(e=>({width:e.clientWidth,scrollWidth:e.scrollWidth,rect:e.getBoundingClientRect().toJSON()}));
+  if(geometry.width!==geometry.scrollWidth||geometry.rect.left<0||geometry.rect.right>320)throw new Error('320px dialog overflow');
+  await page.keyboard.press('Escape');
+  return {cardControls:results,settings320:geometry};
+}
+)(page);
+```

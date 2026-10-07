@@ -1,0 +1,36 @@
+✔ fold drops accents, case and punctuation (0.587833ms)
+✔ albums sort by artist (ignoring 'The'), then year; title and year sorts work (6.212209ms)
+✔ album search matches every word across title, artist and year, accents ignored (0.108042ms)
+✔ album paging and summary (0.065791ms)
+✔ an album's tracks come back in play order; disc folders fold into the album (0.193709ms)
+✔ track search ranks title matches first and needs every word (0.161125ms)
+✔ shuffled keeps every item and leaves the input alone (0.082875ms)
+✔ album identity keeps folders separate but searches every track credit (6.480334ms)
+✔ all entity types include loose songs and artist summaries keep full credits separate (0.12525ms)
+✔ exact matching is normalized whole field, glob is anchored with literal punctuation (0.253ms)
+✔ fuzzy matching catches bounded misspellings without broad short-token guesses (0.237833ms)
+✔ AND/OR rule logic and exclusions have explicit semantics (0.151125ms)
+✔ year range always intersects text logic, excludes missing dates, validates bounds (0.29175ms)
+✔ group totals cover all matches before paging; multi-genre memberships are explicit (0.136708ms)
+✔ sort and pagination are deterministic and bounded (0.099792ms)
+✔ every table field sorts globally in both directions before pagination (1.56825ms)
+✔ missing dates and durations sort last in either direction (0.150583ms)
+✔ invalid rules fail plainly and never become an unrestricted search (0.101084ms)
+✔ year text stays searchable and non-Latin queries never collapse to empty (0.384084ms)
+✔ wildcards cannot create regex backtracking and ? matches one Unicode character (0.218041ms)
+✔ Galaxy groups only explicit featured-credit candidates, retains punctuation band identities and source folders (7.331583ms)
+✔ Galaxy search spans full artist pool and raw featured credits, random reaches artists beyond first page (3.174333ms)
+✔ Galaxy sort count, finite bounds and same-version independent library isolation (0.375666ms)
+✔ Galaxy caps detail track payload and reports truncation while retaining full file counts (3.928542ms)
+✔ Unicode artist searches retain their script, reject oversized searches, and leave raw identities separate (0.663ms)
+✔ legacy column visibility survives, required columns remain, and stored order round-trips (0.7ms)
+✔ malformed preferences cannot duplicate/drop columns, choose invalid sorts or unbounded widths (0.082ms)
+✔ move to a neighbor works in both directions and preserves every column exactly once (0.065166ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 89.181709

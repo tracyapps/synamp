@@ -1,0 +1,157 @@
+{
+  "private": true,
+  "readOnly": true,
+  "retrievedAt": "2026-10-07T16:49:09.656Z",
+  "path": "/Volumes/music/.synamp/library-signals.json",
+  "bytes": 31442037,
+  "sha256": "964717ee675dba44e735bbfa00093d49c207f60a1f4e46f7a17b2fd71ca13b04",
+  "stableDuringRead": true,
+  "tracks": 46117,
+  "checks": [
+    {
+      "sort": "title",
+      "direction": "asc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 1202,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "title",
+      "direction": "desc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 1033,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "type",
+      "direction": "asc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 1367,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "type",
+      "direction": "desc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 1358,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "artist",
+      "direction": "asc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 721,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "artist",
+      "direction": "desc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 731,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "album_artist",
+      "direction": "asc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 687,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "album_artist",
+      "direction": "desc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 695,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "album",
+      "direction": "asc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 909,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "album",
+      "direction": "desc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 917,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "year",
+      "direction": "asc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 880,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "year",
+      "direction": "desc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 874,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "count",
+      "direction": "asc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 975,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "count",
+      "direction": "desc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 969,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "duration",
+      "direction": "asc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 195,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "duration",
+      "direction": "desc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 179,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "genre",
+      "direction": "asc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 1440,
+      "pagingConsistent": true
+    },
+    {
+      "sort": "genre",
+      "direction": "desc",
+      "total": 59910,
+      "returned": 60,
+      "twoCallsMs": 1446,
+      "pagingConsistent": true
+    }
+  ],
+  "limits": "Single Mac process read-only checks. Timings include two explore calls and assertion; first check includes entity indexing. Excludes browser rendering, network, audio delivery and NAS/device benchmarking."
+}

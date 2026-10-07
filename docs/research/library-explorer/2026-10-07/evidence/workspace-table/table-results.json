@@ -1,0 +1,29 @@
+{
+  "checked": [
+    "title:asc",
+    "title:desc",
+    "type:asc",
+    "type:desc",
+    "artist:asc",
+    "artist:desc",
+    "album_artist:asc",
+    "album_artist:desc",
+    "album:asc",
+    "album:desc",
+    "year:asc",
+    "year:desc",
+    "count:asc",
+    "count:desc",
+    "duration:asc",
+    "duration:desc",
+    "genre:asc",
+    "genre:desc"
+  ],
+  "pointerResize": true,
+  "keyboardResize": true,
+  "nativeDrag": true,
+  "keyboardMove": true,
+  "widthInput": 245,
+  "reloadPersisted": true,
+  "mobileSettings": true
+}

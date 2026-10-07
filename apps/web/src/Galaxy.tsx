@@ -46,19 +46,28 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
   const [extra, setExtra] = useState<Planet | null>(null); const [openAlbum, setOpenAlbum] = useState<string | null>(null);
   const [pins, setPins] = useState<Record<string, Point>>(saved.pins); const [view, setView] = useState<View>(saved.view);
   const svg = useRef<SVGSVGElement>(null); const suppressClick = useRef(false);
+  const viewRef = useRef(view); viewRef.current = view;
+  const pointers = useRef(new Map<number, Point>());
+  const pinch = useRef<{ midpoint: Point; distance: number; view: View } | null>(null);
   const mapArea = useRef<HTMLDivElement>(null); const [mapWidth, setMapWidth] = useState(1000);
+  const [canvasHeight, setCanvasHeight] = useState(700);
   const randomTicket = useRef(0);
   const gesture = useRef<{ pointer: number; key: string | null; start: Point; position: Point; view: View; moved: boolean } | null>(null);
   const shown = extra && !nodes.some(node => node.key === extra.key) ? [extra, ...nodes].slice(0, PAGE) : nodes;
   const maximum = Math.max(1, ...shown.map(node => node.tracks));
   const worldWidth = mapWidth < 500 ? 360 : mapWidth < 750 ? 600 : 1000;
-  const worldHeight = mapWidth < 500 ? 480 : 700;
+  const worldHeight = Math.max(1, worldWidth * canvasHeight / mapWidth);
   const columns = mapWidth < 500 ? 2 : mapWidth < 750 ? 3 : 6;
 
   useEffect(() => {
     const element = mapArea.current; if (!element) return;
-    const observer = new ResizeObserver(entries => { const width = entries[0]?.contentRect.width; if (width) setMapWidth(width); });
-    observer.observe(element); return () => observer.disconnect();
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        if (entry.target === element && entry.contentRect.width > 0) setMapWidth(entry.contentRect.width);
+        if (entry.target === svg.current && entry.contentRect.height > 0) setCanvasHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(element); if (svg.current) observer.observe(svg.current); return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -86,39 +95,90 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
   }, [pins, view, sort]);
   useEffect(() => () => { randomTicket.current++; }, []);
 
-  const position = (node: Planet, index: number): Point => pins[node.key] ?? { x: worldWidth / columns * ((index % columns) + .5), y: (mapWidth < 500 ? 80 : 100) + Math.floor(index / columns) * (mapWidth < 500 ? 150 : 160) };
+  // A non-passive listener owns wheel gestures only over the canvas. Ctrl+wheel
+  // is the trackpad pinch event in desktop browsers; both paths retain the
+  // point beneath the cursor instead of zooming around the page center.
+  useEffect(() => {
+    const element = svg.current; if (!element) return;
+    const wheel = (event: WheelEvent) => {
+      const matrix = element.getScreenCTM(); if (!matrix || !event.deltaY) return;
+      event.preventDefault();
+      const screen = element.createSVGPoint(); screen.x = event.clientX; screen.y = event.clientY;
+      const anchor = screen.matrixTransform(matrix.inverse());
+      if (!Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) return;
+      const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? element.clientHeight : 1);
+      const factor = Math.exp(clamp(-pixels * (event.ctrlKey ? .006 : .002), -1, 1));
+      setView(current => {
+        const k = clamp(current.k * factor, .3, 3);
+        const next = { k, x: anchor.x - (anchor.x - current.x) * k / current.k, y: anchor.y - (anchor.y - current.y) * k / current.k };
+        viewRef.current = next; return next;
+      });
+    };
+    element.addEventListener("wheel", wheel, { passive: false });
+    return () => element.removeEventListener("wheel", wheel);
+  }, []);
+
+  const position = (node: Planet, index: number): Point => pins[node.key] ?? { x: worldWidth / columns * ((index % columns) + .5), y: Math.min(mapWidth < 500 ? 80 : 100, Math.max(32, worldHeight * .35)) + Math.floor(index / columns) * (mapWidth < 500 ? 150 : 160) };
+  const publishView = (next: View) => { viewRef.current = next; setView(next); };
   const svgPoint = (clientX: number, clientY: number): Point => {
     const element = svg.current; const matrix = element?.getScreenCTM();
     if (!element || !matrix) return { x: clientX, y: clientY };
     const point = element.createSVGPoint(); point.x = clientX; point.y = clientY; return point.matrixTransform(matrix.inverse());
   };
   const beginGesture = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (event.button !== 0 || gesture.current) return;
+    if (event.button !== 0) return;
+    const point = svgPoint(event.clientX, event.clientY);
+    pointers.current.set(event.pointerId, point);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    if (pointers.current.size >= 2) {
+      const [a, b] = [...pointers.current.values()];
+      pinch.current = { midpoint: { x: (a!.x + b!.x) / 2, y: (a!.y + b!.y) / 2 }, distance: Math.max(1, Math.hypot(a!.x - b!.x, a!.y - b!.y)), view: viewRef.current };
+      gesture.current = null; suppressClick.current = true; return;
+    }
     const key = (event.target as Element).closest("[data-artist-key]")?.getAttribute("data-artist-key") ?? null;
     const index = shown.findIndex(node => node.key === key);
-    gesture.current = { pointer: event.pointerId, key, start: svgPoint(event.clientX, event.clientY),
+    gesture.current = { pointer: event.pointerId, key, start: point,
       position: index >= 0 ? position(shown[index]!, index) : { x: 0, y: 0 }, view, moved: false };
-    event.currentTarget.setPointerCapture(event.pointerId);
   };
   const moveGesture = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (!pointers.current.has(event.pointerId)) return;
+    const point = svgPoint(event.clientX, event.clientY); pointers.current.set(event.pointerId, point);
+    if (pinch.current && pointers.current.size >= 2) {
+      const [a, b] = [...pointers.current.values()]; const initial = pinch.current;
+      const midpoint = { x: (a!.x + b!.x) / 2, y: (a!.y + b!.y) / 2 };
+      const distance = Math.max(1, Math.hypot(a!.x - b!.x, a!.y - b!.y));
+      const k = clamp(initial.view.k * distance / initial.distance, .3, 3);
+      publishView({ k, x: midpoint.x - (initial.midpoint.x - initial.view.x) * k / initial.view.k, y: midpoint.y - (initial.midpoint.y - initial.view.y) * k / initial.view.k });
+      return;
+    }
     const current = gesture.current; if (!current || current.pointer !== event.pointerId) return;
-    const point = svgPoint(event.clientX, event.clientY); const dx = point.x - current.start.x; const dy = point.y - current.start.y;
+    const dx = point.x - current.start.x; const dy = point.y - current.start.y;
     if (Math.abs(dx) + Math.abs(dy) < 5 && !current.moved) return;
     current.moved = true;
     if (current.key) setPins(previous => ({ ...previous, [current.key!]: { x: current.position.x + dx / current.view.k, y: current.position.y + dy / current.view.k } }));
-    else setView({ ...current.view, x: current.view.x + dx, y: current.view.y + dy });
+    else publishView({ ...current.view, x: current.view.x + dx, y: current.view.y + dy });
   };
-  const endGesture = (event: ReactPointerEvent<SVGSVGElement>) => {
-    if (gesture.current?.pointer !== event.pointerId) return;
-    suppressClick.current = !!gesture.current.moved;
-    if (!gesture.current.moved && gesture.current.key) setSelectedKey(gesture.current.key);
-    gesture.current = null;
+  const endGesture = (event: ReactPointerEvent<SVGSVGElement>, cancelled = false) => {
+    if (!pointers.current.has(event.pointerId)) return;
+    const wasPinching = !!pinch.current;
+    pointers.current.delete(event.pointerId);
+    const current = gesture.current;
+    suppressClick.current = cancelled || wasPinching || !!current?.moved;
+    if (!cancelled && !wasPinching && current?.pointer === event.pointerId && !current.moved && current.key) setSelectedKey(current.key);
+    gesture.current = null; pinch.current = null;
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-    setTimeout(() => { suppressClick.current = false; }, 0);
+    const remaining = [...pointers.current.entries()];
+    if (remaining.length === 1) gesture.current = { pointer: remaining[0]![0], key: null, start: remaining[0]![1], position: { x: 0, y: 0 }, view: viewRef.current, moved: true };
+    else if (remaining.length >= 2) {
+      const a = remaining[0]![1], b = remaining[1]![1];
+      pinch.current = { midpoint: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), view: viewRef.current };
+    }
+    if (!remaining.length) setTimeout(() => { suppressClick.current = false; }, 0);
   };
   const zoom = (factor: number) => setView(current => {
     const k = clamp(current.k * factor, .3, 3);
-    return { k, x: worldWidth / 2 - (worldWidth / 2 - current.x) * k / current.k, y: worldHeight / 2 - (worldHeight / 2 - current.y) * k / current.k };
+    const next = { k, x: worldWidth / 2 - (worldWidth / 2 - current.x) * k / current.k, y: worldHeight / 2 - (worldHeight / 2 - current.y) * k / current.k };
+    viewRef.current = next; return next;
   });
   const changeSearch = (value: string) => {
     randomTicket.current++; setRandomBusy(false); setQuery(value); setOffset(0); setExtra(null); setSelectedKey(null); setView(INITIAL);
@@ -145,16 +205,23 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
     <div className="section-card__head"><h2 id="galaxy-title">Your artists</h2><span className="galaxy__mode">Artists → albums → songs</span></div>
     <div className="galaxy__toolbar">
       <label className="galaxy__search"><span className="visually-hidden">Find an artist in the full library</span><input className="input" type="search" placeholder="Find an artist…" maxLength={160} value={query} onChange={event => changeSearch(event.target.value)} /></label>
-      <label>Arrange <select className="select" value={sort} onChange={event => { setSort(event.target.value as "alpha" | "count"); setOffset(0); setExtra(null); setPins({}); setView(INITIAL); }}><option value="alpha">A–Z</option><option value="count">Most songs</option></select></label>
-      <button className="btn btn--ghost" disabled={randomBusy || loading || query !== q || !total} onClick={random}>{randomBusy ? "Finding…" : "↗ Random artist"}</button>
+      <label><span className="galaxy__arrange-label">Arrange</span><select className="select" aria-label="Arrange artists" value={sort} onChange={event => { setSort(event.target.value as "alpha" | "count"); setOffset(0); setExtra(null); setPins({}); setView(INITIAL); }}><option value="alpha">A–Z</option><option value="count">Most songs</option></select></label>
+      <button className="btn btn--ghost galaxy__random" aria-label={randomBusy ? "Finding a random artist" : "Random artist"} disabled={randomBusy || loading || query !== q || !total} onClick={random}><span aria-hidden="true">↗</span><span className="galaxy__random-label">{randomBusy ? "Finding…" : "Random artist"}</span></button>
     </div>
     <div className="galaxy__workspace">
       <div className="galaxy__map-area" ref={mapArea}>
         <div className="galaxy__map-controls"><span>{loading ? "Loading artists…" : `${shown.length} planets on this page · ${total.toLocaleString()} artists in this search`}</span><div>
           <button className="btn btn--quiet btn--sm" onClick={() => zoom(1 / 1.25)} aria-label="Zoom out" disabled={view.k <= .3}>−</button><output aria-label="Zoom level">{Math.round(view.k * 100)}%</output><button className="btn btn--quiet btn--sm" onClick={() => zoom(1.25)} aria-label="Zoom in" disabled={view.k >= 3}>+</button><button className="btn btn--quiet btn--sm" onClick={() => { setView(INITIAL); setPins({}); }}>Reset</button>
         </div></div>
-        <svg ref={svg} className="galaxy__canvas" viewBox={`0 0 ${worldWidth} ${worldHeight}`} role="group" aria-label="Artist planets. Drag empty space to pan, or a planet to reposition. Use zoom buttons and artist list for keyboard navigation."
-          onPointerDown={beginGesture} onPointerMove={moveGesture} onPointerUp={endGesture} onPointerCancel={() => { gesture.current = null; suppressClick.current = true; }}>
+        <svg ref={svg} className="galaxy__canvas" tabIndex={0} viewBox={`0 0 ${worldWidth} ${worldHeight}`} role="group" aria-describedby="galaxy-key" aria-label="Artist planets. Drag empty space to pan, or a planet to reposition. Wheel or pinch to zoom. Arrow keys pan; plus and minus zoom. The artist list also supports keyboard navigation."
+          onKeyDown={event => {
+            if (event.target !== event.currentTarget) return;
+            const movement: Record<string, Point> = { ArrowLeft: { x: 60, y: 0 }, ArrowRight: { x: -60, y: 0 }, ArrowUp: { x: 0, y: 60 }, ArrowDown: { x: 0, y: -60 } };
+            if (movement[event.key]) { event.preventDefault(); const delta = movement[event.key]!; publishView({ ...viewRef.current, x: viewRef.current.x + delta.x, y: viewRef.current.y + delta.y }); }
+            else if (event.key === "+" || event.key === "=") { event.preventDefault(); zoom(1.25); }
+            else if (event.key === "-") { event.preventDefault(); zoom(1 / 1.25); }
+          }}
+          onPointerDown={beginGesture} onPointerMove={moveGesture} onPointerUp={event => endGesture(event)} onPointerCancel={event => endGesture(event, true)}>
           <defs><radialGradient id="galaxy-planet"><stop offset="0" stopColor="#414962" /><stop offset="1" stopColor="#222b41" /></radialGradient></defs>
           <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
             {shown.map((node, index) => {
@@ -173,11 +240,12 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
           </g>
           {!loading && !shown.length && <text x={worldWidth / 2} y={worldHeight / 2} textAnchor="middle" className="galaxy__empty">No matching artists.</text>}
         </svg>
-        <p className="galaxy__legend">Planet area = music file count, relative to this page. Drag to pan or reposition. Parsed credits are candidates; album folders stay separate.</p>
+        <p id="galaxy-key" className="galaxy__legend">Area = files, relative to this page. Drag to pan. Wheel or pinch to zoom. Parsed credits are candidates.</p>
         <div className="galaxy__paging"><button className="btn btn--quiet btn--sm" disabled={loading || offset === 0} onClick={() => { setOffset(Math.max(0, offset - PAGE)); setExtra(null); setView(INITIAL); }}>Previous artists</button><span>Page {Math.floor(offset / PAGE) + 1} of {Math.max(1, Math.ceil(total / PAGE))}</span><button className="btn btn--quiet btn--sm" disabled={loading || offset + PAGE >= total} onClick={() => { setOffset(offset + PAGE); setExtra(null); setView(INITIAL); }}>Next artists</button></div>
         <details className="galaxy__list"><summary>Artist list — keyboard alternative</summary><ul>{shown.map(node => <li key={node.key}><button className="btn btn--quiet" aria-pressed={selectedKey === node.key} onClick={() => setSelectedKey(node.key)}>{node.name}<span>{node.tracks} files</span></button></li>)}</ul></details>
       </div>
-      <aside className="galaxy__details" aria-label="Selected artist details" aria-busy={profileLoading}>
+      <aside className="galaxy__details" aria-label="Selected artist details" aria-busy={profileLoading} hidden={!selectedKey && !profileLoading}>
+        <div className="galaxy__detail-controls"><button className="btn btn--quiet btn--sm" aria-label="Close artist details" onClick={() => { setSelectedKey(null); svg.current?.focus(); }}>Close ×</button></div>
         {profileLoading ? <p className="muted">Loading artist…</p> : details ? <>
           <div className="galaxy__artist-head"><span className="galaxy__avatar" aria-hidden="true">{details.artist.name.slice(0, 1)}</span><div><h3>{details.artist.name}</h3><p>{details.artist.tracks.toLocaleString()} files · {details.artist.albums} album folders</p></div></div>
           {details.artist.parsed_credit && <details className="galaxy__credits"><summary>Parsed credits · candidate grouping</summary><p>Explicit feat/ft/featuring credits are shown under their base artist for browsing. File tags and release identities are unchanged.</p><ul>{details.artist.raw_credits.map(credit => <li key={credit}>{credit}</li>)}</ul></details>}
@@ -192,6 +260,6 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
         </> : <div className="galaxy__welcome"><span aria-hidden="true">✧</span><h3>Choose a planet</h3><p>Open an artist, then an album, then a song. Or pick a random artist from your whole search.</p></div>}
       </aside>
     </div>
-    <p className="galaxy__status" role="status" aria-live="polite">{message}</p>
+    <p className="galaxy__status" role="status" aria-live="polite" title={message}>{message}</p>
   </section>;
 }

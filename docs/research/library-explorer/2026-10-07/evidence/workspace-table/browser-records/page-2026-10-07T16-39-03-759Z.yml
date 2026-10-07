@@ -1,0 +1,17 @@
+- generic [ref=f4e3]:
+  - link "Skip to content" [ref=f4e4] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f4e5]:
+    - link "← Library" [ref=f4e6] [cursor=pointer]:
+      - /url: "#/library"
+      - text: ←
+      - generic [ref=f4e7]: Library
+    - heading "Galaxy" [active] [level=1] [ref=f4e8]
+    - group [ref=f4e9]:
+      - generic "Menu" [ref=f4e10] [cursor=pointer]
+  - main [ref=f4e12]:
+    - status [ref=f4e14]: Opening Galaxy…
+  - region "Player" [ref=f4e16]:
+    - generic [ref=f4e19]:
+      - paragraph [ref=f4e20]: Nothing playing
+      - paragraph [ref=f4e21]: Press Play on an album or a playlist.

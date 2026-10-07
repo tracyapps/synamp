@@ -19,6 +19,10 @@ const modes: Mode[] = ["contains", "exact", "glob", "fuzzy"];
 const unique = (values: Array<string | undefined>) => [...new Set(values.filter((v): v is string => !!v))];
 const norm = (value: string) => value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 const fold = (value: string) => norm(value).replace(/&/g, " and ").replace(/['’`]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+function knownDuration(tracks: Library["tracks"]): number | undefined {
+  const values = tracks.flatMap(track => track.duration_s === undefined ? [] : [track.duration_s]);
+  return values.length ? values.reduce((sum, duration) => sum + duration, 0) : undefined;
+}
 let cache: { library: Library; entities: Entity[] } | undefined;
 
 function entities(library: Library): Entity[] {
@@ -49,7 +53,7 @@ function entities(library: Library): Entity[] {
   for (const unit of units) {
     const genres = unique(unit.tracks.flatMap(track => track.genre ?? []));
     add({ key: unit.key, type: "album", title: unit.title, artist: unit.artist, album_artist: unit.artist, album: unit.title,
-      year: unit.year, count: unit.tracks.length, duration_s: unit.tracks.reduce((sum, track) => sum + (track.duration_s ?? 0), 0), genres },
+      year: unit.year, count: unit.tracks.length, duration_s: knownDuration(unit.tracks), genres },
       { title: [unit.title], artist: unique([unit.artist, ...unit.tracks.map(track => track.artist)]), album_artist: [unit.artist], album: [unit.title], genre: genres },
       unit.year ? [unit.year] : [], [unit.title], [unit.artist]);
   }
@@ -60,7 +64,7 @@ function entities(library: Library): Entity[] {
     const genres = unique(tracks.flatMap(track => track.genre ?? []));
     const years = [...new Set(tracks.flatMap(track => track.year ? [track.year] : []))];
     add({ key, type: "artist", title, artist: title, count: tracks.length, genres,
-      duration_s: tracks.reduce((sum, track) => sum + (track.duration_s ?? 0), 0) },
+      duration_s: knownDuration(tracks) },
       { title: [title], artist: [title], album_artist: albumArtists, album: albums, genre: genres }, years, albums, albumArtists);
   }
   cache = { library, entities: result };
@@ -157,16 +161,20 @@ export function explore(library: Library, options: ExploreOptions = {}) {
   for (const entity of matched) for (const label of labels(entity)) groups.set(label, (groups.get(label) ?? 0) + 1);
   const selected = options.group_key && group !== "none" ? matched.filter(entity => labels(entity).includes(options.group_key!)) : matched;
   const sort = options.sort ?? "artist";
-  if (!["title", "artist", "year", "count", "duration"].includes(sort)) throw new BrowseError("Invalid sort");
+  if (!["title", "type", "artist", "album_artist", "album", "year", "count", "duration", "genre"].includes(sort)) throw new BrowseError("Invalid sort");
   const direction = options.direction ?? (sort === "year" || sort === "count" ? "desc" : "asc");
   if (direction !== "asc" && direction !== "desc") throw new BrowseError("Invalid sort direction");
   const sign = direction === "desc" ? -1 : 1;
   const text = (value: string) => fold(value).replace(/^(the|a|an) /, "");
+  const value = (row: ExplorerRow): string | number | undefined => sort === "duration" ? row.duration_s
+      : sort === "genre" ? row.genres.join(", ") || undefined : row[sort as "title" | "type" | "artist" | "album_artist" | "album" | "year" | "count"];
   selected.sort((a, b) => {
     const x = a.row, y = b.row;
-    const cmp = sort === "year" ? (x.year ?? 0) - (y.year ?? 0) : sort === "count" ? x.count - y.count
-      : sort === "duration" ? (x.duration_s ?? 0) - (y.duration_s ?? 0)
-      : text(sort === "artist" ? x.artist ?? "" : x.title).localeCompare(text(sort === "artist" ? y.artist ?? "" : y.title));
+    const xv = value(x), yv = value(y);
+    const missingX = xv === undefined || xv === "", missingY = yv === undefined || yv === "";
+    // Unknown values remain at the end when reversing the sort.
+    if (missingX !== missingY) return missingX ? 1 : -1;
+    const cmp = typeof xv === "number" && typeof yv === "number" ? xv - yv : text(String(xv ?? "")).localeCompare(text(String(yv ?? "")));
     return sign * cmp || text(x.title).localeCompare(text(y.title)) || x.type.localeCompare(y.type) || x.key.localeCompare(y.key);
   });
   const offset = number(options.offset, "offset", 0, 0, Number.MAX_SAFE_INTEGER);

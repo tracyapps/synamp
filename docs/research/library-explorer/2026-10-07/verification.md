@@ -1,6 +1,6 @@
 # Library Explorer / Galaxy / MilkDrop — local verification
 
-Date: 2026-10-07. Sources remain uncommitted. The running Brave/NAS app and analyzer were not restarted, deployed, moved, retagged or written by these checks.
+Historical first-slice receipt, 2026-10-07: source was uncommitted when these checks ran and was subsequently merged. The newer fullscreen/table work is documented in [its own receipt](workspace-table-verification.md). The running Brave/NAS app and analyzer were not restarted, deployed, moved, retagged or written by these checks.
 
 ## Confirmed checks
 

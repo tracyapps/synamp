@@ -3,21 +3,18 @@ import type { Request } from "./api";
 import type { PlaylistNode } from "./Playlists";
 import { AddToPlaylist, AlbumRow, clock, useDebounced } from "./LibraryParts";
 import Icon from "./ui/Icon";
+import LibraryTable from "./LibraryTable";
+import { columnNames, readPresentation, TABLE_KEY } from "./library-table";
+import type { Column } from "./library-table";
 
 type Kind = "song" | "album" | "artist";
 type Row = { key: string; type: Kind; title: string; artist?: string; album_artist?: string; album?: string; year?: number; count: number; duration_s?: number; genres: string[] };
 type Page = { total: number; matched_total: number; rows: Row[]; groups: { label: string; count: number }[]; group_memberships_overlap: boolean };
 type Rule = { field: string; mode: string; value: string; not: boolean };
-type Column = "type" | "artist" | "album_artist" | "album" | "year" | "count" | "duration" | "genre";
-const columnNames: Record<Column, string> = { type: "Type", artist: "Artist / credit", album_artist: "Album artist", album: "Album", year: "Year", count: "Songs", duration: "Duration", genre: "Genre" };
 const modes = { contains: "Contains words", exact: "Exact field", glob: "Wildcard (* / ?)", fuzzy: "Similar spelling" };
-const KEY = "synamp-library-view-v1";
-function preferences(): { view: string; columns: Column[] } {
-  try {
-    const saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
-    return { view: ["list", "grid", "table"].includes(saved?.view) ? saved.view : "list",
-      columns: Array.isArray(saved?.columns) ? Object.keys(columnNames).filter(c => saved.columns.includes(c)) as Column[] : ["type", "artist", "album", "year", "count", "duration"] };
-  } catch { return { view: "list", columns: ["type", "artist", "album", "year", "count", "duration"] }; }
+function preferences() {
+  try { return readPresentation(JSON.parse(localStorage.getItem(TABLE_KEY) ?? localStorage.getItem("synamp-library-view-v1") ?? "null")); }
+  catch { return readPresentation(null); }
 }
 const freshRule = (): Rule => ({ field: "artist", mode: "contains", value: "", not: false });
 
@@ -25,6 +22,8 @@ export default function LibraryExplorer({ request, play, playlists }: { request:
   const [initial] = useState(preferences);
   const [view, setView] = useState(initial.view);
   const [columns, setColumns] = useState(initial.columns);
+  const [order, setOrder] = useState(initial.order);
+  const [widths, setWidths] = useState(initial.widths);
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState("contains");
   const [types, setTypes] = useState<Kind[]>(["album"]);
@@ -32,8 +31,8 @@ export default function LibraryExplorer({ request, play, playlists }: { request:
   const [logic, setLogic] = useState("and");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [sort, setSort] = useState("artist");
-  const [direction, setDirection] = useState("asc");
+  const [sort, setSort] = useState<string>(initial.sort);
+  const [direction, setDirection] = useState<string>(initial.direction);
   const [group, setGroup] = useState("none");
   const [groupKey, setGroupKey] = useState("");
   const [page, setPage] = useState<Page | null>(null);
@@ -47,7 +46,7 @@ export default function LibraryExplorer({ request, play, playlists }: { request:
   const params = new URLSearchParams({ q: query.trim(), mode, types: types.join(","), rules: JSON.stringify(rules), logic, from, to, sort, direction, group, group_key: groupKey }).toString();
   const settled = useDebounced(params);
   const stale = settled !== params;
-  useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify({ view, columns })); } catch { /* private mode */ } }, [view, columns]);
+  useEffect(() => { try { localStorage.setItem(TABLE_KEY, JSON.stringify({ view, columns, order, widths, sort, direction })); } catch { /* private mode */ } }, [view, columns, order, widths, sort, direction]);
 
   async function load(offset = 0) {
     const id = ++ticket.current;
@@ -77,7 +76,7 @@ export default function LibraryExplorer({ request, play, playlists }: { request:
   const actions = (row: Row) => row.type === "artist" ? <button className="btn btn--ghost btn--sm" disabled={!actionable} onClick={() => inspectArtist(row)}>Explore songs</button>
     : <div className="album__actions"><button className="btn btn--ghost btn--sm" disabled={!actionable} onClick={() => play(row.type === "album" ? { album_key: row.key } : { track_ids: [row.key] }).then(() => say(`Playing ${row.title}.`)).catch(cause => say(cause.message))}><Icon name="play" size={14} />Play</button>
       {row.type === "song" && actionable && <AddToPlaylist request={request} track={{ id: row.key, title: row.title, artist: row.artist }} playlists={playlists} onAdded={say} />}</div>;
-  const cell = (row: Row, column: Column) => column === "duration" ? clock(row.duration_s) || "—" : column === "genre" ? row.genres.join(", ") || "—" : row[column] ?? "—";
+  const cell = (row: Row, column: Exclude<Column, "actions">) => column === "duration" ? row.duration_s === 0 ? "0:00" : clock(row.duration_s) || "—" : column === "genre" ? row.genres.join(", ") || "—" : row[column] ?? "—";
   function reset() { setQuery(""); setMode("contains"); setTypes(["album"]); setRules([]); setLogic("and"); setFrom(""); setTo(""); setGroup("none"); setGroupKey(""); }
 
   return <section className="section-card browse" aria-labelledby="browse-title">
@@ -87,7 +86,7 @@ export default function LibraryExplorer({ request, play, playlists }: { request:
     </div>
     <div className="section-card__body">
       <div className="toolbar" role="search"><label className="search" htmlFor={searchId}><span className="visually-hidden">Search albums, artists and songs</span><Icon name="search" /><input id={searchId} className="input" type="search" maxLength={160} value={query} onChange={event => { setQuery(event.target.value); setGroupKey(""); }} placeholder="Search your library…" autoComplete="off" /></label>
-        <label className="browse__sort">Sort <select className="select select--sm" value={sort} onChange={event => setSort(event.target.value)}><option value="artist">Artist</option><option value="title">Title</option><option value="year">Year</option><option value="count">Song count</option><option value="duration">Duration</option></select></label>
+        <label className="browse__sort">Sort <select className="select select--sm" value={sort} onChange={event => setSort(event.target.value)}>{Object.entries(columnNames).filter(([column]) => column !== "actions").map(([column, label]) => <option key={column} value={column}>{label}</option>)}</select></label>
         <button className="btn btn--ghost btn--sm" aria-label={`Sort ${direction === "asc" ? "descending" : "ascending"}`} onClick={() => setDirection(direction === "asc" ? "desc" : "asc")}>{direction === "asc" ? "↑ Ascending" : "↓ Descending"}</button>
       </div>
       <div className="browse__controls">
@@ -105,7 +104,7 @@ export default function LibraryExplorer({ request, play, playlists }: { request:
             <p className="muted browse__hint">Year and types always narrow the result. Exact matches a whole field, ignoring case and accents. Wildcards match a whole field: * is any text, ? is one character. Similar spelling allows small typos. Artist credits preserve the names in your tags.</p>
           </div>
         </details>
-        {view === "table" && <details className="browse__columns"><summary>Columns</summary><fieldset><legend className="visually-hidden">Visible table columns</legend><p className="muted">Title and actions stay visible.</p>{(Object.keys(columnNames) as Column[]).map(column => <label key={column}><input type="checkbox" checked={columns.includes(column)} onChange={event => setColumns(current => event.target.checked ? [...current, column] : current.filter(v => v !== column))} />{columnNames[column]}</label>)}</fieldset></details>}
+
       </div>
       <div className="browse__pivot"><label>Group by <select className="select select--sm" value={group} onChange={event => { setGroup(event.target.value); setGroupKey(""); }}>{Object.entries({ none: "None", album_artist: "Album artist", artist: "Artist / credit", album: "Album title", decade: "Decade", genre: "Genre" }).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         {group !== "none" && <label>Explore group <select className="select select--sm" value={groupKey} onChange={event => setGroupKey(event.target.value)}><option value="">All groups ({page?.matched_total ?? "…"} results)</option>{page?.groups.map(g => <option key={g.label} value={g.label}>{g.label} · {g.count.toLocaleString()}</option>)}</select></label>}
@@ -115,7 +114,7 @@ export default function LibraryExplorer({ request, play, playlists }: { request:
       {error && <p className="alert" role="alert">{error} <button className="btn btn--quiet btn--sm" onClick={() => load()}>Retry</button></p>}
       <div aria-busy={busy} className={busy || error ? "browse__updating" : ""}>
         {page?.total === 0 && <p className="muted">{types.length ? "No results match these filters." : "Choose at least one type in Advanced filters."}</p>}
-        {view === "table" ? <div className="browse__table-wrap"><table className="table browse__table"><caption className="visually-hidden">Library results</caption><thead><tr><th scope="col">Title</th>{columns.map(column => <th key={column} scope="col">{columnNames[column]}</th>)}<th scope="col">Actions</th></tr></thead><tbody>{page?.rows.map(row => <tr key={`${row.type}:${row.key}`}><th scope="row">{row.title}</th>{columns.map(column => <td key={column} data-column={column}>{cell(row, column)}</td>)}<td>{actions(row)}</td></tr>)}</tbody></table></div>
+        {view === "table" ? <LibraryTable rows={page?.rows ?? []} columns={columns} order={order} widths={widths} sort={sort} direction={direction} setColumns={setColumns} setOrder={setOrder} setWidths={setWidths} cell={cell} actions={actions} onSort={column => { setSort(column); setDirection(sort === column && direction === "asc" ? "desc" : "asc"); }} />
           : <ul className={`albums browse__results ${view === "grid" ? "browse__grid" : ""}`} aria-label="Library results">{page?.rows.map(row => row.type === "album" ? <AlbumRow key={`album:${row.key}`} album={{ key: row.key, title: row.title, artist: row.artist ?? "Unknown", year: row.year, tracks: row.count, duration_s: row.duration_s }} request={request} play={play} playlists={playlists} say={say} disabled={!actionable} />
             : <li className="album" key={`${row.type}:${row.key}`}><div className="album__row"><span className="album__art" aria-hidden="true" /><div className="album__text"><p className="album__title">{row.title}</p><p className="album__meta">{row.type} · {row.artist}{row.year ? ` · ${row.year}` : ""}{row.type !== "song" ? ` · ${row.count} songs` : ""}{row.duration_s ? ` · ${clock(row.duration_s)}` : ""}</p>{row.type === "song" && <p className="album__meta">{row.album}</p>}</div>{actions(row)}</div></li>)}</ul>}
       </div>
