@@ -1,0 +1,4 @@
+
+> @synamp/web@0.0.0 type-check /Users/tapps/_dev/web-apps/SynAmp/apps/web
+> tsc -p tsconfig.json --noEmit
+

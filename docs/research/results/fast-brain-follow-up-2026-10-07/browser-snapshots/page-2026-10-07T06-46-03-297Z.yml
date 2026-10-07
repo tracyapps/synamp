@@ -1,0 +1,57 @@
+- generic [ref=e3]:
+  - link "Skip to content" [ref=e4] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e5]:
+    - link "SynAmp, go to Library" [ref=e6] [cursor=pointer]:
+      - /url: "#/library"
+  - generic [ref=e7]:
+    - navigation "SynAmp" [ref=e8]:
+      - group [ref=e9]:
+        - paragraph [ref=e10]: Listen
+        - link "Library" [ref=e11] [cursor=pointer]:
+          - /url: "#/library"
+        - link "Playlists" [ref=e14] [cursor=pointer]:
+          - /url: "#/playlists"
+        - link "Radio" [ref=e19] [cursor=pointer]:
+          - /url: "#/radio"
+        - link "Party" [ref=e22] [cursor=pointer]:
+          - /url: "#/party"
+      - group [ref=e25]:
+        - paragraph [ref=e26]: Understand
+        - link "The Brain" [ref=e27] [cursor=pointer]:
+          - /url: "#/brain"
+        - link "Library care" [ref=e30] [cursor=pointer]:
+          - /url: "#/care"
+      - group [ref=e33]:
+        - paragraph [ref=e34]: System
+        - link "Listen anywhere" [ref=e35] [cursor=pointer]:
+          - /url: "#/anywhere"
+        - link "Settings" [ref=e41] [cursor=pointer]:
+          - /url: "#/settings"
+    - main [ref=e45]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - paragraph [ref=e48]: Listen
+          - heading "Library" [level=1] [ref=e50]
+          - paragraph [ref=e52]: Everything you own, by album. Search, play, or add songs to a playlist.
+        - region [ref=e53]:
+          - generic [ref=e55]:
+            - heading "Albums" [level=2] [ref=e56]
+            - paragraph [ref=e57]: Loading…
+          - generic [ref=e58]:
+            - search [ref=e59]:
+              - generic [ref=e60]:
+                - generic [ref=e61]: Search albums, artists and songs
+                - searchbox "Search albums, artists and songs" [ref=e62]
+              - generic [ref=e63]:
+                - text: Sort by
+                - combobox "Sort by" [ref=e64]:
+                  - option "Artist" [selected]
+                  - option "Album title"
+                  - option "Newest first"
+            - status [ref=e65]
+            - list "Albums"
+  - region "Player" [ref=e66]:
+    - generic [ref=e69]:
+      - paragraph [ref=e70]: Nothing playing
+      - paragraph [ref=e71]: Press Play on an album or a playlist.

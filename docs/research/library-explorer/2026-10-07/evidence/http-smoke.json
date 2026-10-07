@@ -1,0 +1,13 @@
+{
+  "kind": "isolated synthetic scratch HTTP checks",
+  "base": "http://127.0.0.1:39821/api/v1",
+  "checks": [
+    "full-result grouping before page",
+    "invalid filters HTTP400",
+    "Galaxy HTTP numeric pagination",
+    "Unicode not empty wildcard",
+    "artist folder detail",
+    "random artist constrained by raw credit search",
+    "missing artist HTTP404"
+  ]
+}

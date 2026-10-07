@@ -1,0 +1,76 @@
+✖ unrecognised numbers remain visible rather than making a request look specific (12.013208ms)
+✖ reading notes follow the goals actually applied to each reading (4.929417ms)
+✔ flagship focus prompt — specific, one valid reading carrying the research bundle (1.712959ms)
+✔ each user example phrase fires its goal with a valid reading (2.918333ms)
+✔ vague request — no readings, asks carry the next step (nothing fabricated) (0.362458ms)
+✔ surface verbs stay glue: “play me something good” stays vague (0.784375ms)
+✔ contradictory “fast relaxing bangers” — the documented pair yields two readings (0.779917ms)
+✔ impossible / hyper-specific asks stay honest (0.605ms)
+✔ determinism: identical inputs produce deep-equal interpretations (2.608ms)
+✔ user exclusions survive supersession and stay hard (0.4565ms)
+✔ lexicon: nine goals, soft-only bundles ≤ 1.0 emitted total (≤ 0.5 per term), refs everywhere (0.158083ms)
+✔ opposing goals yield two readings; the dropped side's draft proxies are set aside (0.574916ms)
+✔ blend: calm + sleep merge into one reading with a cooldown arc (0.837042ms)
+✔ drive keeps its medium feel: the draft “energetic” arousal proxy is superseded, never kept twice (0.641084ms)
+✔ genre context guard: “the house” is a room, “house music” is a genre (1.204083ms)
+✔ “workout then sleep” builds the first phase only and asks about the second (0.616083ms)
+✔ catharsis covers angry language too (A1 §2.1 C): angry/anger/furious/rage (1.456041ms)
+✔ copy corrections (C3 F-COPY-1): softened claims, no broken year example, no “lift me” promise (0.286792ms)
+✔ lexicon regressions: drive supersedes the energy proxy; angry words are catharsis triggers (0.051375ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 17
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 115.290208
+
+✖ failing tests:
+
+test at apps/brain/src/intent/intent.test.ts:55:1
+✖ unrecognised numbers remain visible rather than making a request look specific (12.013208ms)
+  AssertionError [ERR_ASSERTION]: nostalgia 1990–2005
+  + actual - expected
+  
+  + 'specific'
+  - 'partial'
+  
+      at TestContext.<anonymous> (file:///Users/tapps/_dev/web-apps/SynAmp/apps/brain/src/intent/intent.test.ts:58:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'specific',
+    expected: 'partial',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at apps/brain/src/intent/intent.test.ts:67:1
+✖ reading notes follow the goals actually applied to each reading (4.929417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + undefined
+  - [
+  -   'No retrieved study shows “focus music” helps globally — lyrics harm verbal tasks and instrumental is neutral (MP-21/22).',
+  -   'Weights are research suggestions, not tuned values.'
+  - ]
+  
+      at TestContext.<anonymous> (file:///Users/tapps/_dev/web-apps/SynAmp/apps/brain/src/intent/intent.test.ts:69:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [ 'No retrieved study shows “focus music” helps globally — lyrics harm verbal tasks and instrumental is neutral (MP-21/22).', 'Weights are research suggestions, not tuned values.' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

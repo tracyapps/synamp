@@ -1,0 +1,14 @@
+
+> synamp@0.0.0-next-87012d8d brain:readback:test /Users/tapps/_dev/web-apps/SynAmp
+> node --experimental-strip-types --test tools/brain-lab/readback.test.mts
+
+✔ read-back uses explicit snapshots/clock, reports usable coverage, and never changes inputs (616.532ms)
+✔ read-back refuses an ambient clock or timezone (71.267958ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 752.10025

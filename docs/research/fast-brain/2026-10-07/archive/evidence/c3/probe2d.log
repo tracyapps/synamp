@@ -1,0 +1,27 @@
+Top 24 by raw-score order — scaled rank vs raw rank (+ = scaled lower):
+sample-031 raw=0.908 scaled=0.918 | rawRank=0 scaledRank=0 
+sample-033 raw=0.873 scaled=0.886 | rawRank=1 scaledRank=1 
+sample-035 raw=0.850 scaled=0.865 | rawRank=2 scaledRank=2 
+sample-045 raw=0.829 scaled=0.796 | rawRank=3 scaledRank=4 <== shifted
+sample-034 raw=0.786 scaled=0.807 | rawRank=4 scaledRank=3 <== shifted
+sample-039 raw=0.751 scaled=0.726 | rawRank=5 scaledRank=6 <== shifted
+sample-040 raw=0.750 scaled=0.726 | rawRank=6 scaledRank=7 <== shifted
+sample-032 raw=0.750 scaled=0.775 | rawRank=7 scaledRank=5 <== shifted
+sample-038 raw=0.744 scaled=0.720 | rawRank=8 scaledRank=8 
+sample-059 raw=0.721 scaled=0.699 | rawRank=9 scaledRank=9 
+sample-005 raw=0.699 scaled=0.629 | rawRank=10 scaledRank=12 <== shifted
+sample-008 raw=0.695 scaled=0.676 | rawRank=11 scaledRank=10 <== shifted
+sample-058 raw=0.694 scaled=0.625 | rawRank=12 scaledRank=13 <== shifted
+sample-036 raw=0.677 scaled=0.660 | rawRank=13 scaledRank=11 <== shifted
+sample-060 raw=0.666 scaled=0.599 | rawRank=14 scaledRank=16 <== shifted
+sample-054 raw=0.643 scaled=0.579 | rawRank=15 scaledRank=19 <== shifted
+sample-007 raw=0.618 scaled=0.606 | rawRank=16 scaledRank=14 <== shifted
+sample-037 raw=0.612 scaled=0.601 | rawRank=17 scaledRank=15 <== shifted
+sample-006 raw=0.610 scaled=0.549 | rawRank=18 scaledRank=20 <== shifted
+sample-043 raw=0.609 scaled=0.548 | rawRank=19 scaledRank=21 <== shifted
+sample-001 raw=0.608 scaled=0.547 | rawRank=20 scaledRank=22 <== shifted
+sample-018 raw=0.603 scaled=0.592 | rawRank=21 scaledRank=17 <== shifted
+sample-024 raw=0.592 scaled=0.583 | rawRank=22 scaledRank=18 <== shifted
+sample-016 raw=0.589 scaled=0.530 | rawRank=23 scaledRank=25 <== shifted
+total pairwise order flips (expect 0 if truly neutral): 47
+pure-bundle score differences >1e-9: 16 (0 = exactly neutral)

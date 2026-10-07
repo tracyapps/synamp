@@ -1,0 +1,7 @@
+as-emitted (MMR on) orders equal: false
+positions differing: 16 of 24
+first 14 full:   sample-017,sample-024,sample-034,sample-045,sample-015,sample-004,sample-047,sample-026,sample-056,sample-059,sample-054,sample-031,sample-037,sample-009
+first 14 noDcl:  sample-017,sample-024,sample-034,sample-045,sample-015,sample-005,sample-047,sample-030,sample-057,sample-031,sample-059,sample-037,sample-053,sample-050
+score-sorted (MMR off) orders equal: true
+first 14 full:   sample-017,sample-024,sample-031,sample-034,sample-045,sample-057,sample-016,sample-037,sample-033,sample-059,sample-018,sample-053,sample-022,sample-050
+first 14 noDcl:  sample-017,sample-024,sample-031,sample-034,sample-045,sample-057,sample-016,sample-037,sample-033,sample-059,sample-018,sample-053,sample-022,sample-050

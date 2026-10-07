@@ -1,0 +1,15 @@
+✔ accepting a negative proposal lowers preference without creating an exclusion (10.905333ms)
+✔ boundary: 2 epochs → no proposal; 3 epochs across 2 dates → exactly one (P21) (0.613167ms)
+✔ scan window: evidence older than 30 days proposes nothing (P23) (0.162958ms)
+✔ not_now pattern needs 3 epochs, 2 dates AND 2 dayparts (P21) (0.2895ms)
+✔ positive thresholds: repeats need 4 epochs AND 3 dates; other apps need 5 and 3 (P22) (0.498083ms)
+✔ artist pattern: ≥ 2 different hidden tracks by one artist across 3 epochs / 2 dates propose (0.310125ms)
+✔ proposal ids are stable across derivations and scan order, and proposals stay sorted (0.263292ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 87.856584

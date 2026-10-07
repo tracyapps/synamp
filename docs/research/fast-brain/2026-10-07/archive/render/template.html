@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SynAmp — The Fast Learning Brain</title>
+<style>
+/* ---------------------------------------------------------------------------
+   SynAmp dossier — dark editorial. Preset "11 Build" rendered in the SynAmp
+   brand palette (slate + ivory + one gold accent). Long Doc structure:
+   cover → TOC → chapters → appendix → colophon. No JS; single file.
+--------------------------------------------------------------------------- */
+:root{
+  --bg:#0F1217; --bg-2:#141A23; --well:#10161F;
+  --ink:#E9E6E0; --ink-2:#C9CDD3; --muted:#9AA3AE; --faint:#6E7987;
+  --line:rgba(233,230,224,.10); --line-2:rgba(233,230,224,.18);
+  --gold:#D2A556; --gold-2:#E0BE79; --gold-wash:rgba(210,165,86,.10);
+  --serif:"Iowan Old Style","New York",Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Segoe UI,Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --measure:70ch; --canvas:1040px;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);scroll-behavior:smooth}
+body{margin:0;font:16px/1.62 var(--sans);color:var(--ink-2);background:var(--bg);-webkit-font-smoothing:antialiased}
+::selection{background:rgba(210,165,86,.22);color:var(--ink)}
+a{color:var(--gold-2);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-color:rgba(224,190,121,.45)}
+a:hover{color:var(--gold)}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:16px;top:12px;background:var(--bg-2);border:1px solid var(--line-2);padding:8px 12px;z-index:50;color:var(--ink)}
+
+/* ---- cover ---- */
+.cover{min-height:88vh;display:flex;flex-direction:column;justify-content:space-between;max-width:1240px;margin:0 auto;padding:clamp(28px,5vw,72px) clamp(20px,5vw,72px) 40px}
+.cover__eyebrow{font:600 11.5px/1 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 26px}
+.cover__title{font:500 clamp(46px,7.4vw,96px)/1.02 var(--serif);letter-spacing:-.022em;color:var(--ink);margin:0 0 22px;max-width:15ch}
+.cover__lede{font-size:clamp(17px,1.6vw,19px);line-height:1.55;color:var(--muted);max-width:56ch;margin:0 0 46px}
+.cover__lede strong{color:var(--ink-2);font-weight:550}
+.cover__meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));gap:0;margin:0 0 34px;border-top:1px solid var(--line-2)}
+.cover__meta div{padding:14px 18px 12px 0;border-bottom:1px solid var(--line)}
+.cover__meta dt{font:600 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 7px}
+.cover__meta dd{margin:0;font:12.5px/1.45 var(--mono);color:var(--ink-2);word-break:break-word}
+.cover__foot{font:12px/1.5 var(--mono);color:var(--faint);border-top:1px solid var(--line);padding-top:14px;margin:0}
+
+/* ---- layout ---- */
+.layout{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:236px minmax(0,1fr);gap:clamp(24px,4vw,64px);padding:0 clamp(20px,4vw,64px)}
+.toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:56px 0 40px;border-right:1px solid var(--line)}
+.toc ol{list-style:none;margin:0;padding:0 22px 0 0}
+.toc li{margin:0 0 14px}
+.toc a{display:block;text-decoration:none;color:var(--ink-2);font:13px/1.4 var(--sans)}
+.toc a:hover{color:var(--gold-2)}
+.toc .n{display:block;font:11px/1 var(--mono);color:var(--faint);margin-bottom:4px;letter-spacing:.05em}
+.toc .part{font:600 10.5px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:34px 0 16px}
+main{min-width:0;padding-bottom:40px}
+
+/* ---- chapters ---- */
+.chapter{padding:76px 0 30px;border-top:1px solid var(--line-2);max-width:var(--canvas)}
+.chapter:first-of-type{border-top:0}
+.chapter__head{margin:0 0 34px}
+.chapter__no{font:600 11px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+.chapter__title{font:500 clamp(30px,3.6vw,44px)/1.12 var(--serif);letter-spacing:-.018em;color:var(--ink);margin:0}
+.chapter h2{font:520 25px/1.25 var(--serif);letter-spacing:-.01em;color:var(--ink);margin:52px 0 14px}
+.chapter h3{font:650 12.5px/1.35 var(--sans);letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:38px 0 12px}
+.chapter h4{font:620 14px/1.4 var(--sans);color:var(--ink-2);margin:28px 0 10px}
+.chapter p,.chapter li{max-width:var(--measure)}
+.chapter p{margin:0 0 15px}
+.chapter ul,.chapter ol{margin:0 0 16px;padding-left:22px}
+.chapter li{margin:0 0 7px}
+.chapter li::marker{color:var(--faint)}
+.chapter strong{color:var(--ink);font-weight:560}
+.chapter em{font-family:var(--serif);font-style:italic;font-size:1.03em;color:var(--ink-2)}
+hr{border:0;border-top:1px solid var(--line-2);width:64px;margin:42px 0}
+blockquote{margin:22px 0;padding:2px 0 2px 22px;border-left:1px solid var(--gold);color:var(--muted);max-width:calc(var(--measure) + 22px)}
+blockquote p{margin:0 0 10px}
+code{font:12.5px/1.5 var(--mono);background:var(--gold-wash);border:1px solid var(--line);padding:1px 5px;color:var(--ink-2)}
+pre{background:var(--well);border:1px solid var(--line);padding:16px 18px;overflow-x:auto;margin:20px 0;max-width:var(--canvas)}
+pre code{background:none;border:0;padding:0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
+
+/* ---- tables ---- */
+.chapter table{width:100%;border-collapse:collapse;margin:22px 0;font-size:13.5px;max-width:var(--canvas)}
+.chapter th{font:650 10.5px/1.3 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:left;padding:9px 14px 9px 0;border-bottom:1px solid var(--line-2);vertical-align:bottom}
+.chapter td{padding:10px 14px 10px 0;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+.chapter tr:last-child td{border-bottom:0}
+.chapter table.ids td:first-child,.chapter table.ids th:first-child{white-space:nowrap;width:1%;padding-right:18px}
+
+/* ---- figures / plates ---- */
+.plate{margin:34px 0;border:1px solid var(--line);background:var(--bg-2);padding:clamp(14px,2vw,26px);max-width:var(--canvas)}
+.plate svg{display:block;width:100%;height:auto}
+.plate figcaption{font:11.5px/1.6 var(--mono);color:var(--muted);margin-top:14px;border-top:1px solid var(--line);padding-top:12px;max-width:90ch}
+.plate .fig-no{color:var(--gold-2);margin-right:8px}
+
+/* ---- colophon ---- */
+.colophon{border-top:1px solid var(--line-2);margin-top:40px;padding:34px clamp(20px,5vw,72px) 60px;font:12px/1.7 var(--mono);color:var(--faint);max-width:1240px}
+.colophon strong{color:var(--muted)}
+.colophon p{max-width:100ch}
+
+/* ---- mobile ---- */
+@media (max-width:920px){
+  .layout{display:block;padding:0 20px}
+  .toc{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line-2);padding:34px 0 26px}
+  .toc ol{padding-right:0}
+  .toc li{display:inline-block;margin:0 18px 10px 0}
+  .cover{min-height:auto;padding-top:56px}
+  .chapter{padding-top:56px}
+}
+
+@media print{
+  :root{--bg:#0F1217}
+  .toc{display:none}
+  .layout{display:block;padding:0 28px;max-width:none}
+  .chapter{page-break-before:always;max-width:none}
+  .cover{min-height:auto;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#exec">Skip to content</a>
+
+<header class="cover" id="top">
+  <div>
+    <p class="cover__eyebrow">SynAmp · engineering dossier</p>
+    <h1 class="cover__title">The Fast Learning Brain</h1>
+    <p class="cover__lede">Natural-language goals in; a playlist that adapts within the session and forgets at the boundary. <strong>A design, implementation, and verification record</strong> for SynAmp’s smart playlists — with measurement honesty and cultural guardrails built into the machinery, not bolted on as a disclaimer.</p>
+  </div>
+  <div>
+    <dl class="cover__meta">
+      <div><dt>Project</dt><dd>SynAmp — self-hosted music system</dd></div>
+      <div><dt>Slice</dt><dd>Intent layer · epoch-v1 learning · sequencing · endpoints · web readout</dd></div>
+      <div><dt>Repository</dt><dd>~/_dev/web-apps/SynAmp · branch feat/fast-learning-brain</dd></div>
+      <div><dt>Prepared</dt><dd>{{DATE}} · America/Chicago</dd></div>
+      <div><dt>Evidence</dt><dd>DELIVERY/verification/ · tools/brain-lab/ · evidence/final-lab/</dd></div>
+      <div><dt>Status</dt><dd>{{STATUS}}</dd></div>
+    </dl>
+    <p class="cover__foot">One commit on <b>feat/fast-learning-brain</b> · all magnitudes are candidate values pending real-listening tuning · fixtures are synthetic and are not evidence about real music</p>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <p class="part">Contents</p>
+  <ol>
+    <li><a href="#exec"><span class="n">00</span>Executive summary</a></li>
+    <li><a href="#ch1"><span class="n">01</span>Words in, music out — the translation layer</a></li>
+    <li><a href="#ch2"><span class="n">02</span>The fast learning brain</a></li>
+    <li><a href="#ch3"><span class="n">03</span>Bias, culture, and measurement honesty</a></li>
+    <li><a href="#ch4"><span class="n">04</span>Verification, rollback, and handoff</a></li>
+    <li><a href="#ch5"><span class="n">05</span>Appendix — sources, parameters, glossary</a></li>
+  </ol>
+  <p class="part">Evidence</p>
+  <ol>
+    <li><a href="#colophon"><span class="n">EV</span>Manifest &amp; reproduction</a></li>
+  </ol>
+</nav>
+
+<main id="content">
+
+<section class="chapter" id="exec">
+  <header class="chapter__head"><p class="chapter__no">00 · Executive summary</p><h1 class="chapter__title">Executive summary</h1></header>
+  {{EXEC}}
+</section>
+
+<section class="chapter" id="ch1">
+  {{CH1}}
+</section>
+<section class="chapter" id="ch2">
+  {{CH2}}
+</section>
+<section class="chapter" id="ch3">
+  {{CH3}}
+</section>
+<section class="chapter" id="ch4">
+  {{CH4}}
+</section>
+<section class="chapter" id="ch5">
+  {{CH5}}
+</section>
+
+</main>
+</div>
+
+<footer class="colophon" id="colophon">
+  <p><strong>How to verify this dossier.</strong> Every claim carries its source ID ([MP-n] / [CC-n] / [ML-n] point into the appendix) or names the receipt it came from. The full stack re-runs with: <code>pnpm --filter @synamp/brain test</code>, <code>pnpm --filter @synamp/brain type-check &amp;&amp; pnpm --filter @synamp/web type-check</code>, and <code>node --experimental-strip-types tools/brain-lab/lab.mts</code>. Logs, screenshots and checksums live in the delivery’s <code>verification/</code> folder; the manifest there is the frozen record this document was assembled against.</p>
+  <p>{{COLOPHON}}</p>
+</footer>
+</body>
+</html>

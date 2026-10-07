@@ -1,0 +1,720 @@
+{
+  "parser": "rule-based draft (no LLM yet)",
+  "recognized": [
+    {
+      "phrase": "no words",
+      "becomes": "vocal_fraction ≤ 0.10 or instrumental ≥ 0.80 (hard; unmeasured fails)"
+    },
+    {
+      "phrase": "no piano",
+      "becomes": "instruments.piano < 0.20 (hard; unmeasured fails)"
+    },
+    {
+      "phrase": "nothing too slow",
+      "becomes": "bpm ≥ 90 (hard)"
+    },
+    {
+      "phrase": "nothing too relaxing",
+      "becomes": "arousal ≥ 0.35 and pulse_clarity ≥ 0.40, mood not relaxing/meditative/sleepy (hard)"
+    },
+    {
+      "phrase": "I need to focus",
+      "becomes": "prefer arousal 0.40–0.60 (soft)"
+    },
+    {
+      "phrase": "I need to focus",
+      "becomes": "prefer pulse_clarity ≥ 0.45 (soft)"
+    }
+  ],
+  "unparsed": [],
+  "encoder_text": "I need to focus.",
+  "validation": {
+    "ok": true,
+    "plan": {
+      "version": "2.0",
+      "intent": {
+        "query_type": "activity",
+        "summary": "I need to focus. no words, no piano, nothing too slow/relaxing."
+      },
+      "target_size": 25,
+      "constraints": [
+        {
+          "id": "goal_focus_1",
+          "source_phrase": "i need to focus",
+          "hard": false,
+          "where": {
+            "field": "vocal_fraction",
+            "op": "lte",
+            "value": 0.1
+          },
+          "unknown_policy": "neutral",
+          "weight": 0.264,
+          "confidence": 0.3,
+          "proxy": "no-words → low vocal_fraction"
+        },
+        {
+          "id": "goal_focus_10",
+          "source_phrase": "i need to focus",
+          "hard": false,
+          "where": {
+            "field": "arousal",
+            "op": "between",
+            "value": [
+              0.3,
+              0.65
+            ]
+          },
+          "unknown_policy": "neutral",
+          "weight": 0.147,
+          "confidence": 0.3,
+          "proxy": "focus → arousal (moderate band)"
+        },
+        {
+          "id": "goal_focus_2",
+          "source_phrase": "i need to focus",
+          "hard": false,
+          "where": {
+            "field": "bpm",
+            "op": "between",
+            "value": [
+              85,
+              125
+            ]
+          },
+          "unknown_policy": "neutral",
+          "weight": 0.088,
+          "confidence": 0.5
+        },
+        {
+          "id": "goal_focus_3",
+          "source_phrase": "i need to focus",
+          "hard": false,
+          "where": {
+            "field": "pulse_clarity",
+            "op": "gte",
+            "value": 0.5
+          },
+          "unknown_policy": "neutral",
+          "weight": 0.088,
+          "confidence": 0.5
+        },
+        {
+          "id": "goal_focus_4",
+          "source_phrase": "i need to focus",
+          "hard": false,
+          "where": {
+            "field": "onset_rate",
+            "op": "lte",
+            "value": 4
+          },
+          "unknown_policy": "neutral",
+          "weight": 0.088,
+          "confidence": 0.5
+        },
+        {
+          "id": "goal_focus_5",
+          "source_phrase": "i need to focus",
+          "hard": false,
+          "where": {
+            "field": "dynamic_complexity",
+            "op": "lte",
+            "value": 8
+          },
+          "unknown_policy": "neutral",
+          "weight": 0.058,
+          "confidence": 0.5
+        },
+        {
+          "id": "goal_focus_6",
+          "source_phrase": "i need to focus",
+          "hard": false,
+          "where": {
+            "field": "lufs_integrated",
+            "op": "between",
+            "value": [
+              -16.4,
+              -10.4
+            ]
+          },
+          "unknown_policy": "neutral",
+          "weight": 0.058,
+          "confidence": 0.5
+        },
+        {
+          "id": "goal_focus_7",
+          "source_phrase": "i need to focus",
+          "hard": false,
+          "where": {
+            "field": "spectral_flatness",
+            "op": "lte",
+            "value": 0.3
+          },
+          "unknown_policy": "neutral",
+          "weight": 0.058,
+          "confidence": 0.5
+        },
+        {
+          "id": "goal_focus_9",
+          "source_phrase": "i need to focus",
+          "hard": false,
+          "where": {
+            "field": "beat_interval_cv",
+            "op": "lte",
+            "value": 0.05
+          },
+          "unknown_policy": "neutral",
+          "weight": 0.088,
+          "confidence": 0.5
+        },
+        {
+          "id": "no_piano",
+          "source_phrase": "no piano",
+          "hard": true,
+          "explicit_exclusion": true,
+          "where": {
+            "field": "instruments.piano",
+            "op": "lt",
+            "value": 0.2
+          },
+          "unknown_policy": "exclude",
+          "confidence": 0.75
+        },
+        {
+          "id": "no_words",
+          "source_phrase": "no words",
+          "hard": true,
+          "explicit_exclusion": true,
+          "where": {
+            "any": [
+              {
+                "field": "vocal_fraction",
+                "op": "lte",
+                "value": 0.1
+              },
+              {
+                "field": "instrumental",
+                "op": "gte",
+                "value": 0.8
+              }
+            ]
+          },
+          "unknown_policy": "exclude",
+          "confidence": 0.8
+        },
+        {
+          "id": "not_relaxing",
+          "source_phrase": "nothing too relaxing",
+          "hard": true,
+          "explicit_exclusion": true,
+          "where": {
+            "all": [
+              {
+                "field": "arousal",
+                "op": "gte",
+                "value": 0.35
+              },
+              {
+                "field": "pulse_clarity",
+                "op": "gte",
+                "value": 0.4
+              },
+              {
+                "field": "mood",
+                "op": "nin",
+                "unknown_policy": "neutral",
+                "value": [
+                  "meditative",
+                  "relaxing",
+                  "sleepy"
+                ]
+              }
+            ]
+          },
+          "unknown_policy": "exclude",
+          "confidence": 0.6,
+          "proxy": "relaxing → arousal composite + pulse clarity; mood tag corroborates"
+        },
+        {
+          "id": "not_slow",
+          "source_phrase": "nothing too slow",
+          "hard": true,
+          "explicit_exclusion": true,
+          "where": {
+            "field": "bpm",
+            "op": "gte",
+            "value": 90
+          },
+          "unknown_policy": "exclude",
+          "confidence": 0.7
+        }
+      ],
+      "ranking": {
+        "signals": [
+          {
+            "name": "feature_soft",
+            "weight": 1
+          }
+        ],
+        "diversity": {
+          "max_per_artist": 3,
+          "max_per_album": 1
+        },
+        "mmr_lambda": 0.65
+      },
+      "relaxation": {
+        "min_results": 10,
+        "tiers": "strict_plus_near_miss",
+        "ladder": [],
+        "require_confirmation_for": [
+          "no_piano",
+          "no_words",
+          "not_relaxing",
+          "not_slow"
+        ]
+      },
+      "sequencing": {
+        "arc": "flat"
+      },
+      "retrieval_text": "I need to focus.",
+      "assumptions": [
+        "“Focus” is a soft preference bundle: mid tempo, a steady pulse, low distraction, no mood imposition — nothing in it excludes a track.",
+        "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+        "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+        "Some library-relative bands were skipped for lack of measured data: “focus”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+      ]
+    },
+    "hash": "c50b871edc031c64ef03e1d1966336d0a13cf3e2c007c2b798fd4c56ec46e222",
+    "registry": "signals/1",
+    "warnings": [
+      "arousal has no analyzer producer yet (stage \"semantic\"); real tracks stay unknown for it until one lands.",
+      "instrumental has no analyzer producer yet (stage \"voice\"); real tracks stay unknown for it until one lands.",
+      "instruments.piano has no analyzer producer yet (stage \"instruments\"); real tracks stay unknown for it until one lands.",
+      "mood has no analyzer producer yet (stage \"semantic\"); real tracks stay unknown for it until one lands.",
+      "vocal_fraction has no analyzer producer yet (stage \"voice\"); real tracks stay unknown for it until one lands."
+    ]
+  },
+  "interpretation": {
+    "parser": "intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)",
+    "accuracy": "specific",
+    "chosen_index": 0,
+    "readings": [
+      {
+        "label": "focus",
+        "confidence": 0.7,
+        "assumptions": [
+          "“Focus” is a soft preference bundle: mid tempo, a steady pulse, low distraction, no mood imposition — nothing in it excludes a track.",
+          "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+          "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+          "Some library-relative bands were skipped for lack of measured data: “focus”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+        ],
+        "chosen": true
+      }
+    ],
+    "asks": [],
+    "audit": [
+      {
+        "phrase": "I need to focus",
+        "becomes": "prefer arousal 0.40–0.60 (soft)",
+        "kind": "soft"
+      },
+      {
+        "phrase": "I need to focus",
+        "becomes": "prefer pulse_clarity ≥ 0.45 (soft)",
+        "kind": "soft"
+      },
+      {
+        "phrase": "i need to focus",
+        "becomes": "goal “focus” — 10 soft preferences, arc flat",
+        "kind": "goal"
+      },
+      {
+        "phrase": "no words",
+        "becomes": "vocal_fraction ≤ 0.10 or instrumental ≥ 0.80 (hard; unmeasured fails)",
+        "kind": "exclusion"
+      },
+      {
+        "phrase": "no piano",
+        "becomes": "instruments.piano < 0.20 (hard; unmeasured fails)",
+        "kind": "exclusion"
+      },
+      {
+        "phrase": "nothing too slow",
+        "becomes": "bpm ≥ 90 (hard)",
+        "kind": "exclusion"
+      },
+      {
+        "phrase": "slow",
+        "becomes": "negated by the request — used only as an exclusion, no goal applied",
+        "kind": "exclusion"
+      },
+      {
+        "phrase": "relaxing",
+        "becomes": "negated by the request — used only as an exclusion, no goal applied",
+        "kind": "exclusion"
+      },
+      {
+        "phrase": "nothing too relaxing",
+        "becomes": "arousal ≥ 0.35 and pulse_clarity ≥ 0.40, mood not relaxing/meditative/sleepy (hard)",
+        "kind": "exclusion"
+      },
+      {
+        "phrase": "focus",
+        "becomes": "dropped draft rule “focus_arousal” — replaced by the goal bundle",
+        "kind": "note"
+      },
+      {
+        "phrase": "focus",
+        "becomes": "dropped draft rule “focus_pulse” — replaced by the goal bundle",
+        "kind": "note"
+      }
+    ]
+  },
+  "preview": {
+    "plan_hash": "c50b871edc031c64ef03e1d1966336d0a13cf3e2c007c2b798fd4c56ec46e222",
+    "registry": "signals/1",
+    "library_version": "e156558f8492",
+    "strict": [
+      {
+        "id": "sample-005",
+        "title": "Engine Paper",
+        "artist": "Lumen Atlas",
+        "album": "Copper Sessions",
+        "score": 0.816,
+        "channels": [
+          "filter"
+        ],
+        "reasons": [
+          "“nothing too slow”: bpm 117.7 BPM — ≥ 90 BPM",
+          "“nothing too relaxing”: arousal 0.38 — ≥ 0.35; pulse_clarity 0.41 — ≥ 0.40",
+          "“no words”: vocal_fraction 0.05 — ≤ 0.10; instrumental 0.98 — ≥ 0.80",
+          "“no piano”: instruments.piano 0.06 — < 0.20",
+          "“i need to focus”: vocal_fraction 0.05 — ≤ 0.10",
+          "“i need to focus”: arousal 0.38 — within 0.30–0.65",
+          "“i need to focus”: bpm 117.7 BPM — within 85–125",
+          "“i need to focus”: onset_rate 3.06 onsets/s — ≤ 4 onsets/s",
+          "“i need to focus”: lufs_integrated -14.3 LUFS — within -16.4–-10.4",
+          "your listening: other tracks by Lumen Atlas this session (-0.2)"
+        ],
+        "unverified": [
+          "“nothing too relaxing”: mood unknown"
+        ],
+        "score_breakdown": {
+          "base": 0.831,
+          "feedback": -0.015
+        }
+      },
+      {
+        "id": "sample-039",
+        "title": "Morning Lanterns",
+        "artist": "Halftone Weather",
+        "album": "Orbit Sessions",
+        "score": 0.798,
+        "channels": [
+          "filter"
+        ],
+        "reasons": [
+          "“nothing too slow”: bpm 106.4 BPM — ≥ 90 BPM",
+          "“nothing too relaxing”: arousal 0.65 — ≥ 0.35; pulse_clarity 0.70 — ≥ 0.40",
+          "“no words”: vocal_fraction 0.02 — ≤ 0.10; instrumental 0.95 — ≥ 0.80",
+          "“no piano”: instruments.piano 0 — < 0.20",
+          "“i need to focus”: vocal_fraction 0.02 — ≤ 0.10",
+          "“i need to focus”: arousal 0.65 — within 0.30–0.65",
+          "“i need to focus”: bpm 106.4 BPM — within 85–125",
+          "“i need to focus”: pulse_clarity 0.70 — ≥ 0.50",
+          "“i need to focus”: lufs_integrated -14.7 LUFS — within -16.4–-10.4"
+        ],
+        "unverified": [
+          "“nothing too relaxing”: mood unknown"
+        ]
+      },
+      {
+        "id": "sample-060",
+        "title": "Quiet Northern",
+        "artist": "Kite Theory",
+        "album": "Window Sessions",
+        "score": 0.791,
+        "channels": [
+          "filter"
+        ],
+        "reasons": [
+          "“nothing too slow”: bpm 121.9 BPM — ≥ 90 BPM",
+          "“nothing too relaxing”: arousal 0.51 — ≥ 0.35; pulse_clarity 0.46 — ≥ 0.40; mood melancholic — is not meditative, relaxing, sleepy",
+          "“no words”: vocal_fraction 0.06 — ≤ 0.10; instrumental 0.91 — ≥ 0.80",
+          "“no piano”: instruments.piano 0.03 — < 0.20",
+          "“i need to focus”: vocal_fraction 0.06 — ≤ 0.10",
+          "“i need to focus”: arousal 0.51 — within 0.30–0.65",
+          "“i need to focus”: bpm 121.9 BPM — within 85–125",
+          "“i need to focus”: onset_rate 3.87 onsets/s — ≤ 4 onsets/s"
+        ],
+        "unverified": []
+      },
+      {
+        "id": "sample-019",
+        "title": "Morning Thread",
+        "artist": "Marigold Unit",
+        "album": "Glass Sessions",
+        "score": 0.628,
+        "channels": [
+          "filter"
+        ],
+        "reasons": [
+          "“nothing too slow”: bpm 116.8 BPM — ≥ 90 BPM",
+          "“nothing too relaxing”: arousal 0.83 — ≥ 0.35; pulse_clarity 0.83 — ≥ 0.40",
+          "“no words”: vocal_fraction 0 — ≤ 0.10; instrumental 1 — ≥ 0.80",
+          "“no piano”: instruments.piano 0.01 — < 0.20",
+          "“i need to focus”: vocal_fraction 0 — ≤ 0.10",
+          "“i need to focus”: bpm 116.8 BPM — within 85–125",
+          "“i need to focus”: pulse_clarity 0.83 — ≥ 0.50"
+        ],
+        "unverified": [
+          "“nothing too relaxing”: mood unknown"
+        ]
+      },
+      {
+        "id": "sample-038",
+        "title": "Engine Circuit",
+        "artist": "Halftone Weather",
+        "album": "Northern Signal",
+        "score": 0.79,
+        "channels": [
+          "filter"
+        ],
+        "reasons": [
+          "“nothing too slow”: bpm 110 BPM — ≥ 90 BPM",
+          "“nothing too relaxing”: arousal 0.47 — ≥ 0.35; pulse_clarity 0.56 — ≥ 0.40",
+          "“no words”: vocal_fraction 0 — ≤ 0.10; instrumental 1 — ≥ 0.80",
+          "“no piano”: instruments.piano 0.07 — < 0.20",
+          "“i need to focus”: vocal_fraction 0 — ≤ 0.10",
+          "“i need to focus”: arousal 0.47 — within 0.30–0.65",
+          "“i need to focus”: bpm 110 BPM — within 85–125",
+          "“i need to focus”: pulse_clarity 0.56 — ≥ 0.50"
+        ],
+        "unverified": [
+          "“nothing too relaxing”: mood unknown"
+        ]
+      },
+      {
+        "id": "sample-016",
+        "title": "Circuit Glass",
+        "artist": "Marigold Unit",
+        "album": "Velvet Drift",
+        "score": 0.699,
+        "channels": [
+          "filter"
+        ],
+        "reasons": [
+          "“nothing too slow”: bpm 116.6 BPM — ≥ 90 BPM",
+          "“nothing too relaxing”: arousal 0.85 — ≥ 0.35; pulse_clarity 0.60 — ≥ 0.40; mood party — is not meditative, relaxing, sleepy",
+          "“no words”: vocal_fraction 0.08 — ≤ 0.10; instrumental 0.92 — ≥ 0.80",
+          "“no piano”: instruments.piano 0.01 — < 0.20",
+          "“i need to focus”: vocal_fraction 0.08 — ≤ 0.10",
+          "“i need to focus”: bpm 116.6 BPM — within 85–125",
+          "“i need to focus”: pulse_clarity 0.60 — ≥ 0.50",
+          "“i need to focus”: onset_rate 1.41 onsets/s — ≤ 4 onsets/s"
+        ],
+        "unverified": []
+      }
+    ],
+    "near_miss": [
+      {
+        "id": "sample-045",
+        "title": "Hollow Glass",
+        "artist": "Glass Canal",
+        "album": "Glass Sessions",
+        "score": 0.891,
+        "channels": [],
+        "reasons": [
+          "“i need to focus”: vocal_fraction 0 — ≤ 0.10",
+          "“i need to focus”: arousal 0.46 — within 0.30–0.65",
+          "“i need to focus”: bpm 96.3 BPM — within 85–125",
+          "“i need to focus”: pulse_clarity 0.60 — ≥ 0.50",
+          "“i need to focus”: onset_rate 3.08 onsets/s — ≤ 4 onsets/s",
+          "“i need to focus”: lufs_integrated -16.4 LUFS — within -16.4–-10.4"
+        ],
+        "unverified": [],
+        "near_miss": {
+          "constraint": "no_piano",
+          "phrase": "no piano",
+          "label": "excluded by your “no piano” rule: instruments.piano 0.36 — needs < 0.20"
+        }
+      },
+      {
+        "id": "sample-058",
+        "title": "Drift Field",
+        "artist": "Kite Theory",
+        "album": "Morning Static",
+        "score": 0.825,
+        "channels": [],
+        "reasons": [
+          "“i need to focus”: vocal_fraction 0 — ≤ 0.10",
+          "“i need to focus”: arousal 0.51 — within 0.30–0.65",
+          "“i need to focus”: bpm 110.4 BPM — within 85–125",
+          "“i need to focus”: onset_rate 2.17 onsets/s — ≤ 4 onsets/s",
+          "“i need to focus”: lufs_integrated -15.6 LUFS — within -16.4–-10.4"
+        ],
+        "unverified": [],
+        "near_miss": {
+          "constraint": "not_relaxing",
+          "phrase": "nothing too relaxing",
+          "label": "excluded by your “nothing too relaxing” rule: pulse_clarity 0.37 — needs ≥ 0.40"
+        }
+      },
+      {
+        "id": "sample-059",
+        "title": "Circuit Hollow",
+        "artist": "Kite Theory",
+        "album": "Window Sessions",
+        "score": 0.763,
+        "channels": [],
+        "reasons": [
+          "“i need to focus”: vocal_fraction 0 — ≤ 0.10",
+          "“i need to focus”: bpm 117.9 BPM — within 85–125",
+          "“i need to focus”: pulse_clarity 0.51 — ≥ 0.50",
+          "“i need to focus”: onset_rate 1.12 onsets/s — ≤ 4 onsets/s"
+        ],
+        "unverified": [],
+        "near_miss": {
+          "constraint": "no_piano",
+          "phrase": "no piano",
+          "label": "excluded by your “no piano” rule: instruments.piano 0.22 — needs < 0.20"
+        }
+      },
+      {
+        "id": "sample-043",
+        "title": "Copper Lattice",
+        "artist": "Glass Canal",
+        "album": "Signal Tide",
+        "score": 0.723,
+        "channels": [],
+        "reasons": [
+          "“i need to focus”: vocal_fraction 0.05 — ≤ 0.10",
+          "“i need to focus”: arousal 0.47 — within 0.30–0.65",
+          "“i need to focus”: bpm 95.2 BPM — within 85–125"
+        ],
+        "unverified": [],
+        "near_miss": {
+          "constraint": "no_piano",
+          "phrase": "no piano",
+          "label": "excluded by your “no piano” rule: instruments.piano 0.26 — needs < 0.20"
+        }
+      },
+      {
+        "id": "sample-036",
+        "title": "Velvet Meridian",
+        "artist": "Halftone Weather",
+        "album": "Northern Signal",
+        "score": 0.711,
+        "channels": [],
+        "reasons": [
+          "“i need to focus”: vocal_fraction 0.08 — ≤ 0.10",
+          "“i need to focus”: arousal 0.51 — within 0.30–0.65",
+          "“i need to focus”: bpm 108.5 BPM — within 85–125"
+        ],
+        "unverified": [],
+        "near_miss": {
+          "constraint": "not_relaxing",
+          "phrase": "nothing too relaxing",
+          "label": "excluded by your “nothing too relaxing” rule: pulse_clarity 0.38 — needs ≥ 0.40"
+        }
+      },
+      {
+        "id": "sample-003",
+        "title": "Engine Meridian",
+        "artist": "Lumen Atlas",
+        "album": "Morning Glass",
+        "score": 0.649,
+        "channels": [],
+        "reasons": [
+          "“i need to focus”: arousal 0.49 — within 0.30–0.65",
+          "“i need to focus”: bpm 112.2 BPM — within 85–125",
+          "“i need to focus”: pulse_clarity 0.58 — ≥ 0.50",
+          "“i need to focus”: lufs_integrated -11.5 LUFS — within -16.4–-10.4"
+        ],
+        "unverified": [],
+        "near_miss": {
+          "constraint": "no_words",
+          "phrase": "no words",
+          "label": "excluded by your “no words” rule: vocal_fraction 0.13 — needs ≤ 0.10; instrumental 0.78 — needs ≥ 0.80"
+        }
+      },
+      {
+        "id": "sample-052",
+        "title": "Quiet Velvet",
+        "artist": "Copper Lanterns",
+        "album": "Drift Northern",
+        "score": 0.629,
+        "channels": [],
+        "reasons": [
+          "“i need to focus”: arousal 0.38 — within 0.30–0.65",
+          "“i need to focus”: bpm 89.2 BPM — within 85–125",
+          "“i need to focus”: lufs_integrated -15.1 LUFS — within -16.4–-10.4"
+        ],
+        "unverified": [],
+        "near_miss": {
+          "constraint": "not_slow",
+          "phrase": "nothing too slow",
+          "label": "excluded by your “nothing too slow” rule: bpm 89.2 BPM — needs ≥ 90 BPM"
+        }
+      },
+      {
+        "id": "sample-057",
+        "title": "Thread Window",
+        "artist": "Kite Theory",
+        "album": "Morning Static",
+        "score": 0.608,
+        "channels": [],
+        "reasons": [
+          "“i need to focus”: bpm 121 BPM — within 85–125",
+          "“i need to focus”: pulse_clarity 0.66 — ≥ 0.50",
+          "“i need to focus”: onset_rate 2.94 onsets/s — ≤ 4 onsets/s",
+          "“i need to focus”: lufs_integrated -11.4 LUFS — within -16.4–-10.4"
+        ],
+        "unverified": [],
+        "near_miss": {
+          "constraint": "no_words",
+          "phrase": "no words",
+          "label": "excluded by your “no words” rule: instrumental 0.77 — needs ≥ 0.80"
+        }
+      }
+    ],
+    "counts": {
+      "library": 60,
+      "candidates": {
+        "filter": 8,
+        "similar": 0,
+        "union": 8
+      },
+      "strict_total": 8,
+      "excluded_by": {
+        "not_relaxing": 27,
+        "no_piano": 37,
+        "no_words": 29,
+        "not_slow": 15
+      },
+      "unknown_by": {
+        "not_relaxing": 19,
+        "no_piano": 11,
+        "no_words": 11
+      },
+      "unverified_by": {
+        "not_relaxing": 20
+      },
+      "capped": 2,
+      "hidden_by_you": 0
+    },
+    "relaxations_applied": [],
+    "underfilled": true,
+    "unenforced": [],
+    "unsupported": [],
+    "warnings": [
+      "arousal has no analyzer producer yet (stage \"semantic\"); real tracks stay unknown for it until one lands.",
+      "instrumental has no analyzer producer yet (stage \"voice\"); real tracks stay unknown for it until one lands.",
+      "instruments.piano has no analyzer producer yet (stage \"instruments\"); real tracks stay unknown for it until one lands.",
+      "mood has no analyzer producer yet (stage \"semantic\"); real tracks stay unknown for it until one lands.",
+      "vocal_fraction has no analyzer producer yet (stage \"voice\"); real tracks stay unknown for it until one lands."
+    ],
+    "missing_exemplars": [],
+    "feedback_policy": "epoch-v1",
+    "hidden": []
+  }
+}

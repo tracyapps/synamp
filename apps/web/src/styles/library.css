@@ -47,3 +47,42 @@
   .browse__sort { flex: 1 1 100%; }
 }
 .browse__albums-head { margin: 0 0 4px; font-size: 1.05rem; }
+.browse__views, .browse__controls, .browse__pivot, .browse__filter-line { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.browse__controls { margin: 12px 0; align-items: flex-start; }
+.browse__advanced { flex: 1; min-width: 0; }
+.browse__controls summary { cursor: pointer; min-height: 36px; padding: 8px 0; color: var(--gold); }
+.browse__filter-body { display: grid; gap: 14px; padding: 14px; border: 1px solid var(--border); border-radius: var(--r-sm); }
+.browse__types { display: flex; flex-wrap: wrap; gap: 18px; border: 0; padding: 0; margin: 0; }
+.browse__types legend { margin-bottom: 6px; color: var(--muted); }
+.browse__types label, .browse__columns label, .browse__rule > label { display: flex; gap: 8px; align-items: center; min-height: 36px; }
+.browse__filter-line label, .browse__pivot label { display: flex; gap: 8px; align-items: center; }
+.browse__filter-line input { width: 100px; }
+.browse__rule { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.browse__rule > input { flex: 1 1 180px; }
+.browse__rule > select { width: auto; max-width: 100%; }
+.browse__hint { font-size: .8125rem; margin: 4px 0; }
+.browse__columns fieldset { border: 1px solid var(--border); border-radius: var(--r-sm); padding: 10px; }
+.browse__columns p { margin: 0; font-size: .8125rem; }
+.browse__pivot select { width: auto; max-width: 300px; }
+.browse__updating { opacity: .55; pointer-events: none; }
+.browse__table-wrap { overflow-x: auto; }
+.browse__table { min-width: 620px; }
+.browse__table tbody th { text-align: left; font: inherit; text-transform: none; letter-spacing: normal; min-width: 180px; max-width: 300px; overflow-wrap: anywhere; padding: 10px; border-top: 1px solid var(--border); }
+.browse__table td { max-width: 260px; overflow-wrap: anywhere; }
+.browse__table td[data-column="artist"], .browse__table td[data-column="album_artist"], .browse__table td[data-column="album"] { min-width: 160px; }
+.browse__table td[data-column="type"], .browse__table td[data-column="year"], .browse__table td[data-column="count"], .browse__table td[data-column="duration"] { min-width: 75px; white-space: nowrap; }
+.browse__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.browse__grid > .album { border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px; }
+.browse__grid .album__row { grid-template-columns: 1fr; padding: 0; }
+.browse__grid .album__art { width: 64px; height: 64px; }
+.browse__grid .album__title, .browse__grid .album__meta { white-space: normal; }
+.browse__grid .album__actions { flex-wrap: wrap; }
+.browse__grid .tracklist { margin: 12px 0 0; }
+@media (max-width: 640px) {
+  .browse .section-card__head { flex-wrap: wrap; gap: 12px; }
+  .browse__views { width: 100%; }
+  .browse__filter-line label, .browse__pivot label { flex: 1 1 100%; flex-wrap: wrap; }
+  .browse__pivot select { max-width: 100%; }
+  .browse__rule > select { flex: 1 1 45%; }
+  .browse__advanced { flex-basis: 100%; }
+}

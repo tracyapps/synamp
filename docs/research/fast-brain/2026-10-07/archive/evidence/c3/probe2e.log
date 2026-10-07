@@ -1,0 +1,6 @@
+### PURE
+  floor-only effect (ship vs exact): maxScoreDiff=1.00e-3 orderPositionsDifferent=6
+  scale effect (exact vs raw):       maxScoreDiff=0.00e+0 orderPositionsDifferent=0
+### MIXED(jazz)
+  floor-only effect (ship vs exact): maxScoreDiff=1.00e-3 orderPositionsDifferent=5
+  scale effect (exact vs raw):       maxScoreDiff=6.90e-2 orderPositionsDifferent=39

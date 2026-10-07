@@ -1,0 +1,204 @@
+[brain-lab] SynAmp fast-learning brain — scenario lab
+[brain-lab] run 2026-10-07T06:45:07.834Z · repo /Users/tapps/_dev/web-apps/SynAmp
+[brain-lab] git HEAD be308a56 @ main (working tree dirty) · node v24.13.0
+[brain-lab] NOTE: timestamps in scenarios are pinned; the lab is deterministic given the same module state.
+
+[brain-lab] library /Users/tapps/_dev/web-apps/SynAmp/apps/brain/fixtures/library.sample.json — 60 tracks (synthetic sample; fixtures are never evidence about real music)
+
+[brain-lab] modules:
+  loaded      apps/brain/src/query/draft.ts (draftPlan)
+  loaded      apps/brain/src/query/plan.ts (validatePlan, planHash)
+  loaded      apps/brain/src/query/evaluate.ts (evaluatePlan)
+  loaded      apps/brain/src/session/feedback.ts (deriveFeedback)
+  loaded      apps/brain/src/query/sequence.ts (sequenceTracks)
+  loaded      apps/brain/src/intent/interpret.ts (interpretGoal)
+  loaded      apps/brain/src/learning/derive.ts (deriveEpochPolicy · fallbacks not needed/absent: deriveAdaptive)
+
+──────────────────────────────────────────────────────────────
+▶ 01-three-phrases — User's three example phrases — interpretation + draft→validate→evaluate
+    · phrase "i need to focus"
+    · recognized: ["i need to focus -> prefer arousal 0.40–0.60 (soft)","i need to focus -> prefer pulse_clarity ≥ 0.45 (soft)"]
+    · unparsed: []
+    · top strict: ["sample-003","sample-011","sample-024","sample-047","sample-060"]
+    · reading plans: 1/1 validate ok
+    · interpretation (via interpretGoal): {"accuracy":"specific","readings":["focus"],"chosen":0}
+    · phrase "pump me up to win this game"
+    · recognized: []
+    · unparsed: ["pump up to win this game"]
+    · validation errors: [{"path":"$.constraints","message":"A plan needs at least one supported constraint or a positive exemplar"}]
+    · reading plans: 1/1 validate ok
+    · interpretation (via interpretGoal): {"accuracy":"specific","readings":["pump up"],"chosen":0}
+    · phrase "i want to dance"
+    · recognized: []
+    · unparsed: ["to dance"]
+    · validation errors: [{"path":"$.constraints","message":"A plan needs at least one supported constraint or a positive exemplar"}]
+    · reading plans: 1/1 validate ok
+    · interpretation (via interpretGoal): {"accuracy":"specific","readings":["dance"],"chosen":0}
+    PASS  focus/pipeline-draft — recognized 2, unparsed 0
+    PASS  focus/pipeline-validates — ok (hash 05ceb5294348)
+    PASS  focus/pipeline-evaluate — strict 24/25, near 0, library 60, unique=true, allInLibrary=true, underfilled=false
+    PASS  focus/pipeline-min-strict — strict 24
+    PASS  focus/intent-structural — accuracy=specific, readings=1, chosen=0, parser="intent-v2 (rule-based: draftPlan + goal lexicon; no LLM)", asks=0, audit=5
+    PASS  focus/intent-chosen-validates — ok (hash 454e84938802)
+    PASS  pump/pipeline-draft — recognized 0, unparsed 1
+    PASS  pump/pipeline-validation-structure — invalid (1 errors: [{"path":"$.constraints","message":"A plan needs at least one supported constraint or a positive exemplar"}])
+    SKIP  pump/pipeline-evaluate — legacy plan did not validate — evaluation not applicable (when a B1 chosen reading validates, its plan is evaluated by intent-chosen-evaluates)
+    PASS  pump/intent-structural — accuracy=specific, readings=1, chosen=0, parser="intent-v2 (rule-based: draftPlan + goal lexicon; no LLM)", asks=0, audit=2
+    PASS  pump/intent-chosen-validates — ok (hash f1de457c230c)
+    PASS  pump/intent-chosen-evaluates — strict 25/25, near 0, unique=true, allInLibrary=true, underfilled=false (via B1 chosen reading)
+    PASS  dance/pipeline-draft — recognized 0, unparsed 1
+    PASS  dance/pipeline-validation-structure — invalid (1 errors: [{"path":"$.constraints","message":"A plan needs at least one supported constraint or a positive exemplar"}])
+    SKIP  dance/pipeline-evaluate — legacy plan did not validate — evaluation not applicable (when a B1 chosen reading validates, its plan is evaluated by intent-chosen-evaluates)
+    PASS  dance/intent-structural — accuracy=specific, readings=1, chosen=0, parser="intent-v2 (rule-based: draftPlan + goal lexicon; no LLM)", asks=0, audit=1
+    PASS  dance/intent-chosen-validates — ok (hash dffc7b8ec47b)
+    PASS  dance/intent-chosen-evaluates — strict 25/25, near 0, unique=true, allInLibrary=true, underfilled=false (via B1 chosen reading)
+  → PASS — 16 pass, 0 fail, 0 pending, 2 skip
+
+──────────────────────────────────────────────────────────────
+▶ 02-vague — Vague request — interpretation must admit underspecification
+    · scenario note: Resolved (B1 fix, re-verified by B4b 2026-10-07): 'play me something good' now classifies accuracy=vague — the intent-v1 filler/quality lexicon ignores generic tokens ('play', 'good', 'something'). Both probes pass. History (B4, 2026-10-06 23:07): it was observed as accuracy=impossible because the residue token 'play' counted as a content claim; the canonical probe 'some music please' already clas… (413 chars)
+    · phrase "some music please"
+    · recognized: []
+    · unparsed: []
+    · validation errors: [{"path":"$.constraints","message":"A plan needs at least one supported constraint or a positive exemplar"}]
+    · interpretation (via interpretGoal): {"accuracy":"vague","readings":[],"chosen":-1}
+    · phrase "play me something good"
+    · recognized: []
+    · unparsed: ["play something good"]
+    · validation errors: [{"path":"$.constraints","message":"A plan needs at least one supported constraint or a positive exemplar"}]
+    · interpretation (via interpretGoal): {"accuracy":"vague","readings":[],"chosen":-1}
+    PASS  vague-canonical/pipeline-draft — recognized 0, unparsed 0
+    PASS  vague-canonical/pipeline-validation-structure — invalid (1 errors: [{"path":"$.constraints","message":"A plan needs at least one supported constraint or a positive exemplar"}])
+    SKIP  vague-canonical/pipeline-evaluate — legacy plan did not validate — evaluation not applicable (when a B1 chosen reading validates, its plan is evaluated by intent-chosen-evaluates)
+    PASS  vague-canonical/intent-structural — accuracy=vague, readings=0, chosen=-1, parser="intent-v2 (rule-based: draftPlan + goal lexicon; no LLM)", asks=2, audit=2
+    PASS  vague-canonical/intent-accuracy — accuracy=vague
+    PASS  vague-play/pipeline-draft — recognized 0, unparsed 1
+    PASS  vague-play/pipeline-validation-structure — invalid (1 errors: [{"path":"$.constraints","message":"A plan needs at least one supported constraint or a positive exemplar"}])
+    SKIP  vague-play/pipeline-evaluate — legacy plan did not validate — evaluation not applicable (when a B1 chosen reading validates, its plan is evaluated by intent-chosen-evaluates)
+    PASS  vague-play/intent-structural — accuracy=vague, readings=0, chosen=-1, parser="intent-v2 (rule-based: draftPlan + goal lexicon; no LLM)", asks=2, audit=2
+    PASS  vague-play/intent-accuracy — accuracy=vague
+  → PASS — 8 pass, 0 fail, 0 pending, 2 skip
+
+──────────────────────────────────────────────────────────────
+▶ 03-contradictory — Contradictory request — 'fast relaxing bangers'
+    · phrase "fast relaxing bangers"
+    · recognized: ["relaxing -> prefer arousal ≤ 0.40 (soft)"]
+    · unparsed: ["fast bangers"]
+    · top strict: ["sample-001","sample-004","sample-005","sample-006","sample-007"]
+    · reading plans: 2/2 validate ok
+    · interpretation (via interpretGoal): {"accuracy":"contradictory","readings":["energetic but soft","literally calm"],"chosen":0}
+    PASS  contradictory/pipeline-draft — recognized 1, unparsed 1
+    PASS  contradictory/pipeline-validation-structure — ok (hash baaedc3c72b0)
+    PASS  contradictory/pipeline-evaluate — strict 25/25, near 0, library 60, unique=true, allInLibrary=true, underfilled=false
+    PASS  contradictory/intent-structural — accuracy=contradictory, readings=2, chosen=0, parser="intent-v2 (rule-based: draftPlan + goal lexicon; no LLM)", asks=1, audit=7
+    PASS  contradictory/intent-accuracy — accuracy=contradictory
+  → PASS — 5 pass, 0 fail, 0 pending, 0 skip
+
+──────────────────────────────────────────────────────────────
+▶ 04-impossible — Hyper-specific / impossible ask — unsatisfiable combination of demands
+    · scenario note: Two probes. 'songs with exactly three clarinets' is hyper-specific with nothing enforceable: expected accuracy=impossible, with asks carrying the next step (never a dead end). 'instrumentals with heavy lead vocals over 300 bpm' is a mixed impossible ask whose vocals half intent-v1 cannot yet express as a claim; asserted only that the answer stays honest — accuracy in [partial, impossible, contradi… (492 chars)
+    · phrase "songs with exactly three clarinets"
+    · recognized: []
+    · unparsed: ["exactly three clarinets"]
+    · validation errors: [{"path":"$.constraints","message":"A plan needs at least one supported constraint or a positive exemplar"}]
+    · interpretation (via interpretGoal): {"accuracy":"impossible","readings":[],"chosen":-1}
+    · phrase "instrumentals with heavy lead vocals over 300 bpm"
+    · recognized: ["instrumentals -> vocal_fraction ≤ 0.10 or instrumental ≥ 0.80 (hard; unmeasured fails)","over 300 bpm -> bpm ≥ 300 (hard)"]
+    · unparsed: ["heavy lead vocals"]
+    · top strict: []
+    · reading plans: 1/1 validate ok
+    · interpretation (via interpretGoal): {"accuracy":"partial","readings":["what I could parse"],"chosen":0}
+    PASS  impossible-clarinets/pipeline-draft — recognized 0, unparsed 1
+    PASS  impossible-clarinets/pipeline-validation-structure — invalid (1 errors: [{"path":"$.constraints","message":"A plan needs at least one supported constraint or a positive exemplar"}])
+    SKIP  impossible-clarinets/pipeline-evaluate — legacy plan did not validate — evaluation not applicable (when a B1 chosen reading validates, its plan is evaluated by intent-chosen-evaluates)
+    PASS  impossible-clarinets/intent-structural — accuracy=impossible, readings=0, chosen=-1, parser="intent-v2 (rule-based: draftPlan + goal lexicon; no LLM)", asks=2, audit=3
+    PASS  impossible-clarinets/intent-accuracy — accuracy=impossible
+    PASS  impossible-vocals/pipeline-draft — recognized 2, unparsed 1
+    PASS  impossible-vocals/pipeline-validation-structure — ok (hash ff8a6b8453a4)
+    PASS  impossible-vocals/pipeline-evaluate — strict 0/25, near 0, library 60, unique=true, allInLibrary=true, underfilled=true
+    PASS  impossible-vocals/pipeline-underfilled — underfilled=true
+    PASS  impossible-vocals/intent-structural — accuracy=partial, readings=1, chosen=0, parser="intent-v2 (rule-based: draftPlan + goal lexicon; no LLM)", asks=1, audit=3
+    PASS  impossible-vocals/intent-accuracy — accuracy=partial
+  → PASS — 10 pass, 0 fail, 0 pending, 1 skip
+
+──────────────────────────────────────────────────────────────
+▶ 05-fast-learning — Fast learning — within-epoch stream reorders the next resolve and hides re-skips
+    · now = 2026-10-07T00:29:00.000Z (+29m after base; stream ends 2026-10-07T00:24:00.000Z, Δend→now 5.0 min)
+    · baseline resolve: strict 60, hidden 0, top: ["sample-001","sample-002","sample-003","sample-004","sample-005"]
+    · resolve feedback view: combined view as feedback + adaptive (mirrors index.ts policyOptions in epoch mode; evaluate.ts applies the removed(playlistId) ∪ epochHides() union at the resolve seam)
+    · sequence_wave probe: C1-F1 regression (H1 receipt §H1-1): pre-fix, odd measured counts dropped one track and emitted undefined → null in JSON → queue crash; even counts were fine and must stay byte-identical.
+    PASS  stream-built — 17 events · signals {"exposure":1,"started":7,"skip_early":4,"full_play":3,"repeat":1,"interrupted":1} · 2026-10-07T00:00:00.000Z → 2026-10-07T00:24:00.000Z
+    PASS  learning-view-structure — via deriveEpochPolicy · policy="epoch-v1" · epoch="ep1:ee735f5b98fdd91" · epochHides=yes · removed=yes · proposals=yes · reliabilityNotes=yes
+    PASS  learning-adjust-positive — sample-034: +1.595 [heard it through this session (0.15); replayed this session (0.44); tempo ~99 BPM — you kept 3 such tracks this session (0.33); loudness ~-15.9 LUFS — you kept 3 such tracks this session (0.24); crest factor ~11.1 dB — you kept 3 such tracks this session (0.21); note onsets ~1.8 onsets/s — you kept 3 such tracks this session (0.33); percussiveness ~0.52 — you kept 3 such tracks this session (0.37)… (1209 chars)
+    PASS  learning-negative-parts — sample-026: skipped early this session (-0.41); other tracks by Static Orchard this session (-0.15); tempo ~171 BPM — near this session's skips (-0.09) | sample-028: skipped early this session (-0.43); other tracks by Static Orchard this session (-0.14); tempo ~171 BPM — near this session's skips (-0.10); loudness ~-14.0 LUFS — near this session's skips (-0.05); crest factor ~13.0 dB — near this session's skips (-0.0… (480 chars)
+    PASS  learning-skip-hidden — hidden=[sample-026, sample-028]
+    PASS  learning-resolve-plan — ok (hash 8beb2ab87af5)
+    PASS  learning-resolve-runs — adapted strict 58 · hidden 0 · baseline strict 60
+    PASS  learning-resolve-baseline-has-hidden — in baseline: [sample-026, sample-028]
+    PASS  learning-resolve-hidden-by-session — out of strict: [sample-026, sample-028] · strict 60→58 · counts.hidden_by_session=2, hidden_by_you=0 · persistent hidden=[]
+    PASS  learning-resolve-improves — sample-034: #33 → #0 ↑ | sample-024: #23 → #2 ↑ | sample-040: #39 → #1 ↑
+    PASS  learning-resolve-sequence — same set · applied=[]
+    PASS  sequence-wave-odd-f1 — n=1: ["lab-wave-1"] | n=3: ["lab-wave-3","lab-wave-1","lab-wave-2"] | n=5: ["lab-wave-4","lab-wave-1","lab-wave-5","lab-wave-2","lab-wave-3"]
+    PASS  sequence-wave-odd-order — n=1: ["lab-wave-1"] | n=3: ["lab-wave-3","lab-wave-1","lab-wave-2"] | n=5: ["lab-wave-4","lab-wave-1","lab-wave-5","lab-wave-2","lab-wave-3"]
+    PASS  sequence-wave-even-bytes — n=2: ["lab-wave-2","lab-wave-1"] (byte path kept) | n=4: ["lab-wave-3","lab-wave-1","lab-wave-4","lab-wave-2"] (byte path kept)
+    PASS  sequence-wave-applied-note — n=1: ["arc wave: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage"] | n=2: ["arc wave: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage"] | n=3: ["arc wave: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage"] | n=4: ["arc wave: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudne… (552 chars)
+  → PASS — 15 pass, 0 fail, 0 pending, 0 skip
+
+──────────────────────────────────────────────────────────────
+▶ 06-isolation — Isolation — same stream resolved at now+16h (next day): implicit adjustments zero/empty
+    · now = 2026-10-07T16:00:00.000Z (+16h after base; stream ends 2026-10-07T00:24:00.000Z, Δend→now 936.0 min)
+    · reliability notes: ["no active session — learning is paused"]
+    · baseline resolve: strict 60, hidden 0, top: ["sample-001","sample-002","sample-003","sample-004","sample-005"]
+    · resolve feedback view: combined view as feedback + adaptive (mirrors index.ts policyOptions in epoch mode; evaluate.ts applies the removed(playlistId) ∪ epochHides() union at the resolve seam)
+    PASS  stream-built — 17 events · signals {"exposure":1,"started":7,"skip_early":4,"full_play":3,"repeat":1,"interrupted":1} · 2026-10-07T00:00:00.000Z → 2026-10-07T00:24:00.000Z
+    PASS  learning-view-structure — via deriveEpochPolicy · policy="epoch-v1" · epoch=null · epochHides=yes · removed=yes · proposals=yes · reliabilityNotes=yes
+    PASS  learning-adjust-zero — sample-034: +0.000 [no parts] | sample-024: +0.000 [no parts] | sample-040: +0.000 [no parts] | sample-026: +0.000 [no parts] | sample-028: +0.000 [no parts]
+    PASS  learning-hides-empty — hidden=[]
+    PASS  learning-resolve-plan — ok (hash 8beb2ab87af5)
+    PASS  learning-resolve-runs — adapted strict 60 · hidden 0 · baseline strict 60
+    PASS  learning-resolve-identical — strict equal=true, hidden equal=true 
+    PASS  learning-resolve-sequence — same set · applied=[]
+  → PASS — 8 pass, 0 fail, 0 pending, 0 skip
+
+──────────────────────────────────────────────────────────────
+▶ 07-forget — Forget — learning_reset marker clears the epoch's evidence (module level)
+    · now = 2026-10-07T00:29:00.000Z (+29m after base; stream ends 2026-10-07T00:25:00.000Z, Δend→now 4.0 min)
+    · reliability notes: ["session learning was reset — only what happened after the reset counts","nothing learned yet this session"]
+    · baseline resolve: strict 60, hidden 0, top: ["sample-001","sample-002","sample-003","sample-004","sample-005"]
+    · resolve feedback view: combined view as feedback + adaptive (mirrors index.ts policyOptions in epoch mode; evaluate.ts applies the removed(playlistId) ∪ epochHides() union at the resolve seam)
+    PASS  stream-built — 18 events · signals {"exposure":1,"started":7,"skip_early":4,"full_play":3,"repeat":1,"interrupted":1,"learning_reset":1} · 2026-10-07T00:00:00.000Z → 2026-10-07T00:25:00.000Z
+    PASS  learning-view-structure — via deriveEpochPolicy · policy="epoch-v1" · epoch="ep1:6882d10d6187a07" · epochHides=yes · removed=yes · proposals=yes · reliabilityNotes=yes
+    PASS  learning-adjust-zero — sample-034: +0.000 [no parts] | sample-024: +0.000 [no parts] | sample-040: +0.000 [no parts] | sample-026: +0.000 [no parts] | sample-028: +0.000 [no parts]
+    PASS  learning-hides-empty — hidden=[]
+    PASS  learning-resolve-plan — ok (hash 8beb2ab87af5)
+    PASS  learning-resolve-runs — adapted strict 60 · hidden 0 · baseline strict 60
+    PASS  learning-resolve-identical — strict equal=true, hidden equal=true 
+    PASS  learning-resolve-sequence — same set · applied=[]
+  → PASS — 8 pass, 0 fail, 0 pending, 0 skip
+
+──────────────────────────────────────────────────────────────
+▶ 08-culture-guardrails — Culture guardrails — culture-language prompts stay defensive; outputs pinned exactly as observed
+    · scenario note: Seed: C2-bias-review.md §E1 (10 culture prompts + 2 controls; transcript evidence/c2/probe-interpret.out.txt). This scenario pins CURRENT honest behaviour as re-observed at the H4 capture (2026-10-07, post hotfixes H1/H2/H3) — it is a regression pin, NOT a classifier-accuracy claim, and not a statement that these phrases are 'handled' for real use. Defensive assertions: culture spans are never ass… (725 chars)
+    PASS  latin-party/pinned — accuracy=partial, chosen=0, readings=["dance"], asks=1
+    PASS  tribal-drumming/pinned — accuracy=impossible, chosen=-1, readings=[], asks=2
+    PASS  gypsy-jazz/pinned — accuracy=partial, chosen=0, readings=["what I could parse"], asks=1
+    PASS  exotic-vibes/pinned — accuracy=impossible, chosen=-1, readings=[], asks=2
+    PASS  ancestors/pinned — accuracy=impossible, chosen=-1, readings=[], asks=2
+    PASS  wa-drumming-focus/pinned — accuracy=partial, chosen=0, readings=["focus"], asks=1
+    PASS  sami-yoik/pinned — accuracy=partial, chosen=0, readings=["calm"], asks=1
+    PASS  indigenous-gym/pinned — accuracy=partial, chosen=0, readings=["pump up"], asks=1
+    PASS  gamelan-study/pinned — accuracy=partial, chosen=0, readings=["focus"], asks=1
+    PASS  world-music/pinned — accuracy=impossible, chosen=-1, readings=[], asks=2
+    PASS  bangers-control/pinned — accuracy=contradictory, chosen=0, readings=["energetic but soft","literally calm"], asks=1
+    PASS  focus-control/pinned — accuracy=specific, chosen=0, readings=["focus"], asks=0
+    PASS  culture-banned-strings — no violations · allowed echoes: tribal-drumming: ask quotes “tribal” · tribal-drumming: audit input phrase “tribal drumming” · exotic-vibes: ask quotes “exotic” · exotic-vibes: audit input phrase “exotic”
+    PASS  culture-no-culture-claims — latin-party: clean (input-recap echo ×2) | tribal-drumming: clean | gypsy-jazz: clean (input-recap echo ×2) | exotic-vibes: clean | ancestors: clean | wa-drumming-focus: clean (input-recap echo ×2) | sami-yoik: clean (input-recap echo ×2) | indigenous-gym: clean (input-recap echo ×2) | gamelan-study: clean (input-recap echo ×2) | world-music: clean
+    PASS  culture-spans-surfaced — latin-party: surfaced (asks 1) | tribal-drumming: surfaced (asks 2) | gypsy-jazz: surfaced (asks 1) | exotic-vibes: surfaced (asks 2) | ancestors: surfaced (asks 2) | wa-drumming-focus: surfaced (asks 1) | sami-yoik: surfaced (asks 1) | indigenous-gym: surfaced (asks 1) | gamelan-study: surfaced (asks 1) | world-music: surfaced (asks 2)
+    PASS  culture-no-dead-ends — latin-party: readings=1, asks=1 | tribal-drumming: readings=0, asks=2 | gypsy-jazz: readings=1, asks=1 | exotic-vibes: readings=0, asks=2 | ancestors: readings=0, asks=2 | wa-drumming-focus: readings=1, asks=1 | sami-yoik: readings=1, asks=1 | indigenous-gym: readings=1, asks=1 | gamelan-study: readings=1, asks=1 | world-music: readings=0, asks=2 | bangers-control: readings=2, asks=1 | focus-control: readings=1, asks… (422 chars)
+  → PASS — 16 pass, 0 fail, 0 pending, 0 skip
+
+══════════════════════════════════════════════════════════════
+[brain-lab] SUMMARY — scenarios: 8 (8 pass, 0 partial, 0 pending, 0 fail)
+[brain-lab] checks: 86 pass · 0 fail · 0 pending · 5 skip
+[brain-lab] RESULT: OK — all checks pass
+[brain-lab] JSON evidence → /tmp/synamp-fast-brain-final-lab.json

@@ -1,0 +1,73 @@
+### boot: PLAYLIST_DATA_PATH=/tmp/synamp-b5/playlists.json LIBRARY_SIGNALS_PATH=/Users/tapps/_dev/web-apps/SynAmp/apps/brain/fixtures/library.sample.json BRAIN_PORT=3911
+server pid 13143
+
+### GET /health
+{
+  "status": "ok",
+  "service": "synamp-brain",
+  "uptimeMs": 169
+}
+
+
+### POST /api/v1/plans/draft — "I need to focus. no words, no piano, nothing too slow/relaxing."
+parser: rule-based draft (no LLM yet)
+accuracy: specific | chosen_index: 0 | readings: [{"label":"focus","chosen":true}]
+asks: 0 | audit entries: 11
+validation ok: true | constraints: 13
+preview strict: 6 | feedback_policy: epoch-v1
+sample reading summary: {"label":"focus","confidence":0.7,"assumptions":["“Focus” is a soft preference bundle: mid tempo, a steady pulse, low distraction, no mood imposition — nothing in it excludes a track.","Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.","Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.","Some library-relative bands were skipped for lack of measured data: “focus”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."],"chosen":true}
+has raw plan inside interpretation: false
+draft bytes:    25450
+
+### POST /api/v1/session/queue — 3 sample tracks
+queue: ["sample-001","sample-002","sample-003"] entry_id[0]=36395ecd-5870-47ee-aeef-5963ce7e2287
+
+### POST /api/v1/session/report — start + early skip for sample-001 (cycle 1)
+derived: ["skip_early"]
+
+### re-queue + start + early skip for sample-001 (cycle 2 → skip_early ×2 → epoch hide)
+derived: ["skip_early"]
+
+### GET /api/v1/brain/session — after the skips
+policy_version: epoch-v1 | listening_policy: epoch-v1 | events: 2
+epoch: {"daypart":"night","date":"2026-10-06","event_count":14}
+hides: ["sample-001"]
+proposals: 0 | reliability_notes: ["skip side not learned yet: only 1 skipped track this session (need 2)"]
+queue_adjustments:
+   sample-001 -0.600 [{"label":"skipped early this session","value":-0.6}]
+   sample-002 -0.210 [{"label":"other tracks by Lumen Atlas this session","value":-0.21}]
+   sample-003 -0.210 [{"label":"other tracks by Lumen Atlas this session","value":-0.21}]
+
+### GET /api/v1/events — policy_version report
+policy_version: epoch-v1 | total: 4 | newest signals: ["skip_early","started","skip_early"]
+
+### POST /api/v1/brain/forget {scope: epoch}
+after forget → hides: [] | notes: ["session learning was reset — only what happened after the reset counts","nothing learned yet this session"]
+adjustments with parts: 0
+
+### POST /api/v1/brain/forget {scope: all} — must be rejected
+{
+  "error": "scope must be \"epoch\" — the event log is never edited, only marked"
+}
+
+
+### POST /api/v1/brain/proposals — validation paths (no proposals exist in a fresh log)
+{
+  "error": "No suggestion with that id"
+}
+
+{
+  "error": "action must be \"accept\" or \"dismiss\""
+}
+
+
+### GET /api/v1/brain/session — after forget
+hides: [] | notes: ["session learning was reset — only what happened after the reset counts","nothing learned yet this session"]
+queue_adjustments with parts: 0
+
+### settings rollback — POST /api/v1/settings {listening_policy: legacy-v1}
+changed: ["listening_policy"] | listening_policy: legacy-v1
+legacy readout → policy_version: heuristic-v1 | listening_policy: legacy-v1 | epoch: null | hides: [] | proposals: 0
+
+### kill epoch server
+done (epoch run)

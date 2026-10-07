@@ -54,6 +54,8 @@ import { albumFolder, groupAlbums } from "./library/albums.ts";
 import { ImportError, matchPlaylists, parsePlaylistFile } from "./library/playlist-import.ts";
 import type { MatchedPlaylist } from "./library/playlist-import.ts";
 import { albumTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
+import { explore } from "./library/explore.ts";
+import { galaxy, galaxyArtist, galaxyRandom } from "./library/galaxy.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
 import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
 import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay } from "./library/organise.ts";
@@ -446,12 +448,13 @@ function brainSessionView() {
   const view = activePolicyView();
   const canonical = (id: string) => library.canonicalId(id);
   const seen = new Set<string>();
-  const queueAdjustments: Array<{ track_id: string; value: number; parts: Array<{ label: string; value: number }> }> = [];
+  const queueAdjustments: Array<{ track_id: string; playlist_id?: string; value: number; parts: Array<{ label: string; value: number }> }> = [];
   for (const entry of sessions.get().queue.slice(0, 50)) {
     const trackId = canonical(entry.track_id);
-    if (seen.has(trackId)) continue;
-    seen.add(trackId);
-    queueAdjustments.push({ track_id: trackId, ...view.adjust(trackId) });
+    const key = JSON.stringify([trackId, entry.source?.playlist_id ?? null]);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    queueAdjustments.push({ track_id: trackId, ...(entry.source ? { playlist_id: entry.source.playlist_id } : {}), ...view.adjust(trackId, entry.source?.playlist_id) });
   }
   return {
     policy_version: view.policy_version,
@@ -739,6 +742,19 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return send(res, 202, { received: progress.received_at });
   }
   // --- browsing the library ----------------------------------------------------
+  if (path === "/api/v1/library/explore" && req.method === "GET") {
+    return send(res, 200, explore(currentLibrary(), Object.fromEntries(url.searchParams)));
+  }
+  if (path === "/api/v1/library/galaxy" && req.method === "GET") {
+    const q = url.searchParams;
+    return send(res, 200, galaxy(currentLibrary(), { q: q.get("q") ?? "", sort: q.get("sort") ?? "", offset: Number(q.get("offset") ?? 0), limit: Number(q.get("limit") ?? 60) }));
+  }
+  if (path === "/api/v1/library/galaxy/artist" && req.method === "GET") {
+    return send(res, 200, galaxyArtist(currentLibrary(), url.searchParams.get("key") ?? ""));
+  }
+  if (path === "/api/v1/library/galaxy/random" && req.method === "GET") {
+    return send(res, 200, galaxyRandom(currentLibrary(), { q: url.searchParams.get("q") ?? "" }));
+  }
   if (path === "/api/v1/library/albums" && req.method === "GET") {
     const q = url.searchParams;
     return send(res, 200, listAlbums(currentLibrary(), { q: q.get("q") ?? "", sort: q.get("sort") ?? "", offset: Number(q.get("offset") ?? 0), limit: Number(q.get("limit") ?? 60) }));
@@ -1092,6 +1108,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
         chosen_index: interpretation.chosen_index,
         readings: interpretation.readings.map((reading, index) => ({
           label: reading.label, confidence: reading.confidence, assumptions: reading.assumptions,
+          caveats: reading.caveats, culture_notes: reading.culture_notes,
           chosen: index === interpretation.chosen_index,
         })),
         asks: interpretation.asks,

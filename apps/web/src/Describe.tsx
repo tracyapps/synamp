@@ -9,7 +9,7 @@ type ResultTrack = {
 };
 type Ask = { ask: string; reason: string; nearest_supported?: string; unenforced?: boolean };
 /* Goal interpretation (brain /plans/draft `interpretation`) — summaries only, no raw plans. */
-type InterpretationReading = { label: string; confidence: number; assumptions: string[]; chosen: boolean };
+type InterpretationReading = { label: string; confidence: number; assumptions: string[]; caveats?: string[]; culture_notes?: string[]; chosen: boolean };
 type Interpretation = {
   parser: string;
   accuracy: "specific" | "partial" | "vague" | "contradictory" | "impossible";
@@ -73,7 +73,7 @@ function InterpretationView({ interpretation }: { interpretation: Interpretation
         <span className={`describe__accuracy describe__accuracy--${accuracy}`}>{accuracy}</span>
         <span className="muted">{ACCURACY_HINT[accuracy]}</span>
       </p>
-      {readings.length === 0 && asks.length > 0 && (
+      {asks.length > 0 && (
         <div className="describe__asks" role="note">
           <p className="muted">A little more would sharpen this:</p>
           <ul>{asks.map((ask) => <li key={ask.ask}>{ask.ask}<small> — {ask.reason}</small></li>)}</ul>
@@ -92,6 +92,18 @@ function InterpretationView({ interpretation }: { interpretation: Interpretation
       )}
       {readings.length === 1 && readings[0] && (
         <p className="describe__single-reading">Read as: <strong>{readings[0].label}</strong></p>
+      )}
+      {readings.some((reading) => reading.assumptions.length || reading.caveats?.length || reading.culture_notes?.length) && (
+        <details className="describe__audit">
+          <summary>Assumptions and limits</summary>
+          {readings.map((reading) => (
+            <div key={reading.label}>
+              <p><strong>{reading.label}</strong></p>
+              <ul>{[...new Set([...reading.assumptions, ...(reading.caveats ?? []), ...(reading.culture_notes ?? [])])]
+                .map((note) => <li key={note}>{note}</li>)}</ul>
+            </div>
+          ))}
+        </details>
       )}
       {audit.length > 0 && (
         <details className="describe__audit">

@@ -216,7 +216,7 @@ export function generateProposals(runs: readonly EpochRun[], opts: ProposalOptio
       // Consequence copy (C2 F5): the accept writes a GLOBAL thumbs-down even when the
       // evidence was "in one playlist" — say so before the click, offer the playlist edit
       // as the alternative.
-      suggested_action: "Keeps it out of suggestions everywhere (a global thumbs-down) — or exclude it from that playlist instead",
+      suggested_action: "Adds a global thumbs-down — future lists weigh it lower; this does not exclude it — or exclude it from that playlist instead",
     });
   }
 
@@ -242,7 +242,7 @@ export function generateProposals(runs: readonly EpochRun[], opts: ProposalOptio
       subject_type: "track",
       thesis: `You often say “not now” to ${label(t)} — ${finding.epochs.size} sessions across ${finding.dates.size} days and ${finding.dayparts.size} parts of the day.`,
       evidence: evidenceOf(finding),
-      suggested_action: "Keeps it out of suggestions everywhere (a global thumbs-down) — you decide",
+      suggested_action: "Adds a global thumbs-down — future lists weigh it lower; this does not exclude it — you decide",
     });
   }
 

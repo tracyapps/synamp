@@ -1,0 +1,2269 @@
+[
+ {
+  "goal": "focus",
+  "phrase": "I need to focus",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "focus",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_focus_1",
+    "field": "vocal_fraction",
+    "op": "lte",
+    "value": 0.1,
+    "weight": 0.264,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "no-words → low vocal_fraction"
+   },
+   {
+    "id": "goal_focus_2",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     85,
+     125
+    ],
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_3",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_4",
+    "field": "onset_rate",
+    "op": "lte",
+    "value": 4,
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_5",
+    "field": "dynamic_complexity",
+    "op": "lte",
+    "value": 8,
+    "weight": 0.058,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_6",
+    "field": "lufs_integrated",
+    "op": "between",
+    "value": [
+     -16.4,
+     -10.4
+    ],
+    "weight": 0.058,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_7",
+    "field": "spectral_flatness",
+    "op": "lte",
+    "value": 0.3,
+    "weight": 0.058,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_9",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.05,
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_10",
+    "field": "arousal",
+    "op": "between",
+    "value": [
+     0.3,
+     0.65
+    ],
+    "weight": 0.147,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "focus → arousal (moderate band)"
+   }
+  ],
+  "assumptions": [
+   "“Focus” is a soft preference bundle: mid tempo, a steady pulse, low distraction, no mood imposition — nothing in it excludes a track.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “focus”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "focus",
+  "phrase": "help me concentrate on my homework",
+  "accuracy": "partial",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "focus",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_focus_1",
+    "field": "vocal_fraction",
+    "op": "lte",
+    "value": 0.1,
+    "weight": 0.264,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "no-words → low vocal_fraction"
+   },
+   {
+    "id": "goal_focus_2",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     85,
+     125
+    ],
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_3",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_4",
+    "field": "onset_rate",
+    "op": "lte",
+    "value": 4,
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_5",
+    "field": "dynamic_complexity",
+    "op": "lte",
+    "value": 8,
+    "weight": 0.058,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_6",
+    "field": "lufs_integrated",
+    "op": "between",
+    "value": [
+     -16.4,
+     -10.4
+    ],
+    "weight": 0.058,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_7",
+    "field": "spectral_flatness",
+    "op": "lte",
+    "value": 0.3,
+    "weight": 0.058,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_9",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.05,
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_10",
+    "field": "arousal",
+    "op": "between",
+    "value": [
+     0.3,
+     0.65
+    ],
+    "weight": 0.147,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "focus → arousal (moderate band)"
+   }
+  ],
+  "assumptions": [
+   "“Focus” is a soft preference bundle: mid tempo, a steady pulse, low distraction, no mood imposition — nothing in it excludes a track.",
+   "Not understood yet, kept only as text for a future encoder: “help”.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “focus”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [
+   "I left “help” unused — if it matters, say it as an activity, a tempo range, or a tag."
+  ],
+  "skippedNotes": []
+ },
+ {
+  "goal": "focus",
+  "phrase": "deep work session",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "focus",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_focus_1",
+    "field": "vocal_fraction",
+    "op": "lte",
+    "value": 0.1,
+    "weight": 0.264,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "no-words → low vocal_fraction"
+   },
+   {
+    "id": "goal_focus_2",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     85,
+     125
+    ],
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_3",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_4",
+    "field": "onset_rate",
+    "op": "lte",
+    "value": 4,
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_5",
+    "field": "dynamic_complexity",
+    "op": "lte",
+    "value": 8,
+    "weight": 0.058,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_6",
+    "field": "lufs_integrated",
+    "op": "between",
+    "value": [
+     -16.4,
+     -10.4
+    ],
+    "weight": 0.058,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_7",
+    "field": "spectral_flatness",
+    "op": "lte",
+    "value": 0.3,
+    "weight": 0.058,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_9",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.05,
+    "weight": 0.088,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_focus_10",
+    "field": "arousal",
+    "op": "between",
+    "value": [
+     0.3,
+     0.65
+    ],
+    "weight": 0.147,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "focus → arousal (moderate band)"
+   }
+  ],
+  "assumptions": [
+   "“Focus” is a soft preference bundle: mid tempo, a steady pulse, low distraction, no mood imposition — nothing in it excludes a track.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “focus”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "pump_up",
+  "phrase": "pump me up for the gym",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "pump up",
+  "arc": "build",
+  "constraints": [
+   {
+    "id": "goal_pump_up_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     125,
+     140
+    ],
+    "weight": 0.166,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "pump up → exercise tempo band"
+   },
+   {
+    "id": "goal_pump_up_2",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.142,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_3",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.55,
+    "weight": 0.119,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_4",
+    "field": "beat_grid_strength",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.095,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_5",
+    "field": "onset_rate",
+    "op": "gte",
+    "value": 4.14,
+    "weight": 0.095,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_6",
+    "field": "lufs_integrated",
+    "op": "gte",
+    "value": -12.7,
+    "weight": 0.095,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.06,
+    "weight": 0.071,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_9",
+    "field": "arousal",
+    "op": "gte",
+    "value": 0.6,
+    "weight": 0.142,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "pump up → arousal"
+   }
+  ],
+  "assumptions": [
+   "“Pump up” becomes an exercise/pre-task bundle: fast steady tempo, prominent percussion, loud and bright — preferences, not filters.",
+   "Self-selected music outperforms preselected; your loves and repeats in this session will move the list more than these defaults (MP-3).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “pump up”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "pump_up",
+  "phrase": "win this game",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "pump up",
+  "arc": "build",
+  "constraints": [
+   {
+    "id": "goal_pump_up_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     125,
+     140
+    ],
+    "weight": 0.166,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "pump up → exercise tempo band"
+   },
+   {
+    "id": "goal_pump_up_2",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.142,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_3",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.55,
+    "weight": 0.119,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_4",
+    "field": "beat_grid_strength",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.095,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_5",
+    "field": "onset_rate",
+    "op": "gte",
+    "value": 4.14,
+    "weight": 0.095,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_6",
+    "field": "lufs_integrated",
+    "op": "gte",
+    "value": -12.7,
+    "weight": 0.095,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.06,
+    "weight": 0.071,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_9",
+    "field": "arousal",
+    "op": "gte",
+    "value": 0.6,
+    "weight": 0.142,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "pump up → arousal"
+   }
+  ],
+  "assumptions": [
+   "“Pump up” becomes an exercise/pre-task bundle: fast steady tempo, prominent percussion, loud and bright — preferences, not filters.",
+   "Self-selected music outperforms preselected; your loves and repeats in this session will move the list more than these defaults (MP-3).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “pump up”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "pump_up",
+  "phrase": "before the game",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "pump up",
+  "arc": "build",
+  "constraints": [
+   {
+    "id": "goal_pump_up_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     125,
+     140
+    ],
+    "weight": 0.166,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "pump up → exercise tempo band"
+   },
+   {
+    "id": "goal_pump_up_2",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.142,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_3",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.55,
+    "weight": 0.119,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_4",
+    "field": "beat_grid_strength",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.095,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_5",
+    "field": "onset_rate",
+    "op": "gte",
+    "value": 4.14,
+    "weight": 0.095,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_6",
+    "field": "lufs_integrated",
+    "op": "gte",
+    "value": -12.7,
+    "weight": 0.095,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.06,
+    "weight": 0.071,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_pump_up_9",
+    "field": "arousal",
+    "op": "gte",
+    "value": 0.6,
+    "weight": 0.142,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "pump up → arousal"
+   }
+  ],
+  "assumptions": [
+   "“Pump up” becomes an exercise/pre-task bundle: fast steady tempo, prominent percussion, loud and bright — preferences, not filters.",
+   "Self-selected music outperforms preselected; your loves and repeats in this session will move the list more than these defaults (MP-3).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “pump up”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "dance",
+  "phrase": "I want to dance",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "dance",
+  "arc": "peak",
+  "constraints": [
+   {
+    "id": "goal_dance_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     115,
+     130
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_2",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.55,
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_3",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_4",
+    "field": "onset_rate",
+    "op": "between",
+    "value": [
+     2.98,
+     5.75
+    ],
+    "weight": 0.075,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_5",
+    "field": "lufs_integrated",
+    "op": "gte",
+    "value": -13.8,
+    "weight": 0.075,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_7",
+    "field": "beat_grid_strength",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.06,
+    "weight": 0.05,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_9",
+    "field": "danceability",
+    "op": "gte",
+    "value": 0.6,
+    "weight": 0.2,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "dance → danceability"
+   }
+  ],
+  "assumptions": [
+   "“Dance” prefers a ~115–130 bpm groove with a clear pulse and percussion, at moderate complexity — not maximum busy-ness.",
+   "Enjoyment beats cultural familiarity for moving together — this bundle is built to yield quickly to your feedback (MP-14).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “dance”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "dance",
+  "phrase": "dance party",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "dance",
+  "arc": "peak",
+  "constraints": [
+   {
+    "id": "goal_dance_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     115,
+     130
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_2",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.55,
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_3",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_4",
+    "field": "onset_rate",
+    "op": "between",
+    "value": [
+     2.98,
+     5.75
+    ],
+    "weight": 0.075,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_5",
+    "field": "lufs_integrated",
+    "op": "gte",
+    "value": -13.8,
+    "weight": 0.075,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_7",
+    "field": "beat_grid_strength",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.06,
+    "weight": 0.05,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_9",
+    "field": "danceability",
+    "op": "gte",
+    "value": 0.6,
+    "weight": 0.2,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "dance → danceability"
+   }
+  ],
+  "assumptions": [
+   "“Dance” prefers a ~115–130 bpm groove with a clear pulse and percussion, at moderate complexity — not maximum busy-ness.",
+   "Enjoyment beats cultural familiarity for moving together — this bundle is built to yield quickly to your feedback (MP-14).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “dance”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "dance",
+  "phrase": "let's dance",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "dance",
+  "arc": "peak",
+  "constraints": [
+   {
+    "id": "goal_dance_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     115,
+     130
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_2",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.55,
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_3",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_4",
+    "field": "onset_rate",
+    "op": "between",
+    "value": [
+     2.98,
+     5.75
+    ],
+    "weight": 0.075,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_5",
+    "field": "lufs_integrated",
+    "op": "gte",
+    "value": -13.8,
+    "weight": 0.075,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_7",
+    "field": "beat_grid_strength",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.06,
+    "weight": 0.05,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_dance_9",
+    "field": "danceability",
+    "op": "gte",
+    "value": 0.6,
+    "weight": 0.2,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "dance → danceability"
+   }
+  ],
+  "assumptions": [
+   "“Dance” prefers a ~115–130 bpm groove with a clear pulse and percussion, at moderate complexity — not maximum busy-ness.",
+   "Enjoyment beats cultural familiarity for moving together — this bundle is built to yield quickly to your feedback (MP-14).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “dance”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "calm",
+  "phrase": "help me calm down",
+  "accuracy": "partial",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "calm",
+  "arc": "cooldown",
+  "constraints": [
+   {
+    "id": "goal_calm_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     55,
+     80
+    ],
+    "weight": 0.186,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_2",
+    "field": "percussiveness",
+    "op": "lte",
+    "value": 0.35,
+    "weight": 0.139,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_3",
+    "field": "onset_rate",
+    "op": "lte",
+    "value": 2.98,
+    "weight": 0.139,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_4",
+    "field": "lufs_integrated",
+    "op": "lte",
+    "value": -13.8,
+    "weight": 0.116,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_5",
+    "field": "loudness_range",
+    "op": "lte",
+    "value": 8.7,
+    "weight": 0.069,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.05,
+    "weight": 0.069,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_9",
+    "field": "arousal",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.139,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "calm → arousal (low)"
+   }
+  ],
+  "assumptions": [
+   "“Calm” leans slow, soft and steady — preferences only; it promises no stress reduction (the physiology evidence is mixed).",
+   "Not understood yet, kept only as text for a future encoder: “help”.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “calm”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3; “calm”: library-relative band for spectral_flatness skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [
+   "I left “help” unused — if it matters, say it as an activity, a tempo range, or a tag."
+  ],
+  "skippedNotes": []
+ },
+ {
+  "goal": "calm",
+  "phrase": "I need to relax",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "calm",
+  "arc": "cooldown",
+  "constraints": [
+   {
+    "id": "goal_calm_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     55,
+     80
+    ],
+    "weight": 0.186,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_2",
+    "field": "percussiveness",
+    "op": "lte",
+    "value": 0.35,
+    "weight": 0.139,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_3",
+    "field": "onset_rate",
+    "op": "lte",
+    "value": 2.98,
+    "weight": 0.139,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_4",
+    "field": "lufs_integrated",
+    "op": "lte",
+    "value": -13.8,
+    "weight": 0.116,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_5",
+    "field": "loudness_range",
+    "op": "lte",
+    "value": 8.7,
+    "weight": 0.069,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.05,
+    "weight": 0.069,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_9",
+    "field": "arousal",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.139,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "calm → arousal (low)"
+   }
+  ],
+  "assumptions": [
+   "“Calm” leans slow, soft and steady — preferences only; it promises no stress reduction (the physiology evidence is mixed).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “calm”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3; “calm”: library-relative band for spectral_flatness skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "calm",
+  "phrase": "wind down",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "calm",
+  "arc": "cooldown",
+  "constraints": [
+   {
+    "id": "goal_calm_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     55,
+     80
+    ],
+    "weight": 0.186,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_2",
+    "field": "percussiveness",
+    "op": "lte",
+    "value": 0.35,
+    "weight": 0.139,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_3",
+    "field": "onset_rate",
+    "op": "lte",
+    "value": 2.98,
+    "weight": 0.139,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_4",
+    "field": "lufs_integrated",
+    "op": "lte",
+    "value": -13.8,
+    "weight": 0.116,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_5",
+    "field": "loudness_range",
+    "op": "lte",
+    "value": 8.7,
+    "weight": 0.069,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.05,
+    "weight": 0.069,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_calm_9",
+    "field": "arousal",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.139,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "calm → arousal (low)"
+   }
+  ],
+  "assumptions": [
+   "“Calm” leans slow, soft and steady — preferences only; it promises no stress reduction (the physiology evidence is mixed).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “calm”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3; “calm”: library-relative band for spectral_flatness skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "sleep",
+  "phrase": "music to fall asleep",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "sleep",
+  "arc": "cooldown",
+  "constraints": [
+   {
+    "id": "goal_sleep_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     50,
+     70
+    ],
+    "weight": 0.191,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_2",
+    "field": "percussiveness",
+    "op": "lte",
+    "value": 0.35,
+    "weight": 0.127,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_3",
+    "field": "onset_rate",
+    "op": "lte",
+    "value": 2.98,
+    "weight": 0.127,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_4",
+    "field": "lufs_integrated",
+    "op": "lte",
+    "value": -13.8,
+    "weight": 0.106,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_5",
+    "field": "loudness_range",
+    "op": "lte",
+    "value": 8.7,
+    "weight": 0.063,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.05,
+    "weight": 0.063,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_9",
+    "field": "vocal_fraction",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.063,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "sleep → less speech-like audio"
+   },
+   {
+    "id": "goal_sleep_10",
+    "field": "arousal",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.127,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "sleep → arousal (low)"
+   }
+  ],
+  "assumptions": [
+   "“Sleep” uses the sleep subset of the sedative profile (50–70 bpm, soft, sparse) — preferences only.",
+   "No mood lift is applied at bedtime; “stay here” is the default and nothing here claims to medicate sleep.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “sleep”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3; “sleep”: library-relative band for spectral_flatness skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "sleep",
+  "phrase": "bedtime",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "sleep",
+  "arc": "cooldown",
+  "constraints": [
+   {
+    "id": "goal_sleep_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     50,
+     70
+    ],
+    "weight": 0.191,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_2",
+    "field": "percussiveness",
+    "op": "lte",
+    "value": 0.35,
+    "weight": 0.127,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_3",
+    "field": "onset_rate",
+    "op": "lte",
+    "value": 2.98,
+    "weight": 0.127,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_4",
+    "field": "lufs_integrated",
+    "op": "lte",
+    "value": -13.8,
+    "weight": 0.106,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_5",
+    "field": "loudness_range",
+    "op": "lte",
+    "value": 8.7,
+    "weight": 0.063,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.05,
+    "weight": 0.063,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_9",
+    "field": "vocal_fraction",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.063,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "sleep → less speech-like audio"
+   },
+   {
+    "id": "goal_sleep_10",
+    "field": "arousal",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.127,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "sleep → arousal (low)"
+   }
+  ],
+  "assumptions": [
+   "“Sleep” uses the sleep subset of the sedative profile (50–70 bpm, soft, sparse) — preferences only.",
+   "No mood lift is applied at bedtime; “stay here” is the default and nothing here claims to medicate sleep.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “sleep”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3; “sleep”: library-relative band for spectral_flatness skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "sleep",
+  "phrase": "lullaby",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "sleep",
+  "arc": "cooldown",
+  "constraints": [
+   {
+    "id": "goal_sleep_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     50,
+     70
+    ],
+    "weight": 0.191,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_2",
+    "field": "percussiveness",
+    "op": "lte",
+    "value": 0.35,
+    "weight": 0.127,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_3",
+    "field": "onset_rate",
+    "op": "lte",
+    "value": 2.98,
+    "weight": 0.127,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_4",
+    "field": "lufs_integrated",
+    "op": "lte",
+    "value": -13.8,
+    "weight": 0.106,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_5",
+    "field": "loudness_range",
+    "op": "lte",
+    "value": 8.7,
+    "weight": 0.063,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_8",
+    "field": "beat_interval_cv",
+    "op": "lte",
+    "value": 0.05,
+    "weight": 0.063,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_sleep_9",
+    "field": "vocal_fraction",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.063,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "sleep → less speech-like audio"
+   },
+   {
+    "id": "goal_sleep_10",
+    "field": "arousal",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.127,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "sleep → arousal (low)"
+   }
+  ],
+  "assumptions": [
+   "“Sleep” uses the sleep subset of the sedative profile (50–70 bpm, soft, sparse) — preferences only.",
+   "No mood lift is applied at bedtime; “stay here” is the default and nothing here claims to medicate sleep.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “sleep”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3; “sleep”: library-relative band for spectral_flatness skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "catharsis",
+  "phrase": "feeling sad",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "catharsis",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_catharsis_1",
+    "field": "valence",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.25,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "sad → low valence"
+   },
+   {
+    "id": "goal_catharsis_2",
+    "field": "mode",
+    "op": "in",
+    "value": [
+     "minor"
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_catharsis_3",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     60,
+     100
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_catharsis_5",
+    "field": "lufs_integrated",
+    "op": "lte",
+    "value": -13.8,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   }
+  ],
+  "assumptions": [
+   "“Catharsis” runs only because you asked in sad words: it holds the mood first and does not auto-lift at the end.",
+   "The lift stays an explicit choice — say “then lift me” and a future arc can shift upward partway; nothing shifts on its own.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “catharsis”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "catharsis",
+  "phrase": "sad songs",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "catharsis",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_catharsis_1",
+    "field": "valence",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.25,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "sad → low valence"
+   },
+   {
+    "id": "goal_catharsis_2",
+    "field": "mode",
+    "op": "in",
+    "value": [
+     "minor"
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_catharsis_3",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     60,
+     100
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_catharsis_5",
+    "field": "lufs_integrated",
+    "op": "lte",
+    "value": -13.8,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   }
+  ],
+  "assumptions": [
+   "“Catharsis” runs only because you asked in sad words: it holds the mood first and does not auto-lift at the end.",
+   "The lift stays an explicit choice — say “then lift me” and a future arc can shift upward partway; nothing shifts on its own.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “catharsis”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "catharsis",
+  "phrase": "let it all out",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "catharsis",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_catharsis_1",
+    "field": "valence",
+    "op": "lte",
+    "value": 0.4,
+    "weight": 0.25,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "sad → low valence"
+   },
+   {
+    "id": "goal_catharsis_2",
+    "field": "mode",
+    "op": "in",
+    "value": [
+     "minor"
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_catharsis_3",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     60,
+     100
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_catharsis_5",
+    "field": "lufs_integrated",
+    "op": "lte",
+    "value": -13.8,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   }
+  ],
+  "assumptions": [
+   "“Catharsis” runs only because you asked in sad words: it holds the mood first and does not auto-lift at the end.",
+   "The lift stays an explicit choice — say “then lift me” and a future arc can shift upward partway; nothing shifts on its own.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “catharsis”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "nostalgia",
+  "phrase": "throwback",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "nostalgia",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_nostalgia_2",
+    "field": "valence",
+    "op": "between",
+    "value": [
+     0.4,
+     0.8
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "nostalgia → bittersweet valence"
+   },
+   {
+    "id": "goal_nostalgia_3",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     70,
+     120
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_nostalgia_4",
+    "field": "mode",
+    "op": "in",
+    "value": [
+     "major"
+    ],
+    "weight": 0.05,
+    "hard": false,
+    "policy": "neutral"
+   }
+  ],
+  "assumptions": [
+   "Nostalgia is personal: release windows and your favourites do the work — timbre terms are deliberately absent (MP-28/29).",
+   "No era is known yet: say a window like “years 1990–2005” to pin the release tag (works only where files are tagged).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “nostalgia”: release-year window skipped — no cohort known (say “years 1990–2005” to pin it)."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "nostalgia",
+  "phrase": "back in the day",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "nostalgia",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_nostalgia_2",
+    "field": "valence",
+    "op": "between",
+    "value": [
+     0.4,
+     0.8
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "nostalgia → bittersweet valence"
+   },
+   {
+    "id": "goal_nostalgia_3",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     70,
+     120
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_nostalgia_4",
+    "field": "mode",
+    "op": "in",
+    "value": [
+     "major"
+    ],
+    "weight": 0.05,
+    "hard": false,
+    "policy": "neutral"
+   }
+  ],
+  "assumptions": [
+   "Nostalgia is personal: release windows and your favourites do the work — timbre terms are deliberately absent (MP-28/29).",
+   "No era is known yet: say a window like “years 1990–2005” to pin the release tag (works only where files are tagged).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “nostalgia”: release-year window skipped — no cohort known (say “years 1990–2005” to pin it)."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "nostalgia",
+  "phrase": "memory lane",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "nostalgia",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_nostalgia_2",
+    "field": "valence",
+    "op": "between",
+    "value": [
+     0.4,
+     0.8
+    ],
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "nostalgia → bittersweet valence"
+   },
+   {
+    "id": "goal_nostalgia_3",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     70,
+     120
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_nostalgia_4",
+    "field": "mode",
+    "op": "in",
+    "value": [
+     "major"
+    ],
+    "weight": 0.05,
+    "hard": false,
+    "policy": "neutral"
+   }
+  ],
+  "assumptions": [
+   "Nostalgia is personal: release windows and your favourites do the work — timbre terms are deliberately absent (MP-28/29).",
+   "No era is known yet: say a window like “years 1990–2005” to pin the release tag (works only where files are tagged).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+   "Some library-relative bands were skipped for lack of measured data: “nostalgia”: release-year window skipped — no cohort known (say “years 1990–2005” to pin it)."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "drive",
+  "phrase": "going for a drive",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "drive",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_drive_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     95,
+     135
+    ],
+    "weight": 0.3,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_drive_2",
+    "field": "lufs_integrated",
+    "op": "gte",
+    "value": -14.7,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_drive_3",
+    "field": "onset_rate",
+    "op": "between",
+    "value": [
+     2.27,
+     5.34
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_drive_4",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.33,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   }
+  ],
+  "assumptions": [
+   "“Drive” keeps a medium, engaged feel: slow/low-energy material can increase fatigue on long drives (MP-31).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "drive",
+  "phrase": "long commute",
+  "accuracy": "partial",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "drive",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_drive_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     95,
+     135
+    ],
+    "weight": 0.3,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_drive_2",
+    "field": "lufs_integrated",
+    "op": "gte",
+    "value": -14.7,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_drive_3",
+    "field": "onset_rate",
+    "op": "between",
+    "value": [
+     2.27,
+     5.34
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_drive_4",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.33,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   }
+  ],
+  "assumptions": [
+   "“Drive” keeps a medium, engaged feel: slow/low-energy material can increase fatigue on long drives (MP-31).",
+   "Not understood yet, kept only as text for a future encoder: “long”.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections."
+  ],
+  "asks": [
+   "I left “long” unused — if it matters, say it as an activity, a tempo range, or a tag."
+  ],
+  "skippedNotes": []
+ },
+ {
+  "goal": "drive",
+  "phrase": "road trip",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "drive",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_drive_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     95,
+     135
+    ],
+    "weight": 0.3,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_drive_2",
+    "field": "lufs_integrated",
+    "op": "gte",
+    "value": -14.7,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_drive_3",
+    "field": "onset_rate",
+    "op": "between",
+    "value": [
+     2.27,
+     5.34
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_drive_4",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.33,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   }
+  ],
+  "assumptions": [
+   "“Drive” keeps a medium, engaged feel: slow/low-energy material can increase fatigue on long drives (MP-31).",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "chores",
+  "phrase": "cleaning the house",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "chores",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "genre_hint",
+    "field": "genre",
+    "op": "in",
+    "value": [
+     "house"
+    ],
+    "weight": 0.3,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     105,
+     135
+    ],
+    "weight": 0.25,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_2",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.2,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_3",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.36,
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_4",
+    "field": "lufs_integrated",
+    "op": "between",
+    "value": [
+     -15.8,
+     -10.2
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_5",
+    "field": "onset_rate",
+    "op": "between",
+    "value": [
+     2.64,
+     5.48
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_6",
+    "field": "valence",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "chores → positive affect"
+   }
+  ],
+  "assumptions": [
+   "“Chores” paces a physical task with a steady mid-up tempo; for desk/admin work the focus rules apply instead.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "chores",
+  "phrase": "do the dishes",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "chores",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_chores_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     105,
+     135
+    ],
+    "weight": 0.25,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_2",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.2,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_3",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.36,
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_4",
+    "field": "lufs_integrated",
+    "op": "between",
+    "value": [
+     -15.8,
+     -10.2
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_5",
+    "field": "onset_rate",
+    "op": "between",
+    "value": [
+     2.64,
+     5.48
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_6",
+    "field": "valence",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "chores → positive affect"
+   }
+  ],
+  "assumptions": [
+   "“Chores” paces a physical task with a steady mid-up tempo; for desk/admin work the focus rules apply instead.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ },
+ {
+  "goal": "chores",
+  "phrase": "tidying up",
+  "accuracy": "specific",
+  "readings": 1,
+  "chosen_index": 0,
+  "label": "chores",
+  "arc": "flat",
+  "constraints": [
+   {
+    "id": "goal_chores_1",
+    "field": "bpm",
+    "op": "between",
+    "value": [
+     105,
+     135
+    ],
+    "weight": 0.25,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_2",
+    "field": "pulse_clarity",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.2,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_3",
+    "field": "percussiveness",
+    "op": "gte",
+    "value": 0.36,
+    "weight": 0.15,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_4",
+    "field": "lufs_integrated",
+    "op": "between",
+    "value": [
+     -15.8,
+     -10.2
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_5",
+    "field": "onset_rate",
+    "op": "between",
+    "value": [
+     2.64,
+     5.48
+    ],
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral"
+   },
+   {
+    "id": "goal_chores_6",
+    "field": "valence",
+    "op": "gte",
+    "value": 0.5,
+    "weight": 0.1,
+    "hard": false,
+    "policy": "neutral",
+    "proxy": "chores → positive affect"
+   }
+  ],
+  "assumptions": [
+   "“Chores” paces a physical task with a steady mid-up tempo; for desk/admin work the focus rules apply instead.",
+   "Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.",
+   "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked."
+  ],
+  "asks": [],
+  "skippedNotes": []
+ }
+]

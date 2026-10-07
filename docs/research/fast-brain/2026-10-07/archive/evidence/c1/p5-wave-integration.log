@@ -1,0 +1,4 @@
+resolved tracks: ["three","one",null]
+contains undefined: true
+GET /resolve payload would serialize as: {"tracks":["three","one",null]}
+queue build CRASHES: TypeError: Cannot read properties of undefined (reading 'id')

@@ -1,0 +1,13 @@
+seeded 6 events
+### boot scratch brain :3911
+brain pid 14118, port owner 14118
+### seed today's active session: queue 3 + skip sample-001 twice
+readout: {"hides":["sample-001"],"proposals":[{"kind":"track_repeat_skip","subject":"sample-005","thesis":"You keep skipping “Engine Paper” (Lumen Atlas) early — 3 sessions across 2 days in one playlist."}],"notes":["skip side not learned yet: only 1 skipped track this session (need 2)"]}
+### boot vite preview :5199 (dist build; proxies to :3911 only)
+preview pid 14137, port owner 14137
+preview / → 200
+### puppeteer screenshots
+saved shot-describe.png
+saved shot-brain.png
+screenshots exit: 0
+done (screenshots v2)

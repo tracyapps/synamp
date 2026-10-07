@@ -1,0 +1,18 @@
+{
+  "base_commit": "be308a56",
+  "note": "Uncommitted local verification inputs; hashes identify the checked slice.",
+  "sha256": {
+    "apps/brain/src/index.ts": "6fe23fd7aef575bcffca0f51e2973c75b1920f5a67d5b87c079cf96f79c2347e",
+    "apps/brain/src/intent/interpret.ts": "8a8ce54acf32d12adcc7c65d3c3eaa83070794c7f182f555124fd466214c9ee9",
+    "apps/brain/src/intent/lexicon.ts": "bf41d243c8f23f48c17f14c9e3d136e5e1502b5996aed1a907e11e99d4341524",
+    "apps/brain/src/learning/proposals.ts": "bee69ac063b35f11aa59be1b78fcefc080ddec62f27ae97931fb59a49ced6d15",
+    "apps/brain/src/brain-readout.test.ts": "405b01b57405140f7748bb9d21fefef970fff8532c6927348df3a05ff039e5df",
+    "apps/web/src/App.tsx": "b5c0af1de9d0042a359baa5e067dca4775e9b9676f6fdc82a553637cbf4fca00",
+    "apps/web/src/BrainSession.tsx": "d76c30a05922a14e0dc0688bc31ae6c2f6395c92e77d24a3d1ea7e3566f690ca",
+    "apps/web/src/Describe.tsx": "09f89067b08b77e94ef7ba16efdfa0c30871b9cf266daddafa8fe8c9d2236807",
+    "apps/web/src/Settings.tsx": "ae61f0c065bbe625b9919f3d5cd5983868dde7d6aadbd4f9b9cb6eeae673370a",
+    "tools/brain-lab/readback.mts": "0aab58e360713e9c2691d5bed7abb52761541cb2adf3e5a7794f7cc05b916e32",
+    "tools/research/build.mjs": "d97b88e967627730d44993c87a70c342fe179378950bf7c7f1fed264845ebd0b",
+    "docs/research/catalog.json": "d1a1afe7cfff3fc3d7260c24c9c78f1f09a67c61976ff4dda786370b6fef3322"
+  }
+}

@@ -1,0 +1,44 @@
+✔ isolation: implicit events from another day never change a derived value (byte compare, both directions) (13.0785ms)
+✔ resume within 30 min keeps this session's evidence; a 30:01 gap starts fresh (0.322167ms)
+✔ midnight boundary kills the previous day's evidence (P2) (0.384875ms)
+✔ half-life: this session's weight at +60 min is ≤ 0.25× a fresh one (P3) (0.289458ms)
+✔ hide rules: one skip never hides; the 2nd hides; not_now hides; all die with the epoch (0.957875ms)
+✔ remove/restore keep their v1 semantics: last write wins per playlist (0.294958ms)
+✔ bounds: a flood of loves or skips stays under the saturated |bonus| bound (P5) (0.451583ms)
+✔ determinism: identical inputs derive byte-identical views, insertion order included (0.283625ms)
+✔ explicit-only parity: love/thumb/remove streams derive the same value and parts as deriveFeedback (0.486209ms)
+✔ scope_persistence: declared keeps playlist thumbs across epochs; global_only makes them die with the epoch (P25) (0.752792ms)
+✔ learning_reset bounds the epoch evidence and clears epoch hides (0.352709ms)
+✔ odd inputs: empty stream, a single event, unknown signals, a torn timestamp — no throws, honest defaults (0.322875ms)
+✔ reliability notes: down-weighted tempo is reported, never silently zero (0.287541ms)
+✔ centroids: the kept band pulls near candidates up; a far candidate stays put; parts stay ≤ 0.5 (P19/P20) (0.337708ms)
+✔ artist propagation: a single event moves nothing; corroborated artist events move neighbours (P17, capped) (0.215375ms)
+✔ a single event forms one epoch with a stable id, daypart and date (16.29325ms)
+✔ resume within 30 min keeps the epoch; 30:01 splits; exactly 30:00 keeps (P1) (0.433ms)
+✔ midnight splits the epoch even inside the idle gap (P2) (0.150709ms)
+✔ a session-id change splits; a missing session_id is its own bucket, never merged (0.36525ms)
+✔ dayparts at the boundaries, America/Chicago (decision 2) (0.613709ms)
+✔ the epoch's daypart and date come from its START, not its end (0.115708ms)
+✔ insertion order does not matter; ties break on id (determinism) (0.5515ms)
+✔ activeEpoch: the last epoch within the live window (inclusive), else null (P4) (0.172708ms)
+✔ an epoch that starts after `now` is never active (future events stay out) (0.311292ms)
+✔ exploration defaults to OFF and is deterministic when asked (0.578084ms)
+✔ exploration OFF path is byte-identical to no-budget (proved on a derived view) (11.51575ms)
+✔ boundary: 2 epochs → no proposal; 3 epochs across 2 dates → exactly one (P21) (12.677ms)
+✔ scan window: evidence older than 30 days proposes nothing (P23) (0.371875ms)
+✔ not_now pattern needs 3 epochs, 2 dates AND 2 dayparts (P21) (0.407667ms)
+✔ positive thresholds: repeats need 4 epochs AND 3 dates; other apps need 5 and 3 (P22) (0.541959ms)
+✔ artist pattern: ≥ 2 different hidden tracks by one artist across 3 epochs / 2 dates propose (0.314167ms)
+✔ proposal ids are stable across derivations and scan order, and proposals stay sorted (0.33075ms)
+✔ the centroid axis list is the frozen A3 subset (1.403167ms)
+✔ bpm uses tempo_confidence: full weight at ≥ 0.5, damped below, unusable at ≤ 0.2 or missing (0.37075ms)
+✔ other produced axes are usable at weight 1.0; missing values are unusable, never zero (0.15175ms)
+✔ declared fields have no producer and are refused honestly (0.219417ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 109.098416

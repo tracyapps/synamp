@@ -30,6 +30,19 @@ function skipEpoch(day: number, hour: number, track: string, count = 2, playlist
 
 const track = (id: string, artist: string): LibraryTrack => ({ id, title: `Track ${id}`, artist, signals: {} });
 
+test("accepting a negative proposal lowers preference without creating an exclusion", () => {
+  const history = [...skipEpoch(1, 9, "T"), ...skipEpoch(1, 14, "T"), ...skipEpoch(2, 9, "T")];
+  const now = local(3, 12);
+  const proposal = deriveEpochPolicy(history, { now, timezone: TZ }).proposals()[0]!;
+  assert.match(proposal.suggested_action, /weigh it lower/);
+  assert.match(proposal.suggested_action, /does not exclude/);
+  const accepted = ev(now, "thumb_down", "T", { scope: "global", source: "server", detail: { proposal_id: proposal.id } });
+  const view = deriveEpochPolicy([...history, accepted], { now, timezone: TZ });
+  assert.ok(view.adjust("T").value < 0);
+  assert.equal(view.epochHides().has("T"), false);
+  assert.equal(view.removed("PL1").has("T"), false);
+});
+
 test("boundary: 2 epochs → no proposal; 3 epochs across 2 dates → exactly one (P21)", () => {
   const two = [...skipEpoch(1, 9, "T"), ...skipEpoch(1, 14, "T")];
   assert.equal(deriveEpochPolicy(two, { now: local(2, 12, 0), timezone: TZ }).proposals().length, 0);

@@ -1,0 +1,355 @@
+{
+  "format": "synamp.research-catalog/1",
+  "updated": "2026-10-07",
+  "description": "A single home for the research behind SynAmp: original findings, source quality, current implementation, open questions and reproducible evidence. Start with the fast-learning report, then follow its claims into the code and experiments.",
+  "featured": {
+    "label": "Read The Fast Learning Brain",
+    "path": "fast-brain/2026-10-07/archive/DELIVERY/SynAmp-Fast-Brain-Report.html"
+  },
+  "handoff": {
+    "label": "Current implementation handoff",
+    "path": "../synamp/plans/FAST-BRAIN-FOLLOW-UP.md"
+  },
+  "archive_manifest": "fast-brain/2026-10-07/manifest.json",
+  "publication_boundary": "The archive is preserved for research continuity. Public publication will export reviewed articles and approved assets; private operational evidence, local paths, logs and screenshots are not part of that export. No site has been published.",
+  "sections": [
+    {
+      "id": "fast-brain",
+      "title": "Fast learning brain",
+      "description": "Goals become validated readings; listening signals adapt within one moment; deliberate feedback and accepted proposals can persist. Candidate values remain untuned.",
+      "links": [
+        {
+          "label": "Original HTML dossier with TOC and appendix",
+          "path": "fast-brain/2026-10-07/archive/DELIVERY/SynAmp-Fast-Brain-Report.html"
+        },
+        {
+          "label": "Original PDF",
+          "path": "fast-brain/2026-10-07/archive/DELIVERY/SynAmp-Fast-Brain-Report.pdf"
+        },
+        {
+          "label": "Implementation contract",
+          "path": "../synamp/plans/FAST-LEARNING-BRAIN.md"
+        },
+        {
+          "label": "Current follow-up plan",
+          "path": "../synamp/plans/FAST-BRAIN-FOLLOW-UP.md"
+        },
+        {
+          "label": "Original handoff (historical)",
+          "path": "fast-brain/2026-10-07/archive/DELIVERY/agent-instructions/AGENT-BRIEF-FAST-BRAIN.md"
+        }
+      ]
+    },
+    {
+      "id": "psychology",
+      "title": "Goals, affect and memory",
+      "description": "Nine goal bundles, attention and lyrics, exercise/arousal, catharsis and nostalgia. Keep perceived emotion, induced effect and activity separate; source results do not establish personal outcomes.",
+      "links": [
+        {
+          "label": "A1 — music psychology and MP sources",
+          "path": "fast-brain/2026-10-07/archive/A1-music-psychology.md"
+        },
+        {
+          "label": "Maintained Brain research dossier",
+          "path": "synamp-brain-dossier.html"
+        }
+      ]
+    },
+    {
+      "id": "rhythm",
+      "title": "Rhythm and measurement across cultures",
+      "description": "Named traditions, metre ambiguity, octave errors, non-12-TET assumptions and attribution. Original sources carry their retrieval limits; no tradition-named feature ships by default.",
+      "links": [
+        {
+          "label": "A2 — cross-cultural metrics and CC sources",
+          "path": "fast-brain/2026-10-07/archive/A2-cross-cultural-metrics.md"
+        },
+        {
+          "label": "Beat timing findings",
+          "path": "beat-timing-findings-2026-09-29.md"
+        },
+        {
+          "label": "Beat timing plan",
+          "path": "../synamp/plans/BEAT-TIMING.md"
+        }
+      ]
+    },
+    {
+      "id": "learning",
+      "title": "Learning and evaluation",
+      "description": "Epoch boundaries, bounded preference evidence, reliability, corroborated proposals, candidate parameters and counterfactual limits.",
+      "links": [
+        {
+          "label": "A3 — learning science, P1–P25 and ML sources",
+          "path": "fast-brain/2026-10-07/archive/A3-learning-science.md"
+        },
+        {
+          "label": "A4 — code integration map",
+          "path": "fast-brain/2026-10-07/archive/A4-code-integration-map.md"
+        },
+        {
+          "label": "Maintained deterministic lab",
+          "path": "../../tools/brain-lab/README.md"
+        },
+        {
+          "label": "Original final lab evidence",
+          "path": "fast-brain/2026-10-07/archive/DELIVERY/verification/final-lab/EVIDENCE.md"
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "title": "Reviews and experiments",
+      "description": "Original review findings are paired with the fix receipts that supersede them. Local verification and real-listening evidence remain distinct.",
+      "links": [
+        {
+          "label": "Fresh follow-up verification",
+          "path": "results/fast-brain-follow-up-2026-10-07/README.md"
+        },
+        {
+          "label": "Review conclusions",
+          "path": "fast-brain/2026-10-07/archive/review.md"
+        },
+        {
+          "label": "Code review",
+          "path": "fast-brain/2026-10-07/archive/C1-code-review.md"
+        },
+        {
+          "label": "Bias review",
+          "path": "fast-brain/2026-10-07/archive/C2-bias-review.md"
+        },
+        {
+          "label": "Psychology review",
+          "path": "fast-brain/2026-10-07/archive/C3-psych-review.md"
+        },
+        {
+          "label": "Production review",
+          "path": "fast-brain/2026-10-07/archive/C4-production-review.md"
+        },
+        {
+          "label": "Verification manifest",
+          "path": "fast-brain/2026-10-07/archive/DELIVERY/verification/README.md"
+        },
+        {
+          "label": "Sound Booth research plan",
+          "path": "synamp-sound-booth-plan.html"
+        },
+        {
+          "label": "System implementation roadmap",
+          "path": "../synamp/plans/AGENT-ROADMAP.md"
+        }
+      ]
+    },
+    {
+      "id": "library-explorer",
+      "title": "Library Explorer and Galaxy",
+      "description": "Release identity, collaboration credits, precise catalog views and visual rediscovery. Private read-only census and an approved Galaxy concept; current implementation and future dependencies are explicit.",
+      "links": [
+        {
+          "label": "HTML findings with TOC and appendix",
+          "path": "library-explorer/2026-10-07/index.html"
+        },
+        {
+          "label": "Canonical Library Explorer / Galaxy roadmap",
+          "path": "../synamp/plans/LIBRARY-EXPLORER.md"
+        },
+        {
+          "label": "Private library census",
+          "path": "library-explorer/2026-10-07/census.md"
+        },
+        {
+          "label": "Approved concept and design contract",
+          "path": "library-explorer/2026-10-07/concept-provenance.json"
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "id": "FB01",
+      "title": "Preserve and index the complete research",
+      "state": "Complete; local checks verified",
+      "depends": "none",
+      "sources": "A1–A4, B/H receipts, C1–C4, DELIVERY",
+      "acceptance": "Every content file retained byte-for-byte; full manifest, HTML TOC, source appendix and deterministic generation."
+    },
+    {
+      "id": "FB02",
+      "title": "Expose unsupported numeric requests",
+      "state": "Complete; local checks verified",
+      "depends": "FB01",
+      "sources": "C3 F-A1-4; H1 §5.2",
+      "acceptance": "Years, bare ranges, short numbers and decimals remain in audit/asks; supported BPM ranges still recognized."
+    },
+    {
+      "id": "FB03",
+      "title": "Show assumptions and culture caveats",
+      "state": "Complete; local checks verified",
+      "depends": "FB02",
+      "sources": "C2 F7; C3 F-SURF-2",
+      "acceptance": "Notes belong to the applied reading and appear in expandable UI; clarification remains visible; metadata does not score."
+    },
+    {
+      "id": "FB04",
+      "title": "Respect playlist context and expose policy rollback",
+      "state": "Complete; local checks verified",
+      "depends": "FB01",
+      "sources": "B5 §7; C2 F15; C4 F5",
+      "acceptance": "Separate readout per canonical track/playlist pair; settings hot-applies either existing policy and retains queue/history."
+    },
+    {
+      "id": "FB05",
+      "title": "Correct negative proposal promises",
+      "state": "Complete; local checks verified",
+      "depends": "FB01",
+      "sources": "H2 F5; current-code read-back",
+      "acceptance": "Thumbs-down lowers preference without guaranteeing exclusion; real-route accept dedupes and keeps log provenance honest."
+    },
+    {
+      "id": "FB06",
+      "title": "Correct the memory statistic attribution",
+      "state": "Implemented; primary indexed text checked",
+      "depends": "FB01",
+      "sources": "A1 MP-29; Janata 2007/2009",
+      "acceptance": "Separate 2007 study-specific result from 2009 recruitment threshold; neither is population prevalence or proof of impaired focus."
+    },
+    {
+      "id": "FB07",
+      "title": "Real-library read-back before tuning",
+      "state": "Replay tool verified; owner listening pending",
+      "depends": "FB02–FB05",
+      "sources": "A3 §4; W4 §4.6",
+      "acceptance": "Read-only replay with input hashes, explicit clock/timezone, ranking differences, coverage/hides/underfill and owner verdicts."
+    },
+    {
+      "id": "FB08",
+      "title": "Odd and layered metre correction",
+      "state": "Planned",
+      "depends": "FB07; beat R2/R4",
+      "sources": "A2 §4.4.4",
+      "acceptance": "Explicit tap-the-cycle and layered/ambiguous states; human verification tier expires with changed measurement."
+    },
+    {
+      "id": "FB09",
+      "title": "Reconcile tempo reliability in ordering",
+      "state": "Decision and evaluation needed",
+      "depends": "FB07",
+      "sources": "C3 F-PB-3; A2 §4.4.6",
+      "acceptance": "Document rule; version changes; test missing and 0/.2/.35/.5/1 confidence, fallback and membership invariants."
+    },
+    {
+      "id": "FB10",
+      "title": "Calibrated field producers",
+      "state": "Planned in system P4",
+      "depends": "P1/P4; independent benchmarks",
+      "sources": "A1 §2; A3 gaps",
+      "acceptance": "Versioned, licensed producers with uncertainty, abstention, resource cost and held-out real-data evaluation."
+    },
+    {
+      "id": "FB11",
+      "title": "Explicit protection for continuous-form ordering",
+      "state": "Schema/design decision needed",
+      "depends": "FB07",
+      "sources": "A2 §4.4.9; C2 F10–11",
+      "acceptance": "Only user metadata suppresses arcs; no cultural/ceremonial inference; hash/compatibility and mixed-list behavior defined."
+    },
+    {
+      "id": "FB12",
+      "title": "Decide proposal dismissal lifecycle",
+      "state": "Decision needed",
+      "depends": "FB07",
+      "sources": "B5 §5.6; C4 F4",
+      "acceptance": "Permanent dismissal documented or explicit reset/expiry designed; new evidence never silently overrides a dismissal."
+    },
+    {
+      "id": "FB13",
+      "title": "Evaluate richer sequence shapes",
+      "state": "Planned hypothesis",
+      "depends": "FB07; FB09; producer coverage",
+      "sources": "A1 §3; C3 F-SEQ-1",
+      "acceptance": "Predeclared shape and outcome, owner comparison with flat, full permutation/unknown positions/hard guards retained."
+    },
+    {
+      "id": "FB14",
+      "title": "Public knowledge base",
+      "state": "Planned; publication separate",
+      "depends": "FB01; source and public-export review",
+      "sources": "User direction; A2 §4.3; W5 appendix",
+      "acceptance": "Topic articles retain evidence/source IDs, retrieval quality, disagreements and attribution; explicit public allowlist and accessible static build."
+    },
+    {
+      "id": "LE02",
+      "title": "Library filters, views, columns and first pivot layer",
+      "state": "Complete initial slice; local checks verified",
+      "depends": "LE01 private census",
+      "sources": "Owner brainstorm; Library Explorer handoff",
+      "acceptance": "List/grid/table, advanced field rules and Unicode-safe matching, full-result grouping, durable browser column preference; physical identity retained."
+    },
+    {
+      "id": "LE06",
+      "title": "Galaxy planets and album/song discovery",
+      "state": "Approved initial slice; local checks verified",
+      "depends": "LE01; approved Galaxy concept",
+      "sources": "Owner design approval 2026-10-07; Library Explorer handoff",
+      "acceptance": "Separate lazy view with full-pool search/random, bounded file-count planets, gesture and keyboard alternatives, source-folder drill-down and truthful candidate credits."
+    },
+    {
+      "id": "LE04-10",
+      "title": "Reviewed release identity and richer Galaxy actions",
+      "state": "Planned; dependencies in Library Explorer handoff",
+      "depends": "LE02, LE06; reviewed identity schema",
+      "sources": "Owner brainstorm; census and primary tagging docs",
+      "acceptance": "Virtual release review, explicit artist identities, paths, nested pivots, notes/tags and saved views, verified listening metrics, tree/flower/radial layout and reduced motion."
+    },
+    {
+      "id": "VB01",
+      "title": "MilkDrop full-canvas Retina render",
+      "state": "Complete; isolated actual-WebGL checks verified",
+      "depends": "none",
+      "sources": "Owner visualizer bug; installed Butterchurn viewport reproduction",
+      "acceptance": "Physical renderer/canvas pixels agree after startup/resize/DPR change, fullscreen dialog contains scroll and restores it on Close/Escape."
+    }
+  ],
+  "errata": [
+    {
+      "title": "Original reports are historical",
+      "detail": "Autoclaw captures describe its frozen feature commit. Current checks belong to a separate receipt; prior counts are not current claims."
+    },
+    {
+      "title": "Negative proposal acceptance",
+      "detail": "The original H2/brief wording promises exclusion. The code applies a bounded global thumbs-down score; maintained product copy now says lower preference."
+    },
+    {
+      "title": "Memory statistic",
+      "detail": "Janata 2007 reports a study-specific 30% average; Janata 2009 selected participants with at least 30% in earlier validation. The maintained dossier attribution is corrected; current source access was indexed primary-text excerpts, with direct full-text opening blocked."
+    },
+    {
+      "title": "Artist gate disagreement",
+      "detail": "A3 prose says at least two distinct tracks; P17 and epoch-v1 count events. Keep the implemented rule until a versioned decision supported by evidence."
+    },
+    {
+      "title": "Dayparts and resets",
+      "detail": "Frozen B2 decisions/code supersede A3 daypart ranges and missing-session semantics. A reset with non-epoch scope is ignored; remove with not_now is epoch-only."
+    },
+    {
+      "title": "Preliminary chapter state",
+      "detail": "W1 source preamble says sequencing notes are unrendered; H2 added them. W2 cites an older lab hash; final H4 capture supersedes it."
+    },
+    {
+      "title": "Cross-session wording",
+      "detail": "Proposals are the consent channel for inferred patterns. Explicit loves, thumbs and removes can also persist at their declared scope."
+    },
+    {
+      "title": "Rollback and smoke paths",
+      "detail": "Archived reset --hard instructions apply to its feature branch, not current main. Archived .cluster smoke paths lived outside this repository. Use the maintained follow-up and scratch route checks."
+    },
+    {
+      "title": "Unsupported fields are not free",
+      "detail": "Declared neutral soft terms dilute score gaps and can alter bounded feedback/MMR selection. Floor normalization is neutral only within a pure bundle, apart from truncation; mixed plans reweight."
+    },
+    {
+      "title": "Candidate evidence",
+      "detail": "Weights, bands, proposal thresholds and fixed arcs are hypotheses. Synthetic fixtures prove invariants, not classifier accuracy, usefulness or cultural generality."
+    }
+  ]
+}

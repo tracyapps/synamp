@@ -1,0 +1,29 @@
+# Determinism & CWD-independence evidence — H4 refresh (2026-10-07, POST hotfixes H1/H2/H3)
+
+Canonical command (run 1, from the repo root — the capture used for lab.json/lab.stdout.log):
+  cd /Users/tapps/_dev/web-apps/SynAmp
+  node --experimental-strip-types tools/brain-lab/lab.mts --json lab.json
+  (absolute --json path used during capture; the path is resolved against CWD, so any path works)
+
+Run 1 generated_at: 2026-10-07T05:13:08.308Z  · exit 0
+Run 2 generated_at: 2026-10-07T05:13:09.506Z  · exit 0
+
+=== Raw diff: lab.json (run 1) vs determinism-run2.json (run 2) ===
+3c3
+<   "generated_at": "2026-10-07T05:13:08.308Z",
+---
+>   "generated_at": "2026-10-07T05:13:09.506Z",
+
+=== Normalized comparison (all fields except generated_at; python json round-trip, sort_keys) ===
+run1 == run2 (normalized): True
+run1 == cwd  (normalized): True
+normalized content sha256 (all three identical): c81b8753ddf79b61a023bf45a66bd581bef1a6634ef4199bd4b8e2335dfdb831
+
+=== CWD independence: third run from /tmp ===
+  cd /tmp && node --experimental-strip-types /Users/tapps/_dev/web-apps/SynAmp/tools/brain-lab/lab.mts --json cwd-run.json  · exit 0  (captured 2026-10-07T05:13:09.687Z)
+  repo.root recorded in cwd-run.json: /Users/tapps/_dev/web-apps/SynAmp @ feat/fast-learning-brain b6ea5ce1
+
+=== Summary lines (identical in all three runs) ===
+[brain-lab] SUMMARY — scenarios: 8 (8 pass, 0 partial, 0 pending, 0 fail)
+[brain-lab] checks: 86 pass · 0 fail · 0 pending · 5 skip
+[brain-lab] RESULT: OK — all checks pass

@@ -1,0 +1,198 @@
+
+> @synamp/brain@0.0.0 test /Users/tapps/_dev/web-apps/SynAmp/apps/brain
+> node --experimental-strip-types --test src/*.test.ts src/*/*.test.ts
+
+✔ request signing follows the Last.fm recipe (0.598042ms)
+✔ Last.fm's play rule: over 30 s, and half the track or 4 minutes (0.068334ms)
+✔ connecting needs the one-time state; then only plays while on are sent (24.299958ms)
+✔ folder-guessed names are held back, never sent; short and partial plays don't count (4.649ms)
+✔ plays captured from other apps use the library core's names (9.19075ms)
+✔ more than 50 plays go in batches of 50, oldest first (10.088917ms)
+✔ outages back off and keep the plays; a bad session pauses until reconnect (31.830542ms)
+✔ refusals are recorded once and never retried (4.056875ms)
+✔ off means off, and disconnect forgets the session (2.368083ms)
+✔ apply: renames, artwork follows, empty folders tidied, every move journaled (17.077292ms)
+✔ apply: refuses before touching anything when a file vanished or a target exists (9.460667ms)
+✔ apply: a failure half-way puts back what was already moved (8.143541ms)
+✔ paths that could leave the library are refused; the library root is never removed (1.954666ms)
+✖ artist merge: whole folders, everything follows, the variant folder disappears (5.608334ms)
+✔ the librarian loop: claims a job from the brain, does it, reports — and resends a lost report (31.326333ms)
+✔ import: files from incoming/ are filed, artwork follows, identical copies set aside, undo puts them back (32.606708ms)
+﹣ import across disks: copied, checksum-verified, then the original removed (0.062209ms) # SKIP
+✔ duplicates: the worse copy is set aside first, the better one takes its place; names never clash; undo puts both back (10.0685ms)
+✔ duplicates: a place is only free when an earlier move in the same decision empties it (1.296417ms)
+✔ buttons queue commands; the worker takes one at a time and reports back (7.138375ms)
+✔ an interrupted command is marked as such; the librarian's batches trigger an update unless switched off (2.413042ms)
+✔ while analysis waits for a library list update, the web app sees how far along it is (5.526959ms)
+✔ fold drops accents, case and punctuation (0.962083ms)
+✔ albums sort by artist (ignoring 'The'), then year; title and year sorts work (9.008708ms)
+✔ album search matches every word across title, artist and year, accents ignored (0.147042ms)
+✔ album paging and summary (0.076958ms)
+✔ an album's tracks come back in play order; disc folders fold into the album (0.239833ms)
+✔ track search ranks title matches first and needs every word (0.197292ms)
+✔ shuffled keeps every item and leaves the input alone (0.097875ms)
+✔ who you love: kept, played and loved; compilations aren't artists; top artists followed unless you unfollow (8.921875ms)
+✔ which artist: from matched albums without a search; a clear search hit; namesakes go to you (22.197875ms)
+✔ the gaps: owned by release group or title, types and live albums filtered, new and upcoming flagged, ignore hides (17.259084ms)
+✔ the checker works through followed artists, skips ones waiting for you, and re-checks monthly (10.636458ms)
+✔ listen/buy links are plain searches with the names encoded (0.153541ms)
+✔ sketches: same recording is close, a different one is far, small shifts are found (1.089375ms)
+✔ same recording: identical audio, or matching sketch and length — otherwise not certain (2.262959ms)
+✔ better copy: lossless, then resolution, then bitrate, then tags; a tie keeps the copy already there (0.484834ms)
+✔ plan: a merge blocked by the same recording keeps the better copy and sets the other aside (12.018333ms)
+✔ plan: two copies of one recording in one album folder — the better keeps the name, no “(2)” (0.680625ms)
+✔ store: a keep choice is saved, checked and can be forgotten (4.529708ms)
+✔ progress reports are type-checked and trimmed to what the UI uses (7.539541ms)
+✔ the latest report survives a restart, and silence while analysing shows as stale (1.149584ms)
+✔ library stats count names, identity and duplicate copies (0.140792ms)
+✔ tags: ID3v2.3 / 2.4 (Latin-1, UTF-8, UTF-16), ID3v1, FLAC, M4A — and junk never throws (4.532792ms)
+✔ incoming scan: waits for files still arriving, skips set-asides and dotfiles, caches tags (9.030583ms)
+✔ new music: named to the standard, filed beside what's there, gaps filled (20.019083ms)
+✔ new music: identical copies are set aside (never deleted); other versions kept as (2) (0.338166ms)
+✔ new music: one album uploaded as loose files still takes its artwork along (0.155ms)
+✔ album folders: disc folders fold in, loose files are ignored, names come from tags or folders (7.982583ms)
+✔ titles compare loosely: remaster suffixes, accents, punctuation, ampersands (0.353959ms)
+✔ a folder with one track left lists the other nine as missing (0.366583ms)
+✔ number and length can match a track whose title differs (0.122083ms)
+✔ the client is polite: contact required, one request per ~second, Lucene escaping (14.934958ms)
+✔ a MusicBrainz ID in the tags is used directly: one request, no search (0.470834ms)
+✔ search picks the edition that explains the files, and keeps the others as alternatives (0.452459ms)
+✔ nothing confident goes to review; nothing found is no_match (1.673792ms)
+✔ the list clears itself when a re-ripped track arrives, and keeps your notes (2.268542ms)
+✔ you can choose another edition, or say the album isn't on MusicBrainz (3.713ms)
+✔ the matcher works through folders, re-opens uncertain ones when they change, and backs off when MusicBrainz is busy (2.940708ms)
+✔ CSV quotes commas, quotes and newlines (0.209042ms)
+✔ naming: safe on macOS and the NAS, the standard track and album forms (8.079125ms)
+✔ plan: album folders get the year, tracks get numbers, from tags or MusicBrainz (9.550875ms)
+✔ plan: disc folders fold in with 1-01 numbering; copies get (2); compilations go to Various Artists (1.3185ms)
+✔ plan: a folder name that's taken gets the edition, or is flagged — never overwritten (0.395ms)
+✔ plan: artist spellings merge into the MusicBrainz / tagged spelling (0.840791ms)
+✔ reviews, batches and the librarian's reports (6.959208ms)
+✔ overlay: moved tracks follow their files until the next export; matches are carried (2.107167ms)
+✔ batches with new music: imports go first, undo swaps the areas back, the overlay ignores arrivals (7.8945ms)
+✔ live progress from the librarian: shown while running, keeps a slow big batch from being handed out again (29.915666ms)
+✔ paths from any OS and file:// URLs become forward-slash paths (1.052417ms)
+✔ M3U: EXTINF gives length, artist and title; comments and streams are skipped (0.48575ms)
+✔ songs are found by path end, then artist + title (choosing the album copy), then title + album (0.764375ms)
+✔ the album breaks a tie between copies of the same song (0.112875ms)
+✔ plist reader handles dicts, arrays, entities, empty and boolean tags (0.275125ms)
+✔ iTunes library XML: your playlists and folders, not the built-in lists (0.339792ms)
+✔ the format is worked out from the file (0.326917ms)
+✔ tapping along: close enough counts, octave errors are recognised (0.8295ms)
+✔ answers count towards accuracy, correct the track, and give way to a new measurement (3.03625ms)
+✔ codes are 6 easy-to-read characters (1.246542ms)
+✔ guest IDs are checked and only a hash is kept (0.623459ms)
+✔ a party: codes in any case, requests, votes, the host's say, and the end (4.631042ms)
+✔ one guest can't flood the list (12.351458ms)
+✔ rate limit: so many a minute per key (0.228417ms)
+✔ play next goes right after the current song; party requests line up behind each other (90.584ms)
+✔ nested folders and roll-ups stay live as tracks are added (4.967834ms)
+✔ interleave alternates children of the source folder (5.25825ms)
+✔ shuffle retains every entry, including duplicates (2.405583ms)
+✔ rejects recursive roll-ups and preserves the prior state (4.607916ms)
+✔ persists edits and protects referenced nodes from deletion (14.148125ms)
+✔ smart playlists store the plan, resolve live, and reject invalid plans (7.474459ms)
+✔ flagship prompt drafts a valid plan with every exclusion protected (16.562917ms)
+✔ negations never reach the encoder-bound text (0.7335ms)
+✔ flagship evaluation obeys every exclusion and keeps near misses separate (1.691125ms)
+✔ the similarity channel cannot smuggle a track past a hard guard (0.3425ms)
+✔ unknown never quietly passes an explicit exclusion (0.092458ms)
+✔ relaxation never crosses a protected rule; permitted widening is recorded (0.968583ms)
+✔ zero and two results are reported honestly, without padding (0.222417ms)
+✔ a missing genre tag is not evidence of absence (5.524208ms)
+✔ unsupported fields become structured asks, and hard ones are flagged unenforced (0.314917ms)
+✔ aliases round-trip to canonical fields and the same hash (0.250542ms)
+✔ the hash ignores key order but not meaning (0.165542ms)
+✔ malformed plans fail with paths (0.601625ms)
+✔ timing predicates require an eligible beat status — null is never zero (0.252542ms)
+✔ diversity caps hold and are counted (0.258458ms)
+✔ exemplar titles resolve against the library or are reported (0.351833ms)
+✔ every produced registry field exists on the analyzer's AnalysisResult (0.512333ms)
+✔ a saved plan picks up a newly analysed track from the library file (7.892209ms)
+✔ every signal the analyzer exports is registered here (0.753375ms)
+✔ the library reader accepts analyzer exports and refuses unknown formats (9.354792ms)
+✔ a moved track keeps its ID: path lookups and old IDs resolve to it (0.972041ms)
+✔ stations: resolved URL, tidy tags; HLS and broken entries are left out (0.927042ms)
+✔ your own network counts as private (3.321917ms)
+✔ search asks the directory with SynAmp's filters and remembers stations for favourites (2.673292ms)
+✔ an unknown station ID is looked up in the directory (0.530542ms)
+✔ the relay passes audio through and follows redirects (16.08625ms)
+✔ the relay refuses stations that point into your own network, even after a redirect (5.966625ms)
+✔ a web page instead of audio is refused (1.695917ms)
+✔ play → skip is recorded as an early skip, scoped to the session (38.79875ms)
+✔ stop classification uses an absolute and a relative floor (0.087417ms)
+✔ retries are idempotent for reports, queues and feedback (39.708167ms)
+✔ interruptions, errors and seeks are never dislikes (62.808917ms)
+✔ reports for a track that is no longer current are refused (21.188292ms)
+✔ restart restores the session and keeps retries recognised (34.263416ms)
+✔ a torn last line from a crash is skipped and the next write starts cleanly (9.681167ms)
+✔ heard-through and replays count for that playlist (46.772292ms)
+✔ remove hides a track from that playlist only, and restore brings it back (19.71225ms)
+✔ feedback re-ranks but cannot break a hard rule (10.585334ms)
+✔ negatives go global only when explicit or corroborated (9.037375ms)
+✔ two early skips in one playlist become a small penalty there (66.300875ms)
+✔ feedback decays: playlist signals fade faster than global ones (0.189458ms)
+✔ stream links are signed, expire, and stay inside the library (24.277667ms)
+✔ feedback recorded under a track's old ID still counts after it moves (0.1095ms)
+✔ saved values win over the server file; clearing goes back to it; secrets never leave (8.064458ms)
+✔ ticks and the NAS's tailnet name are kept; pasted addresses are cleaned up (5.238916ms)
+✔ plays from other apps are grouped by app; only Subsonic plays count (0.156917ms)
+✔ Navidrome's ping: up, answering oddly, or not there (13.173542ms)
+✔ sign-in checks the password with Navidrome and keeps only a salted token (16.132416ms)
+✔ sends each playlist with matched songs, counts the rest, and replaces on the next send (11.612542ms)
+✔ never touches playlists it didn't make, and remakes one deleted by hand (11.231041ms)
+✔ falls back to a quoted empty query and finds new playlists by name on older servers (5.149583ms)
+✔ a password changed in Navidrome signs SynAmp out instead of retrying forever (9.132167ms)
+✔ folder names become part of the playlist name (0.252708ms)
+✔ ordinary calls and streams pass straight through (19.696875ms)
+✔ an accepted scrobble is captured and mapped to the analyzer's track id (6.194041ms)
+✔ a scrobble Navidrome rejects records nothing (104.397875ms)
+✔ form-encoded POST scrobbles (OpenSubsonic) work, including several ids (7.349792ms)
+✔ only real paths inside the library map to ids (0.106459ms)
+✔ the same code gives the same fingerprint; Finder litter and installed packages don't count (14.784042ms)
+✔ running vs the NAS copy: same, waiting for Build, or unknown (75.846125ms)
+ℹ tests 149
+ℹ suites 0
+ℹ pass 147
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 696.365083
+
+✖ failing tests:
+
+test at src/librarian/librarian.test.ts:149:1
+✖ artist merge: whole folders, everything follows, the variant folder disappears (5.608334ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   'Ani Difranco/Dilate/01 Untouchable Face.mp3',
+  +   'Ani Difranco/Dilate/folder.jpg',
+  +   'Ani Difranco/Evolve/01 Promised Land.mp3',
+  +   'Ani Difranco/notes.txt'
+  -   'Ani DiFranco/Dilate/01 Untouchable Face.mp3',
+  -   'Ani DiFranco/Dilate/folder.jpg',
+  -   'Ani DiFranco/Evolve/01 Promised Land.mp3',
+  -   'Ani DiFranco/notes.txt'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/tapps/_dev/web-apps/SynAmp/apps/brain/src/librarian/librarian.test.ts:162:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'Ani Difranco/Dilate/01 Untouchable Face.mp3', 'Ani Difranco/Dilate/folder.jpg', 'Ani Difranco/Evolve/01 Promised Land.mp3', 'Ani Difranco/notes.txt' ],
+    expected: [ 'Ani DiFranco/Dilate/01 Untouchable Face.mp3', 'Ani DiFranco/Dilate/folder.jpg', 'Ani DiFranco/Evolve/01 Promised Land.mp3', 'Ani DiFranco/notes.txt' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+/Users/tapps/_dev/web-apps/SynAmp/apps/brain:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @synamp/brain@0.0.0 test: `node --experimental-strip-types --test src/*.test.ts src/*/*.test.ts`
+Exit status 1
+EXIT:1

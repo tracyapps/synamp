@@ -1,0 +1,18 @@
+=== wind down for bed -> specific readings=1
+  [0] calm + sleep: goal_calm_1(bpm between [55,80] w=0.186); goal_calm_2(percussiveness lte 0.35 w=0.139); goal_calm_3(onset_rate lte 2.98 w=0.139); goal_calm_4(lufs_integrated lte -13.8 w=0.116); goal_calm_5(loudness_range lte 8.7 w=0.069); goal_calm_8(beat_interval_cv lte 0.05 w=0.069); goal_calm_9(arousal lte 0.4 w=0.139); goal_sleep_1(bpm between [50,70] w=0.191); goal_sleep_2(percussiveness lte 0.35 w=0.127); goal_sleep_3(onset_rate lte 2.98 w=0.127); goal_sleep_4(lufs_integrated lte -13.8 w=0.106); goal_sleep_5(loudness_range lte 8.7 w=0.063); goal_sleep_8(beat_interval_cv lte 0.05 w=0.063); goal_sleep_9(vocal_fraction lte 0.4 w=0.063); goal_sleep_10(arousal lte 0.4 w=0.127)
+      arc=cooldown
+  asks: []
+=== chill music for cleaning -> specific readings=1
+  [0] calm + chores: goal_calm_1(bpm between [55,80] w=0.186); goal_calm_2(percussiveness lte 0.35 w=0.139); goal_calm_3(onset_rate lte 2.98 w=0.139); goal_calm_4(lufs_integrated lte -13.8 w=0.116); goal_calm_5(loudness_range lte 8.7 w=0.069); goal_calm_8(beat_interval_cv lte 0.05 w=0.069); goal_calm_9(arousal lte 0.4 w=0.139); goal_chores_1(bpm between [105,135] w=0.25); goal_chores_2(pulse_clarity gte 0.5 w=0.2); goal_chores_3(percussiveness gte 0.36 w=0.15); goal_chores_4(lufs_integrated between [-15.8,-10.2] w=0.1); goal_chores_5(onset_rate between [2.64,5.48] w=0.1); goal_chores_6(valence gte 0.5 w=0.1)
+      arc=cooldown
+  asks: []
+=== focus playlist for studying -> specific readings=1
+  [0] focus: goal_focus_1(vocal_fraction lte 0.1 w=0.264); goal_focus_2(bpm between [85,125] w=0.088); goal_focus_3(pulse_clarity gte 0.5 w=0.088); goal_focus_4(onset_rate lte 4 w=0.088); goal_focus_5(dynamic_complexity lte 8 w=0.058); goal_focus_6(lufs_integrated between [-16.4,-10.4] w=0.058); goal_focus_7(spectral_flatness lte 0.3 w=0.058); goal_focus_9(beat_interval_cv lte 0.05 w=0.088); goal_focus_10(arousal between [0.3,0.65] w=0.147)
+      arc=flat
+  asks: []
+=== music for my workout then sleep -> partial readings=1
+  [0] pump up + sleep: goal_pump_up_1(bpm between [125,140] w=0.166); goal_pump_up_2(percussiveness gte 0.5 w=0.142); goal_pump_up_3(pulse_clarity gte 0.55 w=0.119); goal_pump_up_4(beat_grid_strength gte 0.5 w=0.095); goal_pump_up_5(onset_rate gte 4.14 w=0.095); goal_pump_up_6(lufs_integrated gte -12.7 w=0.095); goal_pump_up_8(beat_interval_cv lte 0.06 w=0.071); goal_pump_up_9(arousal gte 0.6 w=0.142); goal_sleep_1(bpm between [50,70] w=0.191); goal_sleep_2(percussiveness lte 0.35 w=0.127); goal_sleep_3(onset_rate lte 2.98 w=0.127); goal_sleep_4(lufs_integrated lte -13.8 w=0.106); goal_sleep_5(loudness_range lte 8.7 w=0.063); goal_sleep_8(beat_interval_cv lte 0.05 w=0.063); goal_sleep_9(vocal_fraction lte 0.4 w=0.063); goal_sleep_10(arousal lte 0.4 w=0.127)
+      arc=build
+  asks: [
+  'I left “then” unused — if it matters, say it as an activity, a tempo range, or a tag.'
+]

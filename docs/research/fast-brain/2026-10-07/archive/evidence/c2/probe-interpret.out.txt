@@ -1,0 +1,224 @@
+====================================================================================================
+PROMPT: "latin party music"
+accuracy=partial chosen_index=0 readings=1 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  reading[0] label="dance" confidence=0.6 arc=peak
+    constraints: goal_dance_1:bpm between [115,130] | goal_dance_2:pulse_clarity gte 0.55 | goal_dance_3:percussiveness gte 0.5 | goal_dance_4:onset_rate between [2.98,5.75] | goal_dance_5:lufs_integrated gte -13.8 | goal_dance_7:beat_grid_strength gte 0.5 | goal_dance_8:beat_interval_cv lte 0.06 | goal_dance_9:danceability gte 0.6 (proxy: dance → danceability)
+    assumptions:
+      - “Dance” prefers a ~115–130 bpm groove with a clear pulse and percussion, at moderate complexity — not maximum busy-ness.
+      - Enjoyment beats cultural familiarity for moving together — this bundle is built to yield quickly to your feedback (MP-14).
+      - Not understood yet, kept only as text for a future encoder: “latin”.
+      - Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.
+      - Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.
+      - Some library-relative bands were skipped for lack of measured data: “dance”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3.
+  asks:
+    ? I left “latin” unused — if it matters, say it as an activity, a tempo range, or a tag.
+      reason: These words didn't map to anything measurable and were not guessed at.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+  audit:
+    [goal] party -> goal “dance” — 9 soft preferences, arc peak
+    [unparsed] latin -> not understood — kept as text only (not enforced)
+====================================================================================================
+PROMPT: "tribal drumming"
+accuracy=impossible chosen_index=-1 readings=0 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  asks:
+    ? “tribal drumming” is too specific for what I can measure today.
+      reason: Nothing in it maps to a measured field, and I won't fake one.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+    ? Give me one anchor I can measure — an activity, a tempo range, or a tag.
+      reason: One anchor is enough to build a preview.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+  audit:
+    [unparsed] tribal drumming -> not understood — kept as text only (not enforced)
+    [note] reading: what I could parse -> dropped — plan validation failed: $.constraints A plan needs at least one supported constraint or a positive exemplar
+    [note] request -> Nothing enforceable validated — reported as impossible instead of guessing.
+====================================================================================================
+PROMPT: "gypsy jazz"
+accuracy=partial chosen_index=0 readings=1 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  reading[0] label="what I could parse" confidence=0.4 arc=(none)
+    constraints: genre_hint:genre in [jazz]
+    assumptions:
+      - Not understood yet, kept only as text for a future encoder: “gypsy”.
+  asks:
+    ? I left “gypsy” unused — if it matters, say it as an activity, a tempo range, or a tag.
+      reason: These words didn't map to anything measurable and were not guessed at.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+  audit:
+    [soft] jazz -> prefer genre tag jazz (soft — tags are weak evidence)
+    [unparsed] gypsy -> not understood — kept as text only (not enforced)
+====================================================================================================
+PROMPT: "exotic vibes"
+accuracy=impossible chosen_index=-1 readings=0 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  asks:
+    ? “exotic” is too specific for what I can measure today.
+      reason: Nothing in it maps to a measured field, and I won't fake one.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+    ? Give me one anchor I can measure — an activity, a tempo range, or a tag.
+      reason: One anchor is enough to build a preview.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+  audit:
+    [unparsed] exotic -> not understood — kept as text only (not enforced)
+    [note] reading: what I could parse -> dropped — plan validation failed: $.constraints A plan needs at least one supported constraint or a positive exemplar
+    [note] request -> Nothing enforceable validated — reported as impossible instead of guessing.
+====================================================================================================
+PROMPT: "music for my ancestors"
+accuracy=impossible chosen_index=-1 readings=0 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  asks:
+    ? “ancestors” is too specific for what I can measure today.
+      reason: Nothing in it maps to a measured field, and I won't fake one.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+    ? Give me one anchor I can measure — an activity, a tempo range, or a tag.
+      reason: One anchor is enough to build a preview.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+  audit:
+    [unparsed] ancestors -> not understood — kept as text only (not enforced)
+    [note] reading: what I could parse -> dropped — plan validation failed: $.constraints A plan needs at least one supported constraint or a positive exemplar
+    [note] request -> Nothing enforceable validated — reported as impossible instead of guessing.
+====================================================================================================
+PROMPT: "west african drumming for focus"
+accuracy=partial chosen_index=0 readings=1 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  reading[0] label="focus" confidence=0.6 arc=flat
+    constraints: goal_focus_1:vocal_fraction lte 0.1 (proxy: no-words → low vocal_fraction) | goal_focus_2:bpm between [85,125] | goal_focus_3:pulse_clarity gte 0.5 | goal_focus_4:onset_rate lte 4 | goal_focus_5:dynamic_complexity lte 8 | goal_focus_6:lufs_integrated between [-16.4,-10.4] | goal_focus_7:spectral_flatness lte 0.3 | goal_focus_9:beat_interval_cv lte 0.05 | goal_focus_10:arousal between [0.3,0.65] (proxy: focus → arousal (moderate band))
+    assumptions:
+      - “Focus” is a soft preference bundle: mid tempo, a steady pulse, low distraction, no mood imposition — nothing in it excludes a track.
+      - Not understood yet, kept only as text for a future encoder: “west african drumming”.
+      - Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.
+      - Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.
+      - Some library-relative bands were skipped for lack of measured data: “focus”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3.
+  asks:
+    ? I left “west african drumming” unused — if it matters, say it as an activity, a tempo range, or a tag.
+      reason: These words didn't map to anything measurable and were not guessed at.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+  audit:
+    [soft] focus -> prefer arousal 0.40–0.60 (soft)
+    [soft] focus -> prefer pulse_clarity ≥ 0.45 (soft)
+    [goal] focus -> goal “focus” — 10 soft preferences, arc flat
+    [unparsed] west african drumming -> not understood — kept as text only (not enforced)
+    [note] focus -> dropped draft rule “focus_arousal” — replaced by the goal bundle
+    [note] focus -> dropped draft rule “focus_pulse” — replaced by the goal bundle
+====================================================================================================
+PROMPT: "sami yoik to wind down"
+accuracy=partial chosen_index=0 readings=1 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  reading[0] label="calm" confidence=0.5 arc=cooldown
+    constraints: goal_calm_1:bpm between [55,80] | goal_calm_2:percussiveness lte 0.35 | goal_calm_3:onset_rate lte 2.98 | goal_calm_4:lufs_integrated lte -13.8 | goal_calm_5:loudness_range lte 8.7 | goal_calm_8:beat_interval_cv lte 0.05 | goal_calm_9:arousal lte 0.4 (proxy: calm → arousal (low))
+    assumptions:
+      - “Calm” leans slow, soft and steady — preferences only; it promises no stress reduction (the physiology evidence is mixed).
+      - Not understood yet, kept only as text for a future encoder: “sami yoik”.
+      - Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.
+      - Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.
+      - Some library-relative bands were skipped for lack of measured data: “calm”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3; “calm”: library-relative band for spectral_flatness skipped — only 0 measured track(s), need ≥ 3.
+  asks:
+    ? I left “sami yoik” unused — if it matters, say it as an activity, a tempo range, or a tag.
+      reason: These words didn't map to anything measurable and were not guessed at.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+  audit:
+    [goal] wind down -> goal “calm” — 9 soft preferences, arc cooldown
+    [unparsed] sami yoik -> not understood — kept as text only (not enforced)
+====================================================================================================
+PROMPT: "indigenous music for the gym"
+accuracy=partial chosen_index=0 readings=1 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  reading[0] label="pump up" confidence=0.6 arc=build
+    constraints: goal_pump_up_1:bpm between [125,140] (proxy: pump up → exercise tempo band) | goal_pump_up_2:percussiveness gte 0.5 | goal_pump_up_3:pulse_clarity gte 0.55 | goal_pump_up_4:beat_grid_strength gte 0.5 | goal_pump_up_5:onset_rate gte 4.14 | goal_pump_up_6:lufs_integrated gte -12.7 | goal_pump_up_8:beat_interval_cv lte 0.06 | goal_pump_up_9:arousal gte 0.6 (proxy: pump up → arousal)
+    assumptions:
+      - “Pump up” becomes an exercise/pre-task bundle: fast steady tempo, prominent percussion, loud and bright — preferences, not filters.
+      - Self-selected music outperforms preselected; your loves and repeats in this session will move the list more than these defaults (MP-3).
+      - Not understood yet, kept only as text for a future encoder: “indigenous”.
+      - Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.
+      - Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.
+      - Some library-relative bands were skipped for lack of measured data: “pump up”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3.
+  asks:
+    ? I left “indigenous” unused — if it matters, say it as an activity, a tempo range, or a tag.
+      reason: These words didn't map to anything measurable and were not guessed at.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+  audit:
+    [goal] gym -> goal “pump up” — 9 soft preferences, arc build
+    [unparsed] indigenous -> not understood — kept as text only (not enforced)
+====================================================================================================
+PROMPT: "gamelan for studying"
+accuracy=partial chosen_index=0 readings=1 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  reading[0] label="focus" confidence=0.6 arc=flat
+    constraints: goal_focus_1:vocal_fraction lte 0.1 (proxy: no-words → low vocal_fraction) | goal_focus_2:bpm between [85,125] | goal_focus_3:pulse_clarity gte 0.5 | goal_focus_4:onset_rate lte 4 | goal_focus_5:dynamic_complexity lte 8 | goal_focus_6:lufs_integrated between [-16.4,-10.4] | goal_focus_7:spectral_flatness lte 0.3 | goal_focus_9:beat_interval_cv lte 0.05 | goal_focus_10:arousal between [0.3,0.65] (proxy: focus → arousal (moderate band))
+    assumptions:
+      - “Focus” is a soft preference bundle: mid tempo, a steady pulse, low distraction, no mood imposition — nothing in it excludes a track.
+      - Not understood yet, kept only as text for a future encoder: “gamelan”.
+      - Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.
+      - Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.
+      - Some library-relative bands were skipped for lack of measured data: “focus”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3.
+  asks:
+    ? I left “gamelan” unused — if it matters, say it as an activity, a tempo range, or a tag.
+      reason: These words didn't map to anything measurable and were not guessed at.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+  audit:
+    [soft] studying -> prefer arousal 0.40–0.60 (soft)
+    [soft] studying -> prefer pulse_clarity ≥ 0.45 (soft)
+    [goal] studying -> goal “focus” — 10 soft preferences, arc flat
+    [unparsed] gamelan -> not understood — kept as text only (not enforced)
+    [note] focus -> dropped draft rule “focus_arousal” — replaced by the goal bundle
+    [note] focus -> dropped draft rule “focus_pulse” — replaced by the goal bundle
+====================================================================================================
+PROMPT: "play me some world music"
+accuracy=impossible chosen_index=-1 readings=0 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  asks:
+    ? “world” is too specific for what I can measure today.
+      reason: Nothing in it maps to a measured field, and I won't fake one.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+    ? Give me one anchor I can measure — an activity, a tempo range, or a tag.
+      reason: One anchor is enough to build a preview.
+      near: activities (focus, workout, wind down), a tempo range like “90–120 bpm”, or a genre your files are tagged with
+  audit:
+    [unparsed] world -> not understood — kept as text only (not enforced)
+    [note] reading: what I could parse -> dropped — plan validation failed: $.constraints A plan needs at least one supported constraint or a positive exemplar
+    [note] request -> Nothing enforceable validated — reported as impossible instead of guessing.
+====================================================================================================
+PROMPT: "fast relaxing bangers"
+accuracy=contradictory chosen_index=0 readings=2 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  reading[0] label="energetic but soft" confidence=0.5 arc=(none)
+    constraints: goal_fastsoft_1:percussiveness lte 0.35 | goal_fastsoft_2:lufs_integrated lte -13.8 | mod_fast:bpm gte 120 (proxy: fast → tempo high side)
+    assumptions:
+      - Not understood yet, kept only as text for a future encoder: “bangers”.
+      - “fast” was read as a tempo preference (bpm ≥ 120), not a goal.
+      - Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.
+      - Read as “energetic but soft”: keep the fast tempo (fast) and soften the texture — low loudness and light percussion — instead of keeping it calm.
+  reading[1] label="literally calm" confidence=0.5 arc=cooldown
+    constraints: goal_calm_1:bpm between [55,80] | goal_calm_2:percussiveness lte 0.35 | goal_calm_3:onset_rate lte 2.98 | goal_calm_4:lufs_integrated lte -13.8 | goal_calm_5:loudness_range lte 8.7 | goal_calm_8:beat_interval_cv lte 0.05 | goal_calm_9:arousal lte 0.4 (proxy: calm → arousal (low))
+    assumptions:
+      - “Calm” leans slow, soft and steady — preferences only; it promises no stress reduction (the physiology evidence is mixed).
+      - Not understood yet, kept only as text for a future encoder: “bangers”.
+      - Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.
+      - Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.
+      - Some library-relative bands were skipped for lack of measured data: “calm”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3; “calm”: library-relative band for spectral_flatness skipped — only 0 measured track(s), need ≥ 3.
+      - Read as “literally calm”: take “relaxing” literally; the “fast” side is set aside.
+  asks:
+    ? “fast” and “relaxing” pull opposite ways — should it be fast but soft-edged, or actually calm?
+      reason: One request, two opposite directions; both readings are shown and nothing is silently chosen.
+      near: Pick a reading, or say “fast but soft” / “calm only”.
+  audit:
+    [soft] fast -> soft preference: bpm ≥ 120
+    [soft] relaxing -> prefer arousal ≤ 0.40 (soft)
+    [goal] relaxing -> goal “calm” — 9 soft preferences, arc cooldown
+    [unparsed] bangers -> not understood — kept as text only (not enforced)
+    [note] fast + calm pair -> documented pair (fast_calm): two readings — “energetic but soft” keeps the fast side, “literally calm” drops it
+    [note] calm -> dropped for this reading (provable conflict)
+    [note] calm -> dropped draft rule “calm” — replaced by the goal bundle
+====================================================================================================
+PROMPT: "I need to focus. no words, no piano, nothing too slow/relaxing."
+accuracy=specific chosen_index=0 readings=1 parser=intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)
+  reading[0] label="focus" confidence=0.7 arc=flat
+    constraints: no_words:undefined undefined undefined HARD | no_piano:instruments.piano lt 0.2 HARD | not_slow:bpm gte 90 HARD | not_relaxing:undefined undefined undefined HARD (proxy: relaxing → arousal composite + pulse clarity; mood tag corroborates) | goal_focus_1:vocal_fraction lte 0.1 (proxy: no-words → low vocal_fraction) | goal_focus_2:bpm between [85,125] | goal_focus_3:pulse_clarity gte 0.5 | goal_focus_4:onset_rate lte 4 | goal_focus_5:dynamic_complexity lte 8 | goal_focus_6:lufs_integrated between [-16.4,-10.4] | goal_focus_7:spectral_flatness lte 0.3 | goal_focus_9:beat_interval_cv lte 0.05 | goal_focus_10:arousal between [0.3,0.65] (proxy: focus → arousal (moderate band))
+    assumptions:
+      - “Focus” is a soft preference bundle: mid tempo, a steady pulse, low distraction, no mood imposition — nothing in it excludes a track.
+      - Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.
+      - Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.
+      - Some library-relative bands were skipped for lack of measured data: “focus”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3.
+  asks:
+  audit:
+    [soft] I need to focus -> prefer arousal 0.40–0.60 (soft)
+    [soft] I need to focus -> prefer pulse_clarity ≥ 0.45 (soft)
+    [goal] i need to focus -> goal “focus” — 10 soft preferences, arc flat
+    [exclusion] no words -> vocal_fraction ≤ 0.10 or instrumental ≥ 0.80 (hard; unmeasured fails)
+    [exclusion] no piano -> instruments.piano < 0.20 (hard; unmeasured fails)
+    [exclusion] nothing too slow -> bpm ≥ 90 (hard)
+    [exclusion] slow -> negated by the request — used only as an exclusion, no goal applied
+    [exclusion] relaxing -> negated by the request — used only as an exclusion, no goal applied
+    [exclusion] nothing too relaxing -> arousal ≥ 0.35 and pulse_clarity ≥ 0.40, mood not relaxing/meditative/sleepy (hard)
+    [note] focus -> dropped draft rule “focus_arousal” — replaced by the goal bundle
+    [note] focus -> dropped draft rule “focus_pulse” — replaced by the goal bundle

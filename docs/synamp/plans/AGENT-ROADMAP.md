@@ -562,3 +562,37 @@ a session, exploration default OFF. Non-flat arcs (`query/sequence.ts`, accepted
 - **Next smallest experiment:** one real-library session, then read
   `GET /api/v1/brain/session` and check that hides, adjustments and proposals match
   what you meant — tune the P-values only after that.
+
+### 2026-10-07 — Preserve fast-brain research and begin the follow-up
+
+The Autoclaw feature is merged (`be308a56`). The [research library](../../research/index.html)
+now indexes its complete immutable 321-file archive, checksum manifest, report
+TOC/appendix, source packs, reviews and evidence. Current work states and errata
+live in its catalog; [FAST-BRAIN-FOLLOW-UP.md](FAST-BRAIN-FOLLOW-UP.md) provides
+files, owners, dependencies and acceptance checks through FB14.
+
+First slice: unsupported numeric residue stays visible (`intent-v2`), reading
+caveats/culture notes reach expandable UI, queue readout respects playlist scopes,
+Settings exposes policy rollback, and negative proposal copy describes a score
+change rather than a guaranteed exclusion. The maintained dossier's memory
+statistic attribution is corrected from primary indexed excerpts. Read-only
+`tools/brain-lab/readback.mts` starts the real-library evaluation workflow with
+explicit snapshots, clock/timezone and unchanged inputs. Fresh evidence is linked
+from the follow-up receipt; historical counts are not current verification.
+
+Remaining: owner session read-back before tuning; odd/layered metre correction;
+tempo reliability decision; P4 producers; explicit arc-protection design; proposal
+lifecycle; richer arc experiments; reviewed public knowledge-base export. No
+public site or model-accuracy claim is implied by these local changes.
+
+## Library exploration and Galaxy
+
+The [Library Explorer / Galaxy handoff](LIBRARY-EXPLORER.md) owns the catalog
+views, advanced filters, identity review, annotations and visual discovery
+sequence (LE01–LE10), plus the independently verified MilkDrop sizing fix
+(VB01). The [HTML research entry](../../research/library-explorer/2026-10-07/index.html)
+contains the TOC, private census, approved concept and evidence appendix.
+The initial explorer and Galaxy hierarchy are local implementations;
+collaboration paths depend on reviewed multi-artist identity. Preserve physical
+folder keys and do not interrupt the running Brave/NAS analyzer to replay scratch
+checks. Public exports must exclude private catalog samples and operational logs.

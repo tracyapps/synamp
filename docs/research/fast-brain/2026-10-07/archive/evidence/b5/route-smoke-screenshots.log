@@ -1,0 +1,24 @@
+seeded 6 events
+### boot brain :3001 (scratch)
+brain pid 13283
+### seed today's active session: queue 3 + skip sample-001 twice
+readout: {"hides":["sample-001"],"proposals":[],"notes":["skip side not learned yet: only 1 skipped track this session (need 2)"]}
+### boot web dev :5173
+web pid 13296
+### puppeteer screenshots
+/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/puppeteer-core@22.6.2_bufferutil@4.0.8_utf-8-validate@5.0.10/node_modules/puppeteer-core/lib/cjs/puppeteer/common/WaitTask.js:50
+            this.#timeoutError = new Errors_js_1.TimeoutError(`Waiting failed: ${options.timeout}ms exceeded`);
+                                 ^
+
+TimeoutError: Waiting for selector `.describe .chip` failed: Waiting failed: 20000ms exceeded
+    at new WaitTask (/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/puppeteer-core@22.6.2_bufferutil@4.0.8_utf-8-validate@5.0.10/node_modules/puppeteer-core/lib/cjs/puppeteer/common/WaitTask.js:50:34)
+    at IsolatedWorld.waitForFunction (/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/puppeteer-core@22.6.2_bufferutil@4.0.8_utf-8-validate@5.0.10/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Realm.js:25:26)
+    at PQueryHandler.waitFor (/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/puppeteer-core@22.6.2_bufferutil@4.0.8_utf-8-validate@5.0.10/node_modules/puppeteer-core/lib/cjs/puppeteer/common/QueryHandler.js:170:95)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async CdpFrame.waitForSelector (/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/puppeteer-core@22.6.2_bufferutil@4.0.8_utf-8-validate@5.0.10/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Frame.js:468:21)
+    at async CdpPage.waitForSelector (/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/puppeteer-core@22.6.2_bufferutil@4.0.8_utf-8-validate@5.0.10/node_modules/puppeteer-core/lib/cjs/puppeteer/api/Page.js:1314:20)
+    at async file:///Users/tapps/.openclaw-autoclaw/agents/algorithm-scientist/workspace/.cluster/synamp-fast-brain/evidence/b5/screenshots.mjs:17:3
+
+Node.js v24.13.0
+screenshots exit: 1
+done (screenshots)

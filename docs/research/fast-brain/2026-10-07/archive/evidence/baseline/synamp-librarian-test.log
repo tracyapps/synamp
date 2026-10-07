@@ -1,0 +1,31 @@
+test at src/librarian/librarian.test.ts:149:1
+✖ artist merge: whole folders, everything follows, the variant folder disappears (4.638791ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   'Ani Difranco/Dilate/01 Untouchable Face.mp3',
+  +   'Ani Difranco/Dilate/folder.jpg',
+  +   'Ani Difranco/Evolve/01 Promised Land.mp3',
+  +   'Ani Difranco/notes.txt'
+  -   'Ani DiFranco/Dilate/01 Untouchable Face.mp3',
+  -   'Ani DiFranco/Dilate/folder.jpg',
+  -   'Ani DiFranco/Evolve/01 Promised Land.mp3',
+  -   'Ani DiFranco/notes.txt'
+    ]
+  
+      at TestContext.<anonymous> (file:///Users/tapps/_dev/web-apps/SynAmp/apps/brain/src/librarian/librarian.test.ts:162:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'Ani Difranco/Dilate/01 Untouchable Face.mp3', 'Ani Difranco/Dilate/folder.jpg', 'Ani Difranco/Evolve/01 Promised Land.mp3', 'Ani Difranco/notes.txt' ],
+    expected: [ 'Ani DiFranco/Dilate/01 Untouchable Face.mp3', 'Ani DiFranco/Dilate/folder.jpg', 'Ani DiFranco/Evolve/01 Promised Land.mp3', 'Ani DiFranco/notes.txt' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+EXIT:0

@@ -1,0 +1,13 @@
+BEFORE restore — epochHides: [ 'A' ] removed(P): [ 'B' ]
+  adjust(A): {"value":-0.5534266440285073,"parts":[{"label":"skipped early this session","value":-0.55}]}
+AFTER restore(A, playlist-scoped) + restore(B):
+  epochHides: [ 'A' ] (A still hidden if 'A' appears — restore does not clear skip-hides)
+  removed(P): [] (B cleared — restore works for persistent removes)
+  adjust(A): {"value":-0.5407863620095668,"parts":[{"label":"skipped early this session","value":-0.54}]}
+
+--- 'not now' hide + restore ---
+epochHides after not_now + restore: [ 'C' ] (C still hidden if present)
+
+--- scope_persistence: declared vs global_only (next day) ---
+declared: adjust(D, P) = {"value":0.9771756471636648,"parts":[{"label":"thumbs up here","value":0.98}]} | epoch = null
+global_only: adjust(D, P) = {"value":0,"parts":[]} | epoch = null

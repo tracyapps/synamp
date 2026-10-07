@@ -1,0 +1,1987 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SynAmp — The Fast Learning Brain</title>
+<style>
+/* ---------------------------------------------------------------------------
+   SynAmp dossier — dark editorial. Preset "11 Build" rendered in the SynAmp
+   brand palette (slate + ivory + one gold accent). Long Doc structure:
+   cover → TOC → chapters → appendix → colophon. No JS; single file.
+--------------------------------------------------------------------------- */
+:root{
+  --bg:#0F1217; --bg-2:#141A23; --well:#10161F;
+  --ink:#E9E6E0; --ink-2:#C9CDD3; --muted:#9AA3AE; --faint:#6E7987;
+  --line:rgba(233,230,224,.10); --line-2:rgba(233,230,224,.18);
+  --gold:#D2A556; --gold-2:#E0BE79; --gold-wash:rgba(210,165,86,.10);
+  --serif:"Iowan Old Style","New York",Georgia,"Times New Roman",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Segoe UI,Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --measure:70ch; --canvas:1040px;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);scroll-behavior:smooth}
+body{margin:0;font:16px/1.62 var(--sans);color:var(--ink-2);background:var(--bg);-webkit-font-smoothing:antialiased}
+::selection{background:rgba(210,165,86,.22);color:var(--ink)}
+a{color:var(--gold-2);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;text-decoration-color:rgba(224,190,121,.45)}
+a:hover{color:var(--gold)}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:16px;top:12px;background:var(--bg-2);border:1px solid var(--line-2);padding:8px 12px;z-index:50;color:var(--ink)}
+
+/* ---- cover ---- */
+.cover{min-height:88vh;display:flex;flex-direction:column;justify-content:space-between;max-width:1240px;margin:0 auto;padding:clamp(28px,5vw,72px) clamp(20px,5vw,72px) 40px}
+.cover__eyebrow{font:600 11.5px/1 var(--sans);letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 26px}
+.cover__title{font:500 clamp(46px,7.4vw,96px)/1.02 var(--serif);letter-spacing:-.022em;color:var(--ink);margin:0 0 22px;max-width:15ch}
+.cover__lede{font-size:clamp(17px,1.6vw,19px);line-height:1.55;color:var(--muted);max-width:56ch;margin:0 0 46px}
+.cover__lede strong{color:var(--ink-2);font-weight:550}
+.cover__meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));gap:0;margin:0 0 34px;border-top:1px solid var(--line-2)}
+.cover__meta div{padding:14px 18px 12px 0;border-bottom:1px solid var(--line)}
+.cover__meta dt{font:600 10.5px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 7px}
+.cover__meta dd{margin:0;font:12.5px/1.45 var(--mono);color:var(--ink-2);word-break:break-word}
+.cover__foot{font:12px/1.5 var(--mono);color:var(--faint);border-top:1px solid var(--line);padding-top:14px;margin:0}
+
+/* ---- layout ---- */
+.layout{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:236px minmax(0,1fr);gap:clamp(24px,4vw,64px);padding:0 clamp(20px,4vw,64px)}
+.toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding:56px 0 40px;border-right:1px solid var(--line)}
+.toc ol{list-style:none;margin:0;padding:0 22px 0 0}
+.toc li{margin:0 0 14px}
+.toc a{display:block;text-decoration:none;color:var(--ink-2);font:13px/1.4 var(--sans)}
+.toc a:hover{color:var(--gold-2)}
+.toc .n{display:block;font:11px/1 var(--mono);color:var(--faint);margin-bottom:4px;letter-spacing:.05em}
+.toc .part{font:600 10.5px/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:34px 0 16px}
+main{min-width:0;padding-bottom:40px}
+
+/* ---- chapters ---- */
+.chapter{padding:76px 0 30px;border-top:1px solid var(--line-2);max-width:var(--canvas)}
+.chapter:first-of-type{border-top:0}
+.chapter__head{margin:0 0 34px}
+.chapter__no{font:600 11px/1 var(--sans);letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
+.chapter__title{font:500 clamp(30px,3.6vw,44px)/1.12 var(--serif);letter-spacing:-.018em;color:var(--ink);margin:0}
+.chapter h2{font:520 25px/1.25 var(--serif);letter-spacing:-.01em;color:var(--ink);margin:52px 0 14px}
+.chapter h3{font:650 12.5px/1.35 var(--sans);letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:38px 0 12px}
+.chapter h4{font:620 14px/1.4 var(--sans);color:var(--ink-2);margin:28px 0 10px}
+.chapter p,.chapter li{max-width:var(--measure)}
+.chapter p{margin:0 0 15px}
+.chapter ul,.chapter ol{margin:0 0 16px;padding-left:22px}
+.chapter li{margin:0 0 7px}
+.chapter li::marker{color:var(--faint)}
+.chapter strong{color:var(--ink);font-weight:560}
+.chapter em{font-family:var(--serif);font-style:italic;font-size:1.03em;color:var(--ink-2)}
+hr{border:0;border-top:1px solid var(--line-2);width:64px;margin:42px 0}
+blockquote{margin:22px 0;padding:2px 0 2px 22px;border-left:1px solid var(--gold);color:var(--muted);max-width:calc(var(--measure) + 22px)}
+blockquote p{margin:0 0 10px}
+code{font:12.5px/1.5 var(--mono);background:var(--gold-wash);border:1px solid var(--line);padding:1px 5px;color:var(--ink-2)}
+pre{background:var(--well);border:1px solid var(--line);padding:16px 18px;overflow-x:auto;margin:20px 0;max-width:var(--canvas)}
+pre code{background:none;border:0;padding:0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
+
+/* ---- tables ---- */
+.chapter table{width:100%;border-collapse:collapse;margin:22px 0;font-size:13.5px;max-width:var(--canvas)}
+.chapter th{font:650 10.5px/1.3 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--faint);text-align:left;padding:9px 14px 9px 0;border-bottom:1px solid var(--line-2);vertical-align:bottom}
+.chapter td{padding:10px 14px 10px 0;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+.chapter tr:last-child td{border-bottom:0}
+.chapter table.ids td:first-child,.chapter table.ids th:first-child{white-space:nowrap;width:1%;padding-right:18px}
+
+/* ---- figures / plates ---- */
+.plate{margin:34px 0;border:1px solid var(--line);background:var(--bg-2);padding:clamp(14px,2vw,26px);max-width:var(--canvas)}
+.plate svg{display:block;width:100%;height:auto}
+.plate figcaption{font:11.5px/1.6 var(--mono);color:var(--muted);margin-top:14px;border-top:1px solid var(--line);padding-top:12px;max-width:90ch}
+.plate .fig-no{color:var(--gold-2);margin-right:8px}
+
+/* ---- colophon ---- */
+.colophon{border-top:1px solid var(--line-2);margin-top:40px;padding:34px clamp(20px,5vw,72px) 60px;font:12px/1.7 var(--mono);color:var(--faint);max-width:1240px}
+.colophon strong{color:var(--muted)}
+.colophon p{max-width:100ch}
+
+/* ---- mobile ---- */
+@media (max-width:920px){
+  .layout{display:block;padding:0 20px}
+  .toc{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line-2);padding:34px 0 26px}
+  .toc ol{padding-right:0}
+  .toc li{display:inline-block;margin:0 18px 10px 0}
+  .cover{min-height:auto;padding-top:56px}
+  .chapter{padding-top:56px}
+}
+
+@media print{
+  :root{--bg:#0F1217}
+  .toc{display:none}
+  .layout{display:block;padding:0 28px;max-width:none}
+  .chapter{page-break-before:always;max-width:none}
+  .cover{min-height:auto;page-break-after:always}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#exec">Skip to content</a>
+
+<header class="cover" id="top">
+  <div>
+    <p class="cover__eyebrow">SynAmp · engineering dossier</p>
+    <h1 class="cover__title">The Fast Learning Brain</h1>
+    <p class="cover__lede">Natural-language goals in; a playlist that adapts within the session and forgets at the boundary. <strong>A design, implementation, and verification record</strong> for SynAmp’s smart playlists — with measurement honesty and cultural guardrails built into the machinery, not bolted on as a disclaimer.</p>
+  </div>
+  <div>
+    <dl class="cover__meta">
+      <div><dt>Project</dt><dd>SynAmp — self-hosted music system</dd></div>
+      <div><dt>Slice</dt><dd>Intent layer · epoch-v1 learning · sequencing · endpoints · web readout</dd></div>
+      <div><dt>Repository</dt><dd>~/_dev/web-apps/SynAmp · branch feat/fast-learning-brain</dd></div>
+      <div><dt>Prepared</dt><dd>2026-10-07 · America/Chicago</dd></div>
+      <div><dt>Evidence</dt><dd>DELIVERY/verification/ · tools/brain-lab/ · evidence/final-lab/</dd></div>
+      <div><dt>Status</dt><dd>Verified slice · reviews closed · frozen manifest at delivery</dd></div>
+    </dl>
+    <p class="cover__foot">One commit on <b>feat/fast-learning-brain</b> · all magnitudes are candidate values pending real-listening tuning · fixtures are synthetic and are not evidence about real music</p>
+  </div>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <p class="part">Contents</p>
+  <ol>
+    <li><a href="#exec"><span class="n">00</span>Executive summary</a></li>
+    <li><a href="#ch1"><span class="n">01</span>Words in, music out — the translation layer</a></li>
+    <li><a href="#ch2"><span class="n">02</span>The fast learning brain</a></li>
+    <li><a href="#ch3"><span class="n">03</span>Bias, culture, and measurement honesty</a></li>
+    <li><a href="#ch4"><span class="n">04</span>Verification, rollback, and handoff</a></li>
+    <li><a href="#ch5"><span class="n">05</span>Appendix — sources, parameters, glossary</a></li>
+  </ol>
+  <p class="part">Evidence</p>
+  <ol>
+    <li><a href="#colophon"><span class="n">EV</span>Manifest &amp; reproduction</a></li>
+  </ol>
+</nav>
+
+<main id="content">
+
+<section class="chapter" id="exec">
+  <header class="chapter__head"><p class="chapter__no">00 · Executive summary</p><h1 class="chapter__title">Executive summary</h1></header>
+  <p><strong>What was asked, and what exists.</strong> SynAmp's fast-learning brain was asked to do this: state a goal in plain words ("pump me up", "I need to focus") and get a smart playlist that learns fast from listening and forgets at the session boundary. That slice now exists: branch <code>feat/fast-learning-brain</code>, a single commit; new modules in <code>intent/</code> and <code>learning/</code>; the sequencing module <code>query/sequence.ts</code>; new <code>/api/v1/brain</code> routes (session readout, forget, proposals); and a web "This session" panel.</p>
+<p><strong>The two halves.</strong> The translation layer carries nine goal bundles (focus, pump_up, dance, calm, sleep, catharsis, nostalgia, drive, chores), whose research weights never outrank the user's own words; accuracy classes that include contradictions — resolved as two labelled readings plus a clarifying ask, never a silent choice; asks, never guesses for vague or impossible requests; and sequencing arcs that re-order the filtered list without ever betraying a hard constraint. The learning layer is epoch-v1: sessions split on a 30-minute silence gap, a day change, or a session-key change, with a 30-minute live window; evidence and hides compose through one bounded saturation that can re-order but never breaks a hard rule; reliability-weighted keep/skip centroids learn small attribute-level tastes; proposals are the only channel that crosses a session; exploration ships off.</p>
+<p><strong>The guarantees that answer the original ask.</strong> <em>Isolation</em>: a different day, session, or hour cannot bend this moment's ranking — proven by byte-equality when foreign events are appended. <em>Honesty</em>: null is never zero, and a method's rejection is not musical truth. <em>Consent</em>: nothing crosses a session without a yes, and forget is one button — append-only; the log is marked, never edited.</p>
+<p><strong>Verification posture.</strong> The suite stands at 218 tests / 216 pass, plus one pre-existing macOS red and one skip; both type-checks exit 0; a deterministic 8-scenario / 86-check harness re-runs byte-identically apart from its timestamp. Independent reviews (code, bias, psychology, production) closed with fixes landed, and every evidence path is carried in the delivery manifest. Honest limits: magnitudes and thresholds are candidate values — hypotheses, not tuned evidence; fixtures are synthetic, so no real-music evidence yet.</p>
+<p><strong>Where to go next</strong></p>
+<ul>
+<li>Run one real-library session (read <code>GET /api/v1/brain/session</code>), then a tuning pass.</li>
+<li>Land the P4 producers before declared fields (voice, instruments, mood) become real.</li>
+<li>Revisit the conservative proposal thresholds once real data exists.</li>
+</ul>
+<p>Chapter 1 explains how words become rules; Chapter 2 how learning stays in-session; Chapter 3 how measurement stays honest across cultures; Chapter 4 what was verified and how to roll back.</p>
+</section>
+
+<section class="chapter" id="ch1">
+  <header class="chapter__head"><p class="chapter__no">01 · Chapter</p><h1 class="chapter__title">Words in, music out — the translation layer</h1></header>
+<h2>The problem</h2>
+<p>SynAmp's measurement layer speaks in numbers — bpm, onset rate, percussiveness, integrated loudness — while people speak in intentions: "I need to focus", "pump me up to win this game", "I want to dance". The vocabularies do not map cleanly: a request can be accurate, partial, vague, contradictory, or impossible with today's signals ("90s Mongolian throat singing only"). The translation layer's contract: turn words into a candidate plan while never pretending to understand more than it does.</p>
+<h2>The pipeline</h2>
+<p>Text enters <code>interpretGoal()</code> (parser <code>intent-v1</code>; <code>apps/brain/src/intent/interpret.ts</code>), which composes the rule-based draft parser (<code>draft.ts</code>) with the goal lexicon (<code>lexicon.ts</code>, <code>goal-lexicon/1</code>). The draft converts recognised phrases into an <em>untrusted</em> plan object; the lexicon merges goal bundles, applies supersessions, and resolves library-relative bands. Every emitted reading is validated by <code>validatePlan()</code> — the closed, versioned plan schema (v2.0, SHA-256-hashed); readings that fail are dropped with a note, never shipped (B1 §Conclusion). Evaluation (<code>evaluate.ts</code>) filters and scores the union of the hard guard and similarity channels; <code>sequenceTracks()</code> re-orders the already-filtered strict list per the arc; the queue is built from that list.</p>
+<figure class="plate" id="fig-flow">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380" role="img" aria-labelledby="flow-title flow-desc">
+  <title id="flow-title">From your words to your queue</title>
+  <desc id="flow-desc">Pipeline from a natural-language request to the plan queue, with the in-session learning loop: plays, skips, loves and removes append to an event log; only the current session epoch feeds back into evaluate, adjusting ranking within the strict tier; a boundary mark shows that other days, sessions or hours do not leak in.</desc>
+
+  <g fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="24" y="48" width="120" height="96" rx="4"/>
+    <rect x="182" y="48" width="170" height="96" rx="4"/>
+    <rect x="390" y="48" width="190" height="96" rx="4"/>
+    <rect x="618" y="48" width="184" height="96" rx="4"/>
+    <rect x="831" y="48" width="165" height="96" rx="4"/>
+    <rect x="1034" y="48" width="140" height="96" rx="4"/>
+    <path d="M148 96H169M169 90.5L177 96L169 101.5"/>
+    <path d="M356 96H377M377 90.5L385 96L377 101.5"/>
+    <path d="M584 96H605M605 90.5L613 96L605 101.5"/>
+    <path d="M806 96H818M818 90.5L826 96L818 101.5"/>
+    <path d="M1000 96H1021M1021 90.5L1029 96L1021 101.5"/>
+    <rect x="620" y="262" width="170" height="80" rx="4"/>
+    <rect x="829" y="262" width="140" height="80" rx="4"/>
+    <rect x="1032" y="262" width="144" height="80" rx="4"/>
+  </g>
+
+  <!-- feedback loop (gold accent) -->
+  <path d="M1104 144V254M1098.5 254L1104 262L1109.5 254M1032 302H981M981 296.5L973 302L981 307.5M829 302H802M802 296.5L794 302L802 307.5M705 262V156M699.5 156L705 148L710.5 156" fill="none" stroke="#D4A757" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- boundary glyph: the loop enters evaluate, nothing else crosses -->
+  <path d="M697 220L713 236M713 220L697 236" fill="none" stroke="#D4A757" stroke-width="1.25" stroke-linecap="round"/>
+
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="600" fill="#E8E6E1" text-anchor="middle">
+    <text x="84" y="100">Your words</text>
+    <text x="1104" y="100">Queue snapshot</text>
+  </g>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="600" fill="#E8E6E1">
+    <text x="408" y="82">Validated plan</text>
+    <text x="636" y="82">Evaluate</text>
+    <text x="849" y="82">Sequence</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" font-weight="500" fill="#E8E6E1">
+    <text x="200" y="82">interpretGoal</text>
+    <text x="705" y="296" text-anchor="middle">epoch-v1</text>
+  </g>
+  <text x="716" y="190" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#E8E6E1">adjusts ranking</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#98A2AD">
+    <text x="200" y="108">draft + goal lexicon</text>
+    <text x="408" y="108">hard rules = your words</text>
+    <text x="408" y="128">soft = goal bundles</text>
+    <text x="636" y="108">strict tier (hard guard)</text>
+    <text x="636" y="128">near-miss tier</text>
+    <text x="849" y="108">arc: build / peak</text>
+    <text x="849" y="128">cooldown / wave</text>
+    <text x="716" y="206">(bounded, strict tier only)</text>
+    <text x="682" y="234" text-anchor="end">a different day/session/hour does not leak in</text>
+    <text x="705" y="319" text-anchor="middle">this session only</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#98A2AD" text-anchor="middle">
+    <text x="1104" y="296">plays · skips</text>
+    <text x="1104" y="319">loves · removes</text>
+    <text x="899" y="296">append-only</text>
+    <text x="899" y="319">event log</text>
+  </g>
+</svg>
+<figcaption><span class="fig-no">Figure 1 ·</span> From your words to your queue — and the loop that learns back, within this session only.</figcaption>
+</figure>
+
+<p><strong>Hard vs soft — two authorities in one plan.</strong> Hard constraints come from the user's own words: "no words", "no piano", "nothing too slow/relaxing" compile to hard, <code>explicit_exclusion</code> rules ("hard; unmeasured fails") — flagged for confirmation, never loosened downstream. Soft constraints come only from research bundles and modifiers; they weight the ranking, never filter. Tests assert that no <code>goal_*</code>/<code>mod_*</code> term is ever hard (intent.test.ts house rules; B1 §Analysis 4).</p>
+<h2>Nine goals, two modifiers</h2>
+<p>The lexicon carries nine goals — focus, pump_up, dance, calm, sleep, catharsis, nostalgia, drive, chores — each with word-boundary, negation-guarded trigger phrases ("i need to focus", "pump me up", "i want to dance"), plus two tempo modifiers (fast, slow — soft leans only). A <strong>goal bundle</strong> is the goal's set of soft weighted terms (field/op/band/weight plus mechanism and [MP-n]/[CC-n] refs) taken from A1 §2, emitted as <code>goal_&lt;goal&gt;_&lt;n&gt;</code>. Emitted weights are floor-normalised so each bundle totals ≤ 1.0 with every term ≤ 0.5, honouring A1 §2.0's dominance convention — user words and bounded feedback outrank research defaults — while research weights stay on the lexicon entries for traceability (B1 §Analysis 1). Weights are research suggestions, not tuned values (A1 §2.0).</p>
+<p><strong>One reading, not a stack.</strong> When a goal matches, its bundle <em>supersedes</em> the draft's proxy constraints for that reading — dropped, never kept twice, audited (flagship: draft <code>focus_arousal</code>/<code>focus_pulse</code> superseded). The same rule fixed "I'm driving to work": the draft's generic "energetic" arousal proxy is superseded by the drive bundle (H1-4; C3 F-A1-1). A supersede can never drop a user exclusion (intent.test.ts).</p>
+<p><strong>Contradictions, deliberately.</strong> Conflicts resolve in a documented order — opposing goal pairs (pump_up↔calm, dance↔sleep), then the documented fast+calm pair, then hard numeric bounds with an empty intersection. Each conflict yields <strong>two readings</strong> plus a clarifying ask; neither side is chosen silently (ties resolve to the first, so the interface must show both labels or a chooser). "fast relaxing bangers" produces exactly that: reading A "energetic but soft" keeps the fast side and adds soft texture terms; reading B "literally calm" drops the fast side and keeps the calm bundle (B1 §Analysis 5; <code>FAST_CALM_PAIR</code>).</p>
+<p><strong>Two moods in one ask.</strong> "music for my workout then sleep" is not merged into a self-cancelling wash: the then/after cue builds one reading for the first goal only ("pump up", arc build) plus an ask to request the second phase later (H1-6). Declared conflicts still take precedence ("relax after my workout" yields the two-reading pair).</p>
+<p><strong>Asks, never guesses.</strong> Vague and impossible requests return no readings (<code>chosen_index: -1</code>) and 1–3 plain-language asks with reasons: "play me something good" is <code>vague</code> — surface verbs ("play", "queue", "start") are glue, not content (a harness-caught, regression-pinned fix) — and "not four-on-the-floor" stays <code>impossible</code>, the ask naming the phrase (B1 §Evidence).</p>
+<p><strong>Audit transparency.</strong> Every interpretation ships an audit trail (phrase → becomes; kinds: hard/soft/goal/exclusion/unparsed/note), rendered as the expandable <strong>"How I read it (N)"</strong> (<code>Describe.tsx:98</code>): nothing is inferred silently.</p>
+<h2>Sequencing: arcs that cannot betray the ask</h2>
+<p><code>sequenceTracks()</code> only re-orders the already-filtered strict list — it never filters, adds, or scores — so every hard guard stays true at every position (A1 §3; sequence.ts header). Arcs: build (ascending), cooldown (descending), peak (rise then relax), wave (interleaved; implemented and tested, unused by any goal today). Goal arcs: pump_up→build, dance→peak, calm/sleep→cooldown, others flat. "Intensity" means exactly the documented <em>measured pace/energy proxy</em>: bpm (weight .35; ×0.5 when tempo confidence is low/missing — octave errors are a known failure class), onset rate (.25), percussiveness (.20), loudness (.20 — deliberately smallest: LUFS ≠ perceived intensity [CC-43..45]). Below 60% coverage the module keeps the ranked order and returns an honest note — "not enough measured pace/energy data (N% coverage) — kept the ranked order"; tracks without measurements keep their positions; null never counts as zero (sequence.ts; H1-2 reworded the note from "intensity" to "pace/energy").</p>
+<h2>Worked examples</h2>
+<ol>
+<li><strong>"I need to focus. no words, no piano, nothing too slow/relaxing."</strong> → <code>specific</code>; one reading; the user's words stay hard; focus bundle F1–F10 merges; arc flat.</li>
+<li><strong>"pump me up to do this task / win this game"</strong> → <code>goal_pump_up_*</code>; arc build.</li>
+<li><strong>"I want to dance"</strong> → <code>goal_dance_*</code>; arc peak.</li>
+<li><strong>"play me something good"</strong> → <code>vague</code>; no readings; asks carry the next step.</li>
+<li><strong>"fast relaxing bangers"</strong> → <code>contradictory</code>; two readings ("energetic but soft" / "literally calm") plus one clarifying ask.</li>
+</ol>
+<p>All five are receipt-verified spot-checks (B1 §Evidence; intent.test.ts; re-run in H1 §3).</p>
+<table>
+<thead>
+<tr>
+<th>Phrase</th>
+<th>Outcome</th>
+<th>Key rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"I need to focus. no words, no piano, nothing too slow/relaxing."</td>
+<td>specific, 1 reading</td>
+<td>hard <code>no_words</code> / <code>no_piano</code> / <code>not_slow</code> / <code>not_relaxing</code> + <code>goal_focus_1…10</code>; supersede of draft proxies; arc flat</td>
+</tr>
+<tr>
+<td>"pump me up… win this game"</td>
+<td>specific/partial</td>
+<td><code>goal_pump_up_*</code>; arc build</td>
+</tr>
+<tr>
+<td>"I want to dance"</td>
+<td>specific</td>
+<td><code>goal_dance_*</code>; arc peak</td>
+</tr>
+<tr>
+<td>"play me something good"</td>
+<td>vague</td>
+<td>0 readings; asks (surface verbs = glue)</td>
+</tr>
+<tr>
+<td>"fast relaxing bangers"</td>
+<td>contradictory</td>
+<td>two readings + ask; <code>FAST_CALM_PAIR</code></td>
+</tr>
+</tbody>
+</table>
+<p>All behaviours above are test-verified against <strong>synthetic fixtures</strong> — they prove logic, not classifier accuracy on real music; nothing here is tuned or validated on a real library. At fix time the brain suite stood at <strong>218 tests (216 passing; one pre-existing macOS case-fold red, one environment skip)</strong> — final counts live in verification (ch. 4).</p>
+<h2>Bias and honesty notes (quotable)</h2>
+<ul>
+<li><strong>Bands are research starting points, not universals.</strong> "Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections." (<code>SHARED_ASSUMPTIONS.calibration</code>; A1 §2.0; A2 CC-29/30/36/37).</li>
+<li><strong>Declared-field terms are inert until producers land.</strong> Voice, instrument and mood-style fields have no producer today; terms on them emit <code>unknown_policy: "neutral"</code> with the note "no producer yet — inert on real data" and are unknown for every track on a real library. (C3 F-D-1 precision: they don't change base ordering; the magnitude dilution is a tracked claim item.)</li>
+<li><strong>Nothing is inferred silently.</strong> Unparsed text is reported, ambiguity becomes asks, every reading ships its audit trail (B1 §Analysis 7; C2 P10).</li>
+</ul>
+</section>
+<section class="chapter" id="ch2">
+  <header class="chapter__head"><p class="chapter__no">02 · Chapter</p><h1 class="chapter__title">The fast learning brain</h1></header>
+<p>The brief had two halves: learn <em>fast</em> from what the listener does — and never let behaviour from a different day, session, or hour bend what is ranked <em>right now</em>. Human moods change quickly, so the learning must forget just as quickly. This chapter describes the epoch-v1 layer built for that: epochs, what can move a score within one, what may cross a session boundary, and how isolation is proven. Full mathematics: A3 §3 (P1–P25); code: <code>apps/brain/src/learning/</code>.</p>
+<figure class="plate" id="fig-epochs">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="1200" height="460" role="img" aria-labelledby="epochs-title epochs-desc">
+  <title id="epochs-title">Epochs and learning scope across three days</title>
+  <desc id="epochs-desc">Three stacked day rows show epochs as blocks separated by gaps; a 30-minute gap, midnight, and a session-id change each start a new epoch, and one block is marked as the only learning scope. Below, implicit signals stop at the epoch wall, explicit signals cross days, and cross-day patterns feed a proposal that applies only with an explicit yes.</desc>
+
+  <g fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M100 70H1160M100 134H1160M100 198H1160"/>
+    <rect x="104" y="56" width="156" height="28" rx="3"/>
+    <rect x="278" y="56" width="142" height="28" rx="3"/>
+    <rect x="438" y="56" width="262" height="28" rx="3"/>
+    <rect x="718" y="56" width="182" height="28" rx="3"/>
+    <rect x="104" y="120" width="116" height="28" rx="3"/>
+    <rect x="238" y="120" width="322" height="28" rx="3"/>
+    <rect x="570" y="120" width="70" height="28" rx="3"/>
+    <rect x="658" y="120" width="202" height="28" rx="3"/>
+    <rect x="878" y="120" width="62" height="28" rx="3"/>
+    <rect x="104" y="184" width="196" height="28" rx="3"/>
+    <rect x="310" y="184" width="210" height="28" rx="3"/>
+    <rect x="538" y="184" width="222" height="28" rx="3"/>
+    <rect x="778" y="184" width="202" height="28" rx="3"/>
+    <rect x="998" y="184" width="82" height="28" rx="3"/>
+    <path d="M96 122V146M101 122V146M96 186V210M101 186V210M304 186V210M309 186V210"/>
+    <path d="M112 114L104 124"/>
+    <path d="M565 114V128"/>
+    <path d="M336 176L312 189"/>
+    <path d="M649 212V226"/>
+    <circle cx="240" cy="284" r="4"/>
+    <path d="M252 284H456M456 278.5L464 284L456 289.5"/>
+    <path d="M490 262V306"/>
+    <circle cx="240" cy="340" r="4"/>
+    <path d="M252 340H1132M1132 334.5L1140 340L1132 345.5"/>
+    <path d="M560 318V335M560 345V362M800 318V335M800 345V362"/>
+    <path d="M252 400H866M866 394.5L874 400L866 405.5"/>
+    <rect x="880" y="374" width="270" height="52" rx="4"/>
+  </g>
+
+  <!-- crossed glyph: the arrow cannot cross the epoch wall -->
+  <path d="M470 277L484 291M484 277L470 291" fill="none" stroke="#D4A757" stroke-width="1.25" stroke-linecap="round"/>
+  <!-- shield glyph: needs an explicit yes -->
+  <path d="M899 390H913V398Q913 405 906 409Q899 405 899 398Z" fill="none" stroke="#D4A757" stroke-width="1.25" stroke-linejoin="round"/>
+
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" font-weight="600" fill="#E8E6E1">
+    <text x="24" y="75">Day 1</text>
+    <text x="24" y="139">Day 2</text>
+    <text x="24" y="203">Day 3</text>
+    <text x="24" y="278">implicit</text>
+    <text x="24" y="334">explicit</text>
+    <text x="24" y="404">patterns across days</text>
+  </g>
+  <text x="928" y="392" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="600" fill="#E8E6E1">proposal</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" fill="#E8E6E1">
+    <text x="24" y="298">(skips, repeats)</text>
+    <text x="24" y="354">(love, thumbs, remove)</text>
+  </g>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" fill="#98A2AD">
+    <text x="108" y="110">midnight splits</text>
+    <text x="600" y="110" text-anchor="middle">30-min gap → new epoch</text>
+    <text x="400" y="172" text-anchor="middle">session-id change splits</text>
+    <text x="649" y="232" text-anchor="middle">this session = the only learning scope</text>
+    <text x="500" y="288">stays inside</text>
+    <text x="1140" y="328" text-anchor="end">long-lived, declared</text>
+    <text x="928" y="412">applies only with your yes</text>
+  </g>
+  <text x="490" y="252" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" fill="#98A2AD" text-anchor="middle">epoch wall</text>
+</svg>
+<figcaption><span class="fig-no">Figure 2 ·</span> Three days of listening: what a session is, what stays inside it, and what must ask before crossing.</figcaption>
+</figure>
+
+<h2>Epochs — the unit of "this session"</h2>
+<p>Learning is only as isolated as its unit of context — and the server's <code>session_id</code> is the wrong unit: minted once per installation, it survives restarts and never expires, so it can span days (A4 §2.3). Using it as the session would leak exactly what the requirement forbids.</p>
+<p>An <strong>epoch</strong> is derived from the event log instead (A3 §3.1; B2 §3). A boundary exists between two consecutive events when any of three things happens:</p>
+<ul>
+<li><strong>The session key changes.</strong> Different <code>session_id</code>s never mix; id-less events (some other-app captures) form their own bucket rather than joining a session.</li>
+<li><strong>More than 30 minutes of silence.</strong> A gap of exactly 30:00 keeps the session; 30:01 starts a new one — and since 30 minutes is under an hour, the "or even hour" requirement holds with margin.</li>
+<li><strong>The local day changes.</strong> Midnight ends an epoch even when only a minute of silence precedes it.</li>
+</ul>
+<p>An epoch has a <strong>live window</strong>: for up to 30 minutes after its last event it still counts as "this moment" — resuming within the gap continues the same session; if nothing is live, the interface says so ("no active session — learning is paused"). Each epoch carries a stable id (<code>ep1:</code> plus a short hash of its bounds and first event), a daypart label (morning/afternoon/evening/night — context for display and proposals, never a boundary), and its start date.</p>
+<p>To the listener: the panel says "This session: night, started 11:30 PM · 14 signals". That is "this session" honestly — the span of continuous listening since the last real break. Restarting the app does not start a new one; walking away for half an hour, or crossing midnight, does.</p>
+<figure class="plate" id="fig-modules">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" width="1200" height="440" role="img" aria-labelledby="modules-title modules-desc">
+  <title id="modules-title">File map of the fast-brain library</title>
+  <desc id="modules-desc">Nested file map: apps/brain/src contains the intent, learning, query and session modules plus index routes for /brain/session, /brain/forget, /brain/proposals and /plans/draft; tests live beside each module; apps/web/src holds BrainSession and Describe.</desc>
+
+  <g fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="24" y="40" width="816" height="376" rx="4"/>
+    <rect x="48" y="94" width="768" height="52" rx="3"/>
+    <rect x="48" y="156" width="768" height="52" rx="3"/>
+    <rect x="48" y="218" width="768" height="52" rx="3"/>
+    <rect x="48" y="280" width="768" height="52" rx="3"/>
+    <rect x="48" y="342" width="768" height="64" rx="3"/>
+    <rect x="880" y="40" width="296" height="116" rx="4"/>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" font-weight="500" fill="#E8E6E1">
+    <text x="48" y="74">apps/brain/src/</text>
+    <text x="904" y="74">apps/web/src/</text>
+  </g>
+  <text x="816" y="74" text-anchor="end" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" fill="#98A2AD">tests live beside each module (*.test.ts)</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" font-weight="500" fill="#E8E6E1">
+    <text x="68" y="124">intent/</text>
+    <text x="68" y="186">learning/</text>
+    <text x="68" y="248">query/</text>
+    <text x="68" y="310">session/</text>
+    <text x="68" y="378">index.ts</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" fill="#98A2AD">
+    <text x="250" y="124">lexicon.ts · interpret.ts</text>
+    <text x="250" y="186">epochs.ts · derive.ts · reliability.ts · proposals.ts · explore.ts</text>
+    <text x="250" y="248">sequence.ts · plan.ts · evaluate.ts</text>
+    <text x="250" y="310">events.ts<tspan font-family="ui-sans-serif, system-ui, sans-serif"> — </tspan><tspan fill="#D4A757">learning_reset</tspan><tspan font-family="ui-sans-serif, system-ui, sans-serif"> marker</tspan></text>
+    <text x="904" y="112">BrainSession.tsx</text>
+    <text x="904" y="138">Describe.tsx</text>
+  </g>
+  <text x="250" y="366" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" fill="#98A2AD"><tspan font-family="ui-sans-serif, system-ui, sans-serif">routes: </tspan>/brain/session · /brain/forget · /brain/proposals</text>
+  <text x="250" y="388" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" fill="#98A2AD">/plans/draft<tspan font-family="ui-sans-serif, system-ui, sans-serif"> — interpretation</tspan></text>
+</svg>
+<figcaption><span class="fig-no">Figure 3 ·</span> The new library: intent, learning, sequencing — and where every test lives.</figcaption>
+</figure>
+
+<p>The new code is small and pure: <code>epochs.ts</code>, <code>types.ts</code>, <code>derive.ts</code>, <code>proposals.ts</code>, <code>reliability.ts</code>, <code>explore.ts</code> (see figure).</p>
+<h2>What can move a score</h2>
+<p>All session evidence combines into one value. Each contribution is (magnitude × confidence), decays with a 30-minute half-life inside the session, and is <strong>killed exactly at the epoch boundary</strong> — a mask, not a slower decay (B2 §4). Plain-language evidence table (candidate magnitudes — A3 §3.2):</p>
+<table>
+<thead>
+<tr>
+<th>What happened this session</th>
+<th>Pull</th>
+<th>Extra rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Heard it through</td>
+<td>+0.50 × 0.50</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Replayed it</td>
+<td>+1.00 × 0.70</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Skipped early</td>
+<td>−0.60 × 0.50</td>
+<td>a 2nd early skip of the same track hides it for the rest of the session</td>
+</tr>
+<tr>
+<td>Skipped late</td>
+<td>−0.10 × 0.20</td>
+<td>weak; never hides</td>
+</tr>
+<tr>
+<td>Played in your other apps</td>
+<td>+0.25 × 0.50</td>
+<td>—</td>
+</tr>
+<tr>
+<td>"Not now"</td>
+<td>−1.00 × 0.90</td>
+<td>hides immediately; nothing persists</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Hides</strong> are the hard edge of fast forgetting: a repeat-skipped or "not now" track leaves <em>future</em> queue builds and resolves while the epoch lives — the current queue is a snapshot that is never reordered. Hides die at the epoch boundary; "Forget this session" clears them immediately — it appends a <code>learning_reset</code> marker to the never-edited log, so everything learned in the session stops counting. Deliberate signals — loves, thumbs, removes — survive a reset by design: the sanctioned cross-epoch channel (B2 §5; B5 §2).</p>
+<p>Two secondary mechanisms, never dominating. <strong>Artist propagation</strong> lets a track's session evidence touch the artist's other tracks — damped to 35%, capped at ±0.8, opened only by ≥2 events on the artist's other tracks (or a summed magnitude of 1.0); a single event moves almost nothing, and only session-level evidence feeds it (loves do not propagate). It produces the label "other tracks by <artist> this session". <strong>Keep/skip centroids</strong> are the one attribute-level learner: from kept tracks and corroborated negatives (repeat-skips, "not now", reason-coded thumbs), it builds small Rocchio-shaped centroids over five produced axes (bpm, loudness, crest factor, onset rate, percussiveness). Gates: ≥3 keeps, ≥2 rejects, ≥60% coverage, spread-based shrinkage; β = 0.5 vs γ = 0.15 (γ &lt; β per the IR-textbook convention); per-axis parts ≤ ±0.5, feature term ≤ ±1.0. Missing measurements contribute nothing and say why — null is never zero (A3 §3.3c; B2 §4).</p>
+<p>Composition happens exactly once: <strong>bonus = 0.15 · tanh((persistent + session + artist + features)/2)</strong>. One love reaches ≈0.114 of the 0.15 maximum; twenty loves cannot exceed it (flood-tested — C1 §3). The bonus applies only inside the strict tier: it can re-order and re-select within what a request allows, but cannot break a hard rule (an excluded track stays excluded under maxed-out evidence; C1 §3). The learning meaning changed, so the version is <code>epoch-v1</code>; switching back to <code>legacy-v1</code> re-derives the same immutable log — never a migration (B5 §1).</p>
+<h2>Proposals — the only cross-session channel</h2>
+<p>Anything outliving a session must pass a human gate. <strong>Proposals</strong> scan closed epochs within 30 days: a pattern needs ≥3 epochs across ≥2 calendar dates ("mood ≠ habit" — same-day repetitions alone never propose); "not now" patterns need ≥2 dayparts; positives are stricter (repeat 4/3; other-app plays 5/3). Nothing applies by itself (A3 §3.4; B2 §3). Accepting is an explicit yes: it appends a normal explicit signal — a global thumb — with <code>detail.proposal_id</code> for provenance and no synthesized reason (H2 §F3); artist-subject proposals append no event — the decision is recorded and the surface says to follow the artist (B5 §4).</p>
+<h2>Isolation — and how it is proven</h2>
+<p>The guarantee is byte-equality, not a promise: derive for a day-1 moment, append arbitrary day-2 implicit events, derive again — byte-identical output; day-1 implicit events never move day-2 values (B2 §2; C1's probes: 20/0). The suite also exercises boundaries (29:59 keeps / 30:00 exact keeps / 30:01 splits; midnight with a 60-second gap), flood bounds (20 loves / 20 skips ⇒ |bonus| ≤ 0.15), determinism (reversed and interleaved insertion orders byte-identical; lab re-runs identical, hash 6532f3f3…37ab3a), hide expiry at exactly +30:00, reset semantics, and proposal boundaries (2 epochs ⇒ none; 3/2 ⇒ exactly one). C1 re-ran all of it adversarially from the code (probe batches 20/0, 41/0, 33/0); brain-lab scenarios cover the same ground: <strong>05-fast-learning</strong> (within-epoch stream reorders the next resolve; hides re-skips), <strong>06-isolation</strong> (same stream at now+16h: <code>learning-adjust-zero</code>, <code>learning-hides-empty</code>, <code>learning-resolve-identical</code>), <strong>07-forget</strong> (<code>learning_reset</code> clears the epoch's evidence).</p>
+<h2>Exploration — built, off by default</h2>
+<p>The layer ships a deterministic exploration hook, <strong>off by default</strong>; when off, the derived view is byte-identical to a build without exploration (B2 §6). Reason: for a single listener, exploration noise is indistinguishable from a mood change — the exact confusion the isolation work prevents; determinism and honest exposure records are product promises; the novelty/satiation trade-off is one only the user can strike (A3 §3.5). If ever enabled by the user: one slot, seeded from <code>hash(epoch_id, counter)</code>, recorded as such.</p>
+<h2>Honest limits</h2>
+<ul>
+<li>All magnitudes are <strong>candidate values</strong> from the dossier/v1 lineage — hypotheses, not tuned evidence; nothing is tuned on real listening; fixtures are synthetic (A3 §6; B2 §7).</li>
+<li>Reliability weights exist only for <strong>bpm</strong> (<code>tempo_confidence</code>; spot-checks write full confidence); other axes use placeholder 1.0.</li>
+<li>Proposal thresholds are conservative, untested candidates; failure mode: too few proposals, never wrong automatism.</li>
+<li>Axis collinearity is contained — small skip weight, corroboration gates, honest notes — not solved.</li>
+<li>Two single-switch calls stay open: strict <code>global_only</code> scope persistence, and the epoch-wide skip-hide.</li>
+</ul>
+</section>
+<section class="chapter" id="ch3">
+  <header class="chapter__head"><p class="chapter__no">03 · Chapter</p><h1 class="chapter__title">Bias, culture, and measurement honesty</h1></header>
+<h3>3.1 Dominant-culture bias is a correctness problem</h3>
+<p>Every default in a playlist brain is a claim about how music works. SynAmp inherits defaults built for Western, equal-tempered, 4/4 pop: one global tempo per track, key as a twelve-tone template, loudness as a stand-in for intensity, "energy" as one dial. On a real library they are confidently wrong — and learnable. Bias here is a correctness problem: measurements are a moving target, and a system that will not admit it builds lists on claims it cannot support [A2 §0, §3].</p>
+<p>Counterexamples:</p>
+<ul>
+<li><strong>Ewe timeline patterns.</strong> The gankogui bell carries the twelve-pulse standard pattern ⟨2212221⟩; 3:2 relations underpin typical West African polyrhythmic textures [CC-1, CC-2]. Several true pulses coexist, so onset analysis can lock onto the wrong layer — low pulse clarity can describe fully rhythmic music. Ambiguity is not "no beat" (CC-1 full text UNRETRIEVED; CC-2 tertiary).</li>
+<li><strong>Indian tala.</strong> Metre is cyclic and additive — the same 14 beats group differently (Jhoomra 3+4+3+4 vs Dhamar), the sam carries the weight, tempo is elastic [CC-6]. State-of-the-art beat tracking, meter estimation and downbeat detection on Carnatic, Hindustani and Turkish material is "not adequate" [CC-38].</li>
+<li><strong>Gamelan.</strong> Slendro and pelog are per-ensemble tunings ("island to island, village to village") with deliberate paired-instrument beating; 12-TET chroma models misreport key, and interlocking kotekan "sounds faster than any single human could possibly play" — a double-time trap [CC-8, CC-10, CC-11].</li>
+<li><strong>Sámi yoik — ontology, not genre.</strong> Yoik is wordless and often unaccompanied — "singing into being" a person, landscape or animal, not singing about one [CC-16, CC-17]. The right behaviour is abstention plus artist-provided descriptions.</li>
+</ul>
+<p>The machine side is a moving target. Tempo estimation has a named octave-error class (60/120/240), and its standard metric forgives factors 2, 3, ½, ⅓ [CC-37]. Dataset skew is systematic: canonical tempo sets are Western/electronic-heavy with documented mislabels; similarity models diverge from human cross-cultural judgments across nine traditions [CC-42]. SynAmp's own case: 7,351 onsets, phase concentration ≈0.034 — pulse trackable, timing withheld [INT-2]. "Energy carried by microtiming" stays a labelled candidate [CC-46].</p>
+<p>The listener is enculturated too: 12-month-olds respond culture-specifically; adults without exposure miss foreign non-isochronous metres; the groove inverted-U inverts outside 4/4 for Western listeners [CC-29, CC-30, CC-35, CC-36]. Universal "energy" semantics is unsupported at both ends of the chain [A2 §2].</p>
+<h3>3.2 What shipped, in response</h3>
+<p>The response is honesty machinery, not cleverer scores.</p>
+<ul>
+<li><strong>No universal "energy".</strong> Energy asks compile to labelled proxies with named inputs (tempo, onsets, percussiveness, loudness) — loudness smallest-weighted, because LUFS is a normalisation standard, not felt intensity [CC-43–45; C2 P3].</li>
+<li><strong>Soft-only for declared fields.</strong> Mood, arousal, valence, danceability and the other unproduced fields never supply measurements — constraints stay soft, carrying the "no producer yet" note [C2 P10]. Documented caveat: neutral terms still enter the soft average as a constant-0.5 saturation, shifting feedback and MMR margins [H3 E1].</li>
+<li><strong>Reliability gates.</strong> BPM is gated by tempo confidence (full ≥ 0.5; damped with a note below; refused at ≤ 0.2 or missing); beat-stage fields are timing-gated. "A method's rejection is not independent musical truth": rejected tracks are never called arrhythmic — rejection lowers confidence and asks, not asserts [C2 P9; INT-2, INT-3].</li>
+</ul>
+<figure class="plate" id="fig-reliability">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="1200" height="460" role="img" aria-labelledby="reliability-title reliability-desc">
+  <title id="reliability-title">Measurement honesty: produced vs declared fields, and the reliability gates</title>
+  <desc id="reliability-desc">Two field lists, produced fields used with confidence and declared but inert fields, feed a reliability gate: tempo confidence below 0.5 is damped, timing fields need a measured grid, and unknown is never treated as zero. The gates output to scoring (ordering only) and to learning (feature hypotheses paused on suspect metrics; entity signals still learn).</desc>
+
+  <g fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="24" y="32" width="346" height="212" rx="4"/>
+    <rect x="24" y="264" width="346" height="168" rx="4"/>
+    <rect x="420" y="110" width="340" height="168" rx="4"/>
+    <rect x="800" y="96" width="376" height="100" rx="4"/>
+    <rect x="800" y="210" width="376" height="100" rx="4"/>
+    <path d="M40 98H354M40 328H354M436 158H744"/>
+    <path d="M378 186H406M406 180.5L414 186L406 191.5"/>
+    <path d="M768 146H786M786 140.5L794 146L786 151.5"/>
+    <path d="M768 260H786M786 254.5L794 260L786 265.5"/>
+  </g>
+
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="600" fill="#E8E6E1">
+    <text x="44" y="66">Produced</text>
+    <text x="44" y="292">Declared</text>
+    <text x="444" y="144">Reliability gates</text>
+    <text x="824" y="138">Scoring</text>
+    <text x="824" y="244">Learning</text>
+  </g>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" fill="#98A2AD">
+    <text x="44" y="86">(used with confidence)</text>
+    <text x="44" y="312">(no producer yet — inert)</text>
+    <text x="444" y="218">timing fields need a measured grid</text>
+    <text x="824" y="164">(ordering only)</text>
+    <text x="824" y="272" fill="#E8E6E1">feature hypotheses paused on suspect metrics</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" fill="#98A2AD">
+    <text x="44" y="116">bpm</text>
+    <text x="44" y="135">tempo_confidence</text>
+    <text x="44" y="154">pulse_clarity</text>
+    <text x="44" y="173">onset_rate</text>
+    <text x="44" y="192">percussiveness</text>
+    <text x="44" y="211">loudness</text>
+    <text x="44" y="230">beat/timing-gated fields</text>
+    <text x="44" y="346">arousal</text>
+    <text x="44" y="365">valence</text>
+    <text x="44" y="384">danceability</text>
+    <text x="44" y="403">instruments.*</text>
+    <text x="44" y="422">vocal_fraction</text>
+  </g>
+  <text x="444" y="186" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" fill="#98A2AD"><tspan font-family="ui-monospace, SFMono-Regular, Menlo, monospace">tempo_confidence</tspan><tspan> &lt; 0.5 → damped</tspan></text>
+  <!-- the one honesty line (gold accent) -->
+  <text x="444" y="250" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" fill="#D4A757">unknown ≠ zero — never filled in</text>
+  <text x="824" y="294" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" fill="#E8E6E1">entity signals still learn</text>
+</svg>
+<figcaption><span class="fig-no">Figure 4 ·</span> Measurement honesty: which fields are trusted, which are gated, and why unknown is never zero.</figcaption>
+</figure>
+
+<ul>
+<li><strong>"Tempo unclear — tap it", partially shipped.</strong> The spot-check is live (right / half / double / counted-in-threes / tap-to-replace / "no steady beat"), and user-verified values outrank measured ones — a correction holds while the measured BPM still matches [INT-1]. Tap-the-cycle for 5/7/9/11 is planned [C2 S2].</li>
+<li><strong>Never auto-4/4.</strong> No metre field is emitted, so nothing asserts 4/4 or any bar length; no bar-level hard rules [C2 P11].</li>
+<li><strong>No auto genre→culture claims.</strong> Tags are weak hints; "latin party music" reads dance from "party" and asks about "latin"; no "Latin = danceable" claim [C2 P2, E1].</li>
+<li><strong>Culture-flavoured defaults, labelled.</strong> No tradition-named default ships at all [A2 §4.3]; what ships is the calibration line — "Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections." Culture notes are code metadata, unrendered [H3 E3; C2 F7].</li>
+</ul>
+<h3>3.3 Ethics guardrails as design constraints</h3>
+<p>The anchors are named: CARE, with its shift "from regulated consultation to value-based relationships" [CC-47]; UNDRIP rights over cultural heritage and traditional cultural expressions, including free, prior and informed consent [CC-49]; and the Indigenous Protocol &amp; AI paper's insistence on no single unified statement [CC-48]. In practice: public sources only; no sacred or restricted knowledge; no ceremonial inference from audio; attribution in the appendix, which names the traditions used here specifically (Ewe; Sámi; gamelan/kotekan; Yolŋu manikay; Māori taonga pūoro; others) [H3 E3]. Nothing crosses a session without an explicit yes; exploration ships off; adjustments are bounded (±0.15), explainable, reward-free; mood is never inferred from behaviour — only explicit sad or angry language opens catharsis [C2 P4–P6, S10, S14; H1-8].</p>
+<h3>3.4 Bias statements, quotable</h3>
+<p>Twelve lines adapted from C2's inventory; each is true of the shipped slice and quotable as-is.</p>
+<ol>
+<li><strong>Bands are starting points, never laws:</strong> "Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections." [CC-29/30/36/37]</li>
+<li><strong>Tempo is the weakest signal:</strong> octave errors (60/120/240) are a named MIR failure class; low-confidence tempo is damped or refused, never stated as fact; tap-the-cycle remains planned. [CC-37; INT-1; C2 S2]</li>
+<li><strong>No universal "energy":</strong> asks compile to labelled proxies with named inputs; loudness smallest-weighted because LUFS is not perceived intensity. [CC-43–45]</li>
+<li><strong>No genre→culture claims:</strong> tags are weak hints; "latin party music" reads dance, not culture, and asks about "latin". [C2 P2]</li>
+<li><strong>Sensitive words are never product language:</strong> "tribal", "primitive", "exotic", "gypsy", "world music" appear nowhere in shipped code or copy — only echoed back from the user's own prompt. [C2 P1]</li>
+<li><strong>Attribution, not absorption — with a caveat:</strong> the appendix names traditions and peoples; shipped code cites rule ids, names no one, and culture-note rendering stays open. [H3 E3; C2 F1]</li>
+<li><strong>No invented traditions, no sacred-knowledge inference:</strong> ceremonial function is never inferred from audio; no tradition-named default ships before consultation and a decision record. [A2 §4.2–4.3]</li>
+<li><strong>Quiet-time and ceremony is a named gap, not a feature:</strong> no ceremonial-flag mechanism exists; user exclusions stay hard; a user-taggable context flag is the recommended next step. [C2 F10]</li>
+<li><strong>Learning is epoch-scoped, not person-scoped; nothing crosses a session without a yes:</strong> implicit behaviour hard-masks at the session boundary; only deliberate signals and accepted proposals cross. [C2 S9, S10]</li>
+<li><strong>Suspect measurements can't teach feature tastes:</strong> a skip on low-reliability material is identity-level evidence only, never a tempo or rhythm hypothesis — a method's rejection is not musical truth. [A2 §5 r12; INT-2]</li>
+<li><strong>Null is never zero:</strong> unmeasured fields stay unknown with "not measured" reasons; a missing tag is not absence. [C2 S13]</li>
+<li><strong>Where a protection isn't built, the report says so:</strong> still open — ceremony flags, metre-correction depth, angry-word coverage (added after review; not user-tested). [C2 S15; H1-8]</li>
+</ol>
+<p>Boundary note: behaviour claims rest on code and probes on a synthetic fixture — none is evidence about real music; A2's UNRETRIEVED list stays un-upgraded.</p>
+</section>
+<section class="chapter" id="ch4">
+  <header class="chapter__head"><p class="chapter__no">04 · Chapter</p><h1 class="chapter__title">Verification, rollback, and handoff</h1></header>
+<p>Verification here means three re-runnable commands, counts captured fresh on the frozen tree, adversarial review, route smoke against a live server — and notes wherever a check cannot see.</p>
+<h2>4.1 Baseline → final canon</h2>
+<table>
+<thead>
+<tr>
+<th>Verification</th>
+<th>Baseline</th>
+<th>Final canon (fresh capture at write time)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Brain suite (<code>pnpm --filter @synamp/brain test</code>)</td>
+<td><strong>149</strong> — 147 pass · 1 fail · 1 skip</td>
+<td><strong>218</strong> — 216 pass · 1 fail · 1 skip</td>
+</tr>
+<tr>
+<td>Type-checks (<code>@synamp/brain</code>, <code>@synamp/web</code>)</td>
+<td>both exit 0</td>
+<td>both exit 0</td>
+</tr>
+<tr>
+<td>brain-lab harness</td>
+<td>(did not exist)</td>
+<td><strong>8 scenarios · 86 pass · 0 fail · 0 pending · 5 documented skips</strong></td>
+</tr>
+<tr>
+<td>C1 adversarial probes (five scripts)</td>
+<td>—</td>
+<td>132 checks; one red = the <code>wave</code> bug (fixed, regression-pinned)</td>
+</tr>
+</tbody>
+</table>
+<p>Both reds are carried, not earned: the fail is a macOS case-fold artifact — the librarian artist-merge expects <code>Ani DiFranco/…</code> after renaming <code>Ani Difranco/…</code>, which case-insensitive APFS cannot deliver (passes on Linux CI); the skip is the cross-disk <code>/dev/shm</code> case, absent on macOS. Same test, same skip, every run; 69 tests were added net with zero new reds. (The root <code>type-check</code> chain still stops in the pre-broken vendored <code>webamp</code>.) Counts above are the freshest capture at write time (C4's fresh re-runs, 2026-10-07, post H1–H4); the delivery manifest re-captures at S5 and supersedes them. Intermediates (205 / 64 / 66) are never quoted.</p>
+<h2>4.2 The harness: <code>tools/brain-lab</code></h2>
+<p>A read-only harness loads the repo's real modules (absent ones reported, never stubbed) and drives eight scenarios with pinned inputs — clock, fixture, ids. One command:</p>
+<pre><code>cd ~/_dev/web-apps/SynAmp
+node --experimental-strip-types tools/brain-lab/lab.mts
+</code></pre>
+<p><code>--json &lt;path&gt;</code> writes machine evidence (<code>synamp.brain-lab/1</code>). What they prove:</p>
+<ul>
+<li><strong>01–04</strong> — flagship phrases yield valid readings (pump/dance run the full evaluate path, strict 25/25); vague/impossible return asks, never dead ends; contradictions give two labelled readings.</li>
+<li><strong>05 fast-learning</strong> — inside one epoch, repeat-skips hide tracks (<code>counts.hidden_by_session = 2</code>, no dead Restore), kept tracks re-rank (#33→#0, #23→#2, #39→#1); four <code>sequence-wave-*</code> regression checks.</li>
+<li><strong>06 isolation</strong> — the same stream at <code>now+16h</code>: adjustments <code>+0.000</code>, hides empty, resolve <strong>byte-identical</strong> to baseline. Proven, not promised.</li>
+<li><strong>07 forget</strong> — the <code>learning_reset</code> marker clears the epoch's evidence.</li>
+<li><strong>08 culture-guardrails</strong> — banned product words absent (user echo counted), culture spans never asserted outside quoted echo, no dead ends — a pin over honest behaviour, not classifier accuracy.</li>
+</ul>
+<p><strong>Determinism and CWD.</strong> Two runs are byte-identical modulo <code>generated_at</code>; a run from <code>/tmp</code> normalizes to the same hash (<code>c81b8753…</code>). When replayability is the promise, a harness drifting with clock or directory tests the environment, not the code; C4's fresh re-run matched all four canonical captures.</p>
+<p><strong>The five skips</strong> are registered, not silent: two mark the legacy pipeline legs (coverage moved to <code>intent-chosen-evaluates</code>); three are not-applicable by design — evaluating a vague or impossible ask is a category error; the contract is asserted instead.</p>
+<p><strong>Honest boundary.</strong> The lab composes modules exactly as <code>index.ts</code> <code>policyOptions()</code> does but cannot start the server; routes are covered below. Fixtures are synthetic — no evidence about real music.</p>
+<h2>4.3 Route-level evidence</h2>
+<p><strong>Auth on/off.</strong> <code>/health</code> public; without a token the brain routes, <code>/events</code> and <code>/settings</code> return 401, with it 200 (bad bodies still 400); <code>"/api/v1/brain"</code> is protected.</p>
+<p><strong>Policy rollback, live.</strong> One POST — <code>{"listening_policy":"legacy-v1"}</code> — flips the readout to <code>policy_version: heuristic-v1</code>, <code>epoch: null</code>, <code>hides: []</code>; the queue adjustment falls from −0.5999 ("skipped early this session") to 0. Switching back restores the hide — a pure re-derive from the untouched log. No restart, no migration (C4 live).</p>
+<p><strong>Forget.</strong> <code>POST /brain/forget</code> appends a <code>learning_reset</code> marker — append-only proven: 14→15 log lines, first-line hash unchanged.</p>
+<p><strong>Error paths</strong> (probed live; no 500s, nothing leaked):</p>
+<table>
+<thead>
+<tr>
+<th>Probe</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>forget <code>scope:"all"</code> / <code>"session"</code></td>
+<td>400 — "the event log is never edited, only marked"</td>
+</tr>
+<tr>
+<td>forget empty body / invalid JSON</td>
+<td>400</td>
+</tr>
+<tr>
+<td>proposals missing id / bad action</td>
+<td>400</td>
+</tr>
+<tr>
+<td>proposals unknown id</td>
+<td>404 — "No suggestion with that id"</td>
+</tr>
+<tr>
+<td>draft prompt &gt;500 chars / whitespace-only</td>
+<td>400 (500 chars boundary → 200)</td>
+</tr>
+<tr>
+<td>settings bogus policy</td>
+<td>400</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Queue/resolve smokes.</strong> "pump me up…" resolves with an identical order at resolve == explain == evaluate, <code>sequencing_applied</code> at all three; a skip hides <code>sample-034</code> and the list re-derives (same-artist <code>sample-033</code> drops too — deterministic); draft previews match; screenshots from the built dist.</p>
+<h2>4.4 What review caught — and fixed</h2>
+<p>C1's probes found the sharpest catch — <code>wave</code> corrupting odd measured counts (n=3 → <code>[hi, lo, undefined]</code> → <code>null</code> → queue-build 500); it survived a green unit suite because the wave test used even tracks and the determinism loop compared outputs to themselves. A coverage hole, closed. H1 fixed it, added n=1/3/5 regression tests (even counts byte-identical); H4 converted it into lab checks. Display/copy: session hides no longer masquerade as "Removed by you" (no dead Restore); accepted proposals no longer synthesize a reason (<code>detail.proposal_id</code> provenance); consequences precede the click; "% sure" → confidence words; sequencing notes render. Docs: declared-field caveat, propagation marker, guardrails attribution, D8, counts hygiene. Counts were re-captured, not re-quoted.</p>
+<h2>4.5 Rollback and operations</h2>
+<p>C4's verdicts: <strong>rollback — YES; error paths — YES; delivery inputs — YES</strong>, with the commit precondition as its only High finding.</p>
+<ul>
+<li><strong>Branch level.</strong> The slice ships as a single commit on <code>feat/fast-learning-brain</code>; revert = <code>git reset --hard &lt;base&gt;</code> (or <code>git checkout main</code>) — no migrations; data files are additive and inert under an old build; hashes go in the manifest. <em>Precondition (C4 F1, closed at S5):</em> the tree was uncommitted at review time and the patch command void; S5 commits first.</li>
+<li><strong>Policy switch.</strong> <code>POST /api/v1/settings {"listening_policy":"legacy-v1"}</code> and back — instant; curl-only (no UI — carried).</li>
+<li><strong>Forget.</strong> <code>POST /api/v1/brain/forget</code> — append-only; loves/thumbs/removes survive by design.</li>
+<li><strong>Proposals store.</strong> <code>brain-proposals.json</code> (atomic, 0600); decisions never expire — a dismissed id stays suppressed (documented limitation).</li>
+<li><strong>Exploration stays off</strong> (byte-identical when off).</li>
+<li><strong>Scratch recipe.</strong> <code>PLAYLIST_DATA_PATH=… LIBRARY_SIGNALS_PATH=… BRAIN_PORT=… node --experimental-strip-types src/index.ts</code> — state derives beside the playlist store; no <code>BRAIN_DATA_DIR</code>; no new envs; no telemetry.</li>
+<li><strong>Environment notes.</strong> Dev-sandbox residue (<code>apps/brain/data/</code>, 14 synthetic events, gitignored) stays, documented; stale user servers on :5173/:3001 are not ours to touch.</li>
+</ul>
+<h2>4.6 Next smallest experiments — and a status ledger</h2>
+<ol>
+<li><strong>One real-library session, then a tuning pass.</strong> Read <code>GET /api/v1/brain/session</code> after real listening; magnitudes/thresholds are labelled candidates — isolation is proven, "does it feel right" is not.</li>
+<li><strong>P4 producers.</strong> <code>vocal_fraction</code>, <code>instruments.*</code>, mood/arousal/valence/danceability are declared but unproduced; lexicon terms stay inert until producers land.</li>
+<li><strong>Proposal thresholds</strong> — conservative, untested guesses (3 epochs / 2 dates); revisit after real data.</li>
+<li><strong>Metre-correction UI depth</strong> — the tap path seeds the human-verified tier; a surfaced UI (5/7/9/11 tap-the-cycle), like ceremony flags, remains open.</li>
+</ol>
+<p><strong>Status ledger.</strong> <em>Confirmed:</em> counts, determinism, rollback levers, error paths, auth, no telemetry. <em>Partial:</em> proposal accept — the 409 path is not freshly re-exercised (B5/H2 receipts cover it); the legacy policy path is route-verified, not lab-modelled. <em>Unverified:</em> real-music behaviour and long-run logs.</p>
+<p>Handoff: the <code>DELIVERY/verification/</code> manifest re-captures counts and checksums on the frozen tree; <code>review.md</code> carries the round conclusions; the branch — one commit — is the live copy.</p>
+</section>
+<section class="chapter" id="ch5">
+  <header class="chapter__head"><p class="chapter__no">05 · Chapter</p><h1 class="chapter__title">Appendix — sources, parameters, glossary</h1></header>
+<p><em>Sources were retrieved by the A-round researchers on 2026-10-06; this appendix
+only re-organises their records — it adds nothing and fetches nothing.</em></p>
+<p><strong>Contents</strong>
+- §5.1 Sources appendix (merged MP / CC / ML, original IDs preserved) — incl. §5.1.5 UNRETRIEVED / blocked
+- §5.2 Parameter table P1–P25 — annotated with implementation + review outcomes
+- §5.3 Glossary (16 terms, plain language)
+- §5.4 Reproduction commands (full verification stack)</p>
+<hr />
+<h2>5.1 Sources appendix — merged [MP-n] / [CC-n] / [ML-n] (original IDs preserved)</h2>
+<p>Reading notes (apply to all three tables):</p>
+<ul>
+<li><strong>IDs</strong>: [MP-1]–[MP-34] = music psychology (A1 §6); [CC-1]–[CC-52] = cross-cultural &amp; metric reliability (A2 §6);
+  [ML-1]–[ML-23] = learning science / recommender ML (A3 §6). Do not renumber — other chapters cite these IDs.</li>
+<li><strong>Retrieval mode</strong> is reproduced as the packs stated it: full text / abstract / via API (Semantic Scholar, OpenAlex,
+  Europe PMC, PubMed E-utilities) / snippet / tertiary (Wikipedia, Britannica, official docs). A1 gave locators
+  (PMC/PubMed IDs, "full", "abstract") rather than URLs where noted; <strong>no URLs were invented</strong> for this merge.</li>
+<li><strong>Tiers</strong> are as assigned by each pack: High = ≥2 independent retrieved sources agreeing; Medium = one authoritative
+  retrieved source; Low = weak/tertiary single source; Conflict = sources disagree. A1 tiers at claim-cluster level,
+  so MP rows show the cluster label for the claim the source supports ("—" = no individual tier stated by A1).</li>
+<li><strong>Dedup check (this merge)</strong>: no exact duplicates across the three families (URL/DOI/arXiv cross-check);
+  each ID maps to one entry. [CC-35b] is a companion press summary inside the [CC-35] row.</li>
+<li><strong>Conflicts are kept, not smoothed</strong> — rows involved in a listed conflict carry a "Conflict #n" note (A1 §6 conflict
+  list) or the A2 caution verbatim (e.g., "same publisher family — treat as one").</li>
+</ul>
+<h3>5.1.1 [MP-n] — Music psychology (A1 §6; retrievals 2026-10-06)</h3>
+<table class="ids">
+<thead>
+<tr>
+<th>ID</th>
+<th>Source (authors, year — title — venue)</th>
+<th>Retrieved as</th>
+<th>Tier</th>
+<th>Claim cluster it supports</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MP-1</td>
+<td>Karageorghis &amp; Priest (2012) — Music in the exercise domain: a review and synthesis (Part II) — Int. Review of Sport and Exercise Psychology 5(1), 67–84</td>
+<td>PMC3339577 (full)</td>
+<td>High (exercise cluster)</td>
+<td>Pre-task arousal/imagery; async band 125–140 bpm (40–90 % max HRR); stimulative &gt;120 bpm percussive; sedative &lt;80 bpm, 60–70 guidance; synchronous benefits. (Part I UNRETRIEVED.)</td>
+</tr>
+<tr>
+<td>MP-2</td>
+<td>Terry, Karageorghis, Curran, Martin &amp; Parsons-Smith (2020) — Effects of music in exercise and sport: a meta-analytic review — Psychological Bulletin 146(2), 91–117</td>
+<td>BURA green-OA PDF (full)</td>
+<td>High (exercise)</td>
+<td>Affect g=0.48; performance g=0.31; RPE g=0.22; VO₂ g=0.15; HR ns; tempo moderation.</td>
+</tr>
+<tr>
+<td>MP-3</td>
+<td>Delleli, Ouergui, Ballmann, Messaoudi, Trabelsi, Ardigò &amp; Chtourou (2023) — Pre-task music effects… systematic review with multilevel meta-analysis — Frontiers in Psychology 14:1293783</td>
+<td>PMC10701429 (full)</td>
+<td>High (exercise)</td>
+<td>Pre-task gains (time, power, fatigue, feeling); self-selected &gt; pre-selected; wide prediction intervals.</td>
+</tr>
+<tr>
+<td>MP-4</td>
+<td>Juslin &amp; Västfjäll (2008) — Emotional responses to music: the need to consider underlying mechanisms — Behavioral and Brain Sciences 31, 559–575</td>
+<td>PubMed 18826699 (abstract)</td>
+<td>Covered (abstract; no tier given)</td>
+<td>Six-mechanism framework; emotions via non-music-specific mechanisms.</td>
+</tr>
+<tr>
+<td>MP-5</td>
+<td>Juslin (2013) — From everyday emotions to aesthetic emotions — Physics of Life Reviews 10(3), 235–266</td>
+<td>PubMed 23769678 (abstract)</td>
+<td>Covered (abstract)</td>
+<td>BRECVEMA mechanisms; musical event = music × listener × context.</td>
+</tr>
+<tr>
+<td>MP-6</td>
+<td>communicationtheory.org — Mood Management Theory (Zillmann)</td>
+<td>secondary page</td>
+<td>Low (tertiary secondary)</td>
+<td>Media chosen to optimise mood; <strong>Zillmann 1988 primary UNRETRIEVED</strong>.</td>
+</tr>
+<tr>
+<td>MP-7</td>
+<td>Heiderscheit &amp; Madson (2015) — Use of the iso principle as a central method in mood management — Music Therapy Perspectives 33(1), 45–52</td>
+<td><strong>UNRETRIEVED</strong> (metadata verified via search + Semantic Scholar)</td>
+<td>—</td>
+<td>Covered by [MP-8][MP-9].</td>
+</tr>
+<tr>
+<td>MP-8</td>
+<td>Starcke et al. (2021) — Emotion modulation through music after sadness induction — Int J Environ Res Public Health 18(23), 12486</td>
+<td>PMC8656869 (full)</td>
+<td>Medium</td>
+<td>Sad→happy sequence: highest positive / lowest negative affect; not all contrasts significant.</td>
+</tr>
+<tr>
+<td>MP-9</td>
+<td>Cheung et al. (2025) — Individualized iso-principle playlist for de-escalating agitation (RCT feasibility) — Int J Geriatr Psychiatry 40(4), e70070</td>
+<td>PMC11949771 (full)</td>
+<td>Conflict #4</td>
+<td>Feasible; <strong>not more effective than control</strong>; efficacy unconfirmed.</td>
+</tr>
+<tr>
+<td>MP-10</td>
+<td>Witek, Clarke, Wallentin, Kringelbach &amp; Vuust (2014) — Syncopation, body-movement and pleasure in groove music — PLOS ONE 9(4), e94446</td>
+<td>full</td>
+<td>Medium; Conflict #7</td>
+<td>Inverted-U; medium syncopation max wanting/pleasure; dancers stronger; entropy poor.</td>
+</tr>
+<tr>
+<td>MP-11</td>
+<td>Janata, Tomic &amp; Haberman (2012) — Sensorimotor coupling in music and the psychology of the groove — J Exp Psychol Gen 141(1), 54–75</td>
+<td><strong>UNRETRIEVED</strong> (closed; metadata via Semantic Scholar)</td>
+<td>—</td>
+<td>Groove foundational text.</td>
+</tr>
+<tr>
+<td>MP-12</td>
+<td>Stupacher, Hove &amp; Janata (2016) — Audio features underlying perceived groove and sensorimotor synchronization — Music Perception 33(5), 571–589</td>
+<td><strong>UNRETRIEVED</strong> (closed; record via search)</td>
+<td>—</td>
+<td>Groove features.</td>
+</tr>
+<tr>
+<td>MP-13</td>
+<td>Hine, Wakana &amp; Nakauchi (2025) — How we remember music tempo: spontaneous motor tempo in recall and preference — Frontiers in Psychology 16:1631625</td>
+<td>PMC12549237 (full)</td>
+<td>Medium</td>
+<td>SMT predicts adjusted preferred tempo.</td>
+</tr>
+<tr>
+<td>MP-14</td>
+<td>Stupacher, Witek, Vuoskoski &amp; Vuust (2020) — Cultural familiarity and individual musical taste… social bonding when moving to music — Scientific Reports 10 (doi 10.1038/s41598-020-66529-1)</td>
+<td>PMC7308378 (full)</td>
+<td>Medium</td>
+<td>Synchrony × enjoyment drives closeness; familiarity vs enjoyment dissociate.</td>
+</tr>
+<tr>
+<td>MP-15</td>
+<td>Sloboda (1991) — Music structure and emotional response: some empirical findings — Psychology of Music 19(2), 110–120</td>
+<td><strong>UNRETRIEVED</strong> (paywall; mirrors blocked)</td>
+<td>—</td>
+<td>Frisson/chills classic.</td>
+</tr>
+<tr>
+<td>MP-16</td>
+<td>Blood &amp; Zatorre (2001) — Intensely pleasurable responses to music correlate with activity in brain regions implicated in reward and emotion — PNAS 98(20), 11818–11823</td>
+<td>PMC58814 (full)</td>
+<td>High (frisson)</td>
+<td>Chills + autonomic changes; ventral striatum, midbrain, amygdala, OFC, VMPFC.</td>
+</tr>
+<tr>
+<td>MP-17</td>
+<td>Sachs, Damasio &amp; Habibi (2015) — The pleasures of sad music: a systematic review — Frontiers in Human Neuroscience 9:404</td>
+<td>full</td>
+<td>Conflict #2</td>
+<td>Sadness pleasurable when non-threatening/aesthetic/benefit-producing.</td>
+</tr>
+<tr>
+<td>MP-18</td>
+<td>Taruffi &amp; Koelsch (2014) — The paradox of music-evoked sadness: an online survey — PLOS ONE 9(10), e110490</td>
+<td>full</td>
+<td>Conflict #2</td>
+<td>4 rewards; mood-congruent; nostalgia most frequent.</td>
+</tr>
+<tr>
+<td>MP-19</td>
+<td>Garrido &amp; Schubert (2015) — Moody melodies: do they cheer us up? — Psychology of Music 43(2), 244–261</td>
+<td>SAGE abstract page</td>
+<td>Conflict #2</td>
+<td>Increased depression after self-selected sad music.</td>
+</tr>
+<tr>
+<td>MP-20</td>
+<td>Perham &amp; Currie (2014) — Does listening to preferred music improve reading comprehension performance? — Applied Cognitive Psychology 28(2), 279–284</td>
+<td>full PDF (mirror)</td>
+<td>High (lyrics); Conflict #1</td>
+<td>Liked = disliked lyrical music, both worse than non-lyrical/quiet; ISE needs changing-state + seriation.</td>
+</tr>
+<tr>
+<td>MP-21</td>
+<td>Souza &amp; Barbosa (2023) — Should we turn off the music? Music with lyrics interferes with cognitive tasks — Journal of Cognition 6(1), 24</td>
+<td>PMC10162369 (full)</td>
+<td>High (lyrics)</td>
+<td>Lyrics d≈−0.3 verbal/visual memory + reading; arithmetic ns; instrumental neutral.</td>
+</tr>
+<tr>
+<td>MP-22</td>
+<td>Kämpfe, Sedlmeier &amp; Renkewitz (2011) — The impact of background music on adult listeners: a meta-analysis — Psychology of Music 39(4), 424–448</td>
+<td>ERIC EJ944201 (abstract)</td>
+<td>High (lyrics) / Weak (chores); Conflict #1</td>
+<td>Global null; reading disturbed; small memory detriments; positive emotional reactions; tempo paces activity.</td>
+</tr>
+<tr>
+<td>MP-23</td>
+<td>Husain, Thompson &amp; Schellenberg (2002) — Effects of musical tempo and mode on arousal, mood, and spatial abilities — Music Perception 20(2), 151–171</td>
+<td><strong>UNRETRIEVED</strong> (SAGE blocked)</td>
+<td>—</td>
+<td>Tempo→arousal, mode→mood (publisher record; framework in [MP-32]).</td>
+</tr>
+<tr>
+<td>MP-24</td>
+<td>Pietschnig, Voracek &amp; Formann (2010) — Mozart effect–Shmozart effect: a meta-analysis — Intelligence 38(3), 314–323</td>
+<td><strong>UNRETRIEVED</strong> (ScienceDirect captcha)</td>
+<td>—</td>
+<td>Covered by [MP-25].</td>
+</tr>
+<tr>
+<td>MP-25</td>
+<td>Oberleiter &amp; Pietschnig (2023) — Unfounded authority, underpowered studies… Mozart effect myth — Scientific Reports 13:3175</td>
+<td>full</td>
+<td>Conflict #6</td>
+<td>No Mozart-specific benefit; publication bias; underpowered studies.</td>
+</tr>
+<tr>
+<td>MP-26</td>
+<td>Cordi, Ackermann &amp; Rasch (2019) — Effects of relaxing music on healthy sleep — Scientific Reports 9:9079</td>
+<td>full</td>
+<td>Medium</td>
+<td>Subjective sleep 3.69 vs 3.28 (p=.048); N1 reduced; small sample; suggestibility interaction.</td>
+</tr>
+<tr>
+<td>MP-27</td>
+<td>Thoma, La Marca, Brönnimann, Finkel, Ehlert &amp; Nater (2013) — The effect of music on the human stress response — PLOS ONE 8(8), e70156</td>
+<td>full</td>
+<td>Conflict #5</td>
+<td>Faster sAA recovery; cortisol response highest in music (against hypothesis); HR/subjective ns.</td>
+</tr>
+<tr>
+<td>MP-28</td>
+<td>Sedikides, Leunissen &amp; Wildschut (2022) — The psychological benefits of music-evoked nostalgia — Psychology of Music 50(6), 2044–2062</td>
+<td>author PDF (full)</td>
+<td>High (MEAM existence) / Medium (nostalgia)</td>
+<td>Connectedness, self-esteem, optimism, meaning; buffers sadness; familiarity necessity open.</td>
+</tr>
+<tr>
+<td>MP-29</td>
+<td>Janata (2009) — The neural architecture of music-evoked autobiographical memories — Cerebral Cortex 19(11), 2579–2594</td>
+<td>PMC2758676 (full)</td>
+<td>High + <strong>correction</strong></td>
+<td>MPFC network for MEAMs; subjects selected for ≥30 % MEAM frequency — the "~30 %" headline is a selection threshold, not prevalence.</td>
+</tr>
+<tr>
+<td>MP-30</td>
+<td>Madison &amp; Schiölde (2017) — Repeated listening increases the liking for music regardless of its complexity — Frontiers in Neuroscience 11:147</td>
+<td>PMC5374342 (full)</td>
+<td>Conflict #3</td>
+<td>Monotonic liking increase with repetition (no inverted-U); familiarity strongest predictor.</td>
+</tr>
+<tr>
+<td>MP-31</td>
+<td>Li, Chen &amp; Zhang (2019) — Effect of music tempo on long-distance driving — i-Perception 10(4)</td>
+<td>full</td>
+<td>Medium</td>
+<td>Medium tempo best for fatigue/attention; slow worst; single-piece caveat.</td>
+</tr>
+<tr>
+<td>MP-32</td>
+<td>Gigliotti et al. (2025) — The sonic energy of background music impacts cognitive performances — Cognitive Research: Principles and Implications (doi 10.1186/s41235-025-00676-9)</td>
+<td>PMC12627320 (full)</td>
+<td>— (framework)</td>
+<td>Both low/high-arousing raise activation; high-arousing raises felt effort; verbal fluency unaffected.</td>
+</tr>
+<tr>
+<td>MP-33</td>
+<td>Mas-Herrero, Zatorre, Rodriguez-Fornells &amp; Marco-Pallarés (2014) — Dissociation between musical and monetary reward responses in specific musical anhedonia — Current Biology 24(6), 699–704</td>
+<td>abstract via Europe PMC</td>
+<td>Medium–High</td>
+<td>Subgroup with reduced musical pleasure, normal monetary reward (~3–5 % per secondary sources).</td>
+</tr>
+<tr>
+<td>MP-34</td>
+<td>Juslin, Liljeström, Västfjäll, Barradas &amp; Silva (2008) — An experience sampling study of emotional reactions to music — Emotion 8(5), 668–683</td>
+<td>abstract via Europe PMC</td>
+<td>—</td>
+<td>Music in 37 % of episodes; 64 % of music episodes affected feelings.</td>
+</tr>
+</tbody>
+</table>
+<h3>5.1.2 [CC-n] — Cross-cultural &amp; metric reliability (A2 §6; retrievals 2026-10-06)</h3>
+<table class="ids">
+<thead>
+<tr>
+<th>ID</th>
+<th>Source (author/venue as given)</th>
+<th>Retrieved as</th>
+<th>URL (as given)</th>
+<th>Tier</th>
+<th>Claim cluster / caveat</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CC-1</td>
+<td>Agawu — Structural Analysis or Cultural Analysis? … "Standard Pattern" of West African Rhythm — JAMS 59(1), 2006</td>
+<td>Abstract via OpenAlex API</td>
+<td>https://doi.org/10.1525/jams.2006.59.1.1</td>
+<td>Medium (abstract)</td>
+<td>Standard-pattern debate; full text UNRETRIEVED (PDF empty).</td>
+</tr>
+<tr>
+<td>CC-2</td>
+<td>"Ewe music" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Ewe_music</td>
+<td>Low (tertiary)</td>
+<td>Pointer (Agawu 2003, Novotney 1998, Jones).</td>
+</tr>
+<tr>
+<td>CC-3</td>
+<td>"Pygmy music" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Pygmy_music</td>
+<td>Low (tertiary)</td>
+<td>Aka/Baka/Mbuti distinction.</td>
+</tr>
+<tr>
+<td>CC-4</td>
+<td>UNESCO ICH — Polyphonic singing of the Aka Pygmies (no. 00082)</td>
+<td>Full text</td>
+<td>https://ich.unesco.org/en/RL/polyphonic-singing-of-the-aka-pygmies-of-central-africa-00082</td>
+<td>Medium (official)</td>
+<td>Inscribed 2008; oral transmission; improvisation.</td>
+</tr>
+<tr>
+<td>CC-5</td>
+<td>Fürniss — Aka Polyphony, 2006 (chapter)</td>
+<td>Abstract via OpenAlex</td>
+<td>https://doi.org/10.1093/acprof:oso/9780195177893.003.0006</td>
+<td>Medium (abstract)</td>
+<td>Full text UNRETRIEVED (HAL/Anubis blocked).</td>
+</tr>
+<tr>
+<td>CC-6</td>
+<td>"Tala (music)" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Tala_(music)</td>
+<td>Low–Medium</td>
+<td>Additive cycles, avartan, sam, vibhag; consistent with [CC-38].</td>
+</tr>
+<tr>
+<td>CC-7</td>
+<td>Saraga README (MTG)</td>
+<td>Fetched (content not quoted)</td>
+<td>https://raw.githubusercontent.com/MTG/saraga/master/README.md</td>
+<td>—</td>
+<td><strong>Not cited for claims</strong> (not read in time); locatable resource.</td>
+</tr>
+<tr>
+<td>CC-8</td>
+<td>"Kotekan" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Kotekan</td>
+<td>Low</td>
+<td>Vitale quote: interlocking illusion.</td>
+</tr>
+<tr>
+<td>CC-9</td>
+<td>"Colotomy" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Colotomy</td>
+<td>Low</td>
+<td>Nested gong cycles.</td>
+</tr>
+<tr>
+<td>CC-10</td>
+<td>"Slendro" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Slendro</td>
+<td>Low</td>
+<td>Ensemble variability; Balinese paired tuning/beating.</td>
+</tr>
+<tr>
+<td>CC-11</td>
+<td>"Pelog" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Pelog</td>
+<td>Low</td>
+<td>9-TET approximation; Surjodiningrat 1972 cited (original UNRETRIEVED).</td>
+</tr>
+<tr>
+<td>CC-12</td>
+<td>"Gamelan" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Gamelan</td>
+<td>Low</td>
+<td>Ensemble context overview.</td>
+</tr>
+<tr>
+<td>CC-13</td>
+<td>"Manikay" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Manikay</td>
+<td>Low</td>
+<td>Yolŋu clan songs; songlines.</td>
+</tr>
+<tr>
+<td>CC-14</td>
+<td>"Didgeridoo" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Didgeridoo</td>
+<td>Low</td>
+<td>Drone; circular breathing; bilma beat.</td>
+</tr>
+<tr>
+<td>CC-15</td>
+<td>"Clapstick" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Clapstick</td>
+<td>Low</td>
+<td>bilma/bimli naming; rhythm maintenance.</td>
+</tr>
+<tr>
+<td>CC-16</td>
+<td>Madsen — Singing into Being — UAF Circumpolar Music Series</td>
+<td>Full text</td>
+<td>https://www.uaf.edu/music/cms/singing-into-being.php</td>
+<td>Medium</td>
+<td>Mari Boine quote; suppression history.</td>
+</tr>
+<tr>
+<td>CC-17</td>
+<td>Hämäläinen et al. — Sami yoik, Sami history, Sami health: narrative review — Int J Circumpolar Health</td>
+<td>Full text (PMC5912196)</td>
+<td>https://pmc.ncbi.nlm.nih.gov/articles/PMC5912196/</td>
+<td>Medium (peer-reviewed)</td>
+<td>Identity/resilience; "under-researched" caveat.</td>
+</tr>
+<tr>
+<td>CC-18</td>
+<td>Te Ara (Flintoff) — Māori musical instruments – taonga puoro</td>
+<td>Full text</td>
+<td>https://teara.govt.nz/en/maori-musical-instruments-taonga-puoro</td>
+<td>Medium</td>
+<td>Rangi/Papa families; revival.</td>
+</tr>
+<tr>
+<td>CC-19</td>
+<td>Stanfield — Powwow Music and its Polymetric Construction — MUSICultures 37, 2010</td>
+<td>Full PDF</td>
+<td>https://journals.lib.unb.ca/index.php/MC/article/view/20228</td>
+<td>Medium–High (single but primary)</td>
+<td>Drum primacy; notation history; AABCBC context.</td>
+</tr>
+<tr>
+<td>CC-20</td>
+<td>Hoefnagels — Northern Style Powwow Music… — MUSICultures, 2004</td>
+<td>Abstract</td>
+<td>https://journals.lib.unb.ca/index.php/MC/article/view/21605</td>
+<td>Low</td>
+<td>Classification-for-teaching.</td>
+</tr>
+<tr>
+<td>CC-21</td>
+<td>"Clave (rhythm)" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Clave_(rhythm)</td>
+<td>Low</td>
+<td>Son clave; tresillo definition.</td>
+</tr>
+<tr>
+<td>CC-22</td>
+<td>"Tresillo (rhythm)" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Tresillo_(rhythm)</td>
+<td>Low</td>
+<td>3+3+2; cross-rhythm vs additive (cites Agawu 2003, Peñalosa).</td>
+</tr>
+<tr>
+<td>CC-23</td>
+<td>"Aksak (meter)" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Aksak</td>
+<td>Low–Medium</td>
+<td>Cell table; Brăiloiu 1951; usul names.</td>
+</tr>
+<tr>
+<td>CC-24</td>
+<td>Britannica — aksak</td>
+<td>Full text</td>
+<td>https://www.britannica.com/art/aksak</td>
+<td>Medium</td>
+<td>2+3 / 2+2+2+3; "Bulgarian rhythm" (Bartók).</td>
+</tr>
+<tr>
+<td>CC-25</td>
+<td>"Huayno" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Huayno</td>
+<td>Low</td>
+<td>First-beat stress + two short beats.</td>
+</tr>
+<tr>
+<td>CC-26</td>
+<td>"Siku (instrument)" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Siku_(instrument)</td>
+<td>Low</td>
+<td>ira/arka interlocking; stereophonic sound.</td>
+</tr>
+<tr>
+<td>CC-27</td>
+<td>"Ma (negative space)" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Ma_(negative_space)</td>
+<td>Low</td>
+<td>Interval/silence semantics.</td>
+</tr>
+<tr>
+<td>CC-28</td>
+<td>Britannica — jo-ha-kyū / Japanese music structural ideals</td>
+<td>Topic stub</td>
+<td>https://www.britannica.com/art/jo-ha-kyu</td>
+<td>Low–Medium</td>
+<td>Tripartite pacing; Noh placements.</td>
+</tr>
+<tr>
+<td>CC-29</td>
+<td>Hannon &amp; Trehub — Tuning in to musical rhythms: infants learn more readily than adults — PNAS 2005</td>
+<td>Full text (PMC1194930)</td>
+<td>https://pmc.ncbi.nlm.nih.gov/articles/PMC1194930/</td>
+<td>Medium (peer-reviewed)</td>
+<td>Sensitive period; 12-mo vs adults. Same lab lineage as [CC-30] — caution.</td>
+</tr>
+<tr>
+<td>CC-30</td>
+<td>Hannon &amp; Trehub — Metrical Categories in Infancy and Adulthood</td>
+<td>Full PDF (CogSci 2003) + Psych Science 2005 abstract via OpenAlex</td>
+<td>https://escholarship.org/content/qt6170j46c/qt6170j46c.pdf + https://doi.org/10.1111/j.0956-7976.2005.00779.x</td>
+<td>Medium</td>
+<td>7/8 stimulus detail; Bulgarian/Macedonian adults; infant responsiveness.</td>
+</tr>
+<tr>
+<td>CC-31</td>
+<td>Jacoby &amp; McDermott — Integer Ratio Priors on Musical Rhythm — Current Biology 2017</td>
+<td>Abstract via PubMed E-utilities (PMID 28065607)</td>
+<td>https://pubmed.ncbi.nlm.nih.gov/28065607</td>
+<td>Medium (abstract)</td>
+<td>Integer-ratio priors; experience-modulated. Full text UNRETRIEVED (publisher blocked).</td>
+</tr>
+<tr>
+<td>CC-32</td>
+<td>Jacoby et al. — Cross-Cultural Work in Music Cognition — Music Perception 37(3), 2020</td>
+<td>Full PDF</td>
+<td>https://www.norijacoby.com/Jacoby_etal_20202_cross%20cultural%20work%20in%20music%20cognition.pdf</td>
+<td>Medium (position paper)</td>
+<td>WEIRD sampling; ethics/methods/definition recommendations.</td>
+</tr>
+<tr>
+<td>CC-33</td>
+<td>Mehr et al. — Universality and diversity in human song — Science 2019</td>
+<td>Full text (PMC7001657)</td>
+<td>https://pmc.ncbi.nlm.nih.gov/articles/PMC7001657/</td>
+<td>Medium (peer-reviewed)</td>
+<td>309/315 societies; within&gt;across variation; context predictions.</td>
+</tr>
+<tr>
+<td>CC-34</td>
+<td>Savage et al. — Statistical universals… — PNAS 2015</td>
+<td>Full text (PMC4517223)</td>
+<td>https://pmc.ncbi.nlm.nih.gov/articles/PMC4517223/</td>
+<td>Medium (peer-reviewed)</td>
+<td>304 recordings; no absolute universals; group coordination.</td>
+</tr>
+<tr>
+<td>CC-35</td>
+<td>Polak et al. — Rhythmic Prototypes Across Cultures — Music Perception 2018 (<strong>incl. companion [CC-35b] MPI press summary</strong>)</td>
+<td>Abstract via OpenAlex + press release</td>
+<td>https://doi.org/10.1525/mp.2018.36.1.1 ; https://www.aesthetics.mpg.de/en/newsroom/news/news-article/article/rhythm-diversity-different-cultures-prefer-different-beat-patterns-1.html</td>
+<td>Medium (abstract + release)</td>
+<td>Full text UNRETRIEVED (KTH/Anubis blocked).</td>
+</tr>
+<tr>
+<td>CC-36</td>
+<td>Spiech et al. — "4/4 and more…" rhythmic complexity predicts groove in common meters — Communications Psychology (Nature) 2025</td>
+<td>Full PDF</td>
+<td>https://www.nature.com/articles/s44271-025-00360-0.pdf</td>
+<td>Medium (peer-reviewed)</td>
+<td>Groove inverted-U only in 4/4; simpler rhythms groove in non-4/4 (single study).</td>
+</tr>
+<tr>
+<td>CC-37</td>
+<td>Schreiber &amp; Müller — Music Tempo Estimation: Are We Done Yet? — TISMIR 2020</td>
+<td>Full text</td>
+<td>https://transactions.ismir.net/articles/10.5334/tismir.43</td>
+<td>Medium (peer-reviewed)</td>
+<td>OE metrics; ACC2 tolerance critique; varying tempi.</td>
+</tr>
+<tr>
+<td>CC-38</td>
+<td>Srinivasamurthy et al. — In Search of Automatic Rhythm Analysis Methods for Turkish and Indian Art Music</td>
+<td>Abstract via OpenAlex</td>
+<td>https://doi.org/10.1080/09298215.2013.879902</td>
+<td>Medium (abstract)</td>
+<td>"Not adequate" for beat/meter/downbeat on these corpora.</td>
+</tr>
+<tr>
+<td>CC-39</td>
+<td>Miguel et al. — From beat tracking to beat expectation… — PLoS ONE 2020</td>
+<td>Full text (PMC7673539)</td>
+<td>https://pmc.ncbi.nlm.nih.gov/articles/PMC7673539/</td>
+<td>Medium (peer-reviewed)</td>
+<td>Pulse-clarity operationalization.</td>
+</tr>
+<tr>
+<td>CC-40</td>
+<td>TISMIR — A Quantitative Model of Tension and Resolution in Turkish Makam Music</td>
+<td>Full text</td>
+<td>https://transactions.ismir.net/articles/10.5334/tismir.353</td>
+<td>Medium (peer-reviewed)</td>
+<td>Pitch variability; theory–practice gap.</td>
+</tr>
+<tr>
+<td>CC-41</td>
+<td>Serra et al. — AI and Music at a Crossroads… — TISMIR</td>
+<td>Full text</td>
+<td>https://transactions.ismir.net/articles/10.5334/tismir.372</td>
+<td>Medium</td>
+<td>Six priorities; provenance/transparency criteria.</td>
+</tr>
+<tr>
+<td>CC-42</td>
+<td>Papaioannou, Benetos &amp; Potamianos — Cross-Cultural Music Similarity… — TISMIR</td>
+<td>Full text</td>
+<td>https://transactions.ismir.net/articles/10.5334/tismir.341</td>
+<td>Medium (peer-reviewed)</td>
+<td>9 traditions; 1,130 pairs; model–human divergence.</td>
+</tr>
+<tr>
+<td>CC-43</td>
+<td>"Loudness" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Loudness</td>
+<td>Low (tertiary; standard content)</td>
+<td>SPL vs loudness; sone/phon.</td>
+</tr>
+<tr>
+<td>CC-44</td>
+<td>"Equal-loudness contour" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Equal-loudness_contour</td>
+<td>Low</td>
+<td>Frequency dependence; Fletcher–Munson.</td>
+</tr>
+<tr>
+<td>CC-45</td>
+<td>"LKFS" (LUFS) — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/LKFS</td>
+<td>Low</td>
+<td>K-weighted normalization standard.</td>
+</tr>
+<tr>
+<td>CC-46</td>
+<td>Senn et al. — Expert Performance Microtiming on Listeners' Experience of Groove — Frontiers in Psychology 2016</td>
+<td>Full PDF</td>
+<td>https://www.frontiersin.org/articles/10.3389/fpsyg.2016.01487/pdf</td>
+<td>Medium (peer-reviewed)</td>
+<td>Microtiming→groove evidence negative/nuanced.</td>
+</tr>
+<tr>
+<td>CC-47</td>
+<td>Carroll et al. — The CARE Principles for Indigenous Data Governance — Data Science Journal 2020</td>
+<td>Full text</td>
+<td>https://datascience.codata.org/articles/10.5334/dsj-2020-043/</td>
+<td>High (peer-reviewed)</td>
+<td>CARE quad; consultation→relationships shift.</td>
+</tr>
+<tr>
+<td>CC-48</td>
+<td>Lewis et al. (eds.) — Indigenous Protocol and Artificial Intelligence Position Paper, 2020</td>
+<td>Landing + preview text</td>
+<td>https://www.indigenous-ai.net/position-paper/</td>
+<td>Medium (partial)</td>
+<td>Heterogeneous texts; relation-based design.</td>
+</tr>
+<tr>
+<td>CC-49</td>
+<td>UN — Declaration on the Rights of Indigenous Peoples (A/RES/61/295)</td>
+<td>Full PDF</td>
+<td>https://www.un.org/development/desa/indigenouspeoples/wp-content/uploads/sites/19/2018/11/UNDRIP_E_web.pdf</td>
+<td>High (primary instrument)</td>
+<td>Arts 8, 11, 12, 13, 31 quoted; linked with [CC-47].</td>
+</tr>
+<tr>
+<td>CC-50</td>
+<td>"Laya (music)" — Wikipedia</td>
+<td>Full text (thin)</td>
+<td>https://en.wikipedia.org/wiki/Laya_(music)</td>
+<td>Low</td>
+<td>Not used for strong claims.</td>
+</tr>
+<tr>
+<td>CC-51</td>
+<td>"Pulse (music)" — Wikipedia</td>
+<td>Full text</td>
+<td>https://en.wikipedia.org/wiki/Pulse_(music)</td>
+<td>Low</td>
+<td>Background only.</td>
+</tr>
+<tr>
+<td>CC-52</td>
+<td>"Tempo rubato" — Wikipedia</td>
+<td><strong>Search/snippet only — EXCLUDE</strong></td>
+<td>—</td>
+<td>—</td>
+<td>Listed for honesty: not fetched; no claims based on it.</td>
+</tr>
+</tbody>
+</table>
+<h3>5.1.3 [ML-n] — Learning science / recommender ML (A3 §6; retrievals 2026-10-06)</h3>
+<table class="ids">
+<thead>
+<tr>
+<th>ID</th>
+<th>Source (authors, year — title — venue)</th>
+<th>Retrieved as</th>
+<th>Tier</th>
+<th>Claim cluster it supports</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ML-1</td>
+<td>Manning, Raghavan &amp; Schütze — Introduction to Information Retrieval, ch. 9 (Relevance feedback and query expansion) — full text: https://nlp.stanford.edu/IR-book/pdf/09expand.pdf</td>
+<td>full text</td>
+<td>Medium</td>
+<td>Rocchio eq. 9.3; γ&lt;β convention; "tracks an evolving information need".</td>
+</tr>
+<tr>
+<td>ML-2</td>
+<td>Hidasi, Karatzoglou, Baltrunas &amp; Tikk (ICLR 2016) — Session-based Recommendations with RNNs — arXiv:1511.06939</td>
+<td>abstract + official repos via search</td>
+<td>Medium</td>
+<td>GRU4Rec session lineage.</td>
+</tr>
+<tr>
+<td>ML-3</td>
+<td>Brost, Mehrotra &amp; Jehan (WWW 2019) — The Music Streaming Sessions Dataset — arXiv:1901.09851</td>
+<td>abstract page</td>
+<td>Medium</td>
+<td>160 M sessions; uniform-random subset for counterfactual evaluation.</td>
+</tr>
+<tr>
+<td>ML-4</td>
+<td>Garivier &amp; Moulines (2008) — On UCB Policies for Non-Stationary Bandit Problems — arXiv:0805.3415</td>
+<td>abstract</td>
+<td>Medium</td>
+<td>Rewards constant over epochs, change at unknown instants; discounted/sliding-window UCB.</td>
+</tr>
+<tr>
+<td>ML-5</td>
+<td>Li, Chu, Langford &amp; Schapire (WWW 2010) — Contextual-Bandit Approach to Personalized News Article Recommendation — arXiv:1003.0146</td>
+<td>search snippet</td>
+<td>Medium</td>
+<td>LinUCB.</td>
+</tr>
+<tr>
+<td>ML-6</td>
+<td>Russo et al. (2017) — A Tutorial on Thompson Sampling — arXiv:1707.02038</td>
+<td>search snippet</td>
+<td>Medium</td>
+<td>Thompson sampling.</td>
+</tr>
+<tr>
+<td>ML-7</td>
+<td>Jannach, Lerche &amp; Zanker (2018) — Recommending based on Implicit Feedback — Social Information Access chapter</td>
+<td>full text: https://web-ainf.aau.at/pub/jannach/files/BookChapter_Social_Information_Access_2018.pdf</td>
+<td>Medium; with [ML-23] ⇒ <strong>High for "skip ≠ dislike"</strong></td>
+<td>Verbatim: skips "can be context dependent and interpreting it as a general negative assessment of the previous track might be misleading".</td>
+</tr>
+<tr>
+<td>ML-8</td>
+<td>Hu, Koren &amp; Volinsky (ICDM 2008) — Collaborative Filtering for Implicit Feedback Datasets</td>
+<td>text (chrisvolinsky.com PDF)</td>
+<td>Medium</td>
+<td>(sign, magnitude, confidence); "vastly varying confidence levels".</td>
+</tr>
+<tr>
+<td>ML-9</td>
+<td>Chang, Zhang, Tang, Yin, Chang, Hasegawa-Johnson &amp; Huang (WWW 2017) — Streaming Recommender Systems (sRec)</td>
+<td>retrieved snippets (experts.illinois.edu; archives.iw3c2.org)</td>
+<td>Medium/Low</td>
+<td>Time-decay / half-time framing.</td>
+</tr>
+<tr>
+<td>ML-10</td>
+<td>Carbonell &amp; Goldstein (SIGIR 1998) — The Use of MMR, Diversity-Based Reranking — full text: cs.cmu.edu PDF</td>
+<td>full text</td>
+<td>Medium</td>
+<td>λ=1 relevance / λ=0 diversity.</td>
+</tr>
+<tr>
+<td>ML-11</td>
+<td>Song, Kim, Lee et al. — Learning from Noisy Labels with Deep Neural Networks: A Survey — arXiv:2007.08199</td>
+<td>snippet</td>
+<td>Medium</td>
+<td>Noisy-label learning.</td>
+</tr>
+<tr>
+<td>ML-12</td>
+<td>Loni et al. (2021) — A Survey on Cold Start Problem in Recommender Systems — J. Big Data</td>
+<td>snippet via references</td>
+<td>Medium/Low</td>
+<td>Cold start.</td>
+</tr>
+<tr>
+<td>ML-13</td>
+<td>Ie et al. (2019) — RecSim — arXiv:1909.04847</td>
+<td>snippet</td>
+<td>Medium</td>
+<td>Simulation environments for sequential recommendation.</td>
+</tr>
+<tr>
+<td>ML-14</td>
+<td>Radlinski &amp; Craswell (WSDM 2013) — Optimized Interleaving for Online Retrieval Evaluation</td>
+<td>snippets (Microsoft/dblp/ACM)</td>
+<td>Medium/Low</td>
+<td>Interleaving for online evaluation.</td>
+</tr>
+<tr>
+<td>ML-15</td>
+<td>Gama, Žliobaitė, Bifet, Pechenizkiy &amp; Bouchachia (2014) — A Survey on Concept Drift Adaptation — ACM CSUR</td>
+<td>snippets + TU/e PDF</td>
+<td>Medium/Low</td>
+<td>Concept drift.</td>
+</tr>
+<tr>
+<td>ML-16</td>
+<td>Gilotte, Calauzènes, Nedelec, Abraham &amp; Dollé (2018) — Offline A/B Testing for Recommender Systems — arXiv:1801.07030</td>
+<td>abstract</td>
+<td>Medium</td>
+<td>Counterfactual estimators; bias–variance limits.</td>
+</tr>
+<tr>
+<td>ML-17</td>
+<td>Bottou, Peters, Quiñonero-Candela et al. (JMLR 2013) — Counterfactual Reasoning and Learning Systems — arXiv:1209.2355</td>
+<td>abstract</td>
+<td>Medium</td>
+<td>Counterfactual caution.</td>
+</tr>
+<tr>
+<td>ML-18</td>
+<td>Nguyen, Hui, Harper, Terveen &amp; Konstan (WWW 2014) — Exploring the Filter Bubble — full text: archives.iw3c2.org PDF</td>
+<td>full text</td>
+<td>Medium</td>
+<td>Individual-level narrowing measured.</td>
+</tr>
+<tr>
+<td>ML-19</td>
+<td>Chen et al. (RecSys 2021) — Values of Exploration in Recommender Systems — ACM fullHtml, DOI 10.1145/3460231.3474236</td>
+<td>full text</td>
+<td>Medium</td>
+<td>Verbatim: lack of exploration → satiation, "reduced enjoyment of the content".</td>
+</tr>
+<tr>
+<td>ML-20</td>
+<td>Montecchio, Roy &amp; Pachet (2019) — The Skipping Behavior of Users of Music Streaming Services — arXiv:1903.06008</td>
+<td>abstract</td>
+<td>Medium</td>
+<td>Skip timing ↔ musical structure; stable under stationarity.</td>
+</tr>
+<tr>
+<td>ML-21</td>
+<td>The universality of skipping behaviours on music streaming platforms — arXiv:2005.06987</td>
+<td>snippet only</td>
+<td>Low</td>
+<td>Skip profile as song-intrinsic.</td>
+</tr>
+<tr>
+<td>ML-22</td>
+<td>Google Analytics Help — About Analytics sessions</td>
+<td>snippet</td>
+<td>Medium (official doc; convention only)</td>
+<td>30-minute inactivity sessionization default.</td>
+</tr>
+<tr>
+<td>ML-23</td>
+<td>Li, Kuo, Sheng, Zhang &amp; Wu (CHI 2025) — Beyond Explicit and Implicit: How Users Provide Feedback — arXiv:2502.09869</td>
+<td>abstract</td>
+<td>Medium</td>
+<td>Intentional implicit feedback drives diversity/relevance purposes.</td>
+</tr>
+</tbody>
+</table>
+<h3>5.1.4 Internal (project) references — <strong>not world-evidence</strong></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Where</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[SynAmp-dossier]</td>
+<td>docs/research/synamp-brain-dossier.html</td>
+<td>Internal dossier (metric taxonomy; feedback magnitudes; drift/exploration guidance). Used only for internal consistency.</td>
+</tr>
+<tr>
+<td>[SynAmp-CONTEXT]</td>
+<td>.cluster/synamp-fast-brain/CONTEXT.md; plan schema read from apps/brain/src/query/plan.ts, signals.ts</td>
+<td>Verified repo facts; registry gates; spot-check behaviours; scoping rules.</td>
+</tr>
+<tr>
+<td>[INT-1]</td>
+<td>.cluster/synamp-fast-brain/CONTEXT.md</td>
+<td>Signal registry &amp; gates; spot-check behaviours (right/half/double/tap; 3-based ratios; "no steady beat"); epoch scoping; declared-vs-produced.</td>
+</tr>
+<tr>
+<td>[INT-2]</td>
+<td>docs/research/beat-timing-findings-2026-09-29.md</td>
+<td>Two-track smoke results; phase concentration ≈0.034 with trackable pulse; abstention guards; "method rejection ≠ independent musical truth".</td>
+</tr>
+<tr>
+<td>[INT-3]</td>
+<td>docs/synamp/plans/BEAT-TIMING.md</td>
+<td>Onset-attribution requirements; "do not repeat" list (incl. not calling rejected tracks arrhythmic).</td>
+</tr>
+<tr>
+<td>[INT-4]</td>
+<td>docs/research/synamp-brain-dossier.html</td>
+<td>"BPM is the weakest signal"; octave errors 60/120/240; proxy field; dataset-bias design row; cross-cultural similarity variance (Papaioannou).</td>
+</tr>
+<tr>
+<td>[R-code]</td>
+<td>apps/brain/src/session/{events,session,feedback}.ts; apps/brain/src/query/{evaluate,signals,plan}.ts; docs/synamp/plans/AGENT-ROADMAP.md (P3); dossier ch. 7</td>
+<td>Internal design source (read-only, retrieved 2026-10-06).</td>
+</tr>
+</tbody>
+</table>
+<h3>5.1.5 UNRETRIEVED / blocked in this pass (do not cite as evidence)</h3>
+<p><em>Union of the A1 / A2 / A3 unretrieved lists, as given by each pack. Nothing below was fetched; none of it may be cited
+as evidence in the report. Shown here so the boundary of what the evidence actually covers stays visible.</em></p>
+<p><strong>From A1 (compiled from its §5/§6 annotations + return block; reasons as given):</strong></p>
+<ol>
+<li>Karageorghis &amp; Priest — review <strong>Part I</strong> — UNRETRIEVED (PMC hit was a different paper; Part II links its content).</li>
+<li>[MP-7] Heiderscheit &amp; Madson 2015 — UNRETRIEVED (publisher/blocks; record metadata verified via search + Semantic Scholar). Cluster covered by [MP-8][MP-9].</li>
+<li>[MP-11] Janata, Tomic &amp; Haberman 2012 — UNRETRIEVED (closed; metadata verified via Semantic Scholar API).</li>
+<li>[MP-12] Stupacher, Hove &amp; Janata 2016 — UNRETRIEVED (closed; record verified via search).</li>
+<li>[MP-15] Sloboda 1991 — UNRETRIEVED (paywall; mirrors blocked).</li>
+<li>[MP-23] Husain et al. 2002 — UNRETRIEVED (SAGE blocked).</li>
+<li>[MP-24] Pietschnig et al. 2010 — UNRETRIEVED (ScienceDirect captcha). Cluster covered by [MP-25].</li>
+<li>Zillmann 1988 (American Behavioral Scientist) — UNRETRIEVED (noted under [MP-6]; mood-management primary).</li>
+<li>van Goethem &amp; Sloboda 2011 — UNRETRIEVED (listed in A1 return-block gaps; no further detail given).</li>
+<li>de la Mora Velasco 2023 — UNRETRIEVED here (dossier only; conflict #1).</li>
+<li>Kiss &amp; Linnell 2021 (mind-wandering suppression) — UNRETRIEVED (described in [SynAmp-dossier]; candidate).</li>
+<li>ISE origins: Colle &amp; Welsh 1976; Salamé &amp; Baddeley 1982 — originals not retrieved (cited within [MP-20]).</li>
+<li>Binaural-beats evidence: Ingendoh et al. 2023 vs Garcia-Argibay — UNRETRIEVED here (conflicting evidence; must not be implemented as science-backed).</li>
+<li>Driving-simulator companion work — dossier only; UNVERIFIED here (A1 §1.7).</li>
+<li>Coverage-check note (as given): "Mood management (Zillmann) — Gap (primary UNRETRIEVED; secondary only)".</li>
+</ol>
+<p><strong>From A2 — explicit UNRETRIEVED list (verbatim):</strong></p>
+<ol>
+<li>Clayton, <em>Time in Indian Music</em> (SOAS repository page found but not fetched content) — India analysis relies on [CC-6]/[CC-38] only.</li>
+<li>Locke, <em>Drum Gahu</em> (book; only pointer via [CC-2]) — Akan/Ewe detail beyond [CC-1, CC-2] not verified.</li>
+<li>Agawu 2006 full text (PDF fetch empty).</li>
+<li>Fürniss 2006 full text (Anubis block).</li>
+<li>Saraga paper text (emusicology.org Anubis block); Saraga README fetched but unread — no claims made.</li>
+<li>Polak 2018 full text (KTH DiVA Anubis block; abstract used).</li>
+<li>Jacoby &amp; McDermott 2017 full text (cell.com Cloudflare block; abstract used).</li>
+<li>Surjodiningrat 1972 original tuning measurements (via [CC-11] only).</li>
+<li>Indian intonation MIR (tonic identification / pitch-tracking papers; UPF repository blocked).</li>
+<li>"U-M CSEAS Spirit of Tuning" article (Cloudflare block).</li>
+<li>NMA "Songlines" exhibition page (JS-only shell).</li>
+<li>Direct experimental evidence for "note-density → perceived speed/tempo bias" (searches unsuccessful; claim kept candidate, §3.5).</li>
+<li>AIATSIS materials (could not retrieve usable page this pass; do not cite AIATSIS as a source).</li>
+<li>GlobalMood / "Missing Melodies" / music-AI fairness papers surfaced in search but not retrieved — excluded entirely from citations.</li>
+</ol>
+<p><strong>From A3 — UNRETRIEVED / partially unretrieved (verbatim):</strong></p>
+<blockquote>
+<p>Rocchio (1971) original paper; Ide dec-hi original; WSDM-2019 challenge winning-solution details;
+Seshadri et al. RecSys'23 (contrastive skip learning — dossier citation only); "Why People Skip Music?" (2023) full
+text (snippets only); Xie et al. WWW'23 dwell reweighting full text (dossier names arXiv:2209.09000 — not
+independently retrieved); Spotify's "first 30 seconds" rule (dossier already labels unverified — do not use as a
+finding). The dossier's internal magnitudes/claims remain project-internal candidate values, not independently
+validated here.</p>
+</blockquote>
+<hr />
+<h2>5.2 Parameter table P1–P25 — A3 §3.7 spec, annotated with implementation (B2 §3) and review outcomes (C1)</h2>
+<p>Columns: <strong>(#) parameter · default</strong> → <strong>implemented as</strong> (B2 §3 names/constants, code) → <strong>gate / review note</strong> (C1 probe results; deviations and judgment calls worth knowing when reading Ch.2).</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Parameter · default (A3 §3.7)</th>
+<th>Implemented as (B2 §3)</th>
+<th>Gate / review note (C1 + B2 deviations)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td><code>G_idle</code> idle gap = 30 min</td>
+<td><code>IDLE_GAP_MS = 30 * 60_000</code> (epochs.ts); mask, not decay</td>
+<td>C1: 30:00 exact keeps / 30:01 splits (value 0); missing <code>session_id</code> = its own bucket (sandwich → 3 epochs). ✓</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>Day boundary = local midnight</td>
+<td><code>resolveEpochs</code> day-boundary; injectable IANA timezone (default server local)</td>
+<td>C1: midnight split with 60 s gap ✓; pin timezone for cross-restart day determinism (B2 §6.8).</td>
+</tr>
+<tr>
+<td>P3</td>
+<td><code>h_E</code> epoch half-life = 30 min</td>
+<td><code>EPOCH_HALF_LIFE_MS</code>; <code>0.5^(Δt/30min)</code></td>
+<td>C1: ratio exactly 0.25 at +60 min ✓ ("+60 min ≤ 0.25× fresh" asserted on derived values).</td>
+</tr>
+<tr>
+<td>P4</td>
+<td><code>G_live</code> active window = <code>G_idle</code></td>
+<td><code>LIVE_WINDOW_MS</code>; <code>activeEpoch</code></td>
+<td>C1: expiry live at exactly +30:00, cleared at +30:00.001 with "no active session" note ✓. Deviation (B2 §5.2): epochs ending after <code>now</code> are never "active".</td>
+</tr>
+<tr>
+<td>P5</td>
+<td><code>W</code> bound = 0.15</td>
+<td>evaluate.ts <code>0.15·tanh(v/2)</code> (unchanged); one saturation</td>
+<td>C1: flood 20 loves/skips → 0.15000 / −0.14925 / 0.15000, all parts finite; hard rules inviolable under maxed bonus. ✓</td>
+</tr>
+<tr>
+<td>P6</td>
+<td>tanh scale = 2</td>
+<td>same (<code>0.15·tanh(v/2)</code>)</td>
+<td>C1: monotonicity + saturation spot-checks ✓; verified as composed through the real pipeline, not raw value.</td>
+</tr>
+<tr>
+<td>P7</td>
+<td>love = +2.0 / c=1.0</td>
+<td><code>EPOCH_EVIDENCE</code> + <code>PERSISTENT_EVIDENCE</code> (v1 parity)</td>
+<td>C1: single-love bonus = <strong>0.11424</strong> (brief's "0.10–0.11" was approximate); part "you loved this" present. ✓</td>
+</tr>
+<tr>
+<td>P8</td>
+<td>thumb_up = +1.0 / c=0.9</td>
+<td>as above</td>
+<td>C1: explicit-only parity with <code>deriveFeedback</code> (deep-equal adjust/removed) ✓.</td>
+</tr>
+<tr>
+<td>P9</td>
+<td>thumb_down = −1.0 / c=0.9</td>
+<td>as above</td>
+<td>Persists via L1 when reason ≠ <code>not_now</code>; <code>remove</code>+<code>reason=not_now</code> → epoch hide only (C1). ✓</td>
+</tr>
+<tr>
+<td>P10</td>
+<td>repeat = +1.0 / c=0.7</td>
+<td><code>EPOCH_EVIDENCE</code></td>
+<td>L2 only; dies after epoch end ✓ (constant-table check).</td>
+</tr>
+<tr>
+<td>P11</td>
+<td>full_play = +0.5 / c=0.5</td>
+<td><code>EPOCH_EVIDENCE</code></td>
+<td>L2 only (constant-table check; low confidence = unintentional signal).</td>
+</tr>
+<tr>
+<td>P12</td>
+<td>skip_early = −0.6 / c=0.5</td>
+<td><code>EPOCH_EVIDENCE</code></td>
+<td>C1: k=1 → −0.2999, no hide; k=2 → hide + −0.5897 ✓. "Skip ≠ dislike" (High with [ML-7]+[ML-23]).</td>
+</tr>
+<tr>
+<td>P13</td>
+<td>skip_late = −0.1 / c=0.2</td>
+<td><code>EPOCH_EVIDENCE</code></td>
+<td>Never hides ✓ (constant-table check).</td>
+</tr>
+<tr>
+<td>P14</td>
+<td>external_play = +0.25 / c=0.5</td>
+<td><code>EPOCH_EVIDENCE</code> (v1 value kept)</td>
+<td>L2 only; proposal at ≥5 epochs / ≥3 dates ✓ (P22 probe). Demotion decision noted in A3 gaps.</td>
+</tr>
+<tr>
+<td>P15</td>
+<td>skip-hide count = 2</td>
+<td>Epoch-wide hide from <code>skip_early ×2</code> (B2 §5.6: v1's playlist-scoped rule removed from L1)</td>
+<td>C1: full hide lifecycle ✓ incl. exact +30:00 expiry edge; hide survives re-resolve within epoch. Judgment flagged to C-round: epoch-wide vs playlist-scoped scope.</td>
+</tr>
+<tr>
+<td>P16</td>
+<td><code>not_now</code> = hide n=1, no L1</td>
+<td>derive reset/not_now semantics</td>
+<td>C1: <code>not_now</code> hides at n=1; value 0 after the epoch; no persistent cell appears ✓; reset note present.</td>
+</tr>
+<tr>
+<td>P17</td>
+<td>artist π=0.35 / cap=0.8 / min-ev ≥2</td>
+<td><code>ARTIST_MIN_EVENTS=2</code>, <code>ARTIST_MIN_SUM=1.0</code>; cap ±0.8; <code>π·Σ</code></td>
+<td>C1 <strong>F2 (wording drift)</strong>: A3 §3.3(b) prose says "≥2 <strong>distinct tracks</strong>"; code + P17 table + dispatch say "≥2 <strong>events</strong>" — <strong>code follows P17; A3 prose is the outlier</strong> (fix the prose or accept; behaviour per table). C1: cap +0.8 exactly; single event ≤0.11; entity-only propagation (loves don't feed the artist term — state this in one line in Ch.2).</td>
+</tr>
+<tr>
+<td>P18</td>
+<td>centroid gates n_K≥3, cov≥0.6, n_R≥2</td>
+<td><code>FEATURE {min_keeps:3, min_rejects:2, coverage:0.6}</code>; plus axis needs ≥4 usable library values + nonzero 1.4826·MAD (B2 §5.11)</td>
+<td>C1: coverage opens at exactly 60%, falls back at 40 % with exact note; n=2 kept ⇒ no axis + reliability note ✓.</td>
+</tr>
+<tr>
+<td>P19</td>
+<td>β/γ = 0.5/0.15</td>
+<td><code>FEATURE {beta:0.5, gamma:0.15}</code>; γ&lt;β enforced</td>
+<td>C1: γ&lt;β enforced; total clipped to exactly 1.0 (sum-of-parts 2.35) ✓.</td>
+</tr>
+<tr>
+<td>P20</td>
+<td>feature caps: axis ±0.5 / total ±1.0</td>
+<td>per-axis parts ≤0.5 by construction; total clip ±1.0; artist clip ±0.8</td>
+<td>C1: per-axis 0.47 ≤ 0.5; adversarial wide-spread set shrunk via 1/(1+s²) ✓.</td>
+</tr>
+<tr>
+<td>P21</td>
+<td>neg proposal ≥3 epochs ∧ ≥2 dates</td>
+<td><code>PROPOSAL_THRESHOLDS</code></td>
+<td>C1: 2→none; 3/2 dates→exactly 1 with <code>{epochs:3,dates:2,dayparts:[morning,afternoon]}</code>; same-date→none ✓. Note: the <code>not_now_pattern</code> "≥2 dayparts" gate verified by code read + constants only (C1 §8.2); live epoch excluded from scan.</td>
+</tr>
+<tr>
+<td>P22</td>
+<td>pos proposal ≥5 epochs ∧ ≥3 dates</td>
+<td><code>PROPOSAL_THRESHOLDS</code> (repeat 4/3, external 5/3)</td>
+<td>C1: 5/3→proposal; 4→none ✓.</td>
+</tr>
+<tr>
+<td>P23</td>
+<td>proposal scan window = 30 d</td>
+<td><code>PROPOSAL_SCAN_DAYS = 30</code></td>
+<td>C1: 35-day-old pattern → none ✓.</td>
+</tr>
+<tr>
+<td>P24</td>
+<td>exploration OFF; if ON: 1 slot, seeded</td>
+<td><code>explorationEnabled</code> / <code>pickExplorationSlot</code> (derive never reads it)</td>
+<td>C1: OFF byte-identical to no-budget; ON never alters the derived view; seeded slot deterministic ✓.</td>
+</tr>
+<tr>
+<td>P25</td>
+<td><code>scope_persistence</code> = <code>declared</code></td>
+<td><code>PolicyOptions.scopePersistence</code> default <code>"declared"</code></td>
+<td>C1: both modes ✓. <code>global_only</code> magnitudes (±1.0 / c=0.9 / epoch half-life; labels "…(this session)") are a B2 §5.5 judgment call — one constant to change if review disagrees.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reading the table (footnotes):</strong>
+- C1 re-derived ≥10 rows plus the full constant tables (<code>EPOCH_EVIDENCE</code>, <code>PERSISTENT_EVIDENCE</code>, <code>FEATURE</code>,
+  <code>PROPOSAL_THRESHOLDS</code>); everything above "reproduced green" except the noted wording drift (F2) and the two judgment
+  calls (P15 scope, P25 magnitudes) which are flagged, not smoothed. <em>(C1 §2 F5 also notes cosmetic label drift for the
+  artist part: quote the implemented label "other tracks by <artist> this session", not A3's example wording.)</em>
+- C1's one <strong>major must-fix (F1, <code>wave</code> arc on odd measured counts → <code>undefined</code>/500) is outside the P-table</strong> (it is in
+  sequencing). It was fixed by H1 (interleave bound + guards; n=1/3/5 regression tests; resolve path re-probed OK).
+  Post-fix C1 verdict expected: pass-with-notes.
+- "L1 explicit cells survive a learning reset" (B2 §5.4) is implemented as documented and judged acceptable by C1 §7;
+  if the report wants "forget" to also suppress pre-reset explicit cells, that is a one-spot change — say so explicitly.
+- Counts in this table's sources: A3 §3.7 (spec), B2 §3 (implementation), C1 §3–§4 (review probes). All fixtures are
+  synthetic; nothing here is evidence about real music.</p>
+<hr />
+<h2>5.3 Glossary (16 terms, plain language)</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Plain-language meaning (as implemented here)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>plan</strong></td>
+<td>The machine-readable description of what the user asked for: constraints + sequencing + declared relaxation rules; versioned schema (v2.0), validated, and hashed (the plan hash). Something the brain <em>can</em> enforce — vague asks produce questions, impossible asks are refused honestly.</td>
+</tr>
+<tr>
+<td><strong>constraint (hard / soft)</strong></td>
+<td>One requirement inside a plan (e.g., "bpm ≤ 120"). <strong>Hard</strong> = a guard that is never auto-relaxed (explicit exclusions must be hard). <strong>Soft</strong> = may only be relaxed through the plan's declared ladder (<code>drop_boost</code> / <code>widen_numeric</code>).</td>
+</tr>
+<tr>
+<td><strong>unknown_policy</strong></td>
+<td>What to do when a track's value for a constraint is unknown: <code>exclude</code> / <code>include</code> / <code>neutral</code>. Declared-but-no-producer fields use <code>neutral</code> + the inert note "no producer yet — inert on real data".</td>
+</tr>
+<tr>
+<td><strong>near-miss</strong></td>
+<td>The second, separately-labelled result tier: tracks that miss strict filtering within registered near-miss widths. Near-misses are shown, never receive learning bonuses, and never carry feedback reasons.</td>
+</tr>
+<tr>
+<td><strong>tier</strong></td>
+<td>Which bucket a track lands in after evaluation: <strong>strict</strong> (passes every constraint — the only place learning/scoring applies) vs <strong>near-miss</strong> (close misses, hand-labelled). Not to be confused with source-confidence tiers in §5.1.</td>
+</tr>
+<tr>
+<td><strong>arc / sequencing</strong></td>
+<td>The ordering step applied <em>after</em> evaluation to the strict tier only (a permutation — nothing added or dropped; unknowns keep their places). Arcs: <code>flat</code> / <code>build</code> / <code>peak</code> / <code>cooldown</code> / <code>wave</code>; notes appear in <code>sequencing_applied</code> (e.g., "arc build: ordered by measured pace/energy proxy…").</td>
+</tr>
+<tr>
+<td><strong>epoch</strong></td>
+<td>The learning window: one listening session, split by session change, a 30-minute idle gap, or local midnight. Implicit learning <strong>never crosses an epoch boundary</strong> — a closed epoch contributes exactly nothing. Missing <code>session_id</code> events form their own bucket.</td>
+</tr>
+<tr>
+<td><strong>daypart</strong></td>
+<td>Coarse time-of-day label attached to an epoch (morning 05–12 / afternoon 12–17 / evening 17–22 / night 22–05, from the epoch start). A display/evidence convention only — no empirical basis claimed.</td>
+</tr>
+<tr>
+<td><strong>hide (persistent vs session)</strong></td>
+<td>A suppressed track. <strong>Persistent remove</strong> = playlist-scoped, lasts until restored (<code>hidden_by_you</code>). <strong>Session hide</strong> = epoch-wide, from <code>skip_early</code>×2 or <code>not_now</code>; clears when the session ends (or via "Forget this session"; <code>hidden_by_session</code>). Both leave the strict tier; the two counts are reported separately (no dead Restore buttons).</td>
+</tr>
+<tr>
+<td><strong>proposal</strong></td>
+<td>A cross-epoch suggestion — the <em>only</em> channel through which learning crosses epochs. Backed by evidence <code>{epochs, dates, dayparts}</code> and conservative thresholds; requires user confirmation before anything changes. Accepting appends a normal global thumb event (track subjects) or records the decision (artist subjects); never an automatic playback change.</td>
+</tr>
+<tr>
+<td><strong>evidence weight</strong></td>
+<td>How strongly one event counts: magnitude × confidence (e.g., love +2.0 @ c=1.0; repeat +1.0 @ c=0.7), then decayed by the epoch half-life. These are the numbers the learning is built from — all candidate values, tunable, versioned with the policy.</td>
+</tr>
+<tr>
+<td><strong>reliability gate</strong></td>
+<td>The filter deciding whether measured data is trustworthy enough to learn from: declared/missing fields are refused; <code>bpm</code> uses <code>tempo_confidence</code> (full ≥0.5, damped 0.35, unusable ≤0.2/missing); a centroid axis additionally needs ≥4 usable library values and a non-zero robust scale. Gated data produces honest notes, never zero-substitution.</td>
+</tr>
+<tr>
+<td><strong>centroid</strong></td>
+<td>The evidence "centre of mass" per feature axis (e.g., bpm) of the tracks you kept / skipped this session; candidates near the kept centroid get a small, bounded pull ("tempo ~126 BPM — you kept three such tracks"). Gated by minimum counts and coverage; per-axis pull capped.</td>
+</tr>
+<tr>
+<td><strong>saturation bound</strong></td>
+<td>The total feedback adjustment is squeezed through <code>0.15·tanh(v/2)</code> — <strong>never more than ±0.15</strong>, applied once, inside the strict tier only. It is a tiebreaker, never an override: hard constraints and explicit exclusions stay inviolable no matter how much evidence accumulates.</td>
+</tr>
+<tr>
+<td><strong>policy version</strong></td>
+<td>The label stamped on events and readouts for <em>which meaning of the numbers</em> produced them (<code>heuristic-v1</code> or <code>epoch-v1</code>). Any meaning change = new version + re-derive from the same immutable event log — never a migration. Rollback = switch <code>listening_policy</code> back (<code>legacy-v1</code>).</td>
+</tr>
+<tr>
+<td><strong>spot-check correction</strong></td>
+<td>The human-in-the-loop tempo fix: you verify right / half / double / tap, or "no steady beat" (3-based metre ratios recognised). Corrections are applied only while the measured BPM matches the checked one; this is the seed of a human-verified reliability tier.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>5.4 Reproduction commands — full verification stack</h2>
+<p><em>Consolidated from B4b §"Exact commands", B5 §3.2, C1 §10, H1 §4, H2 "Verification" and the H4 re-sync (receipt
+<code>H4-lab-sync.md</code>; canonical lab capture <code>evidence/final-lab/</code>). S5's delivery-manifest re-capture remains the definitive
+set. Captures were taken on <code>feat/fast-learning-brain</code> @ base <code>b6ea5ce1</code> + the working tree; no commits at capture time,
+no installs.</em></p>
+<pre><code class="language-sh">CLUSTER=/Users/tapps/.openclaw-autoclaw/agents/algorithm-scientist/workspace/.cluster/synamp-fast-brain
+cd /Users/tapps/_dev/web-apps/SynAmp
+
+# 1) Brain test suite — expect the ONE carried red (macOS librarian case-fold) + /dev/shm skip
+pnpm --filter @synamp/brain test
+#   capture (H1, 00:02 CDT): 218 tests · 216 pass · 1 fail · 1 skip · exit 1 by design — reproduced fresh post-hotfix
+#   (earlier captures: H2 212/210, C1 210/208 — tests landed progressively; the S5 re-run is definitive)
+
+# 2) Type-checks — both exit 0. Root `pnpm type-check` stops in vendored webamp (pre-broken, untouched): expect exit 1 there
+pnpm --filter @synamp/brain type-check
+pnpm --filter @synamp/web type-check
+pnpm --filter @synamp/web build          # exit 0 (&quot;✓ built in ~1s&quot;)
+
+# 3) Verification harness (deterministic; re-run before quoting any numbers)
+node --experimental-strip-types tools/brain-lab/lab.mts
+#   expected: 8 scenarios · 86 checks pass · 0 fail · 0 pending · 5 skip · exit 0
+#   (last canonical green = H4 re-sync, post-hotfix — `evidence/final-lab/`; a mid-round transient came from concurrent evaluate.ts edits — S5 re-confirms)
+
+# 4) Route smoke — self-contained scripts; scratch ports/dirs only; NEVER real data
+bash $CLUSTER/evidence/b5/route-smoke-epoch.sh     # epoch mode + forget + legacy switch
+bash $CLUSTER/evidence/b5/route-smoke-auth.sh      # PLAYLIST_API_TOKEN 401/200
+bash $CLUSTER/evidence/b5/route-smoke-resolve.sh   # resolve == explain == evaluate; hide → re-derive
+#   transcripts: $CLUSTER/evidence/b5/route-smoke-*.log · H2 variants: evidence/h2/smoke1-routes.mjs, smoke2-playlist-explain.mjs
+
+# 5) Independent adversarial probes (C1; ~132 checks) — read-only wrt the repo
+bash $CLUSTER/evidence/c1/runall.sh
+#   C1-era results: p1 20/0 · p2 41/0 · p3 37/1 (the 1 = the wave defect, fixed by H1) · p4 33/0 · p5 now OK
+#   *p3 re-runs may show cosmetic fails: its hard-coded note strings predate the F8 wording fix (H1 §5.4); behaviour is what counts
+</code></pre>
+<p><strong>Carried reds to expect (unchanged by this branch):</strong> (1) macOS librarian case-fold test (<code>librarian.test.ts:149</code>) —
+fails on default APFS case-insensitive filesystems, also red on <code>main</code>; (2) root <code>pnpm type-check</code> chain — 11 pre-existing
+<code>packages/webamp</code> tsc errors; (3) <code>/dev/shm</code> cross-disk skip. Full accounting: C1 §5, B4 §A, H2.</p>
+<p><strong>When quoting numbers in the report:</strong> use the S5 delivery-manifest re-capture, reproducing the H4/C4 runs (brain
+suite, type-checks, brain-lab JSON, route smoke transcripts, <code>evidence/final-lab/hashes.txt</code> for module hashes). Do
+<strong>not</strong> quote B4's 64-check lab number, B6/roadmap's "Brain 205", or the stale <code>interpret.ts</code> hash <code>f260b260…</code> — all
+superseded (C1 §6 F4).</p>
+<hr />
+<p><em>End of Ch.5 appendix. Sources: retrieved by A1/A2/A3 on 2026-10-06 (modes as stated per entry); this merge adds no
+sources and performs no retrieval. Unretrieved items are listed in §5.1.5 and must not be cited as evidence.</em></p>
+</section>
+
+</main>
+</div>
+
+<footer class="colophon" id="colophon">
+  <p><strong>How to verify this dossier.</strong> Every claim carries its source ID ([MP-n] / [CC-n] / [ML-n] point into the appendix) or names the receipt it came from. The full stack re-runs with: <code>pnpm --filter @synamp/brain test</code>, <code>pnpm --filter @synamp/brain type-check &amp;&amp; pnpm --filter @synamp/web type-check</code>, and <code>node --experimental-strip-types tools/brain-lab/lab.mts</code>. Logs, screenshots and checksums live in the delivery’s <code>verification/</code> folder; the manifest there is the frozen record this document was assembled against.</p>
+  <p><strong>Colophon.</strong> Assembled by the SynAmp agent cluster from research packs A1–A4, engineering receipts B1–B6/H1–H5, and independent reviews C1–C4; rendered as a single self-contained HTML file (no external assets, no scripts). Counts and checksums are frozen in the delivery manifest under <code>verification/</code>.</p>
+</footer>
+</body>
+</html>

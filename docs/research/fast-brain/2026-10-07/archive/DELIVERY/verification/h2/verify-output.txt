@@ -1,0 +1,24 @@
+===== H2 final verification — 2026-10-07T04:59:26Z (shared tree; other writers active) =====
+
+## pnpm --filter @synamp/brain test
+exit=1 (1 = expected: only the pre-existing macOS librarian red)
+ℹ tests 212
+ℹ pass 210
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 877.1445
+test at src/librarian/librarian.test.ts:149:1
+
+## pnpm --filter @synamp/brain type-check
+exit=0
+
+
+## pnpm --filter @synamp/web type-check
+exit=0
+
+
+## pnpm --filter @synamp/web build
+exit=0
+✓ built in 950ms

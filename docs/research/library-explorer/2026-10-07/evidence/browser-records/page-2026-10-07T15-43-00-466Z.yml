@@ -1,0 +1,171 @@
+- generic [active] [ref=f5e1]:
+  - link "Skip to findings" [ref=f5e2] [cursor=pointer]:
+    - /url: "#overview"
+  - main [ref=f5e3]:
+    - generic [ref=f5e4]:
+      - paragraph [ref=f5e5]: SynAmp research library · October 7, 2026
+      - heading "Your music library, with room to explore." [level=1] [ref=f5e6]: Your music library,with room to explore.
+      - paragraph [ref=f5e7]: Album identity, precise library views, and a Galaxy for rediscovering the music you already own.
+      - paragraph [ref=f5e8]: Private working research Local implementation
+      - paragraph [ref=f5e9]:
+        - link "Research library" [ref=f5e10] [cursor=pointer]:
+          - /url: ../../index.html
+        - text: ·
+        - link "Canonical implementation plan" [ref=f5e11] [cursor=pointer]:
+          - /url: ../../../synamp/plans/LIBRARY-EXPLORER.md
+        - text: ·
+        - link "Fresh verification and limits" [ref=f5e12] [cursor=pointer]:
+          - /url: verification.md
+    - navigation "Table of contents" [ref=f5e13]:
+      - list [ref=f5e14]:
+        - listitem [ref=f5e15]:
+          - link "Findings" [ref=f5e16] [cursor=pointer]:
+            - /url: "#overview"
+        - listitem [ref=f5e17]:
+          - link "Organization options" [ref=f5e18] [cursor=pointer]:
+            - /url: "#identity"
+        - listitem [ref=f5e19]:
+          - link "Library Explorer" [ref=f5e20] [cursor=pointer]:
+            - /url: "#explorer"
+        - listitem [ref=f5e21]:
+          - link "Galaxy" [ref=f5e22] [cursor=pointer]:
+            - /url: "#galaxy"
+        - listitem [ref=f5e23]:
+          - link "Actions and future work" [ref=f5e24] [cursor=pointer]:
+            - /url: "#actions"
+        - listitem [ref=f5e25]:
+          - link "Visualizer fix" [ref=f5e26] [cursor=pointer]:
+            - /url: "#visualizer"
+        - listitem [ref=f5e27]:
+          - link "Appendix" [ref=f5e28] [cursor=pointer]:
+            - /url: "#appendix"
+    - generic [ref=f5e29]:
+      - heading "The repeated albums are real folder fragments." [level=2] [ref=f5e30]
+      - paragraph [ref=f5e31]:
+        - text: A read-only exported snapshot contains
+        - strong [ref=f5e32]: 46,117 track records
+        - text: ", 5,597 artist-credit labels and 8,387 folder album groups. Album Artist is present on only"
+        - strong [ref=f5e33]: 22.235%
+        - text: of tracks; a MusicBrainz release ID is present on 0.284%. These are file and label counts, not verified unique recordings or people.
+      - paragraph [ref=f5e34]:
+        - text: “Dirty Harry, Green Lantern, &” spans
+        - strong [ref=f5e35]: 34 tracks in 19 folders
+        - text: ", with no Album Artist or release ID. Some of those credits belong outside the 2Pac family. SynAmp groups albums by folder, so those rows are consistent with the current storage. The user's later Brave analysis counter (10,299 / 47,117) describes newer live progress, not this earlier export."
+      - paragraph [ref=f5e36]:
+        - link "Private census and limitations" [ref=f5e37] [cursor=pointer]:
+          - /url: census.md
+        - text: ·
+        - link "Hash, timestamps and bounded examples" [ref=f5e38] [cursor=pointer]:
+          - /url: library-census.json
+        - text: . No audio, live tags, music folders or analyzer stores were changed.
+    - generic [ref=f5e39]:
+      - heading "One release; every performer still credited." [level=2] [ref=f5e40]
+      - paragraph [ref=f5e41]: Separate release identity from track credits. A 2Pac release can have one reviewed Album Artist while each song retains its featured names. Joint collaboration albums can keep a joint album credit. Multi-artist soundtracks can use Various Artists plus compilation/release metadata; a single-artist soundtrack should retain its artist.
+      - table [ref=f5e43]:
+        - rowgroup [ref=f5e44]:
+          - row [ref=f5e45]:
+            - columnheader "Option" [ref=f5e46]
+            - columnheader "What it solves" [ref=f5e47]
+            - columnheader "What must be reviewed" [ref=f5e48]
+        - rowgroup [ref=f5e49]:
+          - row [ref=f5e50]:
+            - cell "Consistent Album Artist" [ref=f5e51]
+            - cell "Album ownership stays stable across track-level collaborations." [ref=f5e52]
+            - cell "Edition, release and joint album credit; do not overwrite track Artist." [ref=f5e53]
+          - row [ref=f5e54]:
+            - cell "Explicit multiple artists" [ref=f5e55]
+            - cell "Each performer becomes browsable, while the original credit reads naturally." [ref=f5e56]
+            - cell "Roles, IDs, aliases and ambiguous names; punctuation alone is not proof." [ref=f5e57]
+          - row [ref=f5e58]:
+            - cell "Virtual release grouping" [ref=f5e59]
+            - cell "One browsing album can reference several physical folders." [ref=f5e60]
+            - cell "Candidate fragments, conflicting metadata, reversible approval and retained source keys." [ref=f5e61]
+          - row [ref=f5e62]:
+            - cell "Tag/folder cleanup" [ref=f5e63]
+            - cell "Portable organization across music programs." [ref=f5e64]
+            - cell "Dry run, collisions, originals, recovery and scan order before any live write." [ref=f5e65]
+      - paragraph [ref=f5e66]: Navidrome's current documentation supports separate display and multi-valued artist credits, and configurable album identity. Beets files normal albums by album artist, with distinct compilation and soundtrack paths. SynAmp can adopt those distinctions while preserving its folder-level Library Care contract.
+    - generic [ref=f5e67]:
+      - heading "A precise workspace for a large catalog." [level=2] [ref=f5e68]
+      - paragraph [ref=f5e69]:
+        - text: The local implementation adds
+        - strong [ref=f5e70]: list, grid and table
+        - text: views, column toggles, ascending/descending sorting and full-result grouping. The expandable advanced panel contains multi-select albums/songs/artist credits, inclusive year bounds, field rules with AND/OR and NOT, contains/exact/wildcard/similar-spelling matching.
+      - paragraph [ref=f5e71]: Grouping by album artist, artist credit, album title, decade or genre provides the first pivot layer. Counts come from all matching entities before pagination; overlapping memberships are labeled. Grouping an album title does not merge distinct folder releases.
+      - paragraph [ref=f5e72]: Exact matching ignores case and accents while retaining punctuation. Wildcards use * for any text and ? for one character, anchored to a whole field. Similar spelling allows bounded typos and never renames anything. Types and year range always narrow the combined text expression. Artist rows retain full credits rather than inventing individual identities.
+      - paragraph [ref=f5e73]: List and grid albums keep track expansion and playback. Table columns persist as a browser presentation preference. Fully nested pivot dimensions, durable saved views, shareable filter URLs and “create playlist from all filtered songs” are separate follow-up tasks in the canonical plan.
+    - generic [ref=f5e74]:
+      - heading "Browse planets, then follow a path." [level=2] [ref=f5e75]
+      - paragraph [ref=f5e76]: "The approved first slice is a separate Galaxy section: artist planets, full-pool search, alphabetical/song-count arrangements, pan/zoom, dragging, random artist discovery and album/song detail. Planet size means number of song files. It does not imply popularity, influence or musical similarity; screen distance has no similarity meaning."
+      - figure "Design concept, approved for planets and album/song drill-down. The generated counts, connections and artwork are invented placeholders, not evidence. The initial implementation has no collaboration edges or fetched artwork." [ref=f5e77]:
+        - img "Approved Galaxy concept board with a desktop artist-planet canvas and detail panel, phone portrait canvas above a detail sheet, and phone landscape canvas beside details. Counts, links and artwork are illustrative." [ref=f5e78]
+      - paragraph [ref=f5e80]:
+        - text: Explicit feat/ft/featuring credits may contribute to a
+        - emphasis [ref=f5e81]: parsed-credit candidate
+        - text: planet. Raw credits remain available and the candidate is labeled. Names such as AC/DC or Earth, Wind & Fire remain intact. A graph-wide web of every collaboration would obscure discovery; future connections should begin around the selected artist, with supporting tracks and candidate status visible.
+      - group [ref=f5e82]:
+        - generic "See the current local implementation (synthetic smoke fixture)" [ref=f5e83] [cursor=pointer]
+      - paragraph [ref=f5e84]:
+        - strong [ref=f5e85]: D3.js
+        - text: is the visualization library from the brainstorm. Its hierarchy/force/zoom tools can support later tree, radial and relationship layouts. The initial bounded SVG view uses the existing React stack. Mobile keeps the visual before detail controls; keyboard artist selection and zoom buttons provide alternatives to gestures.
+    - generic [ref=f5e86]:
+      - heading "Discovery should lead somewhere useful." [level=2] [ref=f5e87]
+      - paragraph [ref=f5e88]: Current actions use SynAmp's existing playback and per-song playlist addition. Planned common entity cards will offer favorites, durable searchable tags/notes, album/library jumps, and playlist creation from a precisely described selection. A visible menu must duplicate right-click actions.
+      - paragraph [ref=f5e89]:
+        - text: "The roadmap retains every brainstorm: verified collaboration paths and Kevin Bacon-style traversal; optional no-edge artist space; collaborator or album branches; nested pivot order; most played with honest history coverage; tree/radial/flower layouts; group dragging and saved pins; restrained motion with reduced-motion fallback; and random artist/album/song exploration. These features have distinct dependencies and acceptance checks in"
+        - link "LE03–LE10" [ref=f5e90] [cursor=pointer]:
+          - /url: ../../../synamp/plans/LIBRARY-EXPLORER.md
+        - text: .
+    - generic [ref=f5e91]:
+      - heading "MilkDrop now fills the canvas." [level=2] [ref=f5e92]
+      - paragraph [ref=f5e93]: The old Retina canvas had a 2400×1600 drawing buffer but a 1200×800 final renderer viewport, explaining the lower-left quarter image. Startup and resize now pass physical pixel dimensions consistently, including DPR-only changes. The full-screen dialog contains background scrolling and restores it on Close/Escape.
+      - paragraph [ref=f5e94]: Fresh isolated checks exercised actual Butterchurn WebGL at Retina startup/resize, DPR changes/cap, portrait/landscape and reopen. Every final viewport matched the whole buffer. This establishes the local component fix; owner confirmation in the live Brave app and real library playback remain distinct checks.
+      - paragraph [ref=f5e95]:
+        - link "WebGL evidence" [ref=f5e96] [cursor=pointer]:
+          - /url: evidence/visuals/results.json
+        - text: ·
+        - link "Retina screenshot" [ref=f5e97] [cursor=pointer]:
+          - /url: evidence/visuals/retina-fullscreen.png
+        - text: .
+    - generic [ref=f5e98]:
+      - 'heading "Appendix: source, design and implementation" [level=2] [ref=f5e99]'
+      - group [ref=f5e100]:
+        - generic "Primary documentation checked October 7, 2026" [ref=f5e101] [cursor=pointer]
+        - list [ref=f5e102]:
+          - listitem [ref=f5e103]:
+            - link "Navidrome tagging guidelines" [ref=f5e104] [cursor=pointer]:
+              - /url: https://www.navidrome.org/docs/usage/library/tagging/
+            - text: ": Album Artist, display credits and plural multi-artist tags."
+          - listitem [ref=f5e105]:
+            - link "Navidrome persistent IDs" [ref=f5e106] [cursor=pointer]:
+              - /url: https://www.navidrome.org/docs/usage/configuration/persistent-ids/
+            - text: ": release/fallback identities, optional folder PID and retag/move scan order. A running-system configuration change is a migration."
+          - listitem [ref=f5e107]:
+            - link "Beets path configuration" [ref=f5e108] [cursor=pointer]:
+              - /url: https://docs.beets.io/en/stable/reference/config.html#path-format-configuration
+            - text: ": album artist, compilations and soundtrack filing, album disambiguation."
+          - listitem [ref=f5e109]:
+            - link "D3 hierarchy" [ref=f5e110] [cursor=pointer]:
+              - /url: https://d3js.org/d3-hierarchy
+            - text: ","
+            - link "force layout" [ref=f5e111] [cursor=pointer]:
+              - /url: https://d3js.org/d3-force
+            - text: ", and"
+            - link "zoom" [ref=f5e112] [cursor=pointer]:
+              - /url: https://d3js.org/d3-zoom
+            - text: ": primary module documentation for future layout work."
+      - list [ref=f5e113]:
+        - listitem [ref=f5e114]:
+          - link "Canonical roadmap, dependencies, exact files and acceptance checks" [ref=f5e115] [cursor=pointer]:
+            - /url: ../../../synamp/plans/LIBRARY-EXPLORER.md
+        - listitem [ref=f5e116]:
+          - link "Private census provenance and 30 bounded relationships" [ref=f5e117] [cursor=pointer]:
+            - /url: library-census.json
+        - listitem [ref=f5e118]:
+          - link "Design approval and semantic contract" [ref=f5e119] [cursor=pointer]:
+            - /url: concept-provenance.json
+        - listitem [ref=f5e120]:
+          - link "Fresh implementation evidence and limitations" [ref=f5e121] [cursor=pointer]:
+            - /url: verification.md
+      - paragraph [ref=f5e122]: This is a private working edition. A future public knowledge base should export reviewed explanations and approved synthetic examples. Private library samples, local paths, owner notes and operational evidence must remain outside that export. No site was published.
+    - generic [ref=f5e123]: SynAmp research · current implementation status lives in the canonical roadmap and verification receipt. Historical data and illustrative design stay distinguishable.

@@ -1,0 +1,25 @@
+== p1: epoch isolation ==
+  PASS  isolation fwd: appending day-2 events leaves the day-1 snapshot byte-identical
+  PASS  isolation fwd: day-2 events stay out of the active view (hidden set has the day-1 skip pair only)
+  PASS  isolation rev: day-1 implicit events do not move day-2 values (full snapshot)
+  PASS  isolation rev (with explicit): the only day-1 fingerprint in day-2 values is the explicit love part — love=2 day2parts=["heard it through this session"] bothParts-minus-love=["heard it through this session"]
+  PASS  isolation fixture sanity: day-2 hides are the day-2 pair, not the day-1 pair
+  PASS  explicit channel sanity: the day-1 love is visible at day-2 time (documented cross-epoch channel)
+== p1: boundaries ==
+  PASS  gap 30:00 exactly: one epoch (strict > comparison)
+  PASS  gap 30:01: two epochs
+  PASS  value flips with the split: 30:00 keeps the full_play (0.25·0.5 = 0.125 at one half-life), 30:01 kills it — keep=0.125 split=0
+  PASS  midnight: 23:59:30 → 00:00:30 splits into 2 epochs despite the 60 s gap — length=2
+  PASS  midnight: previous day's repeat is killed, the new day's scores — X=0 Y=0.630875323827581
+  PASS  missing session_id sandwich (s1 → ∅ → s1) → 3 epochs — length=3
+  PASS  missing bucket has empty session_ids, s1 epochs keep theirs
+  PASS  consecutive missing-id events form ONE bucket
+  PASS  shuffled (reversed) input derives byte-identically
+  PASS  shuffled (interleaved) input derives byte-identically
+== p1: determinism + exploration OFF ==
+  PASS  two derives of identical inputs are byte-equal
+  PASS  exploration:false identical to absent
+  PASS  exploration:true never alters the derived view (flag is queue-build only)
+  PASS  pickExplorationSlot deterministic — pick=y
+
+p1 summary: 20 pass, 0 fail

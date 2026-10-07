@@ -1,0 +1,89 @@
+
+=== "I'm driving to work" ===
+accuracy: partial | readings: drive
+constraint ids: goal_drive_1, goal_drive_2, goal_drive_3, goal_drive_4
+arc: flat
+assumptions: [
+ "“Drive” keeps a medium, engaged feel: one driving study found slow material can add to fatigue on long trips, though individual differences dominate (MP-31).",
+ "Not understood yet, kept only as text for a future encoder: “'m work”.",
+ "Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections."
+]
+asks: ["I left “'m work” unused — if it matters, say it as an activity, a tempo range, or a tag."]
+audit notes: dropped draft rule “energetic” — replaced by the goal bundle
+
+=== "cleaning the house" ===
+accuracy: specific | readings: chores
+constraint ids: goal_chores_1, goal_chores_2, goal_chores_3, goal_chores_4, goal_chores_5, goal_chores_6
+arc: flat
+assumptions: [
+ "“Chores” paces a physical task with a steady mid-up tempo; for desk/admin work the focus rules apply instead.",
+ "Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections.",
+ "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked."
+]
+asks: []
+audit notes: read as the ordinary word here (not a genre) — no genre preference added
+
+=== "house music for cleaning" ===
+accuracy: specific | readings: chores
+constraint ids: genre_hint, goal_chores_1, goal_chores_2, goal_chores_3, goal_chores_4, goal_chores_5, goal_chores_6
+genre_hint value: ["house"]
+arc: flat
+assumptions: [
+ "“Chores” paces a physical task with a steady mid-up tempo; for desk/admin work the focus rules apply instead.",
+ "Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections.",
+ "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked."
+]
+asks: []
+audit notes: 
+
+=== "play me the blues" ===
+accuracy: specific | readings: what I could parse
+constraint ids: genre_hint
+genre_hint value: ["blues"]
+arc: (none)
+assumptions: [
+ "Not understood yet, kept only as text for a future encoder: “play”."
+]
+asks: []
+audit notes: 
+
+=== "music for my workout then sleep" ===
+accuracy: partial | readings: pump up
+constraint ids: goal_pump_up_1, goal_pump_up_2, goal_pump_up_3, goal_pump_up_4, goal_pump_up_5, goal_pump_up_6, goal_pump_up_7, goal_pump_up_8, goal_pump_up_9
+arc: build
+assumptions: [
+ "“Pump up” becomes an exercise/pre-task bundle: fast steady tempo, prominent percussion, loud and bright — preferences, not filters.",
+ "Self-selected music outperforms preselected (MP-3). Your loves and repeats re-rank this list as you listen — kept deliberately bounded, so they steer quickly without steamrolling the request.",
+ "Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections.",
+ "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked."
+]
+asks: ["Two moods in one ask — “workout” then “sleep” reads as two phases. I built a list for the first one (“pump up”) only; ask again for “sleep” when you get there and I'll build the second."]
+audit notes: sequence cue “then” — built “pump up” only; “sleep” is left for a follow-up ask instead of being merged
+
+=== "i'm so angry, i need to rage" ===
+accuracy: specific | readings: catharsis
+constraint ids: goal_catharsis_1, goal_catharsis_2, goal_catharsis_3, goal_catharsis_4, goal_catharsis_5
+arc: flat
+assumptions: [
+ "“Catharsis” runs only because you asked in sad or angry words: it holds the mood first and does not auto-lift at the end.",
+ "There's no automatic lift here — if you ever want the mood to shift partway, that would be a future option you ask for explicitly; nothing shifts on its own today.",
+ "Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections.",
+ "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked."
+]
+asks: []
+audit notes: 
+
+=== "throwback, years 1990 to 2005" ===
+accuracy: partial | readings: nostalgia
+constraint ids: goal_nostalgia_2, goal_nostalgia_3, goal_nostalgia_4
+arc: flat
+assumptions: [
+ "Nostalgia is personal: release windows and your favourites do the work — timbre terms are deliberately absent (MP-28/29).",
+ "No era is known yet: release-year windows aren't supported yet — say “throwback” or “old school”, and your loves and repeats steer the flavour.",
+ "Not understood yet, kept only as text for a future encoder: “years 1990 2005”.",
+ "Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections.",
+ "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+ "Some library-relative bands were skipped for lack of measured data: “nostalgia”: release-year window skipped — year windows aren't supported yet (no cohort known)."
+]
+asks: ["I left “years 1990 2005” unused — if it matters, say it as an activity, a tempo range, or a tag."]
+audit notes: 

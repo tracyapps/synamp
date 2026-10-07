@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 460" width="1200" height="460" role="img" aria-labelledby="epochs-title epochs-desc">
+  <title id="epochs-title">Epochs and learning scope across three days</title>
+  <desc id="epochs-desc">Three stacked day rows show epochs as blocks separated by gaps; a 30-minute gap, midnight, and a session-id change each start a new epoch, and one block is marked as the only learning scope. Below, implicit signals stop at the epoch wall, explicit signals cross days, and cross-day patterns feed a proposal that applies only with an explicit yes.</desc>
+
+  <g fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M100 70H1160M100 134H1160M100 198H1160"/>
+    <rect x="104" y="56" width="156" height="28" rx="3"/>
+    <rect x="278" y="56" width="142" height="28" rx="3"/>
+    <rect x="438" y="56" width="262" height="28" rx="3"/>
+    <rect x="718" y="56" width="182" height="28" rx="3"/>
+    <rect x="104" y="120" width="116" height="28" rx="3"/>
+    <rect x="238" y="120" width="322" height="28" rx="3"/>
+    <rect x="570" y="120" width="70" height="28" rx="3"/>
+    <rect x="658" y="120" width="202" height="28" rx="3"/>
+    <rect x="878" y="120" width="62" height="28" rx="3"/>
+    <rect x="104" y="184" width="196" height="28" rx="3"/>
+    <rect x="310" y="184" width="210" height="28" rx="3"/>
+    <rect x="538" y="184" width="222" height="28" rx="3"/>
+    <rect x="778" y="184" width="202" height="28" rx="3"/>
+    <rect x="998" y="184" width="82" height="28" rx="3"/>
+    <path d="M96 122V146M101 122V146M96 186V210M101 186V210M304 186V210M309 186V210"/>
+    <path d="M112 114L104 124"/>
+    <path d="M565 114V128"/>
+    <path d="M336 176L312 189"/>
+    <path d="M649 212V226"/>
+    <circle cx="240" cy="284" r="4"/>
+    <path d="M252 284H456M456 278.5L464 284L456 289.5"/>
+    <path d="M490 262V306"/>
+    <circle cx="240" cy="340" r="4"/>
+    <path d="M252 340H1132M1132 334.5L1140 340L1132 345.5"/>
+    <path d="M560 318V335M560 345V362M800 318V335M800 345V362"/>
+    <path d="M252 400H866M866 394.5L874 400L866 405.5"/>
+    <rect x="880" y="374" width="270" height="52" rx="4"/>
+  </g>
+
+  <!-- crossed glyph: the arrow cannot cross the epoch wall -->
+  <path d="M470 277L484 291M484 277L470 291" fill="none" stroke="#D4A757" stroke-width="1.25" stroke-linecap="round"/>
+  <!-- shield glyph: needs an explicit yes -->
+  <path d="M899 390H913V398Q913 405 906 409Q899 405 899 398Z" fill="none" stroke="#D4A757" stroke-width="1.25" stroke-linejoin="round"/>
+
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" font-weight="600" fill="#E8E6E1">
+    <text x="24" y="75">Day 1</text>
+    <text x="24" y="139">Day 2</text>
+    <text x="24" y="203">Day 3</text>
+    <text x="24" y="278">implicit</text>
+    <text x="24" y="334">explicit</text>
+    <text x="24" y="404">patterns across days</text>
+  </g>
+  <text x="928" y="392" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="600" fill="#E8E6E1">proposal</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" fill="#E8E6E1">
+    <text x="24" y="298">(skips, repeats)</text>
+    <text x="24" y="354">(love, thumbs, remove)</text>
+  </g>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" fill="#98A2AD">
+    <text x="108" y="110">midnight splits</text>
+    <text x="600" y="110" text-anchor="middle">30-min gap → new epoch</text>
+    <text x="400" y="172" text-anchor="middle">session-id change splits</text>
+    <text x="649" y="232" text-anchor="middle">this session = the only learning scope</text>
+    <text x="500" y="288">stays inside</text>
+    <text x="1140" y="328" text-anchor="end">long-lived, declared</text>
+    <text x="928" y="412">applies only with your yes</text>
+  </g>
+  <text x="490" y="252" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" fill="#98A2AD" text-anchor="middle">epoch wall</text>
+</svg>

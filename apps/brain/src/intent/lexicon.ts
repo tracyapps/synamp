@@ -17,8 +17,8 @@
  *    exceed the A1 convention "bundle total ≤ 1.0", so their *emitted* weights
  *    are floor-normalised (scale = 1/total) to satisfy that convention. The
  *    evaluator scores soft terms as a weighted average (sum(w·sat)/sum(w)),
- *    so normalisation is score-neutral — it only keeps the published relative
- *    weights while honouring the dominance rule.
+ *    so uniform scaling cancels within a pure bundle (apart from floor truncation).
+ *    Mixed plans change the bundle share relative to other soft terms.
  *  - Bands are labelled starting points, never laws: tempo octave errors are a
  *    named MIR failure class and listener enculturation shapes what "works"
  *    (A2 CC-29/30/36/37). Never hard-enforce Western metre/tempo conventions.
@@ -574,9 +574,8 @@ export const FAST_CALM_PAIR = {
 /* --------------------------------------------------------------------------
  * Shared assumption lines (plain language; shown with readings).
  *
- * The per-goal `culture` arrays and SHARED_CULTURE_NOTES below are metadata
- * comments only — nothing renders them yet (open review item, C2 F7/F8).
- * Keep them honest for a future surface; do not present them as shipped copy.
+ * Per-goal caveats and culture notes travel separately from the scored plan
+ * as reading metadata, shown in the expandable interpretation notes.
  * ------------------------------------------------------------------------ */
 
 export const SHARED_ASSUMPTIONS = {

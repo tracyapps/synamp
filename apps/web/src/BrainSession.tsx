@@ -12,7 +12,7 @@ import type { SessionView } from "./Player";
  * The player bar is deliberately untouched; this panel is the readout.
  */
 
-type Adjustment = { track_id: string; value: number; parts: Array<{ label: string; value: number }> };
+type Adjustment = { track_id: string; playlist_id?: string; value: number; parts: Array<{ label: string; value: number }> };
 type ProposalKind = "track_repeat_skip" | "artist_repeat_skip" | "not_now_pattern" | "external_play_positive" | "repeat_positive";
 type Proposal = {
   id: string; kind: ProposalKind; subject: string; subject_type: "track" | "artist";
@@ -42,7 +42,7 @@ const signed = (value: number) => `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
  * a global thumbs-down/up for track subjects; a recorded decision only for artists.
  */
 function acceptConsequence(proposal: Proposal): string {
-  if (proposal.kind === "track_repeat_skip" || proposal.kind === "not_now_pattern") return "Keeps it out of suggestions everywhere (a global thumbs-down).";
+  if (proposal.kind === "track_repeat_skip" || proposal.kind === "not_now_pattern") return "Adds a global thumbs-down — future lists weigh it lower; this does not exclude it.";
   if (proposal.kind === "repeat_positive" || (proposal.kind === "external_play_positive" && proposal.subject_type === "track")) return "Adds a global thumbs-up — future lists weigh it in.";
   if (proposal.kind === "external_play_positive") return "Records your decision — no automatic change; follow the artist from the Library.";
   return "Records your decision — no automatic change; edit the playlist to exclude the artist."; // artist_repeat_skip
@@ -50,13 +50,13 @@ function acceptConsequence(proposal: Proposal): string {
 
 /** The matching confirmation after the click, so the panel never overclaims. */
 function acceptDone(proposal: Proposal): string {
-  if (proposal.kind === "track_repeat_skip" || proposal.kind === "not_now_pattern") return "Recorded a global thumbs-down — it stays out of suggestions everywhere.";
+  if (proposal.kind === "track_repeat_skip" || proposal.kind === "not_now_pattern") return "Recorded a global thumbs-down — future lists weigh it lower; it can still appear.";
   if (proposal.kind === "repeat_positive" || (proposal.kind === "external_play_positive" && proposal.subject_type === "track")) return "Recorded a global thumbs-up — future lists weigh it in.";
   if (proposal.kind === "external_play_positive") return "Recorded — no automatic change; follow the artist from the Library if you want that.";
   return "Recorded — no automatic change; edit the playlist to exclude the artist if you want that."; // artist_repeat_skip
 }
 
-export default function BrainSession({ request, session, startOpen = false }: { request: Request; session: SessionView | null; startOpen?: boolean }) {
+export default function BrainSession({ request, session, playlistName, startOpen = false }: { request: Request; session: SessionView | null; playlistName?: (id: string) => string | undefined; startOpen?: boolean }) {
   const [open, setOpen] = useState(startOpen);
   const [readout, setReadout] = useState<Readout | null>(null);
   const [message, setMessage] = useState("");
@@ -94,7 +94,7 @@ export default function BrainSession({ request, session, startOpen = false }: { 
         <div>
           <h3>What’s learned right now</h3>
           {!readout ? <p className="muted">Loading…</p> : legacy ? (
-            <p className="muted">Session learning is off — the v1 re-ranker derives from your explicit signals only while the legacy policy is active.</p>
+            <p className="muted">Session learning is off — the earlier feedback policy is active. Change it under Settings → Learning.</p>
           ) : readout.epoch ? (
             <p className="brain__epoch">
               This session: <strong>{readout.epoch.daypart}</strong>, started {clock(readout.epoch.t_start)} · {readout.epoch.event_count} {readout.epoch.event_count === 1 ? "signal" : "signals"} · last {clock(readout.epoch.t_end)}
@@ -104,12 +104,12 @@ export default function BrainSession({ request, session, startOpen = false }: { 
           )}
           {readout && !legacy && <>
             {adjustments.length === 0 ? (
-              <p className="muted">Nothing yet — skips, repeats and loves show up here as they happen, and only for this session.</p>
+              <p className="muted">No adjustments for this queue yet. Session signals appear as you listen; deliberate loves and thumbs can carry over.</p>
             ) : (
               <ul className="brain__adjustments">{adjustments.map((item) => (
-                <li key={item.track_id}>
+                <li key={JSON.stringify([item.track_id, item.playlist_id])}>
                   <div className="brain__adjustment-head">
-                    <span>{title(item.track_id)}</span>
+                    <span>{title(item.track_id)}{item.playlist_id && <small className="muted"> · {playlistName?.(item.playlist_id) ?? "unavailable playlist"}</small>}</span>
                     <span className={`brain__value ${item.value >= 0 ? "brain__value--up" : "brain__value--down"}`}>{signed(item.value)}</span>
                   </div>
                   <ul className="brain__parts">{item.parts.map((part) => (
@@ -150,7 +150,7 @@ export default function BrainSession({ request, session, startOpen = false }: { 
         {readout && <div className="brain__policy">
           <span>Learning policy: <code>{readout.listening_policy}</code> <span className="muted">({readout.policy_version})</span></span>
           {legacy ? (
-            <span className="muted">Set listening_policy back to epoch-v1 to re-enable session learning.</span>
+            <span className="muted">Choose “Learn within this session” under Settings → Learning to re-enable it.</span>
           ) : confirmForget ? (
             <span className="brain__confirm">
               <span>Clear what this session taught the brain? Loves, thumbs and removals stay.</span>

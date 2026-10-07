@@ -1,0 +1,12 @@
+### boot scratch brain :3911 (same seed data as screenshots v2)
+### functional: draft preview respects epoch hides (sample-001 hidden by the seeded skips)
+strict ids: ["sample-005","sample-039","sample-060","sample-019","sample-038","sample-016"]
+hidden: [] | hidden_by_you: 0
+sample-001 hidden: false | sample-001 in strict: false
+interpretation: specific | reading: focus
+### boot preview :5199
+saved shot-describe-interpretation.png
+saved shot-describe-result.png
+saved shot-brain-panel.png
+detail screenshots exit: 0
+done (details)

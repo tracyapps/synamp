@@ -44,18 +44,18 @@
 import { draftPlan } from "../query/draft.ts";
 import type { Draft } from "../query/draft.ts";
 import { validatePlan } from "../query/plan.ts";
-import { GOALS, MODIFIERS, FAST_CALM_PAIR, SHARED_ASSUMPTIONS, bundleScale, emittedWeight, resolveLexConstraint } from "./lexicon.ts";
+import { GOALS, MODIFIERS, FAST_CALM_PAIR, SHARED_ASSUMPTIONS, SHARED_CULTURE_NOTES, bundleScale, emittedWeight, resolveLexConstraint } from "./lexicon.ts";
 import type { Arc, Goal, LexConstraint, Modifier } from "./lexicon.ts";
 import type { Library } from "../query/evaluate.ts";
 
-export const INTERPRET_VERSION = "intent-v1";
-const PARSER = "intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)";
+export const INTERPRET_VERSION = "intent-v2";
+const PARSER = "intent-v2 (rule-based: draftPlan + goal lexicon; no LLM)";
 const PROMPT_CAP = 500;
 const MAX_GOALS_MERGED = 2;
 const MAX_ASKS = 3;
 
 export type Accuracy = "specific" | "partial" | "vague" | "contradictory" | "impossible";
-export type Reading = { label: string; confidence: number; plan: unknown; assumptions: string[] };
+export type Reading = { label: string; confidence: number; plan: unknown; assumptions: string[]; caveats: string[]; culture_notes: string[] };
 export type Ask = { ask: string; reason: string; nearest_supported?: string };
 export type AuditEntry = { phrase: string; becomes: string; kind: "hard" | "soft" | "goal" | "exclusion" | "unparsed" | "note" };
 export type GoalInterpretation = {
@@ -438,7 +438,8 @@ type MergeSpec = {
   residue: string[];
 };
 
-type MergeResult = { plan: RawPlan; skipped: string[]; notes: AuditEntry[] };
+type ReadingNotes = { caveats: string[]; culture_notes: string[] };
+type MergeResult = { plan: RawPlan; skipped: string[]; notes: AuditEntry[]; readingNotes: ReadingNotes };
 
 function mergePlan(draft: Draft, spec: MergeSpec, library: Library | undefined): MergeResult {
   const plan = structuredClone(draft.plan) as RawPlan;
@@ -556,7 +557,12 @@ function mergePlan(draft: Draft, spec: MergeSpec, library: Library | undefined):
   }
   if (assembled.length) plan.assumptions = assembled.slice(0, 20).map((line) => clamp(line));
 
-  return { plan, skipped, notes };
+  return { plan, skipped, notes, readingNotes: {
+    caveats: [...new Set(spec.goals.flatMap((entry) => entry.goal.caveats))],
+    culture_notes: spec.goals.length ? [...new Set([
+      ...spec.goals.flatMap((entry) => entry.goal.culture), ...SHARED_CULTURE_NOTES,
+    ])] : [],
+  } };
 }
 
 function hasDeclared(spec: MergeSpec): boolean {
@@ -616,14 +622,14 @@ function computeResidue(text: string, draft: Draft, accepted: AcceptedMatch[], e
   }
   rest += text.slice(cursor);
   const out: string[] = [];
-  for (const part of rest.split(/[.,;!?/]+/)) {
+  for (const part of rest.split(/[,;!?/]+|(?<!\d)\.|\.(?!\d)/)) {
     const cleaned = part
       .replace(DRAFT_FILLER, " ")
       .replace(EXTRA_FILLER, " ")
-      .replace(/[^a-z0-9'’\s]/gi, " ")
+      .replace(/[^a-z0-9'’.–—\-\s]/gi, " ")
       .replace(/\s+/g, " ")
       .trim();
-    if (/[a-z0-9]{3,}/i.test(cleaned) && /[a-z]/i.test(cleaned) && !/^'\w+$/.test(cleaned)) out.push(cleaned);
+    if ((/[a-z0-9]{3,}/i.test(cleaned) && /[a-z]/i.test(cleaned) || /\d/.test(cleaned)) && !/^'\w+$/.test(cleaned)) out.push(cleaned);
   }
   return out;
 }
@@ -632,7 +638,7 @@ function computeResidue(text: string, draft: Draft, accepted: AcceptedMatch[], e
 /* Readings assembly                                                   */
 /* ------------------------------------------------------------------ */
 
-type Candidate = { label: string; confidence: number; plan: RawPlan; extraAssumptions: string[] };
+type Candidate = { label: string; confidence: number; plan: RawPlan; extraAssumptions: string[]; readingNotes: ReadingNotes };
 
 function confidenceFor(base: number, residueLength: number, skippedCount: number): number {
   let value = base;
@@ -660,6 +666,7 @@ function finalizeReadings(candidates: Candidate[], audit: AuditEntry[]): { readi
       label: candidate.label,
       confidence: candidate.confidence,
       plan: candidate.plan,
+      ...candidate.readingNotes,
       assumptions: [...new Set([...planAssumptions, ...candidate.extraAssumptions.map((line) => clamp(line))])].slice(0, 20),
     });
     confidences.push(candidate.confidence);
@@ -771,7 +778,7 @@ export function interpretGoal(text: string, opts: { library?: Library; now?: num
       : "what I could parse";
   const base = mergedGoals.length ? 0.7 : 0.5;
   const confidence = confidenceFor(base, residue.length, merged.skipped.length);
-  const candidates: Candidate[] = [{ label, confidence, plan: merged.plan, extraAssumptions: [] }];
+  const candidates: Candidate[] = [{ label, confidence, plan: merged.plan, readingNotes: merged.readingNotes, extraAssumptions: [] }];
   const finalized = finalizeReadings(candidates, audit);
   audit.push(...merged.notes);
 
@@ -813,9 +820,9 @@ function buildContradictory(
     // Each reading also drops the other side's draft proxies (their cruder versions).
     const mergedA = mergePlan(draft, { goals: capGoals(sideA, audit), modifiers, extra: [], forceDropIds: b.supersedes, skipArc: false, residue }, library);
     const mergedB = mergePlan(draft, { goals: capGoals(sideB, audit), modifiers, extra: [], forceDropIds: a.supersedes, skipArc: false, residue }, library);
-    candidates.push({ label: a.label, confidence: 0.5, plan: mergedA.plan,
+    candidates.push({ label: a.label, confidence: 0.5, plan: mergedA.plan, readingNotes: mergedA.readingNotes,
       extraAssumptions: [`Read as “${a.label}” — the “${b.label}” request was set aside for this reading.`] });
-    candidates.push({ label: b.label, confidence: 0.5, plan: mergedB.plan,
+    candidates.push({ label: b.label, confidence: 0.5, plan: mergedB.plan, readingNotes: mergedB.readingNotes,
       extraAssumptions: [`Read as “${b.label}” — the “${a.label}” request was set aside for this reading.`] });
     audit.push({ phrase: `${a.label} ↔ ${b.label}`, becomes: `provable goal opposition: two readings built (kept “${a.label}” / kept “${b.label}”); nothing silently chosen`, kind: "note" });
     audit.push(...mergedA.notes, ...mergedB.notes);
@@ -850,9 +857,9 @@ function buildContradictory(
       skipArc: false,
       residue,
     }, library);
-    candidates.push({ label: pair.sideA.label, confidence: 0.5, plan: mergedA.plan,
+    candidates.push({ label: pair.sideA.label, confidence: 0.5, plan: mergedA.plan, readingNotes: mergedA.readingNotes,
       extraAssumptions: [`Read as “${pair.sideA.label}”: keep the fast tempo (${conflict.fastPhrase}) and soften the texture — low loudness and light percussion — instead of keeping it calm.`] });
-    candidates.push({ label: pair.sideB.label, confidence: 0.5, plan: mergedB.plan,
+    candidates.push({ label: pair.sideB.label, confidence: 0.5, plan: mergedB.plan, readingNotes: mergedB.readingNotes,
       extraAssumptions: [`Read as “${pair.sideB.label}”: take “${conflict.calmPhrase}” literally; the “${conflict.fastPhrase}” side is set aside.`] });
     audit.push({ phrase: "fast + calm pair", becomes: `documented pair (${pair.id}): two readings — “${pair.sideA.label}” keeps the fast side, “${pair.sideB.label}” drops it`, kind: "note" });
     audit.push(...mergedA.notes, ...mergedB.notes);
@@ -866,9 +873,9 @@ function buildContradictory(
     const b = conflict.b;
     const sideA = mergePlan(draft, { goals: capGoals(goals, audit), modifiers, extra: [], forceDropIds: [b.id], skipArc: false, residue }, library);
     const sideB = mergePlan(draft, { goals: capGoals(goals, audit), modifiers, extra: [], forceDropIds: [a.id], skipArc: false, residue }, library);
-    candidates.push({ label: `keeps “${a.phrase}”`, confidence: 0.5, plan: sideA.plan,
+    candidates.push({ label: `keeps “${a.phrase}”`, confidence: 0.5, plan: sideA.plan, readingNotes: sideA.readingNotes,
       extraAssumptions: [`Read as: “${a.phrase}” (${a.bound}) leads; “${b.phrase}” (${b.bound}) was set aside for this reading.`] });
-    candidates.push({ label: `keeps “${b.phrase}”`, confidence: 0.5, plan: sideB.plan,
+    candidates.push({ label: `keeps “${b.phrase}”`, confidence: 0.5, plan: sideB.plan, readingNotes: sideB.readingNotes,
       extraAssumptions: [`Read as: “${b.phrase}” (${b.bound}) leads; “${a.phrase}” (${a.bound}) was set aside for this reading.`] });
     audit.push({ phrase: `numeric conflict on ${conflict.field}`, becomes: `“${a.phrase}” and “${b.phrase}” cannot both hold — two readings built` , kind: "note" });
     audit.push(...sideA.notes, ...sideB.notes);
@@ -919,7 +926,7 @@ function buildSequenced(
   const candidates: Candidate[] = [{
     label: seq.first.goal.label,
     confidence,
-    plan: merged.plan,
+    plan: merged.plan, readingNotes: merged.readingNotes,
     extraAssumptions: [
       `Read as the first of two phases: “${seq.first.phrase}” — the “${seq.second.phrase}” part comes after and gets its own list.`,
     ],

@@ -1,0 +1,559 @@
+{
+  "format": "synamp.brain-lab/1",
+  "generated_at": "2026-10-07T04:06:48.045Z",
+  "repo": {
+    "root": "/Users/tapps/_dev/web-apps/SynAmp",
+    "head": "b6ea5ce1",
+    "branch": "feat/fast-learning-brain",
+    "dirty": true
+  },
+  "node": "v24.13.0",
+  "library": {
+    "path": "apps/brain/fixtures/library.sample.json",
+    "tracks": 60
+  },
+  "modules": [
+    {
+      "key": "draft",
+      "path": "apps/brain/src/query/draft.ts",
+      "status": "loaded",
+      "wanted": [
+        "draftPlan"
+      ],
+      "found": [
+        "draftPlan"
+      ],
+      "exports": [
+        "draftPlan"
+      ]
+    },
+    {
+      "key": "plan",
+      "path": "apps/brain/src/query/plan.ts",
+      "status": "loaded",
+      "wanted": [
+        "validatePlan",
+        "planHash"
+      ],
+      "found": [
+        "validatePlan",
+        "planHash"
+      ],
+      "exports": [
+        "PLAN_VERSION",
+        "encoderText",
+        "planHash",
+        "validatePlan"
+      ]
+    },
+    {
+      "key": "evaluate",
+      "path": "apps/brain/src/query/evaluate.ts",
+      "status": "loaded",
+      "wanted": [
+        "evaluatePlan"
+      ],
+      "found": [
+        "evaluatePlan"
+      ],
+      "exports": [
+        "evaluatePlan"
+      ]
+    },
+    {
+      "key": "feedback",
+      "path": "apps/brain/src/session/feedback.ts",
+      "status": "loaded",
+      "wanted": [
+        "deriveFeedback"
+      ],
+      "found": [
+        "deriveFeedback"
+      ],
+      "exports": [
+        "FEEDBACK_WEIGHT",
+        "FeedbackError",
+        "HALF_LIFE_DAYS",
+        "deriveFeedback",
+        "feedbackBonus",
+        "recordFeedback"
+      ]
+    },
+    {
+      "key": "sequence",
+      "path": "apps/brain/src/query/sequence.ts",
+      "status": "missing",
+      "wanted": [
+        "sequenceTracks"
+      ],
+      "found": [],
+      "exports": []
+    },
+    {
+      "key": "intent",
+      "path": "apps/brain/src/intent/interpret.ts",
+      "status": "loaded",
+      "wanted": [
+        "interpretGoal"
+      ],
+      "found": [
+        "interpretGoal"
+      ],
+      "exports": [
+        "GOAL_BY_ID",
+        "INTERPRET_VERSION",
+        "SHARED_CULTURE_NOTES",
+        "interpretGoal"
+      ]
+    },
+    {
+      "key": "learning",
+      "path": "apps/brain/src/learning/derive.ts",
+      "status": "loaded",
+      "wanted": [
+        "deriveEpochPolicy",
+        "deriveAdaptive"
+      ],
+      "found": [
+        "deriveEpochPolicy"
+      ],
+      "exports": [
+        "ARTIST_MIN_EVENTS",
+        "ARTIST_MIN_SUM",
+        "EPOCH_HALF_LIFE_MS",
+        "EPOCH_POLICY_VERSION",
+        "deriveEpochPolicy"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "01-three-phrases",
+      "title": "User's three example phrases — interpretation + draft→validate→evaluate",
+      "kind": "phrase",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "focus/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 2, unparsed 0"
+        },
+        {
+          "id": "focus/pipeline-validates",
+          "status": "pass",
+          "actual": "ok (hash 05ceb5294348)"
+        },
+        {
+          "id": "focus/pipeline-evaluate",
+          "status": "pass",
+          "actual": "strict 24/25, near 0, library 60, unique=true, allInLibrary=true, underfilled=false"
+        },
+        {
+          "id": "focus/pipeline-min-strict",
+          "status": "pass",
+          "actual": "strict 24"
+        },
+        {
+          "id": "focus/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=specific, readings=1, chosen=0, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=0, audit=5"
+        },
+        {
+          "id": "focus/intent-chosen-validates",
+          "status": "pass",
+          "actual": "ok (hash 2cb53f38198f)"
+        },
+        {
+          "id": "pump/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 0, unparsed 1"
+        },
+        {
+          "id": "pump/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "invalid (1 errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}])"
+        },
+        {
+          "id": "pump/pipeline-evaluate",
+          "status": "skip",
+          "note": "plan did not validate — evaluation not applicable"
+        },
+        {
+          "id": "pump/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=specific, readings=1, chosen=0, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=0, audit=2"
+        },
+        {
+          "id": "pump/intent-chosen-validates",
+          "status": "pass",
+          "actual": "ok (hash 170ee9fca7c2)"
+        },
+        {
+          "id": "dance/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 0, unparsed 1"
+        },
+        {
+          "id": "dance/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "invalid (1 errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}])"
+        },
+        {
+          "id": "dance/pipeline-evaluate",
+          "status": "skip",
+          "note": "plan did not validate — evaluation not applicable"
+        },
+        {
+          "id": "dance/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=specific, readings=1, chosen=0, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=0, audit=1"
+        },
+        {
+          "id": "dance/intent-chosen-validates",
+          "status": "pass",
+          "actual": "ok (hash 31379772ccde)"
+        }
+      ],
+      "notes": [
+        "phrase \"i need to focus\"",
+        "recognized: [\"i need to focus -> prefer arousal 0.40–0.60 (soft)\",\"i need to focus -> prefer pulse_clarity ≥ 0.45 (soft)\"]",
+        "unparsed: []",
+        "top strict: [\"sample-003\",\"sample-011\",\"sample-024\",\"sample-047\",\"sample-060\"]",
+        "reading plans: 1/1 validate ok",
+        "interpretation (via interpretGoal): {\"accuracy\":\"specific\",\"readings\":[\"focus\"],\"chosen\":0}",
+        "phrase \"pump me up to win this game\"",
+        "recognized: []",
+        "unparsed: [\"pump up to win this game\"]",
+        "validation errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}]",
+        "reading plans: 1/1 validate ok",
+        "interpretation (via interpretGoal): {\"accuracy\":\"specific\",\"readings\":[\"pump up\"],\"chosen\":0}",
+        "phrase \"i want to dance\"",
+        "recognized: []",
+        "unparsed: [\"to dance\"]",
+        "validation errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}]",
+        "reading plans: 1/1 validate ok",
+        "interpretation (via interpretGoal): {\"accuracy\":\"specific\",\"readings\":[\"dance\"],\"chosen\":0}"
+      ]
+    },
+    {
+      "id": "02-vague",
+      "title": "Vague request — interpretation must admit underspecification",
+      "kind": "phrase",
+      "status": "fail",
+      "checks": [
+        {
+          "id": "vague/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 0, unparsed 1"
+        },
+        {
+          "id": "vague/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "invalid (1 errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}])"
+        },
+        {
+          "id": "vague/pipeline-evaluate",
+          "status": "skip",
+          "note": "plan did not validate — evaluation not applicable"
+        },
+        {
+          "id": "vague/intent-structural",
+          "status": "fail",
+          "expected": "accuracy in [specific, partial, vague, contradictory, impossible], >=1 well-formed reading, chosen_index in range, parser string, asks[]+audit[]",
+          "actual": "accuracy=impossible, readings=0, chosen=-1, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=2, audit=3"
+        },
+        {
+          "id": "vague/intent-accuracy",
+          "status": "fail",
+          "expected": "accuracy=vague",
+          "actual": "accuracy=impossible"
+        }
+      ],
+      "notes": [
+        "phrase \"play me something good\"",
+        "recognized: []",
+        "unparsed: [\"play something good\"]",
+        "validation errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}]",
+        "interpretation (via interpretGoal): {\"accuracy\":\"impossible\",\"readings\":[],\"chosen\":-1}"
+      ]
+    },
+    {
+      "id": "03-contradictory",
+      "title": "Contradictory request — 'fast relaxing bangers'",
+      "kind": "phrase",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "contradictory/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 1, unparsed 1"
+        },
+        {
+          "id": "contradictory/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "ok (hash baaedc3c72b0)"
+        },
+        {
+          "id": "contradictory/pipeline-evaluate",
+          "status": "pass",
+          "actual": "strict 25/25, near 0, library 60, unique=true, allInLibrary=true, underfilled=false"
+        },
+        {
+          "id": "contradictory/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=contradictory, readings=2, chosen=0, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=1, audit=7"
+        },
+        {
+          "id": "contradictory/intent-accuracy",
+          "status": "pass",
+          "actual": "accuracy=contradictory"
+        }
+      ],
+      "notes": [
+        "phrase \"fast relaxing bangers\"",
+        "recognized: [\"relaxing -> prefer arousal ≤ 0.40 (soft)\"]",
+        "unparsed: [\"fast bangers\"]",
+        "top strict: [\"sample-001\",\"sample-004\",\"sample-005\",\"sample-006\",\"sample-007\"]",
+        "reading plans: 2/2 validate ok",
+        "interpretation (via interpretGoal): {\"accuracy\":\"contradictory\",\"readings\":[\"energetic but soft\",\"literally calm\"],\"chosen\":0}"
+      ]
+    },
+    {
+      "id": "04-impossible",
+      "title": "Hyper-specific / impossible ask — unsatisfiable combination of demands",
+      "kind": "phrase",
+      "status": "fail",
+      "checks": [
+        {
+          "id": "impossible/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 2, unparsed 1"
+        },
+        {
+          "id": "impossible/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "ok (hash ff8a6b8453a4)"
+        },
+        {
+          "id": "impossible/pipeline-evaluate",
+          "status": "pass",
+          "actual": "strict 0/25, near 0, library 60, unique=true, allInLibrary=true, underfilled=true"
+        },
+        {
+          "id": "impossible/pipeline-underfilled",
+          "status": "pass",
+          "actual": "underfilled=true"
+        },
+        {
+          "id": "impossible/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=partial, readings=1, chosen=0, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=1, audit=3"
+        },
+        {
+          "id": "impossible/intent-accuracy",
+          "status": "fail",
+          "expected": "accuracy=impossible",
+          "actual": "accuracy=partial"
+        }
+      ],
+      "notes": [
+        "phrase \"instrumentals with heavy lead vocals over 300 bpm\"",
+        "recognized: [\"instrumentals -> vocal_fraction ≤ 0.10 or instrumental ≥ 0.80 (hard; unmeasured fails)\",\"over 300 bpm -> bpm ≥ 300 (hard)\"]",
+        "unparsed: [\"heavy lead vocals\"]",
+        "top strict: []",
+        "reading plans: 1/1 validate ok",
+        "interpretation (via interpretGoal): {\"accuracy\":\"partial\",\"readings\":[\"what I could parse\"],\"chosen\":0}"
+      ]
+    },
+    {
+      "id": "05-fast-learning",
+      "title": "Fast learning — within-epoch stream reorders the next resolve and hides re-skips",
+      "kind": "learning",
+      "status": "partial",
+      "checks": [
+        {
+          "id": "stream-built",
+          "status": "pass",
+          "actual": "17 events · signals {\"exposure\":1,\"started\":7,\"skip_early\":4,\"full_play\":3,\"repeat\":1,\"interrupted\":1} · 2026-10-07T00:00:00.000Z → 2026-10-07T00:24:00.000Z"
+        },
+        {
+          "id": "learning-view-structure",
+          "status": "pass",
+          "actual": "via deriveEpochPolicy · policy=\"epoch-v1\" · epoch=\"ep1:ee735f5b98fdd91\" · epochHides=yes · removed=yes · proposals=yes · reliabilityNotes=yes"
+        },
+        {
+          "id": "learning-adjust-positive",
+          "status": "pass",
+          "actual": "sample-034: +1.595 [heard it through this session (0.15); replayed this session (0.44); tempo ~99 BPM — you kept 3 such tracks this session (0.33); loudness ~-15.9 LUFS — you kept 3 such tracks this session (0.24); crest factor ~11.1 dB — you kept 3 such tracks this session (0.21); note onsets ~1.8 onsets/s — you kept 3 such tracks this session (0.33); percussiveness ~0.52 — you kept 3 such tracks this session (0.37)] | sample-024: +1.177 [heard it through this session (0.18); tempo ~99 BPM — you kept 3 such tracks this session (0.43); loudness ~-15.9 LUFS — you kept 3 such tracks this session (0.30); crest factor ~11.1 dB — you kept 3 such tracks this session (0.03); note onsets ~1.8 onsets/s — you kept 3 such tracks this session (0.03); percussiveness ~0.52 — you kept 3 such tracks this session (0.39)] | sample-040: +1.198 [heard it through this session (0.20); tempo ~99 BPM — you kept 3 such tracks this session (0.23); loudness ~-15.9 LUFS — you kept 3 such tracks this session (0.08); crest factor ~11.1 dB — you kept 3 such tracks this session (0.29); note onsets ~1.8 onsets/s — you kept 3 such tracks this session (0.39); percussiveness ~0.52 — you kept 3 such tracks this session (0.29)]"
+        },
+        {
+          "id": "learning-negative-parts",
+          "status": "pass",
+          "actual": "sample-026: skipped early this session (-0.41); other tracks by Static Orchard this session (-0.15); tempo ~171 BPM — near this session's skips (-0.09) | sample-028: skipped early this session (-0.43); other tracks by Static Orchard this session (-0.14); tempo ~171 BPM — near this session's skips (-0.10); loudness ~-14.0 LUFS — near this session's skips (-0.05); crest factor ~13.0 dB — near this session's skips (-0.02); percussiveness ~0.36 — near this session's skips (-0.05)"
+        },
+        {
+          "id": "learning-skip-hidden",
+          "status": "pass",
+          "actual": "hidden=[sample-026, sample-028]"
+        },
+        {
+          "id": "learning-resolve-plan",
+          "status": "pass",
+          "actual": "ok (hash 8beb2ab87af5)"
+        },
+        {
+          "id": "learning-resolve-runs",
+          "status": "pass",
+          "actual": "adapted strict 58 · hidden 2 · baseline strict 60"
+        },
+        {
+          "id": "learning-resolve-baseline-has-hidden",
+          "status": "pass",
+          "actual": "in baseline: [sample-026, sample-028]"
+        },
+        {
+          "id": "learning-resolve-hidden",
+          "status": "pass",
+          "actual": "hidden=[sample-026, sample-028]"
+        },
+        {
+          "id": "learning-resolve-improves",
+          "status": "pass",
+          "actual": "sample-034: #33 → #0 ↑ | sample-024: #23 → #2 ↑ | sample-040: #39 → #1 ↑"
+        },
+        {
+          "id": "learning-resolve-sequence",
+          "status": "pending",
+          "note": "query/sequence.ts: apps/brain/src/query/sequence.ts not present yet"
+        }
+      ],
+      "notes": [
+        "now = 2026-10-07T00:29:00.000Z (+29m after base; stream ends 2026-10-07T00:24:00.000Z, Δend→now 5.0 min)",
+        "baseline resolve: strict 60, hidden 0, top: [\"sample-001\",\"sample-002\",\"sample-003\",\"sample-004\",\"sample-005\"]",
+        "resolve feedback view: combined view + decision-3 hide union (persistent removes ∪ epochHides; applied by the harness at the resolve seam)"
+      ]
+    },
+    {
+      "id": "06-isolation",
+      "title": "Isolation — same stream resolved at now+16h (next day): implicit adjustments zero/empty",
+      "kind": "learning",
+      "status": "partial",
+      "checks": [
+        {
+          "id": "stream-built",
+          "status": "pass",
+          "actual": "17 events · signals {\"exposure\":1,\"started\":7,\"skip_early\":4,\"full_play\":3,\"repeat\":1,\"interrupted\":1} · 2026-10-07T00:00:00.000Z → 2026-10-07T00:24:00.000Z"
+        },
+        {
+          "id": "learning-view-structure",
+          "status": "pass",
+          "actual": "via deriveEpochPolicy · policy=\"epoch-v1\" · epoch=null · epochHides=yes · removed=yes · proposals=yes · reliabilityNotes=yes"
+        },
+        {
+          "id": "learning-adjust-zero",
+          "status": "pass",
+          "actual": "sample-034: +0.000 [no parts] | sample-024: +0.000 [no parts] | sample-040: +0.000 [no parts] | sample-026: +0.000 [no parts] | sample-028: +0.000 [no parts]"
+        },
+        {
+          "id": "learning-hides-empty",
+          "status": "pass",
+          "actual": "hidden=[]"
+        },
+        {
+          "id": "learning-resolve-plan",
+          "status": "pass",
+          "actual": "ok (hash 8beb2ab87af5)"
+        },
+        {
+          "id": "learning-resolve-runs",
+          "status": "pass",
+          "actual": "adapted strict 60 · hidden 0 · baseline strict 60"
+        },
+        {
+          "id": "learning-resolve-identical",
+          "status": "pass",
+          "actual": "strict equal=true, hidden equal=true "
+        },
+        {
+          "id": "learning-resolve-sequence",
+          "status": "pending",
+          "note": "query/sequence.ts: apps/brain/src/query/sequence.ts not present yet"
+        }
+      ],
+      "notes": [
+        "now = 2026-10-07T16:00:00.000Z (+16h after base; stream ends 2026-10-07T00:24:00.000Z, Δend→now 936.0 min)",
+        "reliability notes: [\"no active session — learning is paused\"]",
+        "baseline resolve: strict 60, hidden 0, top: [\"sample-001\",\"sample-002\",\"sample-003\",\"sample-004\",\"sample-005\"]",
+        "resolve feedback view: combined view + decision-3 hide union (persistent removes ∪ epochHides; applied by the harness at the resolve seam)"
+      ]
+    },
+    {
+      "id": "07-forget",
+      "title": "Forget — learning_reset marker clears the epoch's evidence (module level)",
+      "kind": "learning",
+      "status": "partial",
+      "checks": [
+        {
+          "id": "stream-built",
+          "status": "pass",
+          "actual": "18 events · signals {\"exposure\":1,\"started\":7,\"skip_early\":4,\"full_play\":3,\"repeat\":1,\"interrupted\":1,\"learning_reset\":1} · 2026-10-07T00:00:00.000Z → 2026-10-07T00:25:00.000Z"
+        },
+        {
+          "id": "learning-view-structure",
+          "status": "pass",
+          "actual": "via deriveEpochPolicy · policy=\"epoch-v1\" · epoch=\"ep1:6882d10d6187a07\" · epochHides=yes · removed=yes · proposals=yes · reliabilityNotes=yes"
+        },
+        {
+          "id": "learning-adjust-zero",
+          "status": "pass",
+          "actual": "sample-034: +0.000 [no parts] | sample-024: +0.000 [no parts] | sample-040: +0.000 [no parts] | sample-026: +0.000 [no parts] | sample-028: +0.000 [no parts]"
+        },
+        {
+          "id": "learning-hides-empty",
+          "status": "pass",
+          "actual": "hidden=[]"
+        },
+        {
+          "id": "learning-resolve-plan",
+          "status": "pass",
+          "actual": "ok (hash 8beb2ab87af5)"
+        },
+        {
+          "id": "learning-resolve-runs",
+          "status": "pass",
+          "actual": "adapted strict 60 · hidden 0 · baseline strict 60"
+        },
+        {
+          "id": "learning-resolve-identical",
+          "status": "pass",
+          "actual": "strict equal=true, hidden equal=true "
+        },
+        {
+          "id": "learning-resolve-sequence",
+          "status": "pending",
+          "note": "query/sequence.ts: apps/brain/src/query/sequence.ts not present yet"
+        }
+      ],
+      "notes": [
+        "now = 2026-10-07T00:29:00.000Z (+29m after base; stream ends 2026-10-07T00:25:00.000Z, Δend→now 4.0 min)",
+        "reliability notes: [\"session learning was reset — only what happened after the reset counts\",\"nothing learned yet this session\"]",
+        "baseline resolve: strict 60, hidden 0, top: [\"sample-001\",\"sample-002\",\"sample-003\",\"sample-004\",\"sample-005\"]",
+        "resolve feedback view: combined view + decision-3 hide union (persistent removes ∪ epochHides; applied by the harness at the resolve seam)"
+      ]
+    }
+  ],
+  "summary": {
+    "scenarios": {
+      "pass": 2,
+      "partial": 3,
+      "pending": 0,
+      "fail": 2
+    },
+    "checks": {
+      "pass": 50,
+      "fail": 3,
+      "pending": 3,
+      "skip": 3
+    }
+  }
+}

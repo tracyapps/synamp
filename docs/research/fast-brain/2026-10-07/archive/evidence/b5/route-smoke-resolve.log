@@ -1,0 +1,23 @@
+### draft 'pump me up to do this task / win this game' → chosen reading (arc build)
+accuracy: specific | reading: pump up | arc: {"arc":"build"}
+preview sequencing_applied: ["arc build: ordered by measured intensity (100% coverage)"]
+preview strict order: ["sample-016","sample-034","sample-033","sample-014","sample-022","sample-057","sample-021","sample-056"]
+### create smart playlist from the chosen plan
+playlist id: 09715161-12bc-4e72-b2ff-8ad5d616d574
+### GET /resolve — the sequenced order (resolveSmart path)
+resolve order: ["sample-016","sample-034","sample-033","sample-014","sample-022","sample-057","sample-021","sample-056"]
+### GET /explain — evaluation + sequencing_applied note
+explain strict order: ["sample-016","sample-034","sample-033","sample-014","sample-022","sample-057","sample-021","sample-056"]
+sequencing_applied: ["arc build: ordered by measured intensity (100% coverage)"]
+feedback_policy: epoch-v1
+### POST /plans/evaluate — same plan, same sequencing
+evaluate order: ["sample-016","sample-034","sample-033","sample-014","sample-022","sample-057","sample-021","sample-056"]
+sequencing_applied: ["arc build: ordered by measured intensity (100% coverage)"]
+### skip lesson: hide a resolved track in the live epoch, resolve again
+hiding: sample-034
+(append + restart so the new epoch is derived fresh)
+appended for sample-034
+hides: ["sample-034"]
+resolve order after hide: ["sample-016","sample-014","sample-022","sample-006","sample-057","sample-018","sample-021","sample-056"]
+(the hidden track must be gone from the resolve)
+done (resolve probe)

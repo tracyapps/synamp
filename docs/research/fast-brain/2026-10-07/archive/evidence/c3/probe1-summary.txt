@@ -1,0 +1,226 @@
+
+### focus | "I need to focus" -> accuracy=specific readings=1 chosen=0 label="focus" arc=flat
+   goal_focus_1 :: vocal_fraction lte 0.1 w=0.264 pol=neutral
+   goal_focus_2 :: bpm between [85,125] w=0.088 pol=neutral
+   goal_focus_3 :: pulse_clarity gte 0.5 w=0.088 pol=neutral
+   goal_focus_4 :: onset_rate lte 4 w=0.088 pol=neutral
+   goal_focus_5 :: dynamic_complexity lte 8 w=0.058 pol=neutral
+   goal_focus_6 :: lufs_integrated between [-16.4,-10.4] w=0.058 pol=neutral
+   goal_focus_7 :: spectral_flatness lte 0.3 w=0.058 pol=neutral
+   goal_focus_9 :: beat_interval_cv lte 0.05 w=0.088 pol=neutral
+   goal_focus_10 :: arousal between [0.3,0.65] w=0.147 pol=neutral
+
+### focus | "help me concentrate on my homework" -> accuracy=partial readings=1 chosen=0 label="focus" arc=flat
+   goal_focus_1 :: vocal_fraction lte 0.1 w=0.264 pol=neutral
+   goal_focus_2 :: bpm between [85,125] w=0.088 pol=neutral
+   goal_focus_3 :: pulse_clarity gte 0.5 w=0.088 pol=neutral
+   goal_focus_4 :: onset_rate lte 4 w=0.088 pol=neutral
+   goal_focus_5 :: dynamic_complexity lte 8 w=0.058 pol=neutral
+   goal_focus_6 :: lufs_integrated between [-16.4,-10.4] w=0.058 pol=neutral
+   goal_focus_7 :: spectral_flatness lte 0.3 w=0.058 pol=neutral
+   goal_focus_9 :: beat_interval_cv lte 0.05 w=0.088 pol=neutral
+   goal_focus_10 :: arousal between [0.3,0.65] w=0.147 pol=neutral
+
+### focus | "deep work session" -> accuracy=specific readings=1 chosen=0 label="focus" arc=flat
+   goal_focus_1 :: vocal_fraction lte 0.1 w=0.264 pol=neutral
+   goal_focus_2 :: bpm between [85,125] w=0.088 pol=neutral
+   goal_focus_3 :: pulse_clarity gte 0.5 w=0.088 pol=neutral
+   goal_focus_4 :: onset_rate lte 4 w=0.088 pol=neutral
+   goal_focus_5 :: dynamic_complexity lte 8 w=0.058 pol=neutral
+   goal_focus_6 :: lufs_integrated between [-16.4,-10.4] w=0.058 pol=neutral
+   goal_focus_7 :: spectral_flatness lte 0.3 w=0.058 pol=neutral
+   goal_focus_9 :: beat_interval_cv lte 0.05 w=0.088 pol=neutral
+   goal_focus_10 :: arousal between [0.3,0.65] w=0.147 pol=neutral
+
+### pump_up | "pump me up for the gym" -> accuracy=specific readings=1 chosen=0 label="pump up" arc=build
+   goal_pump_up_1 :: bpm between [125,140] w=0.166 pol=neutral
+   goal_pump_up_2 :: percussiveness gte 0.5 w=0.142 pol=neutral
+   goal_pump_up_3 :: pulse_clarity gte 0.55 w=0.119 pol=neutral
+   goal_pump_up_4 :: beat_grid_strength gte 0.5 w=0.095 pol=neutral
+   goal_pump_up_5 :: onset_rate gte 4.14 w=0.095 pol=neutral
+   goal_pump_up_6 :: lufs_integrated gte -12.7 w=0.095 pol=neutral
+   goal_pump_up_8 :: beat_interval_cv lte 0.06 w=0.071 pol=neutral
+   goal_pump_up_9 :: arousal gte 0.6 w=0.142 pol=neutral
+
+### pump_up | "win this game" -> accuracy=specific readings=1 chosen=0 label="pump up" arc=build
+   goal_pump_up_1 :: bpm between [125,140] w=0.166 pol=neutral
+   goal_pump_up_2 :: percussiveness gte 0.5 w=0.142 pol=neutral
+   goal_pump_up_3 :: pulse_clarity gte 0.55 w=0.119 pol=neutral
+   goal_pump_up_4 :: beat_grid_strength gte 0.5 w=0.095 pol=neutral
+   goal_pump_up_5 :: onset_rate gte 4.14 w=0.095 pol=neutral
+   goal_pump_up_6 :: lufs_integrated gte -12.7 w=0.095 pol=neutral
+   goal_pump_up_8 :: beat_interval_cv lte 0.06 w=0.071 pol=neutral
+   goal_pump_up_9 :: arousal gte 0.6 w=0.142 pol=neutral
+
+### pump_up | "before the game" -> accuracy=specific readings=1 chosen=0 label="pump up" arc=build
+   goal_pump_up_1 :: bpm between [125,140] w=0.166 pol=neutral
+   goal_pump_up_2 :: percussiveness gte 0.5 w=0.142 pol=neutral
+   goal_pump_up_3 :: pulse_clarity gte 0.55 w=0.119 pol=neutral
+   goal_pump_up_4 :: beat_grid_strength gte 0.5 w=0.095 pol=neutral
+   goal_pump_up_5 :: onset_rate gte 4.14 w=0.095 pol=neutral
+   goal_pump_up_6 :: lufs_integrated gte -12.7 w=0.095 pol=neutral
+   goal_pump_up_8 :: beat_interval_cv lte 0.06 w=0.071 pol=neutral
+   goal_pump_up_9 :: arousal gte 0.6 w=0.142 pol=neutral
+
+### dance | "I want to dance" -> accuracy=specific readings=1 chosen=0 label="dance" arc=peak
+   goal_dance_1 :: bpm between [115,130] w=0.15 pol=neutral
+   goal_dance_2 :: pulse_clarity gte 0.55 w=0.15 pol=neutral
+   goal_dance_3 :: percussiveness gte 0.5 w=0.15 pol=neutral
+   goal_dance_4 :: onset_rate between [2.98,5.75] w=0.075 pol=neutral
+   goal_dance_5 :: lufs_integrated gte -13.8 w=0.075 pol=neutral
+   goal_dance_7 :: beat_grid_strength gte 0.5 w=0.1 pol=neutral
+   goal_dance_8 :: beat_interval_cv lte 0.06 w=0.05 pol=neutral
+   goal_dance_9 :: danceability gte 0.6 w=0.2 pol=neutral
+
+### dance | "dance party" -> accuracy=specific readings=1 chosen=0 label="dance" arc=peak
+   goal_dance_1 :: bpm between [115,130] w=0.15 pol=neutral
+   goal_dance_2 :: pulse_clarity gte 0.55 w=0.15 pol=neutral
+   goal_dance_3 :: percussiveness gte 0.5 w=0.15 pol=neutral
+   goal_dance_4 :: onset_rate between [2.98,5.75] w=0.075 pol=neutral
+   goal_dance_5 :: lufs_integrated gte -13.8 w=0.075 pol=neutral
+   goal_dance_7 :: beat_grid_strength gte 0.5 w=0.1 pol=neutral
+   goal_dance_8 :: beat_interval_cv lte 0.06 w=0.05 pol=neutral
+   goal_dance_9 :: danceability gte 0.6 w=0.2 pol=neutral
+
+### dance | "let's dance" -> accuracy=specific readings=1 chosen=0 label="dance" arc=peak
+   goal_dance_1 :: bpm between [115,130] w=0.15 pol=neutral
+   goal_dance_2 :: pulse_clarity gte 0.55 w=0.15 pol=neutral
+   goal_dance_3 :: percussiveness gte 0.5 w=0.15 pol=neutral
+   goal_dance_4 :: onset_rate between [2.98,5.75] w=0.075 pol=neutral
+   goal_dance_5 :: lufs_integrated gte -13.8 w=0.075 pol=neutral
+   goal_dance_7 :: beat_grid_strength gte 0.5 w=0.1 pol=neutral
+   goal_dance_8 :: beat_interval_cv lte 0.06 w=0.05 pol=neutral
+   goal_dance_9 :: danceability gte 0.6 w=0.2 pol=neutral
+
+### calm | "help me calm down" -> accuracy=partial readings=1 chosen=0 label="calm" arc=cooldown
+   goal_calm_1 :: bpm between [55,80] w=0.186 pol=neutral
+   goal_calm_2 :: percussiveness lte 0.35 w=0.139 pol=neutral
+   goal_calm_3 :: onset_rate lte 2.98 w=0.139 pol=neutral
+   goal_calm_4 :: lufs_integrated lte -13.8 w=0.116 pol=neutral
+   goal_calm_5 :: loudness_range lte 8.7 w=0.069 pol=neutral
+   goal_calm_8 :: beat_interval_cv lte 0.05 w=0.069 pol=neutral
+   goal_calm_9 :: arousal lte 0.4 w=0.139 pol=neutral
+
+### calm | "I need to relax" -> accuracy=specific readings=1 chosen=0 label="calm" arc=cooldown
+   goal_calm_1 :: bpm between [55,80] w=0.186 pol=neutral
+   goal_calm_2 :: percussiveness lte 0.35 w=0.139 pol=neutral
+   goal_calm_3 :: onset_rate lte 2.98 w=0.139 pol=neutral
+   goal_calm_4 :: lufs_integrated lte -13.8 w=0.116 pol=neutral
+   goal_calm_5 :: loudness_range lte 8.7 w=0.069 pol=neutral
+   goal_calm_8 :: beat_interval_cv lte 0.05 w=0.069 pol=neutral
+   goal_calm_9 :: arousal lte 0.4 w=0.139 pol=neutral
+
+### calm | "wind down" -> accuracy=specific readings=1 chosen=0 label="calm" arc=cooldown
+   goal_calm_1 :: bpm between [55,80] w=0.186 pol=neutral
+   goal_calm_2 :: percussiveness lte 0.35 w=0.139 pol=neutral
+   goal_calm_3 :: onset_rate lte 2.98 w=0.139 pol=neutral
+   goal_calm_4 :: lufs_integrated lte -13.8 w=0.116 pol=neutral
+   goal_calm_5 :: loudness_range lte 8.7 w=0.069 pol=neutral
+   goal_calm_8 :: beat_interval_cv lte 0.05 w=0.069 pol=neutral
+   goal_calm_9 :: arousal lte 0.4 w=0.139 pol=neutral
+
+### sleep | "music to fall asleep" -> accuracy=specific readings=1 chosen=0 label="sleep" arc=cooldown
+   goal_sleep_1 :: bpm between [50,70] w=0.191 pol=neutral
+   goal_sleep_2 :: percussiveness lte 0.35 w=0.127 pol=neutral
+   goal_sleep_3 :: onset_rate lte 2.98 w=0.127 pol=neutral
+   goal_sleep_4 :: lufs_integrated lte -13.8 w=0.106 pol=neutral
+   goal_sleep_5 :: loudness_range lte 8.7 w=0.063 pol=neutral
+   goal_sleep_8 :: beat_interval_cv lte 0.05 w=0.063 pol=neutral
+   goal_sleep_9 :: vocal_fraction lte 0.4 w=0.063 pol=neutral
+   goal_sleep_10 :: arousal lte 0.4 w=0.127 pol=neutral
+
+### sleep | "bedtime" -> accuracy=specific readings=1 chosen=0 label="sleep" arc=cooldown
+   goal_sleep_1 :: bpm between [50,70] w=0.191 pol=neutral
+   goal_sleep_2 :: percussiveness lte 0.35 w=0.127 pol=neutral
+   goal_sleep_3 :: onset_rate lte 2.98 w=0.127 pol=neutral
+   goal_sleep_4 :: lufs_integrated lte -13.8 w=0.106 pol=neutral
+   goal_sleep_5 :: loudness_range lte 8.7 w=0.063 pol=neutral
+   goal_sleep_8 :: beat_interval_cv lte 0.05 w=0.063 pol=neutral
+   goal_sleep_9 :: vocal_fraction lte 0.4 w=0.063 pol=neutral
+   goal_sleep_10 :: arousal lte 0.4 w=0.127 pol=neutral
+
+### sleep | "lullaby" -> accuracy=specific readings=1 chosen=0 label="sleep" arc=cooldown
+   goal_sleep_1 :: bpm between [50,70] w=0.191 pol=neutral
+   goal_sleep_2 :: percussiveness lte 0.35 w=0.127 pol=neutral
+   goal_sleep_3 :: onset_rate lte 2.98 w=0.127 pol=neutral
+   goal_sleep_4 :: lufs_integrated lte -13.8 w=0.106 pol=neutral
+   goal_sleep_5 :: loudness_range lte 8.7 w=0.063 pol=neutral
+   goal_sleep_8 :: beat_interval_cv lte 0.05 w=0.063 pol=neutral
+   goal_sleep_9 :: vocal_fraction lte 0.4 w=0.063 pol=neutral
+   goal_sleep_10 :: arousal lte 0.4 w=0.127 pol=neutral
+
+### catharsis | "feeling sad" -> accuracy=specific readings=1 chosen=0 label="catharsis" arc=flat
+   goal_catharsis_1 :: valence lte 0.4 w=0.25 pol=neutral
+   goal_catharsis_2 :: mode in ["minor"] w=0.15 pol=neutral
+   goal_catharsis_3 :: bpm between [60,100] w=0.15 pol=neutral
+   goal_catharsis_5 :: lufs_integrated lte -13.8 w=0.1 pol=neutral
+
+### catharsis | "sad songs" -> accuracy=specific readings=1 chosen=0 label="catharsis" arc=flat
+   goal_catharsis_1 :: valence lte 0.4 w=0.25 pol=neutral
+   goal_catharsis_2 :: mode in ["minor"] w=0.15 pol=neutral
+   goal_catharsis_3 :: bpm between [60,100] w=0.15 pol=neutral
+   goal_catharsis_5 :: lufs_integrated lte -13.8 w=0.1 pol=neutral
+
+### catharsis | "let it all out" -> accuracy=specific readings=1 chosen=0 label="catharsis" arc=flat
+   goal_catharsis_1 :: valence lte 0.4 w=0.25 pol=neutral
+   goal_catharsis_2 :: mode in ["minor"] w=0.15 pol=neutral
+   goal_catharsis_3 :: bpm between [60,100] w=0.15 pol=neutral
+   goal_catharsis_5 :: lufs_integrated lte -13.8 w=0.1 pol=neutral
+
+### nostalgia | "throwback" -> accuracy=specific readings=1 chosen=0 label="nostalgia" arc=flat
+   goal_nostalgia_2 :: valence between [0.4,0.8] w=0.15 pol=neutral
+   goal_nostalgia_3 :: bpm between [70,120] w=0.1 pol=neutral
+   goal_nostalgia_4 :: mode in ["major"] w=0.05 pol=neutral
+
+### nostalgia | "back in the day" -> accuracy=specific readings=1 chosen=0 label="nostalgia" arc=flat
+   goal_nostalgia_2 :: valence between [0.4,0.8] w=0.15 pol=neutral
+   goal_nostalgia_3 :: bpm between [70,120] w=0.1 pol=neutral
+   goal_nostalgia_4 :: mode in ["major"] w=0.05 pol=neutral
+
+### nostalgia | "memory lane" -> accuracy=specific readings=1 chosen=0 label="nostalgia" arc=flat
+   goal_nostalgia_2 :: valence between [0.4,0.8] w=0.15 pol=neutral
+   goal_nostalgia_3 :: bpm between [70,120] w=0.1 pol=neutral
+   goal_nostalgia_4 :: mode in ["major"] w=0.05 pol=neutral
+
+### drive | "going for a drive" -> accuracy=specific readings=1 chosen=0 label="drive" arc=flat
+   goal_drive_1 :: bpm between [95,135] w=0.3 pol=neutral
+   goal_drive_2 :: lufs_integrated gte -14.7 w=0.1 pol=neutral
+   goal_drive_3 :: onset_rate between [2.27,5.34] w=0.1 pol=neutral
+   goal_drive_4 :: percussiveness gte 0.33 w=0.1 pol=neutral
+
+### drive | "long commute" -> accuracy=partial readings=1 chosen=0 label="drive" arc=flat
+   goal_drive_1 :: bpm between [95,135] w=0.3 pol=neutral
+   goal_drive_2 :: lufs_integrated gte -14.7 w=0.1 pol=neutral
+   goal_drive_3 :: onset_rate between [2.27,5.34] w=0.1 pol=neutral
+   goal_drive_4 :: percussiveness gte 0.33 w=0.1 pol=neutral
+
+### drive | "road trip" -> accuracy=specific readings=1 chosen=0 label="drive" arc=flat
+   goal_drive_1 :: bpm between [95,135] w=0.3 pol=neutral
+   goal_drive_2 :: lufs_integrated gte -14.7 w=0.1 pol=neutral
+   goal_drive_3 :: onset_rate between [2.27,5.34] w=0.1 pol=neutral
+   goal_drive_4 :: percussiveness gte 0.33 w=0.1 pol=neutral
+
+### chores | "cleaning the house" -> accuracy=specific readings=1 chosen=0 label="chores" arc=flat
+   genre_hint :: genre in ["house"] w=0.3 pol=neutral
+   goal_chores_1 :: bpm between [105,135] w=0.25 pol=neutral
+   goal_chores_2 :: pulse_clarity gte 0.5 w=0.2 pol=neutral
+   goal_chores_3 :: percussiveness gte 0.36 w=0.15 pol=neutral
+   goal_chores_4 :: lufs_integrated between [-15.8,-10.2] w=0.1 pol=neutral
+   goal_chores_5 :: onset_rate between [2.64,5.48] w=0.1 pol=neutral
+   goal_chores_6 :: valence gte 0.5 w=0.1 pol=neutral
+
+### chores | "do the dishes" -> accuracy=specific readings=1 chosen=0 label="chores" arc=flat
+   goal_chores_1 :: bpm between [105,135] w=0.25 pol=neutral
+   goal_chores_2 :: pulse_clarity gte 0.5 w=0.2 pol=neutral
+   goal_chores_3 :: percussiveness gte 0.36 w=0.15 pol=neutral
+   goal_chores_4 :: lufs_integrated between [-15.8,-10.2] w=0.1 pol=neutral
+   goal_chores_5 :: onset_rate between [2.64,5.48] w=0.1 pol=neutral
+   goal_chores_6 :: valence gte 0.5 w=0.1 pol=neutral
+
+### chores | "tidying up" -> accuracy=specific readings=1 chosen=0 label="chores" arc=flat
+   goal_chores_1 :: bpm between [105,135] w=0.25 pol=neutral
+   goal_chores_2 :: pulse_clarity gte 0.5 w=0.2 pol=neutral
+   goal_chores_3 :: percussiveness gte 0.36 w=0.15 pol=neutral
+   goal_chores_4 :: lufs_integrated between [-15.8,-10.2] w=0.1 pol=neutral
+   goal_chores_5 :: onset_rate between [2.64,5.48] w=0.1 pol=neutral
+   goal_chores_6 :: valence gte 0.5 w=0.1 pol=neutral

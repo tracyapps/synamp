@@ -1,0 +1,741 @@
+{
+  "format": "synamp.brain-lab/1",
+  "generated_at": "2026-10-07T05:13:09.687Z",
+  "repo": {
+    "root": "/Users/tapps/_dev/web-apps/SynAmp",
+    "head": "b6ea5ce1",
+    "branch": "feat/fast-learning-brain",
+    "dirty": true
+  },
+  "node": "v24.13.0",
+  "library": {
+    "path": "apps/brain/fixtures/library.sample.json",
+    "tracks": 60
+  },
+  "modules": [
+    {
+      "key": "draft",
+      "path": "apps/brain/src/query/draft.ts",
+      "status": "loaded",
+      "wanted": [
+        "draftPlan"
+      ],
+      "found": [
+        "draftPlan"
+      ],
+      "exports": [
+        "draftPlan"
+      ]
+    },
+    {
+      "key": "plan",
+      "path": "apps/brain/src/query/plan.ts",
+      "status": "loaded",
+      "wanted": [
+        "validatePlan",
+        "planHash"
+      ],
+      "found": [
+        "validatePlan",
+        "planHash"
+      ],
+      "exports": [
+        "PLAN_VERSION",
+        "encoderText",
+        "planHash",
+        "validatePlan"
+      ]
+    },
+    {
+      "key": "evaluate",
+      "path": "apps/brain/src/query/evaluate.ts",
+      "status": "loaded",
+      "wanted": [
+        "evaluatePlan"
+      ],
+      "found": [
+        "evaluatePlan"
+      ],
+      "exports": [
+        "evaluatePlan"
+      ]
+    },
+    {
+      "key": "feedback",
+      "path": "apps/brain/src/session/feedback.ts",
+      "status": "loaded",
+      "wanted": [
+        "deriveFeedback"
+      ],
+      "found": [
+        "deriveFeedback"
+      ],
+      "exports": [
+        "FEEDBACK_WEIGHT",
+        "FeedbackError",
+        "HALF_LIFE_DAYS",
+        "deriveFeedback",
+        "feedbackBonus",
+        "recordFeedback"
+      ]
+    },
+    {
+      "key": "sequence",
+      "path": "apps/brain/src/query/sequence.ts",
+      "status": "loaded",
+      "wanted": [
+        "sequenceTracks"
+      ],
+      "found": [
+        "sequenceTracks"
+      ],
+      "exports": [
+        "sequenceTracks"
+      ]
+    },
+    {
+      "key": "intent",
+      "path": "apps/brain/src/intent/interpret.ts",
+      "status": "loaded",
+      "wanted": [
+        "interpretGoal"
+      ],
+      "found": [
+        "interpretGoal"
+      ],
+      "exports": [
+        "INTERPRET_VERSION",
+        "interpretGoal"
+      ]
+    },
+    {
+      "key": "learning",
+      "path": "apps/brain/src/learning/derive.ts",
+      "status": "loaded",
+      "wanted": [
+        "deriveEpochPolicy",
+        "deriveAdaptive"
+      ],
+      "found": [
+        "deriveEpochPolicy"
+      ],
+      "exports": [
+        "ARTIST_MIN_EVENTS",
+        "ARTIST_MIN_SUM",
+        "EPOCH_HALF_LIFE_MS",
+        "EPOCH_POLICY_VERSION",
+        "deriveEpochPolicy"
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "01-three-phrases",
+      "title": "User's three example phrases — interpretation + draft→validate→evaluate",
+      "kind": "phrase",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "focus/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 2, unparsed 0"
+        },
+        {
+          "id": "focus/pipeline-validates",
+          "status": "pass",
+          "actual": "ok (hash 05ceb5294348)"
+        },
+        {
+          "id": "focus/pipeline-evaluate",
+          "status": "pass",
+          "actual": "strict 24/25, near 0, library 60, unique=true, allInLibrary=true, underfilled=false"
+        },
+        {
+          "id": "focus/pipeline-min-strict",
+          "status": "pass",
+          "actual": "strict 24"
+        },
+        {
+          "id": "focus/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=specific, readings=1, chosen=0, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=0, audit=5"
+        },
+        {
+          "id": "focus/intent-chosen-validates",
+          "status": "pass",
+          "actual": "ok (hash 454e84938802)"
+        },
+        {
+          "id": "pump/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 0, unparsed 1"
+        },
+        {
+          "id": "pump/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "invalid (1 errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}])"
+        },
+        {
+          "id": "pump/pipeline-evaluate",
+          "status": "skip",
+          "note": "legacy plan did not validate — evaluation not applicable (when a B1 chosen reading validates, its plan is evaluated by intent-chosen-evaluates)"
+        },
+        {
+          "id": "pump/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=specific, readings=1, chosen=0, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=0, audit=2"
+        },
+        {
+          "id": "pump/intent-chosen-validates",
+          "status": "pass",
+          "actual": "ok (hash f1de457c230c)"
+        },
+        {
+          "id": "pump/intent-chosen-evaluates",
+          "status": "pass",
+          "actual": "strict 25/25, near 0, unique=true, allInLibrary=true, underfilled=false (via B1 chosen reading)"
+        },
+        {
+          "id": "dance/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 0, unparsed 1"
+        },
+        {
+          "id": "dance/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "invalid (1 errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}])"
+        },
+        {
+          "id": "dance/pipeline-evaluate",
+          "status": "skip",
+          "note": "legacy plan did not validate — evaluation not applicable (when a B1 chosen reading validates, its plan is evaluated by intent-chosen-evaluates)"
+        },
+        {
+          "id": "dance/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=specific, readings=1, chosen=0, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=0, audit=1"
+        },
+        {
+          "id": "dance/intent-chosen-validates",
+          "status": "pass",
+          "actual": "ok (hash dffc7b8ec47b)"
+        },
+        {
+          "id": "dance/intent-chosen-evaluates",
+          "status": "pass",
+          "actual": "strict 25/25, near 0, unique=true, allInLibrary=true, underfilled=false (via B1 chosen reading)"
+        }
+      ],
+      "notes": [
+        "phrase \"i need to focus\"",
+        "recognized: [\"i need to focus -> prefer arousal 0.40–0.60 (soft)\",\"i need to focus -> prefer pulse_clarity ≥ 0.45 (soft)\"]",
+        "unparsed: []",
+        "top strict: [\"sample-003\",\"sample-011\",\"sample-024\",\"sample-047\",\"sample-060\"]",
+        "reading plans: 1/1 validate ok",
+        "interpretation (via interpretGoal): {\"accuracy\":\"specific\",\"readings\":[\"focus\"],\"chosen\":0}",
+        "phrase \"pump me up to win this game\"",
+        "recognized: []",
+        "unparsed: [\"pump up to win this game\"]",
+        "validation errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}]",
+        "reading plans: 1/1 validate ok",
+        "interpretation (via interpretGoal): {\"accuracy\":\"specific\",\"readings\":[\"pump up\"],\"chosen\":0}",
+        "phrase \"i want to dance\"",
+        "recognized: []",
+        "unparsed: [\"to dance\"]",
+        "validation errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}]",
+        "reading plans: 1/1 validate ok",
+        "interpretation (via interpretGoal): {\"accuracy\":\"specific\",\"readings\":[\"dance\"],\"chosen\":0}"
+      ]
+    },
+    {
+      "id": "02-vague",
+      "title": "Vague request — interpretation must admit underspecification",
+      "kind": "phrase",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "vague-canonical/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 0, unparsed 0"
+        },
+        {
+          "id": "vague-canonical/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "invalid (1 errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}])"
+        },
+        {
+          "id": "vague-canonical/pipeline-evaluate",
+          "status": "skip",
+          "note": "legacy plan did not validate — evaluation not applicable (when a B1 chosen reading validates, its plan is evaluated by intent-chosen-evaluates)"
+        },
+        {
+          "id": "vague-canonical/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=vague, readings=0, chosen=-1, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=2, audit=2"
+        },
+        {
+          "id": "vague-canonical/intent-accuracy",
+          "status": "pass",
+          "actual": "accuracy=vague"
+        },
+        {
+          "id": "vague-play/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 0, unparsed 1"
+        },
+        {
+          "id": "vague-play/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "invalid (1 errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}])"
+        },
+        {
+          "id": "vague-play/pipeline-evaluate",
+          "status": "skip",
+          "note": "legacy plan did not validate — evaluation not applicable (when a B1 chosen reading validates, its plan is evaluated by intent-chosen-evaluates)"
+        },
+        {
+          "id": "vague-play/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=vague, readings=0, chosen=-1, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=2, audit=2"
+        },
+        {
+          "id": "vague-play/intent-accuracy",
+          "status": "pass",
+          "actual": "accuracy=vague"
+        }
+      ],
+      "notes": [
+        "phrase \"some music please\"",
+        "recognized: []",
+        "unparsed: []",
+        "validation errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}]",
+        "interpretation (via interpretGoal): {\"accuracy\":\"vague\",\"readings\":[],\"chosen\":-1}",
+        "phrase \"play me something good\"",
+        "recognized: []",
+        "unparsed: [\"play something good\"]",
+        "validation errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}]",
+        "interpretation (via interpretGoal): {\"accuracy\":\"vague\",\"readings\":[],\"chosen\":-1}"
+      ],
+      "scenario_note": "Resolved (B1 fix, re-verified by B4b 2026-10-07): 'play me something good' now classifies accuracy=vague — the intent-v1 filler/quality lexicon ignores generic tokens ('play', 'good', 'something'). Both probes pass. History (B4, 2026-10-06 23:07): it was observed as accuracy=impossible because the residue token 'play' counted as a content claim; the canonical probe 'some music please' already classified vague."
+    },
+    {
+      "id": "03-contradictory",
+      "title": "Contradictory request — 'fast relaxing bangers'",
+      "kind": "phrase",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "contradictory/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 1, unparsed 1"
+        },
+        {
+          "id": "contradictory/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "ok (hash baaedc3c72b0)"
+        },
+        {
+          "id": "contradictory/pipeline-evaluate",
+          "status": "pass",
+          "actual": "strict 25/25, near 0, library 60, unique=true, allInLibrary=true, underfilled=false"
+        },
+        {
+          "id": "contradictory/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=contradictory, readings=2, chosen=0, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=1, audit=7"
+        },
+        {
+          "id": "contradictory/intent-accuracy",
+          "status": "pass",
+          "actual": "accuracy=contradictory"
+        }
+      ],
+      "notes": [
+        "phrase \"fast relaxing bangers\"",
+        "recognized: [\"relaxing -> prefer arousal ≤ 0.40 (soft)\"]",
+        "unparsed: [\"fast bangers\"]",
+        "top strict: [\"sample-001\",\"sample-004\",\"sample-005\",\"sample-006\",\"sample-007\"]",
+        "reading plans: 2/2 validate ok",
+        "interpretation (via interpretGoal): {\"accuracy\":\"contradictory\",\"readings\":[\"energetic but soft\",\"literally calm\"],\"chosen\":0}"
+      ]
+    },
+    {
+      "id": "04-impossible",
+      "title": "Hyper-specific / impossible ask — unsatisfiable combination of demands",
+      "kind": "phrase",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "impossible-clarinets/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 0, unparsed 1"
+        },
+        {
+          "id": "impossible-clarinets/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "invalid (1 errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}])"
+        },
+        {
+          "id": "impossible-clarinets/pipeline-evaluate",
+          "status": "skip",
+          "note": "legacy plan did not validate — evaluation not applicable (when a B1 chosen reading validates, its plan is evaluated by intent-chosen-evaluates)"
+        },
+        {
+          "id": "impossible-clarinets/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=impossible, readings=0, chosen=-1, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=2, audit=3"
+        },
+        {
+          "id": "impossible-clarinets/intent-accuracy",
+          "status": "pass",
+          "actual": "accuracy=impossible"
+        },
+        {
+          "id": "impossible-vocals/pipeline-draft",
+          "status": "pass",
+          "actual": "recognized 2, unparsed 1"
+        },
+        {
+          "id": "impossible-vocals/pipeline-validation-structure",
+          "status": "pass",
+          "actual": "ok (hash ff8a6b8453a4)"
+        },
+        {
+          "id": "impossible-vocals/pipeline-evaluate",
+          "status": "pass",
+          "actual": "strict 0/25, near 0, library 60, unique=true, allInLibrary=true, underfilled=true"
+        },
+        {
+          "id": "impossible-vocals/pipeline-underfilled",
+          "status": "pass",
+          "actual": "underfilled=true"
+        },
+        {
+          "id": "impossible-vocals/intent-structural",
+          "status": "pass",
+          "actual": "accuracy=partial, readings=1, chosen=0, parser=\"intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)\", asks=1, audit=3"
+        },
+        {
+          "id": "impossible-vocals/intent-accuracy",
+          "status": "pass",
+          "actual": "accuracy=partial"
+        }
+      ],
+      "notes": [
+        "phrase \"songs with exactly three clarinets\"",
+        "recognized: []",
+        "unparsed: [\"exactly three clarinets\"]",
+        "validation errors: [{\"path\":\"$.constraints\",\"message\":\"A plan needs at least one supported constraint or a positive exemplar\"}]",
+        "interpretation (via interpretGoal): {\"accuracy\":\"impossible\",\"readings\":[],\"chosen\":-1}",
+        "phrase \"instrumentals with heavy lead vocals over 300 bpm\"",
+        "recognized: [\"instrumentals -> vocal_fraction ≤ 0.10 or instrumental ≥ 0.80 (hard; unmeasured fails)\",\"over 300 bpm -> bpm ≥ 300 (hard)\"]",
+        "unparsed: [\"heavy lead vocals\"]",
+        "top strict: []",
+        "reading plans: 1/1 validate ok",
+        "interpretation (via interpretGoal): {\"accuracy\":\"partial\",\"readings\":[\"what I could parse\"],\"chosen\":0}"
+      ],
+      "scenario_note": "Two probes. 'songs with exactly three clarinets' is hyper-specific with nothing enforceable: expected accuracy=impossible, with asks carrying the next step (never a dead end). 'instrumentals with heavy lead vocals over 300 bpm' is a mixed impossible ask whose vocals half intent-v1 cannot yet express as a claim; asserted only that the answer stays honest — accuracy in [partial, impossible, contradictory] (never specific) — and that the library resolve underfills instead of faking results."
+    },
+    {
+      "id": "05-fast-learning",
+      "title": "Fast learning — within-epoch stream reorders the next resolve and hides re-skips",
+      "kind": "learning",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "stream-built",
+          "status": "pass",
+          "actual": "17 events · signals {\"exposure\":1,\"started\":7,\"skip_early\":4,\"full_play\":3,\"repeat\":1,\"interrupted\":1} · 2026-10-07T00:00:00.000Z → 2026-10-07T00:24:00.000Z"
+        },
+        {
+          "id": "learning-view-structure",
+          "status": "pass",
+          "actual": "via deriveEpochPolicy · policy=\"epoch-v1\" · epoch=\"ep1:ee735f5b98fdd91\" · epochHides=yes · removed=yes · proposals=yes · reliabilityNotes=yes"
+        },
+        {
+          "id": "learning-adjust-positive",
+          "status": "pass",
+          "actual": "sample-034: +1.595 [heard it through this session (0.15); replayed this session (0.44); tempo ~99 BPM — you kept 3 such tracks this session (0.33); loudness ~-15.9 LUFS — you kept 3 such tracks this session (0.24); crest factor ~11.1 dB — you kept 3 such tracks this session (0.21); note onsets ~1.8 onsets/s — you kept 3 such tracks this session (0.33); percussiveness ~0.52 — you kept 3 such tracks this session (0.37)] | sample-024: +1.177 [heard it through this session (0.18); tempo ~99 BPM — you kept 3 such tracks this session (0.43); loudness ~-15.9 LUFS — you kept 3 such tracks this session (0.30); crest factor ~11.1 dB — you kept 3 such tracks this session (0.03); note onsets ~1.8 onsets/s — you kept 3 such tracks this session (0.03); percussiveness ~0.52 — you kept 3 such tracks this session (0.39)] | sample-040: +1.198 [heard it through this session (0.20); tempo ~99 BPM — you kept 3 such tracks this session (0.23); loudness ~-15.9 LUFS — you kept 3 such tracks this session (0.08); crest factor ~11.1 dB — you kept 3 such tracks this session (0.29); note onsets ~1.8 onsets/s — you kept 3 such tracks this session (0.39); percussiveness ~0.52 — you kept 3 such tracks this session (0.29)]"
+        },
+        {
+          "id": "learning-negative-parts",
+          "status": "pass",
+          "actual": "sample-026: skipped early this session (-0.41); other tracks by Static Orchard this session (-0.15); tempo ~171 BPM — near this session's skips (-0.09) | sample-028: skipped early this session (-0.43); other tracks by Static Orchard this session (-0.14); tempo ~171 BPM — near this session's skips (-0.10); loudness ~-14.0 LUFS — near this session's skips (-0.05); crest factor ~13.0 dB — near this session's skips (-0.02); percussiveness ~0.36 — near this session's skips (-0.05)"
+        },
+        {
+          "id": "learning-skip-hidden",
+          "status": "pass",
+          "actual": "hidden=[sample-026, sample-028]"
+        },
+        {
+          "id": "learning-resolve-plan",
+          "status": "pass",
+          "actual": "ok (hash 8beb2ab87af5)"
+        },
+        {
+          "id": "learning-resolve-runs",
+          "status": "pass",
+          "actual": "adapted strict 58 · hidden 0 · baseline strict 60"
+        },
+        {
+          "id": "learning-resolve-baseline-has-hidden",
+          "status": "pass",
+          "actual": "in baseline: [sample-026, sample-028]"
+        },
+        {
+          "id": "learning-resolve-hidden-by-session",
+          "status": "pass",
+          "actual": "out of strict: [sample-026, sample-028] · strict 60→58 · counts.hidden_by_session=2, hidden_by_you=0 · persistent hidden=[]"
+        },
+        {
+          "id": "learning-resolve-improves",
+          "status": "pass",
+          "actual": "sample-034: #33 → #0 ↑ | sample-024: #23 → #2 ↑ | sample-040: #39 → #1 ↑"
+        },
+        {
+          "id": "learning-resolve-sequence",
+          "status": "pass",
+          "actual": "same set · applied=[]"
+        },
+        {
+          "id": "sequence-wave-odd-f1",
+          "status": "pass",
+          "actual": "n=1: [\"lab-wave-1\"] | n=3: [\"lab-wave-3\",\"lab-wave-1\",\"lab-wave-2\"] | n=5: [\"lab-wave-4\",\"lab-wave-1\",\"lab-wave-5\",\"lab-wave-2\",\"lab-wave-3\"]"
+        },
+        {
+          "id": "sequence-wave-odd-order",
+          "status": "pass",
+          "actual": "n=1: [\"lab-wave-1\"] | n=3: [\"lab-wave-3\",\"lab-wave-1\",\"lab-wave-2\"] | n=5: [\"lab-wave-4\",\"lab-wave-1\",\"lab-wave-5\",\"lab-wave-2\",\"lab-wave-3\"]"
+        },
+        {
+          "id": "sequence-wave-even-bytes",
+          "status": "pass",
+          "actual": "n=2: [\"lab-wave-2\",\"lab-wave-1\"] (byte path kept) | n=4: [\"lab-wave-3\",\"lab-wave-1\",\"lab-wave-4\",\"lab-wave-2\"] (byte path kept)"
+        },
+        {
+          "id": "sequence-wave-applied-note",
+          "status": "pass",
+          "actual": "n=1: [\"arc wave: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage\"] | n=2: [\"arc wave: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage\"] | n=3: [\"arc wave: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage\"] | n=4: [\"arc wave: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage\"] | n=5: [\"arc wave: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage\"]"
+        }
+      ],
+      "notes": [
+        "now = 2026-10-07T00:29:00.000Z (+29m after base; stream ends 2026-10-07T00:24:00.000Z, Δend→now 5.0 min)",
+        "baseline resolve: strict 60, hidden 0, top: [\"sample-001\",\"sample-002\",\"sample-003\",\"sample-004\",\"sample-005\"]",
+        "resolve feedback view: combined view as feedback + adaptive (mirrors index.ts policyOptions in epoch mode; evaluate.ts applies the removed(playlistId) ∪ epochHides() union at the resolve seam)",
+        "sequence_wave probe: C1-F1 regression (H1 receipt §H1-1): pre-fix, odd measured counts dropped one track and emitted undefined → null in JSON → queue crash; even counts were fine and must stay byte-identical."
+      ]
+    },
+    {
+      "id": "06-isolation",
+      "title": "Isolation — same stream resolved at now+16h (next day): implicit adjustments zero/empty",
+      "kind": "learning",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "stream-built",
+          "status": "pass",
+          "actual": "17 events · signals {\"exposure\":1,\"started\":7,\"skip_early\":4,\"full_play\":3,\"repeat\":1,\"interrupted\":1} · 2026-10-07T00:00:00.000Z → 2026-10-07T00:24:00.000Z"
+        },
+        {
+          "id": "learning-view-structure",
+          "status": "pass",
+          "actual": "via deriveEpochPolicy · policy=\"epoch-v1\" · epoch=null · epochHides=yes · removed=yes · proposals=yes · reliabilityNotes=yes"
+        },
+        {
+          "id": "learning-adjust-zero",
+          "status": "pass",
+          "actual": "sample-034: +0.000 [no parts] | sample-024: +0.000 [no parts] | sample-040: +0.000 [no parts] | sample-026: +0.000 [no parts] | sample-028: +0.000 [no parts]"
+        },
+        {
+          "id": "learning-hides-empty",
+          "status": "pass",
+          "actual": "hidden=[]"
+        },
+        {
+          "id": "learning-resolve-plan",
+          "status": "pass",
+          "actual": "ok (hash 8beb2ab87af5)"
+        },
+        {
+          "id": "learning-resolve-runs",
+          "status": "pass",
+          "actual": "adapted strict 60 · hidden 0 · baseline strict 60"
+        },
+        {
+          "id": "learning-resolve-identical",
+          "status": "pass",
+          "actual": "strict equal=true, hidden equal=true "
+        },
+        {
+          "id": "learning-resolve-sequence",
+          "status": "pass",
+          "actual": "same set · applied=[]"
+        }
+      ],
+      "notes": [
+        "now = 2026-10-07T16:00:00.000Z (+16h after base; stream ends 2026-10-07T00:24:00.000Z, Δend→now 936.0 min)",
+        "reliability notes: [\"no active session — learning is paused\"]",
+        "baseline resolve: strict 60, hidden 0, top: [\"sample-001\",\"sample-002\",\"sample-003\",\"sample-004\",\"sample-005\"]",
+        "resolve feedback view: combined view as feedback + adaptive (mirrors index.ts policyOptions in epoch mode; evaluate.ts applies the removed(playlistId) ∪ epochHides() union at the resolve seam)"
+      ]
+    },
+    {
+      "id": "07-forget",
+      "title": "Forget — learning_reset marker clears the epoch's evidence (module level)",
+      "kind": "learning",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "stream-built",
+          "status": "pass",
+          "actual": "18 events · signals {\"exposure\":1,\"started\":7,\"skip_early\":4,\"full_play\":3,\"repeat\":1,\"interrupted\":1,\"learning_reset\":1} · 2026-10-07T00:00:00.000Z → 2026-10-07T00:25:00.000Z"
+        },
+        {
+          "id": "learning-view-structure",
+          "status": "pass",
+          "actual": "via deriveEpochPolicy · policy=\"epoch-v1\" · epoch=\"ep1:6882d10d6187a07\" · epochHides=yes · removed=yes · proposals=yes · reliabilityNotes=yes"
+        },
+        {
+          "id": "learning-adjust-zero",
+          "status": "pass",
+          "actual": "sample-034: +0.000 [no parts] | sample-024: +0.000 [no parts] | sample-040: +0.000 [no parts] | sample-026: +0.000 [no parts] | sample-028: +0.000 [no parts]"
+        },
+        {
+          "id": "learning-hides-empty",
+          "status": "pass",
+          "actual": "hidden=[]"
+        },
+        {
+          "id": "learning-resolve-plan",
+          "status": "pass",
+          "actual": "ok (hash 8beb2ab87af5)"
+        },
+        {
+          "id": "learning-resolve-runs",
+          "status": "pass",
+          "actual": "adapted strict 60 · hidden 0 · baseline strict 60"
+        },
+        {
+          "id": "learning-resolve-identical",
+          "status": "pass",
+          "actual": "strict equal=true, hidden equal=true "
+        },
+        {
+          "id": "learning-resolve-sequence",
+          "status": "pass",
+          "actual": "same set · applied=[]"
+        }
+      ],
+      "notes": [
+        "now = 2026-10-07T00:29:00.000Z (+29m after base; stream ends 2026-10-07T00:25:00.000Z, Δend→now 4.0 min)",
+        "reliability notes: [\"session learning was reset — only what happened after the reset counts\",\"nothing learned yet this session\"]",
+        "baseline resolve: strict 60, hidden 0, top: [\"sample-001\",\"sample-002\",\"sample-003\",\"sample-004\",\"sample-005\"]",
+        "resolve feedback view: combined view as feedback + adaptive (mirrors index.ts policyOptions in epoch mode; evaluate.ts applies the removed(playlistId) ∪ epochHides() union at the resolve seam)"
+      ]
+    },
+    {
+      "id": "08-culture-guardrails",
+      "title": "Culture guardrails — culture-language prompts stay defensive; outputs pinned exactly as observed",
+      "kind": "culture",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "latin-party/pinned",
+          "status": "pass",
+          "actual": "accuracy=partial, chosen=0, readings=[\"dance\"], asks=1"
+        },
+        {
+          "id": "tribal-drumming/pinned",
+          "status": "pass",
+          "actual": "accuracy=impossible, chosen=-1, readings=[], asks=2"
+        },
+        {
+          "id": "gypsy-jazz/pinned",
+          "status": "pass",
+          "actual": "accuracy=partial, chosen=0, readings=[\"what I could parse\"], asks=1"
+        },
+        {
+          "id": "exotic-vibes/pinned",
+          "status": "pass",
+          "actual": "accuracy=impossible, chosen=-1, readings=[], asks=2"
+        },
+        {
+          "id": "ancestors/pinned",
+          "status": "pass",
+          "actual": "accuracy=impossible, chosen=-1, readings=[], asks=2"
+        },
+        {
+          "id": "wa-drumming-focus/pinned",
+          "status": "pass",
+          "actual": "accuracy=partial, chosen=0, readings=[\"focus\"], asks=1"
+        },
+        {
+          "id": "sami-yoik/pinned",
+          "status": "pass",
+          "actual": "accuracy=partial, chosen=0, readings=[\"calm\"], asks=1"
+        },
+        {
+          "id": "indigenous-gym/pinned",
+          "status": "pass",
+          "actual": "accuracy=partial, chosen=0, readings=[\"pump up\"], asks=1"
+        },
+        {
+          "id": "gamelan-study/pinned",
+          "status": "pass",
+          "actual": "accuracy=partial, chosen=0, readings=[\"focus\"], asks=1"
+        },
+        {
+          "id": "world-music/pinned",
+          "status": "pass",
+          "actual": "accuracy=impossible, chosen=-1, readings=[], asks=2"
+        },
+        {
+          "id": "bangers-control/pinned",
+          "status": "pass",
+          "actual": "accuracy=contradictory, chosen=0, readings=[\"energetic but soft\",\"literally calm\"], asks=1"
+        },
+        {
+          "id": "focus-control/pinned",
+          "status": "pass",
+          "actual": "accuracy=specific, chosen=0, readings=[\"focus\"], asks=0"
+        },
+        {
+          "id": "culture-banned-strings",
+          "status": "pass",
+          "actual": "no violations · allowed echoes: tribal-drumming: ask quotes “tribal” · tribal-drumming: audit input phrase “tribal drumming” · exotic-vibes: ask quotes “exotic” · exotic-vibes: audit input phrase “exotic”"
+        },
+        {
+          "id": "culture-no-culture-claims",
+          "status": "pass",
+          "actual": "latin-party: clean (input-recap echo ×2) | tribal-drumming: clean | gypsy-jazz: clean (input-recap echo ×2) | exotic-vibes: clean | ancestors: clean | wa-drumming-focus: clean (input-recap echo ×2) | sami-yoik: clean (input-recap echo ×2) | indigenous-gym: clean (input-recap echo ×2) | gamelan-study: clean (input-recap echo ×2) | world-music: clean"
+        },
+        {
+          "id": "culture-spans-surfaced",
+          "status": "pass",
+          "actual": "latin-party: surfaced (asks 1) | tribal-drumming: surfaced (asks 2) | gypsy-jazz: surfaced (asks 1) | exotic-vibes: surfaced (asks 2) | ancestors: surfaced (asks 2) | wa-drumming-focus: surfaced (asks 1) | sami-yoik: surfaced (asks 1) | indigenous-gym: surfaced (asks 1) | gamelan-study: surfaced (asks 1) | world-music: surfaced (asks 2)"
+        },
+        {
+          "id": "culture-no-dead-ends",
+          "status": "pass",
+          "actual": "latin-party: readings=1, asks=1 | tribal-drumming: readings=0, asks=2 | gypsy-jazz: readings=1, asks=1 | exotic-vibes: readings=0, asks=2 | ancestors: readings=0, asks=2 | wa-drumming-focus: readings=1, asks=1 | sami-yoik: readings=1, asks=1 | indigenous-gym: readings=1, asks=1 | gamelan-study: readings=1, asks=1 | world-music: readings=0, asks=2 | bangers-control: readings=2, asks=1 | focus-control: readings=1, asks=0"
+        }
+      ],
+      "notes": [],
+      "scenario_note": "Seed: C2-bias-review.md §E1 (10 culture prompts + 2 controls; transcript evidence/c2/probe-interpret.out.txt). This scenario pins CURRENT honest behaviour as re-observed at the H4 capture (2026-10-07, post hotfixes H1/H2/H3) — it is a regression pin, NOT a classifier-accuracy claim, and not a statement that these phrases are 'handled' for real use. Defensive assertions: culture spans are never asserted as semantics (only quoted user echo + the 'not understood' assumption), the banned product-copy words (tribal/primitive/exotic) never appear in product-authored text (user echo is expected, must be quoted, and is counted in the evidence), every unparsed span is surfaced in asks, and no prompt dead-ends without an ask."
+    }
+  ],
+  "summary": {
+    "scenarios": {
+      "pass": 8,
+      "partial": 0,
+      "pending": 0,
+      "fail": 0
+    },
+    "checks": {
+      "pass": 86,
+      "fail": 0,
+      "pending": 0,
+      "skip": 5
+    }
+  }
+}

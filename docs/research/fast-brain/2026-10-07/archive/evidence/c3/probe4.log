@@ -1,0 +1,25 @@
+======================================================================
+PROMPT: pump me up for the gym arc: build
+same set (pure re-order): true | count: 25
+applied: [ 'arc build: ordered by measured intensity (100% coverage)' ]
+intensity sequence: 0.311, 0.354, 0.376, 0.377, 0.389, 0.426, 0.444, 0.45, 0.451, 0.477, 0.488, 0.522, 0.522, 0.524, 0.536, 0.537, 0.547, 0.561, 0.575, 0.59, 0.593, 0.595, 0.619, 0.624, 0.656
+ascending? true
+null positions input: [] output: []
+======================================================================
+PROMPT: I want to dance arc: peak
+same set (pure re-order): true | count: 25
+applied: [ 'arc peak: ordered by measured intensity (100% coverage)' ]
+intensity sequence: 0.311, 0.376, 0.379, 0.405, 0.426, 0.477, 0.488, 0.522, 0.536, 0.547, 0.59, 0.595, 0.656, 0.619, 0.593, 0.561, 0.537, 0.524, 0.522, 0.481, 0.45, 0.41, 0.387, 0.377, 0.354
+null positions input: [] output: []
+======================================================================
+PROMPT: wind down arc: cooldown
+same set (pure re-order): true | count: 25
+applied: [ 'arc cooldown: ordered by measured intensity (100% coverage)' ]
+intensity sequence: 0.433, 0.428, 0.421, 0.419, 0.419, 0.416, 0.412, 0.409, 0.405, 0.387, 0.371, 0.35, 0.344, 0.343, 0.338, 0.327, 0.323, 0.322, 0.321, 0.314, 0.313, 0.311, 0.271, 0.265, 0.224
+descending? true
+null positions input: [] output: []
+======================================================================
+coverage scenario applied: [
+  'arc build: not enough measured intensity (32% coverage) — kept the ranked order'
+]
+order unchanged: true

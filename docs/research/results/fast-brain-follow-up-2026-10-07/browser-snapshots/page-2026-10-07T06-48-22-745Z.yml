@@ -1,0 +1,295 @@
+- generic [active] [ref=f1e1]:
+  - link "Skip to research" [ref=f1e2] [cursor=pointer]:
+    - /url: "#library"
+  - main [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - paragraph [ref=f1e5]: SynAmp • research library • 2026-10-07
+      - heading "Music, learning and the listening moment." [level=1] [ref=f1e6]: Music, learningand the listening moment.
+      - paragraph [ref=f1e7]: "A single home for the research behind SynAmp: original findings, source quality, current implementation, open questions and reproducible evidence. Start with the fast-learning report, then follow its claims into the code and experiments."
+      - paragraph [ref=f1e8]:
+        - link "Read The Fast Learning Brain" [ref=f1e9] [cursor=pointer]:
+          - /url: fast-brain/2026-10-07/archive/DELIVERY/SynAmp-Fast-Brain-Report.html
+        - text: ·
+        - link "Current implementation handoff" [ref=f1e10] [cursor=pointer]:
+          - /url: ../synamp/plans/FAST-BRAIN-FOLLOW-UP.md
+    - navigation "Table of contents" [ref=f1e11]:
+      - list [ref=f1e12]:
+        - listitem [ref=f1e13]:
+          - link "Fast learning brain" [ref=f1e14] [cursor=pointer]:
+            - /url: "#fast-brain"
+        - listitem [ref=f1e15]:
+          - link "Goals, affect and memory" [ref=f1e16] [cursor=pointer]:
+            - /url: "#psychology"
+        - listitem [ref=f1e17]:
+          - link "Rhythm and measurement across cultures" [ref=f1e18] [cursor=pointer]:
+            - /url: "#rhythm"
+        - listitem [ref=f1e19]:
+          - link "Learning and evaluation" [ref=f1e20] [cursor=pointer]:
+            - /url: "#learning"
+        - listitem [ref=f1e21]:
+          - link "Reviews and experiments" [ref=f1e22] [cursor=pointer]:
+            - /url: "#evidence"
+        - listitem [ref=f1e23]:
+          - link "Work queue" [ref=f1e24] [cursor=pointer]:
+            - /url: "#tasks"
+        - listitem [ref=f1e25]:
+          - link "Corrections" [ref=f1e26] [cursor=pointer]:
+            - /url: "#errata"
+        - listitem [ref=f1e27]:
+          - link "Source appendix" [ref=f1e28] [cursor=pointer]:
+            - /url: "#appendix"
+    - generic [ref=f1e29]:
+      - heading "Fast learning brain" [level=2] [ref=f1e30]
+      - paragraph [ref=f1e31]: Goals become validated readings; listening signals adapt within one moment; deliberate feedback and accepted proposals can persist. Candidate values remain untuned.
+      - list [ref=f1e32]:
+        - listitem [ref=f1e33]:
+          - link "Original HTML dossier with TOC and appendix" [ref=f1e34] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/DELIVERY/SynAmp-Fast-Brain-Report.html
+        - listitem [ref=f1e35]:
+          - link "Original PDF" [ref=f1e36] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/DELIVERY/SynAmp-Fast-Brain-Report.pdf
+        - listitem [ref=f1e37]:
+          - link "Implementation contract" [ref=f1e38] [cursor=pointer]:
+            - /url: ../synamp/plans/FAST-LEARNING-BRAIN.md
+        - listitem [ref=f1e39]:
+          - link "Current follow-up plan" [ref=f1e40] [cursor=pointer]:
+            - /url: ../synamp/plans/FAST-BRAIN-FOLLOW-UP.md
+        - listitem [ref=f1e41]:
+          - link "Original handoff (historical)" [ref=f1e42] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/DELIVERY/agent-instructions/AGENT-BRIEF-FAST-BRAIN.md
+    - generic [ref=f1e43]:
+      - heading "Goals, affect and memory" [level=2] [ref=f1e44]
+      - paragraph [ref=f1e45]: Nine goal bundles, attention and lyrics, exercise/arousal, catharsis and nostalgia. Keep perceived emotion, induced effect and activity separate; source results do not establish personal outcomes.
+      - list [ref=f1e46]:
+        - listitem [ref=f1e47]:
+          - link "A1 — music psychology and MP sources" [ref=f1e48] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/A1-music-psychology.md
+        - listitem [ref=f1e49]:
+          - link "Maintained Brain research dossier" [ref=f1e50] [cursor=pointer]:
+            - /url: synamp-brain-dossier.html
+    - generic [ref=f1e51]:
+      - heading "Rhythm and measurement across cultures" [level=2] [ref=f1e52]
+      - paragraph [ref=f1e53]: Named traditions, metre ambiguity, octave errors, non-12-TET assumptions and attribution. Original sources carry their retrieval limits; no tradition-named feature ships by default.
+      - list [ref=f1e54]:
+        - listitem [ref=f1e55]:
+          - link "A2 — cross-cultural metrics and CC sources" [ref=f1e56] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/A2-cross-cultural-metrics.md
+        - listitem [ref=f1e57]:
+          - link "Beat timing findings" [ref=f1e58] [cursor=pointer]:
+            - /url: beat-timing-findings-2026-09-29.md
+        - listitem [ref=f1e59]:
+          - link "Beat timing plan" [ref=f1e60] [cursor=pointer]:
+            - /url: ../synamp/plans/BEAT-TIMING.md
+    - generic [ref=f1e61]:
+      - heading "Learning and evaluation" [level=2] [ref=f1e62]
+      - paragraph [ref=f1e63]: Epoch boundaries, bounded preference evidence, reliability, corroborated proposals, candidate parameters and counterfactual limits.
+      - list [ref=f1e64]:
+        - listitem [ref=f1e65]:
+          - link "A3 — learning science, P1–P25 and ML sources" [ref=f1e66] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/A3-learning-science.md
+        - listitem [ref=f1e67]:
+          - link "A4 — code integration map" [ref=f1e68] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/A4-code-integration-map.md
+        - listitem [ref=f1e69]:
+          - link "Maintained deterministic lab" [ref=f1e70] [cursor=pointer]:
+            - /url: ../../tools/brain-lab/README.md
+        - listitem [ref=f1e71]:
+          - link "Original final lab evidence" [ref=f1e72] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/DELIVERY/verification/final-lab/EVIDENCE.md
+    - generic [ref=f1e73]:
+      - heading "Reviews and experiments" [level=2] [ref=f1e74]
+      - paragraph [ref=f1e75]: Original review findings are paired with the fix receipts that supersede them. Local verification and real-listening evidence remain distinct.
+      - list [ref=f1e76]:
+        - listitem [ref=f1e77]:
+          - link "Review conclusions" [ref=f1e78] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/review.md
+        - listitem [ref=f1e79]:
+          - link "Code review" [ref=f1e80] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/C1-code-review.md
+        - listitem [ref=f1e81]:
+          - link "Bias review" [ref=f1e82] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/C2-bias-review.md
+        - listitem [ref=f1e83]:
+          - link "Psychology review" [ref=f1e84] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/C3-psych-review.md
+        - listitem [ref=f1e85]:
+          - link "Production review" [ref=f1e86] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/C4-production-review.md
+        - listitem [ref=f1e87]:
+          - link "Verification manifest" [ref=f1e88] [cursor=pointer]:
+            - /url: fast-brain/2026-10-07/archive/DELIVERY/verification/README.md
+        - listitem [ref=f1e89]:
+          - link "Sound Booth research plan" [ref=f1e90] [cursor=pointer]:
+            - /url: synamp-sound-booth-plan.html
+        - listitem [ref=f1e91]:
+          - link "System implementation roadmap" [ref=f1e92] [cursor=pointer]:
+            - /url: ../synamp/plans/AGENT-ROADMAP.md
+    - generic [ref=f1e93]:
+      - heading "Work queue" [level=2] [ref=f1e94]
+      - paragraph [ref=f1e95]: Status belongs to this catalog. The linked handoff records exact files, dependencies, owners and checks. Completed software checks establish behavior; real listening usefulness still needs owner evidence.
+      - table [ref=f1e97]:
+        - rowgroup [ref=f1e98]:
+          - row [ref=f1e99]:
+            - columnheader "ID" [ref=f1e100]
+            - columnheader "Outcome and acceptance" [ref=f1e101]
+            - columnheader "Status" [ref=f1e102]
+            - columnheader "Depends on" [ref=f1e103]
+            - columnheader "Source" [ref=f1e104]
+        - rowgroup [ref=f1e105]:
+          - row [ref=f1e106]:
+            - rowheader "FB01" [ref=f1e107]
+            - cell [ref=f1e108]:
+              - strong [ref=f1e109]: Preserve and index the complete research
+              - paragraph [ref=f1e110]: Every content file retained byte-for-byte; full manifest, HTML TOC, source appendix and deterministic generation.
+            - cell "Implemented; integrity check pending" [ref=f1e111]
+            - cell "none" [ref=f1e112]
+            - cell "A1–A4, B/H receipts, C1–C4, DELIVERY" [ref=f1e113]
+          - row [ref=f1e114]:
+            - rowheader "FB02" [ref=f1e115]
+            - cell [ref=f1e116]:
+              - strong [ref=f1e117]: Expose unsupported numeric requests
+              - paragraph [ref=f1e118]: Years, bare ranges, short numbers and decimals remain in audit/asks; supported BPM ranges still recognized.
+            - cell "Implemented; focused checks pass" [ref=f1e119]
+            - cell "FB01" [ref=f1e120]
+            - cell "C3 F-A1-4; H1 §5.2" [ref=f1e121]
+          - row [ref=f1e122]:
+            - rowheader "FB03" [ref=f1e123]
+            - cell [ref=f1e124]:
+              - strong [ref=f1e125]: Show assumptions and culture caveats
+              - paragraph [ref=f1e126]: Notes belong to the applied reading and appear in expandable UI; clarification remains visible; metadata does not score.
+            - cell "Implemented; browser check pending" [ref=f1e127]
+            - cell "FB02" [ref=f1e128]
+            - cell "C2 F7; C3 F-SURF-2" [ref=f1e129]
+          - row [ref=f1e130]:
+            - rowheader "FB04" [ref=f1e131]
+            - cell [ref=f1e132]:
+              - strong [ref=f1e133]: Respect playlist context and expose policy rollback
+              - paragraph [ref=f1e134]: Separate readout per canonical track/playlist pair; settings hot-applies either existing policy and retains queue/history.
+            - cell "Implemented; route/browser checks pending" [ref=f1e135]
+            - cell "FB01" [ref=f1e136]
+            - cell "B5 §7; C2 F15; C4 F5" [ref=f1e137]
+          - row [ref=f1e138]:
+            - rowheader "FB05" [ref=f1e139]
+            - cell [ref=f1e140]:
+              - strong [ref=f1e141]: Correct negative proposal promises
+              - paragraph [ref=f1e142]: Thumbs-down lowers preference without guaranteeing exclusion; real-route accept dedupes and keeps log provenance honest.
+            - cell "Implemented; focused checks pass" [ref=f1e143]
+            - cell "FB01" [ref=f1e144]
+            - cell "H2 F5; current-code read-back" [ref=f1e145]
+          - row [ref=f1e146]:
+            - rowheader "FB06" [ref=f1e147]
+            - cell [ref=f1e148]:
+              - strong [ref=f1e149]: Correct the memory statistic attribution
+              - paragraph [ref=f1e150]: Separate 2007 study-specific result from 2009 recruitment threshold; neither is population prevalence or proof of impaired focus.
+            - cell "Implemented; primary indexed text checked" [ref=f1e151]
+            - cell "FB01" [ref=f1e152]
+            - cell "A1 MP-29; Janata 2007/2009" [ref=f1e153]
+          - row [ref=f1e154]:
+            - rowheader "FB07" [ref=f1e155]
+            - cell [ref=f1e156]:
+              - strong [ref=f1e157]: Real-library read-back before tuning
+              - paragraph [ref=f1e158]: Read-only replay with input hashes, explicit clock/timezone, ranking differences, coverage/hides/underfill and owner verdicts.
+            - cell "Planned; owner listening evidence needed" [ref=f1e159]
+            - cell "FB02–FB05" [ref=f1e160]
+            - cell "A3 §4; W4 §4.6" [ref=f1e161]
+          - row [ref=f1e162]:
+            - rowheader "FB08" [ref=f1e163]
+            - cell [ref=f1e164]:
+              - strong [ref=f1e165]: Odd and layered metre correction
+              - paragraph [ref=f1e166]: Explicit tap-the-cycle and layered/ambiguous states; human verification tier expires with changed measurement.
+            - cell "Planned" [ref=f1e167]
+            - cell "FB07; beat R2/R4" [ref=f1e168]
+            - cell "A2 §4.4.4" [ref=f1e169]
+          - row [ref=f1e170]:
+            - rowheader "FB09" [ref=f1e171]
+            - cell [ref=f1e172]:
+              - strong [ref=f1e173]: Reconcile tempo reliability in ordering
+              - paragraph [ref=f1e174]: Document rule; version changes; test missing and 0/.2/.35/.5/1 confidence, fallback and membership invariants.
+            - cell "Decision and evaluation needed" [ref=f1e175]
+            - cell "FB07" [ref=f1e176]
+            - cell "C3 F-PB-3; A2 §4.4.6" [ref=f1e177]
+          - row [ref=f1e178]:
+            - rowheader "FB10" [ref=f1e179]
+            - cell [ref=f1e180]:
+              - strong [ref=f1e181]: Calibrated field producers
+              - paragraph [ref=f1e182]: Versioned, licensed producers with uncertainty, abstention, resource cost and held-out real-data evaluation.
+            - cell "Planned in system P4" [ref=f1e183]
+            - cell "P1/P4; independent benchmarks" [ref=f1e184]
+            - cell "A1 §2; A3 gaps" [ref=f1e185]
+          - row [ref=f1e186]:
+            - rowheader "FB11" [ref=f1e187]
+            - cell [ref=f1e188]:
+              - strong [ref=f1e189]: Explicit protection for continuous-form ordering
+              - paragraph [ref=f1e190]: Only user metadata suppresses arcs; no cultural/ceremonial inference; hash/compatibility and mixed-list behavior defined.
+            - cell "Schema/design decision needed" [ref=f1e191]
+            - cell "FB07" [ref=f1e192]
+            - cell "A2 §4.4.9; C2 F10–11" [ref=f1e193]
+          - row [ref=f1e194]:
+            - rowheader "FB12" [ref=f1e195]
+            - cell [ref=f1e196]:
+              - strong [ref=f1e197]: Decide proposal dismissal lifecycle
+              - paragraph [ref=f1e198]: Permanent dismissal documented or explicit reset/expiry designed; new evidence never silently overrides a dismissal.
+            - cell "Decision needed" [ref=f1e199]
+            - cell "FB07" [ref=f1e200]
+            - cell "B5 §5.6; C4 F4" [ref=f1e201]
+          - row [ref=f1e202]:
+            - rowheader "FB13" [ref=f1e203]
+            - cell [ref=f1e204]:
+              - strong [ref=f1e205]: Evaluate richer sequence shapes
+              - paragraph [ref=f1e206]: Predeclared shape and outcome, owner comparison with flat, full permutation/unknown positions/hard guards retained.
+            - cell "Planned hypothesis" [ref=f1e207]
+            - cell "FB07; FB09; producer coverage" [ref=f1e208]
+            - cell "A1 §3; C3 F-SEQ-1" [ref=f1e209]
+          - row [ref=f1e210]:
+            - rowheader "FB14" [ref=f1e211]
+            - cell [ref=f1e212]:
+              - strong [ref=f1e213]: Public knowledge base
+              - paragraph [ref=f1e214]: Topic articles retain evidence/source IDs, retrieval quality, disagreements and attribution; explicit public allowlist and accessible static build.
+            - cell "Planned; publication separate" [ref=f1e215]
+            - cell "FB01; source and public-export review" [ref=f1e216]
+            - cell "User direction; A2 §4.3; W5 appendix" [ref=f1e217]
+    - generic [ref=f1e218]:
+      - heading "Corrections and disagreements" [level=2] [ref=f1e219]
+      - paragraph [ref=f1e220]: The original report is a historical edition. Read these alongside it; archived claims and past test counts are not silently upgraded.
+      - list [ref=f1e221]:
+        - listitem [ref=f1e222]:
+          - strong [ref=f1e223]: Original reports are historical.
+          - text: Autoclaw captures describe its frozen feature commit. Current checks belong to a separate receipt; prior counts are not current claims.
+        - listitem [ref=f1e224]:
+          - strong [ref=f1e225]: Negative proposal acceptance.
+          - text: The original H2/brief wording promises exclusion. The code applies a bounded global thumbs-down score; maintained product copy now says lower preference.
+        - listitem [ref=f1e226]:
+          - strong [ref=f1e227]: Memory statistic.
+          - text: Janata 2007 reports a study-specific 30% average; Janata 2009 selected participants with at least 30% in earlier validation. The maintained dossier attribution is corrected; current source access was indexed primary-text excerpts, with direct full-text opening blocked.
+        - listitem [ref=f1e228]:
+          - strong [ref=f1e229]: Artist gate disagreement.
+          - text: A3 prose says at least two distinct tracks; P17 and epoch-v1 count events. Keep the implemented rule until a versioned decision supported by evidence.
+        - listitem [ref=f1e230]:
+          - strong [ref=f1e231]: Dayparts and resets.
+          - text: Frozen B2 decisions/code supersede A3 daypart ranges and missing-session semantics. A reset with non-epoch scope is ignored; remove with not_now is epoch-only.
+        - listitem [ref=f1e232]:
+          - strong [ref=f1e233]: Preliminary chapter state.
+          - text: W1 source preamble says sequencing notes are unrendered; H2 added them. W2 cites an older lab hash; final H4 capture supersedes it.
+        - listitem [ref=f1e234]:
+          - strong [ref=f1e235]: Cross-session wording.
+          - text: Proposals are the consent channel for inferred patterns. Explicit loves, thumbs and removes can also persist at their declared scope.
+        - listitem [ref=f1e236]:
+          - strong [ref=f1e237]: Rollback and smoke paths.
+          - text: Archived reset --hard instructions apply to its feature branch, not current main. Archived .cluster smoke paths lived outside this repository. Use the maintained follow-up and scratch route checks.
+        - listitem [ref=f1e238]:
+          - strong [ref=f1e239]: Unsupported fields are not free.
+          - text: Declared neutral soft terms dilute score gaps and can alter bounded feedback/MMR selection. Floor normalization is neutral only within a pure bundle, apart from truncation; mixed plans reweight.
+        - listitem [ref=f1e240]:
+          - strong [ref=f1e241]: Candidate evidence.
+          - text: Weights, bands, proposal thresholds and fixed arcs are hypotheses. Synthetic fixtures prove invariants, not classifier accuracy, usefulness or cultural generality.
+    - generic [ref=f1e242]:
+      - heading "Source appendix" [level=2] [ref=f1e243]
+      - paragraph [ref=f1e244]:
+        - text: 321 original files preserved with SHA-256 and byte counts. 4 Finder metadata files excluded.
+        - link "Machine-readable provenance manifest" [ref=f1e245] [cursor=pointer]:
+          - /url: fast-brain/2026-10-07/manifest.json
+        - text: . Retrieval modes and MP/CC/ML citation IDs remain in the original packs and report appendix.
+      - group [ref=f1e246]:
+        - generic "Browse every preserved source and evidence file" [ref=f1e247] [cursor=pointer]
+      - paragraph [ref=f1e248]: The archive is preserved for research continuity. Public publication will export reviewed articles and approved assets; private operational evidence, local paths, logs and screenshots are not part of that export. No site has been published.
+    - generic [ref=f1e249]: Generated from catalog.json by tools/research/build.mjs. Original report and evidence are immutable; current implementation lives in apps/ and tools/brain-lab.

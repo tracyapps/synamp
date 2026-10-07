@@ -80,8 +80,12 @@ for what each of these implies for the design.
 
 ## Read next
 
+- [Research library](../research/index.html) — original reports, source packs, evidence and corrections
+- [Fast-brain follow-up](plans/FAST-BRAIN-FOLLOW-UP.md) — current implementation and dependency-ordered experiments
+
 - [Agent implementation roadmap](plans/AGENT-ROADMAP.md) — current research handoff, dependencies and acceptance tests
 - [Beat timing plan](plans/BEAT-TIMING.md) — dense-mix repair and remaining real-music timing work
+- [Library Explorer and Galaxy](plans/LIBRARY-EXPLORER.md) — advanced filters, table columns, release identity and visual rediscovery
 - [Library care plan](plans/LIBRARY-CARE.md) — identity, missing tracks, organising and importing the library
 - [Latest findings](../research/beat-timing-findings-2026-09-29.md) — reproduction and fresh verification
 

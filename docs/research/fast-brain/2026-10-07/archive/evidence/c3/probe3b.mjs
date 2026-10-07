@@ -1,0 +1,13 @@
+import { readFileSync } from "node:fs";
+const repo = "/Users/tapps/_dev/web-apps/SynAmp/apps/brain";
+const { interpretGoal } = await import(`${repo}/src/intent/interpret.ts`);
+const { validatePlan } = await import(`${repo}/src/query/plan.ts`);
+const { evaluatePlan } = await import(`${repo}/src/query/evaluate.ts`);
+const fixture = JSON.parse(readFileSync(`${repo}/fixtures/library.sample.json`, "utf8"));
+const DECLARED = ["vocal_fraction","instrumental","instruments.piano","instruments.synthesizer","arousal","valence","mood"];
+const lib = { version: "real-sim", tracks: fixture.tracks.map((t) => { const s = { ...t.signals }; for (const k of DECLARED) delete s[k]; return { ...t, signals: s }; }) };
+const plan = interpretGoal("I need to focus", { library: lib }).readings[0].plan;
+const noDeclared = structuredClone(plan);
+noDeclared.constraints = noDeclared.constraints.filter((c) => c.id !== "goal_focus_1" && c.id !== "goal_focus_10");
+const order = (p) => evaluatePlan(validatePlan(p), lib).strict.map(t=>t.id).join(",");
+console.log("pre-feedback orders equal:", order(plan) === order(noDeclared));

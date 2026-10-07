@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380" role="img" aria-labelledby="flow-title flow-desc">
+  <title id="flow-title">From your words to your queue</title>
+  <desc id="flow-desc">Pipeline from a natural-language request to the plan queue, with the in-session learning loop: plays, skips, loves and removes append to an event log; only the current session epoch feeds back into evaluate, adjusting ranking within the strict tier; a boundary mark shows that other days, sessions or hours do not leak in.</desc>
+
+  <g fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="24" y="48" width="120" height="96" rx="4"/>
+    <rect x="182" y="48" width="170" height="96" rx="4"/>
+    <rect x="390" y="48" width="190" height="96" rx="4"/>
+    <rect x="618" y="48" width="184" height="96" rx="4"/>
+    <rect x="831" y="48" width="165" height="96" rx="4"/>
+    <rect x="1034" y="48" width="140" height="96" rx="4"/>
+    <path d="M148 96H169M169 90.5L177 96L169 101.5"/>
+    <path d="M356 96H377M377 90.5L385 96L377 101.5"/>
+    <path d="M584 96H605M605 90.5L613 96L605 101.5"/>
+    <path d="M806 96H818M818 90.5L826 96L818 101.5"/>
+    <path d="M1000 96H1021M1021 90.5L1029 96L1021 101.5"/>
+    <rect x="620" y="262" width="170" height="80" rx="4"/>
+    <rect x="829" y="262" width="140" height="80" rx="4"/>
+    <rect x="1032" y="262" width="144" height="80" rx="4"/>
+  </g>
+
+  <!-- feedback loop (gold accent) -->
+  <path d="M1104 144V254M1098.5 254L1104 262L1109.5 254M1032 302H981M981 296.5L973 302L981 307.5M829 302H802M802 296.5L794 302L802 307.5M705 262V156M699.5 156L705 148L710.5 156" fill="none" stroke="#D4A757" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- boundary glyph: the loop enters evaluate, nothing else crosses -->
+  <path d="M697 220L713 236M713 220L697 236" fill="none" stroke="#D4A757" stroke-width="1.25" stroke-linecap="round"/>
+
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="600" fill="#E8E6E1" text-anchor="middle">
+    <text x="84" y="100">Your words</text>
+    <text x="1104" y="100">Queue snapshot</text>
+  </g>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="600" fill="#E8E6E1">
+    <text x="408" y="82">Validated plan</text>
+    <text x="636" y="82">Evaluate</text>
+    <text x="849" y="82">Sequence</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" font-weight="500" fill="#E8E6E1">
+    <text x="200" y="82">interpretGoal</text>
+    <text x="705" y="296" text-anchor="middle">epoch-v1</text>
+  </g>
+  <text x="716" y="190" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#E8E6E1">adjusts ranking</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" fill="#98A2AD">
+    <text x="200" y="108">draft + goal lexicon</text>
+    <text x="408" y="108">hard rules = your words</text>
+    <text x="408" y="128">soft = goal bundles</text>
+    <text x="636" y="108">strict tier (hard guard)</text>
+    <text x="636" y="128">near-miss tier</text>
+    <text x="849" y="108">arc: build / peak</text>
+    <text x="849" y="128">cooldown / wave</text>
+    <text x="716" y="206">(bounded, strict tier only)</text>
+    <text x="682" y="234" text-anchor="end">a different day/session/hour does not leak in</text>
+    <text x="705" y="319" text-anchor="middle">this session only</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#98A2AD" text-anchor="middle">
+    <text x="1104" y="296">plays · skips</text>
+    <text x="1104" y="319">loves · removes</text>
+    <text x="899" y="296">append-only</text>
+    <text x="899" y="319">event log</text>
+  </g>
+</svg>

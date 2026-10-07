@@ -1,0 +1,40 @@
+- generic [ref=f2e3]:
+  - link "Skip to content" [ref=f2e4] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f2e5]:
+    - link "SynAmp, go to Library" [ref=f2e6] [cursor=pointer]:
+      - /url: "#/library"
+  - generic [ref=f2e7]:
+    - navigation "SynAmp" [ref=f2e8]:
+      - group "Listen" [ref=f2e9]:
+        - link "Library" [ref=f2e10] [cursor=pointer]:
+          - /url: "#/library"
+        - link "Galaxy" [ref=f2e13] [cursor=pointer]:
+          - /url: "#/galaxy"
+        - link "Playlists" [ref=f2e20] [cursor=pointer]:
+          - /url: "#/playlists"
+        - link "Radio" [ref=f2e25] [cursor=pointer]:
+          - /url: "#/radio"
+        - link "Party" [ref=f2e28] [cursor=pointer]:
+          - /url: "#/party"
+      - group "Understand" [ref=f2e31]:
+        - link "The Brain" [ref=f2e32] [cursor=pointer]:
+          - /url: "#/brain"
+        - link "Library care" [ref=f2e35] [cursor=pointer]:
+          - /url: "#/care"
+      - group "System" [ref=f2e38]:
+        - link "Listen anywhere" [ref=f2e39] [cursor=pointer]:
+          - /url: "#/anywhere"
+        - link "Settings" [ref=f2e45] [cursor=pointer]:
+          - /url: "#/settings"
+    - main [ref=f2e49]:
+      - generic [ref=f2e50]:
+        - generic [ref=f2e51]:
+          - paragraph [ref=f2e52]: Discover
+          - heading "Galaxy" [active] [level=1] [ref=f2e54]
+          - paragraph [ref=f2e56]: Find a familiar artist, or rediscover a forgotten corner of your library.
+        - status [ref=f2e57]: Opening Galaxy…
+  - region "Player" [ref=f2e58]:
+    - generic [ref=f2e61]:
+      - paragraph [ref=f2e62]: Nothing playing
+      - paragraph [ref=f2e63]: Press Play on an album or a playlist.

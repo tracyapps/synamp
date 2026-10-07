@@ -1,0 +1,12 @@
+=== pump me up to do this task -> specific readings 1
+   label: pump up arc: build
+   chosen:  0
+=== win this game -> specific readings 1
+   label: pump up arc: build
+   chosen:  0
+=== I want to dance -> specific readings 1
+   label: dance arc: peak
+   chosen:  0
+=== nothing too slow -> specific readings 1
+   label: what I could parse arc: undefined
+   chosen:  0

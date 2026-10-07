@@ -1,0 +1,277 @@
+{
+  "capturedAt": "2026-10-07T15:24:29.967Z",
+  "browser": "Chrome/123.0.6312.86",
+  "cases": [
+    {
+      "name": "retina-initial",
+      "css": [
+        1200,
+        800
+      ],
+      "canvas": [
+        2400,
+        1600
+      ],
+      "buffer": [
+        2400,
+        1600
+      ],
+      "viewport": [
+        0,
+        0,
+        2400,
+        1600
+      ],
+      "dialog": [
+        1200,
+        800,
+        1200,
+        800
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ],
+      "dpr": 2,
+      "screen": [
+        1200,
+        800
+      ],
+      "renderer": "WebKit WebGL",
+      "audio": "$$$ Royal — Mashup (197)"
+    },
+    {
+      "name": "retina-resize",
+      "css": [
+        800,
+        600
+      ],
+      "canvas": [
+        1600,
+        1200
+      ],
+      "buffer": [
+        1600,
+        1200
+      ],
+      "viewport": [
+        0,
+        0,
+        1600,
+        1200
+      ],
+      "dialog": [
+        800,
+        600,
+        800,
+        600
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ],
+      "dpr": 2,
+      "screen": [
+        800,
+        600
+      ],
+      "renderer": "WebKit WebGL",
+      "audio": "$$$ Royal — Mashup (197)"
+    },
+    {
+      "name": "dpr-only",
+      "css": [
+        800,
+        600
+      ],
+      "canvas": [
+        800,
+        600
+      ],
+      "buffer": [
+        800,
+        600
+      ],
+      "viewport": [
+        0,
+        0,
+        800,
+        600
+      ],
+      "dialog": [
+        800,
+        600,
+        800,
+        600
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ],
+      "dpr": 1,
+      "screen": [
+        800,
+        600
+      ],
+      "renderer": "WebKit WebGL",
+      "audio": "$$$ Royal — Mashup (197)"
+    },
+    {
+      "name": "dpr-capped",
+      "css": [
+        800,
+        600
+      ],
+      "canvas": [
+        1600,
+        1200
+      ],
+      "buffer": [
+        1600,
+        1200
+      ],
+      "viewport": [
+        0,
+        0,
+        1600,
+        1200
+      ],
+      "dialog": [
+        800,
+        600,
+        800,
+        600
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ],
+      "dpr": 3,
+      "screen": [
+        800,
+        600
+      ],
+      "renderer": "WebKit WebGL",
+      "audio": "$$$ Royal — Mashup (197)"
+    },
+    {
+      "name": "phone",
+      "css": [
+        390,
+        844
+      ],
+      "canvas": [
+        780,
+        1688
+      ],
+      "buffer": [
+        780,
+        1688
+      ],
+      "viewport": [
+        0,
+        0,
+        780,
+        1688
+      ],
+      "dialog": [
+        390,
+        844,
+        390,
+        844
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ],
+      "dpr": 2,
+      "screen": [
+        390,
+        844
+      ],
+      "renderer": "WebKit WebGL",
+      "audio": "$$$ Royal — Mashup (197)"
+    },
+    {
+      "name": "landscape",
+      "css": [
+        844,
+        390
+      ],
+      "canvas": [
+        1688,
+        780
+      ],
+      "buffer": [
+        1688,
+        780
+      ],
+      "viewport": [
+        0,
+        0,
+        1688,
+        780
+      ],
+      "dialog": [
+        844,
+        390,
+        844,
+        390
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ],
+      "dpr": 2,
+      "screen": [
+        844,
+        390
+      ],
+      "renderer": "WebKit WebGL",
+      "audio": "$$$ Royal — Mashup (197)"
+    },
+    {
+      "name": "reopened",
+      "css": [
+        844,
+        390
+      ],
+      "canvas": [
+        1688,
+        780
+      ],
+      "buffer": [
+        1688,
+        780
+      ],
+      "viewport": [
+        0,
+        0,
+        1688,
+        780
+      ],
+      "dialog": [
+        844,
+        390,
+        844,
+        390
+      ],
+      "overflow": [
+        "hidden",
+        "hidden"
+      ],
+      "dpr": 2,
+      "screen": [
+        844,
+        390
+      ],
+      "renderer": "WebKit WebGL",
+      "audio": "$$$ Royal — Mashup (197)"
+    }
+  ],
+  "errors": [],
+  "wheelContained": true,
+  "closeRestored": true,
+  "escapeRestored": true,
+  "limitations": "Isolated real-WebGL component with a generated tone; no owner running-app, physical display-move, or music-library playback check."
+}

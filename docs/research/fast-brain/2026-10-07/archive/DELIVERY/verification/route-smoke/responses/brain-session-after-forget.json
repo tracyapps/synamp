@@ -1,0 +1,40 @@
+{
+  "policy_version": "epoch-v1",
+  "listening_policy": "epoch-v1",
+  "events": 1,
+  "epoch": {
+    "id": "ep1:ec9580d0d0fd83f",
+    "t_start": 1791347125367,
+    "t_end": 1791347125650,
+    "first_event_id": "smoke-queue-0001:exposure:36395ecd-5870-47ee-aeef-5963ce7e2287",
+    "event_count": 15,
+    "session_ids": [
+      "0bdfa6da-0009-4912-90d3-73aad0be63b7"
+    ],
+    "daypart": "night",
+    "date": "2026-10-06"
+  },
+  "hides": [],
+  "proposals": [],
+  "reliability_notes": [
+    "session learning was reset — only what happened after the reset counts",
+    "nothing learned yet this session"
+  ],
+  "queue_adjustments": [
+    {
+      "track_id": "sample-001",
+      "value": 0,
+      "parts": []
+    },
+    {
+      "track_id": "sample-002",
+      "value": 0,
+      "parts": []
+    },
+    {
+      "track_id": "sample-003",
+      "value": 0,
+      "parts": []
+    }
+  ]
+}

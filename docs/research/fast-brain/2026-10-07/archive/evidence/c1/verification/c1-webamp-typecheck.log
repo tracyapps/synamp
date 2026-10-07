@@ -1,0 +1,126 @@
+
+> webamp@2.3.1 type-check /Users/tapps/_dev/web-apps/SynAmp/packages/webamp
+> tsc
+
+[96mjs/actionCreators/files.ts[0m:[93m1[0m:[93m33[0m - [91merror[0m[90m TS2307: [0mCannot find module 'winamp-eqf' or its corresponding type declarations.
+
+[7m1[0m import { parser, creator } from "winamp-eqf";
+[7m [0m [91m                                ~~~~~~~~~~~~[0m
+
+[96mjs/components/App.tsx[0m:[93m40[0m:[93m25[0m - [91merror[0m[90m TS2742: [0mThe inferred type of 'App' cannot be named without a reference to '.pnpm/@types+react@19.2.7/node_modules/@types/react'. This is likely not portable. A type annotation is necessary.
+
+[7m40[0m export default function App({
+[7m  [0m [91m                        ~~~[0m
+
+[96mjs/components/App.tsx[0m:[93m148[0m:[93m8[0m - [91merror[0m[90m TS2786: [0m'Css' cannot be used as a JSX component.
+  Its type '({ children, id }: Props) => ReactPortal' is not a valid JSX element type.
+    Type '({ children, id }: Props) => ReactPortal' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'ReactPortal' is not assignable to type 'ReactNode'.
+        Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactPortal' is not assignable to type 'React.ReactPortal'.
+          Types of property 'children' are incompatible.
+            Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactNode' is not assignable to type 'React.ReactNode'.
+              Type 'bigint' is not assignable to type 'ReactNode'.
+
+[7m148[0m       <Css>{cssText}</Css>
+[7m   [0m [91m       ~~~[0m
+
+[96mjs/components/ClipPaths.tsx[0m:[93m10[0m:[93m25[0m - [91merror[0m[90m TS2742: [0mThe inferred type of 'ClipPaths' cannot be named without a reference to '.pnpm/@types+react@19.2.7/node_modules/@types/react'. This is likely not portable. A type annotation is necessary.
+
+[7m10[0m export default function ClipPaths({ children }: Props) {
+[7m  [0m [91m                        ~~~~~~~~~[0m
+
+[96mjs/components/ContextMenu.tsx[0m:[93m112[0m:[93m6[0m - [91merror[0m[90m TS2786: [0m'Portal' cannot be used as a JSX component.
+  Its type '(props: PortalProps) => React.ReactPortal' is not a valid JSX element type.
+    Type '(props: PortalProps) => React.ReactPortal' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'ReactPortal' is not assignable to type 'ReactNode'.
+        Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactPortal' is not assignable to type 'React.ReactPortal'.
+          Types of property 'children' are incompatible.
+            Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactNode' is not assignable to type 'React.ReactNode'.
+              Type 'bigint' is not assignable to type 'ReactNode'.
+
+[7m112[0m     <Portal top={offsetTop} left={offsetLeft} zIndex={zIndex}>
+[7m   [0m [91m     ~~~~~~[0m
+
+[96mjs/components/Css.tsx[0m:[93m9[0m:[93m25[0m - [91merror[0m[90m TS2742: [0mThe inferred type of 'Css' cannot be named without a reference to '.pnpm/@types+react@19.2.7/node_modules/@types/react'. This is likely not portable. A type annotation is necessary.
+
+[7m9[0m export default function Css({ children, id }: Props) {
+[7m [0m [91m                        ~~~[0m
+
+[96mjs/components/MilkdropWindow/Desktop.tsx[0m:[93m9[0m:[93m28[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+  Overload 1 of 2, '(Component: FunctionComponent<Props>, propsAreEqual?: ((prevProps: Readonly<Props>, nextProps: Readonly<Props>) => boolean) | undefined): NamedExoticComponent<...>', gave the following error.
+    Argument of type '({ children }: Props) => React.ReactPortal' is not assignable to parameter of type 'FunctionComponent<Props>'.
+      Type 'ReactPortal' is not assignable to type 'ReactNode'.
+        Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactPortal' is not assignable to type 'React.ReactPortal'.
+          Types of property 'children' are incompatible.
+            Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactNode' is not assignable to type 'React.ReactNode'.
+              Type 'bigint' is not assignable to type 'ReactNode'.
+  Overload 2 of 2, '(Component: ComponentType<any>, propsAreEqual?: ((prevProps: Readonly<any>, nextProps: Readonly<any>) => boolean) | undefined): MemoExoticComponent<ComponentType<any>>', gave the following error.
+    Argument of type '({ children }: Props) => React.ReactPortal' is not assignable to parameter of type 'ComponentType<any>'.
+      Type '({ children }: Props) => React.ReactPortal' is not assignable to type 'FunctionComponent<any>'.
+        Type 'ReactPortal' is not assignable to type 'ReactNode'.
+          Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactPortal' is not assignable to type 'React.ReactPortal'.
+            Types of property 'children' are incompatible.
+              Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactNode' is not assignable to type 'React.ReactNode'.
+                Type 'bigint' is not assignable to type 'ReactNode'.
+
+[7m9[0m const Desktop = React.memo(({ children }: Props) => {
+[7m [0m [91m                           ~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+
+
+[96mjs/components/Skin.tsx[0m:[93m10[0m:[93m39[0m - [91merror[0m[90m TS2307: [0mCannot find module 'ani-cursor' or its corresponding type declarations.
+
+[7m10[0m import { convertAniBinaryToCSS } from "ani-cursor";
+[7m  [0m [91m                                      ~~~~~~~~~~~~[0m
+
+[96mjs/components/Skin.tsx[0m:[93m151[0m:[93m8[0m - [91merror[0m[90m TS2786: [0m'Css' cannot be used as a JSX component.
+  Its type '({ children, id }: Props) => ReactPortal' is not a valid JSX element type.
+    Type '({ children, id }: Props) => ReactPortal' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'ReactPortal' is not assignable to type 'ReactNode'.
+        Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactPortal' is not assignable to type 'React.ReactPortal'.
+          Types of property 'children' are incompatible.
+            Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactNode' is not assignable to type 'React.ReactNode'.
+              Type 'bigint' is not assignable to type 'ReactNode'.
+
+[7m151[0m       <Css id="webamp-skin">{cssRules}</Css>
+[7m   [0m [91m       ~~~[0m
+
+[96mjs/components/Skin.tsx[0m:[93m152[0m:[93m8[0m - [91merror[0m[90m TS2786: [0m'ClipPaths' cannot be used as a JSX component.
+  Its type '({ children }: Props) => ReactPortal' is not a valid JSX element type.
+    Type '({ children }: Props) => ReactPortal' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'ReactPortal' is not assignable to type 'ReactNode'.
+        Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactPortal' is not assignable to type 'React.ReactPortal'.
+          Types of property 'children' are incompatible.
+            Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactNode' is not assignable to type 'React.ReactNode'.
+              Type 'bigint' is not assignable to type 'ReactNode'.
+
+[7m152[0m       <ClipPaths>{clipPaths}</ClipPaths>
+[7m   [0m [91m       ~~~~~~~~~[0m
+
+[96mjs/webampLazy.tsx[0m:[93m530[0m:[93m10[0m - [91merror[0m[90m TS2786: [0m'App' cannot be used as a JSX component.
+  Its type '({ media, filePickers, onMount, parentDomNode, }: Props) => ReactPortal | null' is not a valid JSX element type.
+    Type '({ media, filePickers, onMount, parentDomNode, }: Props) => ReactPortal | null' is not assignable to type '(props: any, deprecatedLegacyContext?: any) => ReactNode'.
+      Type 'ReactPortal | null' is not assignable to type 'ReactNode'.
+        Type 'ReactPortal' is not assignable to type 'ReactNode'.
+          Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactPortal' is not assignable to type 'React.ReactPortal'.
+            Types of property 'children' are incompatible.
+              Type 'import("/Users/tapps/_dev/web-apps/SynAmp/node_modules/.pnpm/@types+react@19.2.7/node_modules/@types/react/index").ReactNode' is not assignable to type 'React.ReactNode'.
+                Type 'bigint' is not assignable to type 'ReactNode'.
+
+[7m530[0m         <App
+[7m   [0m [91m         ~~~[0m
+
+
+Found 11 errors in 8 files.
+
+Errors  Files
+     1  js/actionCreators/files.ts[90m:1[0m
+     2  js/components/App.tsx[90m:40[0m
+     1  js/components/ClipPaths.tsx[90m:10[0m
+     1  js/components/ContextMenu.tsx[90m:112[0m
+     1  js/components/Css.tsx[90m:9[0m
+     1  js/components/MilkdropWindow/Desktop.tsx[90m:9[0m
+     3  js/components/Skin.tsx[90m:10[0m
+     1  js/webampLazy.tsx[90m:530[0m
+/Users/tapps/_dev/web-apps/SynAmp/packages/webamp:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  webamp@2.3.1 type-check: `tsc`
+Exit status 1

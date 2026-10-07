@@ -1,0 +1,25 @@
+{
+  "date": "2026-10-07",
+  "environment": "Isolated Chromium CLI; built web app39822, scratch Brain39821, five-track synthetic library",
+  "confirmed": [
+    "List/grid expandable album tracks with preserved expansion",
+    "Table column toggles and reload persistence",
+    "Multi-type filtering, fuzzy search, year ranges, AND/OR rules",
+    "Full-result group drill-down",
+    "Local table horizontal scrolling without body overflow",
+    "Galaxy artist/album/song inspection",
+    "Full-pool search and constrained random selection",
+    "Zoom controls, Reset, drag, keyboard Enter",
+    "Portrait360-unit logical canvas, desktop and landscape",
+    "Scratch per-track playlist write verified by API",
+    "Artist album queue sends only selected track IDs",
+    "Report TOC and local assets load"
+  ],
+  "limits": [
+    "No real audio files in app smoke fixture; queue/playlist ID proof only",
+    "No owner Brave tab was controlled",
+    "Initial locator failures corrected; full browser console has deliberate scratch-restart connection errors",
+    "Physical touch/screen-reader/NAS/installed app unverified"
+  ],
+  "cleanup": "Owned scratch browser and servers stopped; scratch temporary stores not applied to live stores"
+}

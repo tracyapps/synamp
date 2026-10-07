@@ -1,0 +1,2921 @@
+{
+  "format": "synamp.research-archive/1",
+  "edition": "2026-10-07",
+  "source_location": "~/.openclaw-autoclaw/agents/algorithm-scientist/workspace/.cluster/synamp-fast-brain",
+  "merged_code_commit": "66cbe4e8",
+  "main_merge_commit": "be308a56",
+  "notes": [
+    "Byte-for-byte snapshot, not a current verification claim.",
+    "Private operational evidence is preserved for the owner; publication uses a separately reviewed allowlist.",
+    "Runtime code is authoritative under apps/ and tools/brain-lab; archive code is historical."
+  ],
+  "files": [
+    {
+      "original_path": "A1-music-psychology.md",
+      "path": "archive/A1-music-psychology.md",
+      "bytes": 55435,
+      "sha256": "5bd16d7390da068e7c1354f26fc8603b0f0bbb4ee8b30cf6b6b756d13be53d65",
+      "source_mtime_ns": 1791344916464878156,
+      "role": "research",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "A2-cross-cultural-metrics.md",
+      "path": "archive/A2-cross-cultural-metrics.md",
+      "bytes": 68609,
+      "sha256": "adb05c9e2cf0d4b40ddb3fb2a7902b6f8b7fdab63c8287793a55a35c57c28874",
+      "source_mtime_ns": 1791345191625635964,
+      "role": "research",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "A3-learning-science.md",
+      "path": "archive/A3-learning-science.md",
+      "bytes": 53561,
+      "sha256": "b27c9d9d9bebfbc43468917cd70bdbe5784a15a3632926e17eda1941c446e6d9",
+      "source_mtime_ns": 1791344410934398259,
+      "role": "research",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "A4-code-integration-map.md",
+      "path": "archive/A4-code-integration-map.md",
+      "bytes": 42478,
+      "sha256": "de2713150b37436c0d042d23db754c5018910789d6a4002650ff681d568ec51e",
+      "source_mtime_ns": 1791344218952460356,
+      "role": "research",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "B1-intent.md",
+      "path": "archive/B1-intent.md",
+      "bytes": 19373,
+      "sha256": "2b6039e7430ed0c2b3dfe4cc9df7e89b99c8c71935094cd7778a9b33d8f268cf",
+      "source_mtime_ns": 1791346459126227310,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "B2-learning.md",
+      "path": "archive/B2-learning.md",
+      "bytes": 21114,
+      "sha256": "6b470d37a5b9e6671e87cb0d7c2cea7a4ce544df926e22b9e6be6d8929b5a872",
+      "source_mtime_ns": 1791346236676119561,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "B4-harness.md",
+      "path": "archive/B4-harness.md",
+      "bytes": 13219,
+      "sha256": "d3341a0a6e3952baae2da1116df2b12c8533cac8413ca06876581f2b5942831b",
+      "source_mtime_ns": 1791346219468426481,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "B4b-harness-refresh.md",
+      "path": "archive/B4b-harness-refresh.md",
+      "bytes": 20805,
+      "sha256": "795610d08d70a63247365253b8139882cb9d45a14402f4d9d6b69650d1217888",
+      "source_mtime_ns": 1791348135437621979,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "B5-integration.md",
+      "path": "archive/B5-integration.md",
+      "bytes": 24492,
+      "sha256": "fb6bd33c7f172612c1e42173c318389ae51166eda4da7cbb288a8955a94d7caf",
+      "source_mtime_ns": 1791347665019699536,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "B6-docs.md",
+      "path": "archive/B6-docs.md",
+      "bytes": 8026,
+      "sha256": "ab238cff3b5b0a6a87f88c12e369d55e383006290c7af4c5af450e88a5a3c687",
+      "source_mtime_ns": 1791347031076624599,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "C1-code-review.md",
+      "path": "archive/C1-code-review.md",
+      "bytes": 20632,
+      "sha256": "4809c5897d3d18c663e44c6297287cfb2baf4933c9b636ba52d9160c8e455c44",
+      "source_mtime_ns": 1791348440902241019,
+      "role": "review",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "C2-bias-review.md",
+      "path": "archive/C2-bias-review.md",
+      "bytes": 35973,
+      "sha256": "42b5d0fb9e6022c02774faf4c4d6c2f21fc800125afaf2c5b710f40ed2180162",
+      "source_mtime_ns": 1791348224502386034,
+      "role": "review",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "C3-psych-review.md",
+      "path": "archive/C3-psych-review.md",
+      "bytes": 36527,
+      "sha256": "1de9c02877bc1419f20108c36ffd831ebce5445bc79fd27861ff78a22c8fba61",
+      "source_mtime_ns": 1791348417874815344,
+      "role": "review",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "C4-production-review.md",
+      "path": "archive/C4-production-review.md",
+      "bytes": 26044,
+      "sha256": "770aeed68ca1c8e4b6f47a8d48101d9d87d3bc3cce5efb53f2a1b1e41fb6988a",
+      "source_mtime_ns": 1791350632445730408,
+      "role": "review",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "CONTEXT.md",
+      "path": "archive/CONTEXT.md",
+      "bytes": 10024,
+      "sha256": "94ce9d315e7b43bc97956cba262cb214389ed25b36df2803c432aa44a3342e7b",
+      "source_mtime_ns": 1791343753967883165,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/README.md",
+      "path": "archive/DELIVERY/README.md",
+      "bytes": 1981,
+      "sha256": "a8b4f091e10833c10b3d20b27411995473273360fc19cb3c8584f45a78137ab8",
+      "source_mtime_ns": 1791351616119491071,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/SynAmp-Fast-Brain-Report.html",
+      "path": "archive/DELIVERY/SynAmp-Fast-Brain-Report.html",
+      "bytes": 123706,
+      "sha256": "b1e6b529f4cb1984b6d585e931f758ab0a248ee3a167201414ddcb95b0ec0051",
+      "source_mtime_ns": 1791351585692950777,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/SynAmp-Fast-Brain-Report.pdf",
+      "path": "archive/DELIVERY/SynAmp-Fast-Brain-Report.pdf",
+      "bytes": 6990886,
+      "sha256": "5b5f598046981a7a29a92f2065dab0e9cceedefe6bdeeb96043e72314824a650",
+      "source_mtime_ns": 1791351589842191727,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/agent-instructions/AGENT-BRIEF-FAST-BRAIN.md",
+      "path": "archive/DELIVERY/agent-instructions/AGENT-BRIEF-FAST-BRAIN.md",
+      "bytes": 10197,
+      "sha256": "c6282a3306696a0a267578ae122c9ac874787954eec3a54e34b29781bdb9663f",
+      "source_mtime_ns": 1791351480914837068,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/PATCH.diff",
+      "path": "archive/DELIVERY/code/PATCH.diff",
+      "bytes": 447005,
+      "sha256": "d41ea3798e34c6ff300b26af9718ba5118e361413a8cebf4804bce01b1f39523",
+      "source_mtime_ns": 1791351462577867231,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/README.md",
+      "path": "archive/DELIVERY/code/README.md",
+      "bytes": 1549,
+      "sha256": "2d033ad0dc280eb0030abc67f0c8a5281f75b4550c4495feb667aa5c72de04f7",
+      "source_mtime_ns": 1791351631738774735,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/intent/intent.test.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/intent/intent.test.ts",
+      "bytes": 18734,
+      "sha256": "3aaab45ef30bab2ded216d8e3546c8da955874053e6f9c37141f3df3ab8cbba2",
+      "source_mtime_ns": 1791351480830520068,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/intent/interpret.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/intent/interpret.ts",
+      "bytes": 48586,
+      "sha256": "6ae4b4e2a10f3e95cf60882a1d48bc9fb3df2e64006ca601bf2cc9ed711d5c3c",
+      "source_mtime_ns": 1791351480830987696,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/intent/lexicon.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/intent/lexicon.ts",
+      "bytes": 37875,
+      "sha256": "2c0efcfdffa22c80eb8c4613af5437ae14bddd4e602b25fd5829b565b76ab3b9",
+      "source_mtime_ns": 1791351480829951939,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/derive.test.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/derive.test.ts",
+      "bytes": 21217,
+      "sha256": "9d06e7bb284a14f7e9b7a2f4dc83de77b51e64263f0aa1ee584aefef0fe80e9a",
+      "source_mtime_ns": 1791351480839652840,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/derive.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/derive.ts",
+      "bytes": 23292,
+      "sha256": "d54438d7291d725577ba412a39a8630e7427e300b2d11b07aaa21cfb9bafa0ca",
+      "source_mtime_ns": 1791351480841087974,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/epochs.test.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/epochs.test.ts",
+      "bytes": 6591,
+      "sha256": "8f76c120b7229930677aeb46403c736fed57fbe8e162fd2a50fa4ff49a8ece95",
+      "source_mtime_ns": 1791351480840637388,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/epochs.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/epochs.ts",
+      "bytes": 7306,
+      "sha256": "f27742d28f22f810f0bf240fe9ed0a81b6defc1470dcb5484557a438775c34e1",
+      "source_mtime_ns": 1791351480841474935,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/explore.test.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/explore.test.ts",
+      "bytes": 2676,
+      "sha256": "8ad054a475c0937412a27ebc18f5d47b2d0abeacafcdeb07bff257a84a5c3863",
+      "source_mtime_ns": 1791351480838677041,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/explore.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/explore.ts",
+      "bytes": 1870,
+      "sha256": "4d206ffff5e7bab516fd5adbf34cb365c8c8b53647b51f291063709fca78f74e",
+      "source_mtime_ns": 1791351480839969508,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/proposals.test.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/proposals.test.ts",
+      "bytes": 5952,
+      "sha256": "2bf891c96dcf51e2edfc9eb26f015e69708d325d15191dbeb0217fd1e554c8a0",
+      "source_mtime_ns": 1791351480842464109,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/proposals.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/proposals.ts",
+      "bytes": 11162,
+      "sha256": "135ad5f474f652bebd8b0a848dccb8e523edf9a28f0640f5c196ec44726510e0",
+      "source_mtime_ns": 1791351480839148586,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/reliability.test.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/reliability.test.ts",
+      "bytes": 2730,
+      "sha256": "195d48789020bf10ba0fd49fc60aff996a287410499764bc6f9e30c6f7fa0ec0",
+      "source_mtime_ns": 1791351480842071190,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/reliability.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/reliability.ts",
+      "bytes": 3470,
+      "sha256": "bd9339e8842722d88ab5e5e8c9b37a459bff48dd57143ba3988f15bfa34f17a5",
+      "source_mtime_ns": 1791351480841775896,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/learning/types.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/learning/types.ts",
+      "bytes": 7284,
+      "sha256": "af41278d074615117f95dd09503cac94357c829de9cccecee86f3ff2be9d43ab",
+      "source_mtime_ns": 1791351480840313052,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/query/hide-union.test.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/query/hide-union.test.ts",
+      "bytes": 10167,
+      "sha256": "642f18a7c2bb3a4c18237d96e821527b8ce9260db3cfa62f75511260db1fdf12",
+      "source_mtime_ns": 1791351480865295184,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/query/sequence.test.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/query/sequence.test.ts",
+      "bytes": 8223,
+      "sha256": "ea42883c21833dcd91e7e8847ad483b0cfb31350f25e12eb88210d65fce22199",
+      "source_mtime_ns": 1791351480857641172,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/query/sequence.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/query/sequence.ts",
+      "bytes": 7351,
+      "sha256": "183309950d681e5cecd5c1e8ab4e58a6fdd711bf92d5faa738b9d3a8807c8d10",
+      "source_mtime_ns": 1791351480850093745,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/brain/src/session/feedback.test.ts",
+      "path": "archive/DELIVERY/code/new-files/apps/brain/src/session/feedback.test.ts",
+      "bytes": 789,
+      "sha256": "22849e8ba81ad2f1a01b65ddb7538af06d157ed51e06181f47bd823d1e25e80a",
+      "source_mtime_ns": 1791351480872613067,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/web/src/BrainSession.tsx",
+      "path": "archive/DELIVERY/code/new-files/apps/web/src/BrainSession.tsx",
+      "bytes": 10352,
+      "sha256": "6b3886bbf257da5612680edc917bed8838989a1a11aaeea0178095d1c96a50b0",
+      "source_mtime_ns": 1791351480880281787,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/apps/web/src/styles/brain.css",
+      "path": "archive/DELIVERY/code/new-files/apps/web/src/styles/brain.css",
+      "bytes": 2298,
+      "sha256": "38f16219d450452fda2d878368b9455057e45475751a0a4023698545dfcc7cd1",
+      "source_mtime_ns": 1791351480886161495,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/docs/synamp/plans/FAST-LEARNING-BRAIN.md",
+      "path": "archive/DELIVERY/code/new-files/docs/synamp/plans/FAST-LEARNING-BRAIN.md",
+      "bytes": 25817,
+      "sha256": "717e664094e96b532187f1f0a43a8f8a2bd424365029c906ce815d4d9b065e59",
+      "source_mtime_ns": 1791351480893581921,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/README.md",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/README.md",
+      "bytes": 22090,
+      "sha256": "2f81fff735547ad07218c0b91b6284b84cde5475cd25f3279475476b5c3b2cb9",
+      "source_mtime_ns": 1791351480901246849,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/lab.mts",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/lab.mts",
+      "bytes": 11183,
+      "sha256": "15ec6d7ce321c1178cff46945bb5dca13c539f98a7584aecfbb88ca812658862",
+      "source_mtime_ns": 1791351480900774471,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/lib/checks.mts",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/lib/checks.mts",
+      "bytes": 3272,
+      "sha256": "38e42bd2680400b95a24aa23c47900158f60298788556ce6ff152e21dded1896",
+      "source_mtime_ns": 1791351480906085924,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/lib/events.mts",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/lib/events.mts",
+      "bytes": 6737,
+      "sha256": "804ccf7fa6e31f25681a3ff0d4a1a305b8081650f266719bc46424a3eed79a5d",
+      "source_mtime_ns": 1791351480905544004,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/lib/modules.mts",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/lib/modules.mts",
+      "bytes": 4154,
+      "sha256": "6295765583ec25e1d83de1e9b1edd8ede78fa6ad245570bff1e3fdebd42cd156",
+      "source_mtime_ns": 1791351480905867964,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/lib/runner.mts",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/lib/runner.mts",
+      "bytes": 55246,
+      "sha256": "c1ac68294c74b5287610c0abd71cbe09ae518cd80b5f685af938102db159d082",
+      "source_mtime_ns": 1791351480906511885,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/lib/util.mts",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/lib/util.mts",
+      "bytes": 2435,
+      "sha256": "867b8fd4bd2dc7451b2cb385da6828f09981067fe848ce8f5cb3ba38e8ebedbd",
+      "source_mtime_ns": 1791351480906720887,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/scenarios/01-three-phrases.json",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/scenarios/01-three-phrases.json",
+      "bytes": 581,
+      "sha256": "b0e780b684d24d8eedc1257caa77889414650668a7fc325d5f9c95af0b31b061",
+      "source_mtime_ns": 1791351480903949451,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/scenarios/02-vague.json",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/scenarios/02-vague.json",
+      "bytes": 824,
+      "sha256": "afb6eeb8e9a4cd6ebcf203b3daa5fb3123809e80f925ad30b38729887f8e00c7",
+      "source_mtime_ns": 1791351480904307870,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/scenarios/03-contradictory.json",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/scenarios/03-contradictory.json",
+      "bytes": 280,
+      "sha256": "42ed30b8c5a281280aebf2235e42796d61a25466990558f0acb0b9f5493792c4",
+      "source_mtime_ns": 1791351480904940833,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/scenarios/04-impossible.json",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/scenarios/04-impossible.json",
+      "bytes": 1069,
+      "sha256": "3ef12f7ab70c2f10e7ca271fde86a17e7911537a52afaa2d5c3457b3a6344191",
+      "source_mtime_ns": 1791351480902914152,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/scenarios/05-fast-learning.json",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/scenarios/05-fast-learning.json",
+      "bytes": 3262,
+      "sha256": "3beb2bc2361221a7baeeec24c7d83dbdd78cca1d94a720d327eed9251750471e",
+      "source_mtime_ns": 1791351480903304072,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/scenarios/06-isolation.json",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/scenarios/06-isolation.json",
+      "bytes": 491,
+      "sha256": "2ad890fd2a0f5cc0175fb6f5e07f560133fb78dd5a1ce8dba7df71fecb122e65",
+      "source_mtime_ns": 1791351480901886603,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/scenarios/07-forget.json",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/scenarios/07-forget.json",
+      "bytes": 618,
+      "sha256": "73848b8bc600d7c975fd8e389829d4aaba3e02b9bd552934ebc7519b5199211c",
+      "source_mtime_ns": 1791351480902474316,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/code/new-files/tools/brain-lab/scenarios/08-culture-guardrails.json",
+      "path": "archive/DELIVERY/code/new-files/tools/brain-lab/scenarios/08-culture-guardrails.json",
+      "bytes": 3110,
+      "sha256": "06846882f284ba36b8325260850f051f2f494373ed31fc4fb01de51c0ee4adae",
+      "source_mtime_ns": 1791351480904606872,
+      "role": "historical-code-snapshot",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/figures/FIGURES.md",
+      "path": "archive/DELIVERY/report-kit/figures/FIGURES.md",
+      "bytes": 6026,
+      "sha256": "8a9c40d13389cf61f787360500bafc79944a93fab09fad1febf2eba88cfbebb4",
+      "source_mtime_ns": 1791351480928074326,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/figures/epochs.svg",
+      "path": "archive/DELIVERY/report-kit/figures/epochs.svg",
+      "bytes": 4060,
+      "sha256": "7d3d63cf91541ce52d6d6fd201e223301732ec752d7f1944bf54c8d26faf767d",
+      "source_mtime_ns": 1791351480928621580,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/figures/flow.svg",
+      "path": "archive/DELIVERY/report-kit/figures/flow.svg",
+      "bytes": 3869,
+      "sha256": "399e13201a1142121a5dcd18814c1d2642462be3ac439ed872a666034d9e0381",
+      "source_mtime_ns": 1791351480929251834,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/figures/modules.svg",
+      "path": "archive/DELIVERY/report-kit/figures/modules.svg",
+      "bytes": 2936,
+      "sha256": "0b96a252ba85239c4ad002b89315cc2002c386366c8f79fcb46691b2ba784e91",
+      "source_mtime_ns": 1791351480929592920,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/figures/reliability.svg",
+      "path": "archive/DELIVERY/report-kit/figures/reliability.svg",
+      "bytes": 3321,
+      "sha256": "c91f659a35d123fef8d873823cb471b1915ce2b61db425bb802004cb2df4828c",
+      "source_mtime_ns": 1791351480929963006,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/render/build.py",
+      "path": "archive/DELIVERY/report-kit/render/build.py",
+      "bytes": 6318,
+      "sha256": "583b34c4acd1e10cdae8630ab5a4584f9db38c5b4bd58a006e6efb12c478a94d",
+      "source_mtime_ns": 1791351594569371259,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/render/pdf.mjs",
+      "path": "archive/DELIVERY/report-kit/render/pdf.mjs",
+      "bytes": 972,
+      "sha256": "0634e5d7e78f6c13c019ea9064de5cc091bb548cec88ac02400b9dfb81a1dc4f",
+      "source_mtime_ns": 1791351549840697912,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/render/shot.mjs",
+      "path": "archive/DELIVERY/report-kit/render/shot.mjs",
+      "bytes": 1223,
+      "sha256": "89ef0e88903c7a8810a71f4cb84270c4bd353af8529c795f297024d76e2770d2",
+      "source_mtime_ns": 1791351480933090319,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/render/template.html",
+      "path": "archive/DELIVERY/report-kit/render/template.html",
+      "bytes": 10595,
+      "sha256": "1c1e8314a32577d2a1a110edbabfc09c2a12ea4317f409bc5bc643de1e9e5f89",
+      "source_mtime_ns": 1791351594569036006,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/sources/W1-ch1-translation.md",
+      "path": "archive/DELIVERY/report-kit/sources/W1-ch1-translation.md",
+      "bytes": 11455,
+      "sha256": "4a7b2d293aca294330aade42992587257a7a64e166d36a6531c44965f9db30cc",
+      "source_mtime_ns": 1791351480922949207,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/sources/W2-ch2-learning.md",
+      "path": "archive/DELIVERY/report-kit/sources/W2-ch2-learning.md",
+      "bytes": 9602,
+      "sha256": "ef88d1f79fd12ad09999db9955260a22874fc7696d9f8e6484de9cd1fc22e844",
+      "source_mtime_ns": 1791351480923295168,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/sources/W3-ch3-bias.md",
+      "path": "archive/DELIVERY/report-kit/sources/W3-ch3-bias.md",
+      "bytes": 10916,
+      "sha256": "7e9ee2f171591024cdbe749465c753bd06645d8267ebfa1b4e196d52acea2bb9",
+      "source_mtime_ns": 1791351480923629879,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/sources/W4-ch4-verification.md",
+      "path": "archive/DELIVERY/report-kit/sources/W4-ch4-verification.md",
+      "bytes": 10900,
+      "sha256": "79bf691b8ab1d7def510e55b66504f205f03d04c5d0fa13394fff2f50c6d5bc9",
+      "source_mtime_ns": 1791351480923959798,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/sources/W5-ch5-appendix.md",
+      "path": "archive/DELIVERY/report-kit/sources/W5-ch5-appendix.md",
+      "bytes": 52935,
+      "sha256": "31ae0e1feefa15180b708e277967202117f46582caffddd07e45d4e342e6a569",
+      "source_mtime_ns": 1791351480924394426,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/sources/W6-exec-summary.md",
+      "path": "archive/DELIVERY/report-kit/sources/W6-exec-summary.md",
+      "bytes": 2797,
+      "sha256": "85d25dadb8003cca34044f0c15d275ca6a030bb8319b37003060647f2f9e6810",
+      "source_mtime_ns": 1791351549828098908,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/report-kit/sources/W7-agent-brief.md",
+      "path": "archive/DELIVERY/report-kit/sources/W7-agent-brief.md",
+      "bytes": 10429,
+      "sha256": "803a5f025f4d991290042870625481e101fe6f44859f971ec2a50649fa17c657",
+      "source_mtime_ns": 1791351549830452049,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/C1-code-review.md",
+      "path": "archive/DELIVERY/verification/C1-code-review.md",
+      "bytes": 20632,
+      "sha256": "4809c5897d3d18c663e44c6297287cfb2baf4933c9b636ba52d9160c8e455c44",
+      "source_mtime_ns": 1791351512105432397,
+      "role": "review",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/C2-bias-review.md",
+      "path": "archive/DELIVERY/verification/C2-bias-review.md",
+      "bytes": 35973,
+      "sha256": "42b5d0fb9e6022c02774faf4c4d6c2f21fc800125afaf2c5b710f40ed2180162",
+      "source_mtime_ns": 1791351512105748982,
+      "role": "review",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/C3-psych-review.md",
+      "path": "archive/DELIVERY/verification/C3-psych-review.md",
+      "bytes": 36527,
+      "sha256": "1de9c02877bc1419f20108c36ffd831ebce5445bc79fd27861ff78a22c8fba61",
+      "source_mtime_ns": 1791351512105961484,
+      "role": "review",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/C4-production-review.md",
+      "path": "archive/DELIVERY/verification/C4-production-review.md",
+      "bytes": 26044,
+      "sha256": "770aeed68ca1c8e4b6f47a8d48101d9d87d3bc3cce5efb53f2a1b1e41fb6988a",
+      "source_mtime_ns": 1791351512106367445,
+      "role": "review",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/README.md",
+      "path": "archive/DELIVERY/verification/README.md",
+      "bytes": 3463,
+      "sha256": "96b0994ea00318c9f7950fe8373d05a813eab8d9f992aab61091d53e236a1133",
+      "source_mtime_ns": 1791351616119468029,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/baseline/BASELINE.md",
+      "path": "archive/DELIVERY/verification/baseline/BASELINE.md",
+      "bytes": 4314,
+      "sha256": "13c990db76ed224ac41479a45013755e9ce7f130f97c0748bd0807252a9cb219",
+      "source_mtime_ns": 1791351512068062722,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/baseline/brain-test-rerun-2026-10-06T2258CDT.log",
+      "path": "archive/DELIVERY/verification/baseline/brain-test-rerun-2026-10-06T2258CDT.log",
+      "bytes": 15022,
+      "sha256": "72fdc5970111644a6959410c54c2832e28f246489cea422cff48730f87f78f38",
+      "source_mtime_ns": 1791351512067263466,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/baseline/synamp-brain-test.log",
+      "path": "archive/DELIVERY/verification/baseline/synamp-brain-test.log",
+      "bytes": 14844,
+      "sha256": "be6a819ec2703c3cd079f21780022e8c5c2d643e74e5bdc39a35f295b6e7c4f3",
+      "source_mtime_ns": 1791351512068509600,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/baseline/synamp-librarian-test.log",
+      "path": "archive/DELIVERY/verification/baseline/synamp-librarian-test.log",
+      "bytes": 1585,
+      "sha256": "fcc6ea97958a6dcc167d32b7edb846f16e12e209a0485981a11a92fcabe63a54",
+      "source_mtime_ns": 1791351512068839685,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/baseline/synamp-typecheck.log",
+      "path": "archive/DELIVERY/verification/baseline/synamp-typecheck.log",
+      "bytes": 10335,
+      "sha256": "22f72ed208392fda74cc00b023b0469be778e596b85a5eb7edd1822d10e1031c",
+      "source_mtime_ns": 1791351512067706469,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/brain-suite-full.log",
+      "path": "archive/DELIVERY/verification/brain-suite-full.log",
+      "bytes": 21211,
+      "sha256": "1b09faed17184fb87be5d3f18e15af47800d115f0e4f79870b7738902e9b4a0a",
+      "source_mtime_ns": 1791351523328042565,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/checksums.txt",
+      "path": "archive/DELIVERY/verification/checksums.txt",
+      "bytes": 13831,
+      "sha256": "e977aab982660cf75b1f0d06e35dfc1e9e9ed899ad18a0aa89c0b683a314c46e",
+      "source_mtime_ns": 1791351665698906512,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-capture.log",
+      "path": "archive/DELIVERY/verification/final-capture.log",
+      "bytes": 1440,
+      "sha256": "f13559ffdc7cd936ab797df5a40eb8b6ff78731dbdac606bf63372a92cfd2414",
+      "source_mtime_ns": 1791351523323040989,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/EVIDENCE.md",
+      "path": "archive/DELIVERY/verification/final-lab/EVIDENCE.md",
+      "bytes": 3129,
+      "sha256": "2785560df42a5cb4799760f6864479d24e20637dc041e767e0da82416137adbf",
+      "source_mtime_ns": 1791351512073701469,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/cwd-run.json",
+      "path": "archive/DELIVERY/verification/final-lab/cwd-run.json",
+      "bytes": 32342,
+      "sha256": "4e91f4a553cf0adaa261e5265b6f6dd3ba7176746b1d04f3cb1ba3920bffbc8c",
+      "source_mtime_ns": 1791351512074211306,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/cwd-run.log",
+      "path": "archive/DELIVERY/verification/final-lab/cwd-run.log",
+      "bytes": 22984,
+      "sha256": "ac601fc858b48b6f41b9391a2ec073ff7e43a1c348e637a4f21c799be18b9cf8",
+      "source_mtime_ns": 1791351512076823699,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/determinism-run1.json",
+      "path": "archive/DELIVERY/verification/final-lab/determinism-run1.json",
+      "bytes": 32342,
+      "sha256": "9092531812ee0703dfefcf4aa1cbc8282d3aa041e958b37d884f36d48b2e4510",
+      "source_mtime_ns": 1791351512075891359,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/determinism-run2.json",
+      "path": "archive/DELIVERY/verification/final-lab/determinism-run2.json",
+      "bytes": 32342,
+      "sha256": "7986cbb8f1d9f355c381382ea24e7eccd96809c1f249f8f88d3a63a3527693fc",
+      "source_mtime_ns": 1791351512074674601,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/determinism.txt",
+      "path": "archive/DELIVERY/verification/final-lab/determinism.txt",
+      "bytes": 1524,
+      "sha256": "f3d4c8097a3e84be807552c55c3e61166e5c05fe873002145d5b1095eca3fd9d",
+      "source_mtime_ns": 1791351512074986561,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/hashes.txt",
+      "path": "archive/DELIVERY/verification/final-lab/hashes.txt",
+      "bytes": 4199,
+      "sha256": "e29191cde31639acee43371a96a2d38cc271e54c1f7240b37a97de5f831e4326",
+      "source_mtime_ns": 1791351512076274695,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/lab.json",
+      "path": "archive/DELIVERY/verification/final-lab/lab.json",
+      "bytes": 32342,
+      "sha256": "9092531812ee0703dfefcf4aa1cbc8282d3aa041e958b37d884f36d48b2e4510",
+      "source_mtime_ns": 1791351512072207625,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/lab.stdout.log",
+      "path": "archive/DELIVERY/verification/final-lab/lab.stdout.log",
+      "bytes": 22980,
+      "sha256": "2fa173dec18c4d642aaa9d2801a6de6cbc3e8795d5f34e3a445fb90ded0eab68",
+      "source_mtime_ns": 1791351512072743421,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/prerefresh-run.json",
+      "path": "archive/DELIVERY/verification/final-lab/prerefresh-run.json",
+      "bytes": 24651,
+      "sha256": "256d8875c37a9d96a3ab7c583db25bfd5c5e122806c8505b9ca7196b93e892d8",
+      "source_mtime_ns": 1791351512075431773,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/prerefresh-run.log",
+      "path": "archive/DELIVERY/verification/final-lab/prerefresh-run.log",
+      "bytes": 17200,
+      "sha256": "50f5ba8c00141fa13f9be14d2419a380a049b26b6fc401aaffce3b8204a24251",
+      "source_mtime_ns": 1791351512073249924,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/final-lab/run.json",
+      "path": "archive/DELIVERY/verification/final-lab/run.json",
+      "bytes": 3292,
+      "sha256": "19195ff569065680da4969d55e27b4677b1e66d665490f11f4c6fd205b0bde4a",
+      "source_mtime_ns": 1791351512077143326,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/h2/smoke-output.txt",
+      "path": "archive/DELIVERY/verification/h2/smoke-output.txt",
+      "bytes": 2187,
+      "sha256": "7a9824f0690ccef46d24de93e6371f71fa996f9995a49668c895114e04ab437d",
+      "source_mtime_ns": 1791351512102426584,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/h2/smoke1-routes.mjs",
+      "path": "archive/DELIVERY/verification/h2/smoke1-routes.mjs",
+      "bytes": 7221,
+      "sha256": "2dd2920d025942c51c7027bae1af251021fc460385ce20219641de91860ecd6f",
+      "source_mtime_ns": 1791351512102983755,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/h2/smoke2-playlist-explain.mjs",
+      "path": "archive/DELIVERY/verification/h2/smoke2-playlist-explain.mjs",
+      "bytes": 5977,
+      "sha256": "8d257fb069922b83d3b61ba2d31225c6667559f7885efd34e0a03a7cf1ea3101",
+      "source_mtime_ns": 1791351512101999915,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/h2/verify-output.txt",
+      "path": "archive/DELIVERY/verification/h2/verify-output.txt",
+      "bytes": 509,
+      "sha256": "a610ced93d18fa3f57517a979ede37ec52ce821b5824d015856f7e704601068a",
+      "source_mtime_ns": 1791351512102718211,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/pdf-page1.png",
+      "path": "archive/DELIVERY/verification/pdf-page1.png",
+      "bytes": 221712,
+      "sha256": "9c9a3f3e2e344a504d300426aa2c1a508cfb5b58b1d1bac6a01760ec42e38a38",
+      "source_mtime_ns": 1791351665634349899,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/report-ch1.png",
+      "path": "archive/DELIVERY/verification/report-ch1.png",
+      "bytes": 320073,
+      "sha256": "94f9ed2f6012d7f7092c4ed07c3d33d4de8097b46d7fd51944bc01911e7658c8",
+      "source_mtime_ns": 1791351549709266961,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/report-cover.png",
+      "path": "archive/DELIVERY/verification/report-cover.png",
+      "bytes": 151539,
+      "sha256": "3919164b73904698c3dea86fd6ccb685dd8ae7d935a1dd2c27f34a25ea7467da",
+      "source_mtime_ns": 1791351592215798354,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/report-exec.png",
+      "path": "archive/DELIVERY/verification/report-exec.png",
+      "bytes": 388145,
+      "sha256": "f2532918dab6b050e7ac1c8f95911e271ccb9f594a9a2f0aa98fd5ed9f7ed1f1",
+      "source_mtime_ns": 1791351594457440401,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/review.md",
+      "path": "archive/DELIVERY/verification/review.md",
+      "bytes": 7066,
+      "sha256": "1489ba2e784270eaab2b34b084f5c6212a629364456b6bf6f2e919f97f611432",
+      "source_mtime_ns": 1791351512107512828,
+      "role": "review",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/brain-test-after.log",
+      "path": "archive/DELIVERY/verification/route-smoke/brain-test-after.log",
+      "bytes": 20360,
+      "sha256": "9b353c5d0e34b8b50d6f8c042d89f1a77744f19f88de986aec7867cfe58dacc0",
+      "source_mtime_ns": 1791351512083835289,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/brain-test-before.log",
+      "path": "archive/DELIVERY/verification/route-smoke/brain-test-before.log",
+      "bytes": 19907,
+      "sha256": "7881c102ba574311efa2c75d71dc8473affa55c5b2880d33a545f1f0147c2352",
+      "source_mtime_ns": 1791351512088012068,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/brain-test-final.log",
+      "path": "archive/DELIVERY/verification/route-smoke/brain-test-final.log",
+      "bytes": 20341,
+      "sha256": "129137a4fd76bca59e0ce4c2b051101d082d3720c1529cc8bbc807adaf71e04d",
+      "source_mtime_ns": 1791351512086371015,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/lab-after.log",
+      "path": "archive/DELIVERY/verification/route-smoke/lab-after.log",
+      "bytes": 17151,
+      "sha256": "0c9cf2e9f77efd0fff94af4b972ffc721bdc9e2ea47efc2bdc980ba684c88057",
+      "source_mtime_ns": 1791351512091398216,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/lab-before.log",
+      "path": "archive/DELIVERY/verification/route-smoke/lab-before.log",
+      "bytes": 17151,
+      "sha256": "6be14e50deefcc3a2eb9f175fcc79a4269abae239ae17ecc62a5510f51004b71",
+      "source_mtime_ns": 1791351512090107916,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/lab-final.log",
+      "path": "archive/DELIVERY/verification/route-smoke/lab-final.log",
+      "bytes": 17151,
+      "sha256": "cf6b0d0e94727869ce7a3eaca8d6c9ef37135706416ca212beb2be95fda32cf6",
+      "source_mtime_ns": 1791351512090894838,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/responses/brain-session-after-forget-get.json",
+      "path": "archive/DELIVERY/verification/route-smoke/responses/brain-session-after-forget-get.json",
+      "bytes": 881,
+      "sha256": "a1ed17f68ed0337f70a1aff02824d3720bdb2ce853f36364621877eef1a8ab27",
+      "source_mtime_ns": 1791351512084311834,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/responses/brain-session-after-forget.json",
+      "path": "archive/DELIVERY/verification/route-smoke/responses/brain-session-after-forget.json",
+      "bytes": 881,
+      "sha256": "a1ed17f68ed0337f70a1aff02824d3720bdb2ce853f36364621877eef1a8ab27",
+      "source_mtime_ns": 1791351512084692295,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/responses/brain-session-after-skips.json",
+      "path": "archive/DELIVERY/verification/route-smoke/responses/brain-session-after-skips.json",
+      "bytes": 1244,
+      "sha256": "e68c7907a31030392ea3ffeeb0031ad8002b3cee5f5e1c377437b13ff57d66b5",
+      "source_mtime_ns": 1791351512085906595,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/responses/draft-against-session.json",
+      "path": "archive/DELIVERY/verification/route-smoke/responses/draft-against-session.json",
+      "bytes": 24939,
+      "sha256": "65529a17013704bbbfefc59d4659965353aaf050855fe02413dee1d3fce91577",
+      "source_mtime_ns": 1791351512085593801,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/responses/draft-epoch-smoke.json",
+      "path": "archive/DELIVERY/verification/route-smoke/responses/draft-epoch-smoke.json",
+      "bytes": 25450,
+      "sha256": "aa01d8ff88e6a1a4020b69878c34727f41a81ef4d7e527a8136628b4cd7f652a",
+      "source_mtime_ns": 1791351512085204673,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-auth.log",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-auth.log",
+      "bytes": 923,
+      "sha256": "9fd636680905d015a9813ee49633a11cb93aae707118c667e4dab0aeb1cd1c91",
+      "source_mtime_ns": 1791351512081760816,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-auth.sh",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-auth.sh",
+      "bytes": 2519,
+      "sha256": "28e7b996896bd7beb77a842efa77fca046c19a128a544ef519fbf9e031041288",
+      "source_mtime_ns": 1791351512089493287,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-details.log",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-details.log",
+      "bytes": 536,
+      "sha256": "0c4ffb9f9fc0f5d5bd5f6547924b0f068dd6a14b666aae46c54ebff91add7873",
+      "source_mtime_ns": 1791351512088952908,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-details.sh",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-details.sh",
+      "bytes": 2319,
+      "sha256": "ae8f988f44241cc508de93bcb1d7f952f61f4c4b049f5196a7f9c74497a44bec",
+      "source_mtime_ns": 1791351512094444446,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-epoch.log",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-epoch.log",
+      "bytes": 3579,
+      "sha256": "af694b406448809eb8fa1e5726a7ca95f847b37f01103b07ae368081e867322b",
+      "source_mtime_ns": 1791351512096616336,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-epoch.sh",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-epoch.sh",
+      "bytes": 7793,
+      "sha256": "5c2eeec8e2ba57e9c06ad933195ca31918876fe63036f2bb85570374bc26043c",
+      "source_mtime_ns": 1791351512096307917,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-resolve.log",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-resolve.log",
+      "bytes": 1587,
+      "sha256": "7c68d57f7b7c9d25859fa6361350536a259bb3d976620d44fe41a277cdc81b74",
+      "source_mtime_ns": 1791351512086689767,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-resolve.sh",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-resolve.sh",
+      "bytes": 5082,
+      "sha256": "a2a94d1ba152294bda93a39c3bda04f21ca8d723d79c3e5a8510a32cb20e4a05",
+      "source_mtime_ns": 1791351512088577822,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-screenshots-v2.log",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-screenshots-v2.log",
+      "bytes": 671,
+      "sha256": "90b46c96266d6ccd29bd5ba3c4c7bae11e486f07abc1f22e5444776cc73f8dfd",
+      "source_mtime_ns": 1791351512095857372,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-screenshots-v2.sh",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-screenshots-v2.sh",
+      "bytes": 4755,
+      "sha256": "ed61fcc37acf28cdec15314aeac4214604b1a2d31f48baab82735f3150fe13cd",
+      "source_mtime_ns": 1791351512087045770,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-screenshots.log",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-screenshots.log",
+      "bytes": 2120,
+      "sha256": "41d27cce93cca8205f3b9d036478f105a34d757c471c677621d740138909fb7b",
+      "source_mtime_ns": 1791351512097223173,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/route-smoke-screenshots.sh",
+      "path": "archive/DELIVERY/verification/route-smoke/route-smoke-screenshots.sh",
+      "bytes": 3997,
+      "sha256": "54b1582ca3c8a9afdb12c988972a62ff4b51e23d54dfcf9dd324f9ffae33eade",
+      "source_mtime_ns": 1791351512079981221,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/screenshots-detail.mjs",
+      "path": "archive/DELIVERY/verification/route-smoke/screenshots-detail.mjs",
+      "bytes": 1998,
+      "sha256": "65140704038ab01aa9d99f92c491250f3a9bcb0432276507a7f0240b9a6e97b0",
+      "source_mtime_ns": 1791351512098005720,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/screenshots.mjs",
+      "path": "archive/DELIVERY/verification/route-smoke/screenshots.mjs",
+      "bytes": 2105,
+      "sha256": "0a0b1c04b0a54233a848c5674233f5e5bba24a8b06b423368f3fe661405f4ece",
+      "source_mtime_ns": 1791351512083220951,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/shot-brain-panel.png",
+      "path": "archive/DELIVERY/verification/route-smoke/shot-brain-panel.png",
+      "bytes": 199211,
+      "sha256": "ee7c6f20a8ac27ac9b0a16755d867329e2583be105694ca5fcf3b02fb4c5914e",
+      "source_mtime_ns": 1791351512080512766,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/shot-brain.png",
+      "path": "archive/DELIVERY/verification/route-smoke/shot-brain.png",
+      "bytes": 179158,
+      "sha256": "22c10b7dacb20abe89c1c37e5396666f7eb87dca4c63b0fbbff505d577252cec",
+      "source_mtime_ns": 1791351512081239854,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/shot-describe-interpretation.png",
+      "path": "archive/DELIVERY/verification/route-smoke/shot-describe-interpretation.png",
+      "bytes": 238251,
+      "sha256": "9908c28f85529ea1a8ef07f62654ade80ef8dd9d595ff00ce69753ac70826e40",
+      "source_mtime_ns": 1791351512082720198,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/shot-describe-result.png",
+      "path": "archive/DELIVERY/verification/route-smoke/shot-describe-result.png",
+      "bytes": 220580,
+      "sha256": "69eb6083aa07d2b0b37fc2aea4d91be286a82aa5c5739f43ab937ddc1425bce9",
+      "source_mtime_ns": 1791351512087518356,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/shot-describe.png",
+      "path": "archive/DELIVERY/verification/route-smoke/shot-describe.png",
+      "bytes": 508487,
+      "sha256": "69a6ed73393266933828b57dcd291c97a88d68f26d7a1ae4593a83d49ff8d34f",
+      "source_mtime_ns": 1791351512092131221,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/type-check-brain-final.log",
+      "path": "archive/DELIVERY/verification/route-smoke/type-check-brain-final.log",
+      "bytes": 112,
+      "sha256": "eedd03b85fe74641a25ae6c9b5d883cd903c80419f7f0b9f09b7db8503d9ad2e",
+      "source_mtime_ns": 1791351512097543301,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/type-check-web-final.log",
+      "path": "archive/DELIVERY/verification/route-smoke/type-check-web-final.log",
+      "bytes": 108,
+      "sha256": "069b567c13c7c6db12781aa1f3ced8b63998cd782e2bb441a7ff12359a9fc0f3",
+      "source_mtime_ns": 1791351512096837796,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "DELIVERY/verification/route-smoke/web-build-final.log",
+      "path": "archive/DELIVERY/verification/route-smoke/web-build-final.log",
+      "bytes": 1121,
+      "sha256": "bdea2ec33c99bd949acd14ef70c08aee9fae03adb2ad0ef7a556fa6eadbc17b2",
+      "source_mtime_ns": 1791351512082151819,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "H1-fixes.md",
+      "path": "archive/H1-fixes.md",
+      "bytes": 15229,
+      "sha256": "21facdd2f4289223e6969db74179e5432668461298e458c22e2f7580c0a1987d",
+      "source_mtime_ns": 1791349397108964615,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "H2-fixes.md",
+      "path": "archive/H2-fixes.md",
+      "bytes": 13443,
+      "sha256": "4dde90b3f611c79c1280c47d36a9236fe90db2d243decf1bba4dbe7a1b37cde3",
+      "source_mtime_ns": 1791349201376775351,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "H3-docs.md",
+      "path": "archive/H3-docs.md",
+      "bytes": 9120,
+      "sha256": "09b6259eca6092ac59e5cc8ed881cc3b76b5dab513ddf5d97d541dbdf95096a2",
+      "source_mtime_ns": 1791348948501753487,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "H4-lab-sync.md",
+      "path": "archive/H4-lab-sync.md",
+      "bytes": 10035,
+      "sha256": "773160c871a4d806504a5b4d58aa8c3a9b12c896cac86ac0cf72e54293132f22",
+      "source_mtime_ns": 1791350513789041667,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "H5-numbers.md",
+      "path": "archive/H5-numbers.md",
+      "bytes": 14994,
+      "sha256": "dbca6e341fd228b2808c8cd2f7c00d97a58648bd8bd89b211a83e284064b719a",
+      "source_mtime_ns": 1791351207108375439,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "delivery-plan.md",
+      "path": "archive/delivery-plan.md",
+      "bytes": 5917,
+      "sha256": "fcdfab903a3d60a721d320bdf0919724a6651b3e44d6a2cf364e620642e676b6",
+      "source_mtime_ns": 1791350457069119393,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "dispatch-prep.md",
+      "path": "archive/dispatch-prep.md",
+      "bytes": 5439,
+      "sha256": "1cfa8cadd4427730eddf2ac55ebcd49689b2e66d36ab6c048b7fa3ede6765be5",
+      "source_mtime_ns": 1791346625645415626,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/brain-test-after.log",
+      "path": "archive/evidence/b5/brain-test-after.log",
+      "bytes": 20360,
+      "sha256": "9b353c5d0e34b8b50d6f8c042d89f1a77744f19f88de986aec7867cfe58dacc0",
+      "source_mtime_ns": 1791347090685027787,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/brain-test-before.log",
+      "path": "archive/evidence/b5/brain-test-before.log",
+      "bytes": 19907,
+      "sha256": "7881c102ba574311efa2c75d71dc8473affa55c5b2880d33a545f1f0147c2352",
+      "source_mtime_ns": 1791346844317927736,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/brain-test-final.log",
+      "path": "archive/evidence/b5/brain-test-final.log",
+      "bytes": 20341,
+      "sha256": "129137a4fd76bca59e0ce4c2b051101d082d3720c1529cc8bbc807adaf71e04d",
+      "source_mtime_ns": 1791347585384950173,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/lab-after.log",
+      "path": "archive/evidence/b5/lab-after.log",
+      "bytes": 17151,
+      "sha256": "0c9cf2e9f77efd0fff94af4b972ffc721bdc9e2ea47efc2bdc980ba684c88057",
+      "source_mtime_ns": 1791347089443704881,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/lab-before.log",
+      "path": "archive/evidence/b5/lab-before.log",
+      "bytes": 17151,
+      "sha256": "6be14e50deefcc3a2eb9f175fcc79a4269abae239ae17ecc62a5510f51004b71",
+      "source_mtime_ns": 1791346848900711641,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/lab-final.log",
+      "path": "archive/evidence/b5/lab-final.log",
+      "bytes": 17151,
+      "sha256": "cf6b0d0e94727869ce7a3eaca8d6c9ef37135706416ca212beb2be95fda32cf6",
+      "source_mtime_ns": 1791347596250737387,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/responses/brain-session-after-forget-get.json",
+      "path": "archive/evidence/b5/responses/brain-session-after-forget-get.json",
+      "bytes": 881,
+      "sha256": "a1ed17f68ed0337f70a1aff02824d3720bdb2ce853f36364621877eef1a8ab27",
+      "source_mtime_ns": 1791347619621388305,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/responses/brain-session-after-forget.json",
+      "path": "archive/evidence/b5/responses/brain-session-after-forget.json",
+      "bytes": 881,
+      "sha256": "a1ed17f68ed0337f70a1aff02824d3720bdb2ce853f36364621877eef1a8ab27",
+      "source_mtime_ns": 1791347619618898530,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/responses/brain-session-after-skips.json",
+      "path": "archive/evidence/b5/responses/brain-session-after-skips.json",
+      "bytes": 1244,
+      "sha256": "e68c7907a31030392ea3ffeeb0031ad8002b3cee5f5e1c377437b13ff57d66b5",
+      "source_mtime_ns": 1791347619615100283,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/responses/draft-against-session.json",
+      "path": "archive/evidence/b5/responses/draft-against-session.json",
+      "bytes": 24939,
+      "sha256": "65529a17013704bbbfefc59d4659965353aaf050855fe02413dee1d3fce91577",
+      "source_mtime_ns": 1791347619623785330,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/responses/draft-epoch-smoke.json",
+      "path": "archive/evidence/b5/responses/draft-epoch-smoke.json",
+      "bytes": 25450,
+      "sha256": "aa01d8ff88e6a1a4020b69878c34727f41a81ef4d7e527a8136628b4cd7f652a",
+      "source_mtime_ns": 1791347619612299171,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-auth.log",
+      "path": "archive/evidence/b5/route-smoke-auth.log",
+      "bytes": 923,
+      "sha256": "9fd636680905d015a9813ee49633a11cb93aae707118c667e4dab0aeb1cd1c91",
+      "source_mtime_ns": 1791347139050870450,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-auth.sh",
+      "path": "archive/evidence/b5/route-smoke-auth.sh",
+      "bytes": 2519,
+      "sha256": "28e7b996896bd7beb77a842efa77fca046c19a128a544ef519fbf9e031041288",
+      "source_mtime_ns": 1791347135106580700,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-details.log",
+      "path": "archive/evidence/b5/route-smoke-details.log",
+      "bytes": 536,
+      "sha256": "0c4ffb9f9fc0f5d5bd5f6547924b0f068dd6a14b666aae46c54ebff91add7873",
+      "source_mtime_ns": 1791347479762738424,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-details.sh",
+      "path": "archive/evidence/b5/route-smoke-details.sh",
+      "bytes": 2319,
+      "sha256": "ae8f988f44241cc508de93bcb1d7f952f61f4c4b049f5196a7f9c74497a44bec",
+      "source_mtime_ns": 1791347471117788780,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-epoch.log",
+      "path": "archive/evidence/b5/route-smoke-epoch.log",
+      "bytes": 3579,
+      "sha256": "af694b406448809eb8fa1e5726a7ca95f847b37f01103b07ae368081e867322b",
+      "source_mtime_ns": 1791347125824600124,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-epoch.sh",
+      "path": "archive/evidence/b5/route-smoke-epoch.sh",
+      "bytes": 7793,
+      "sha256": "5c2eeec8e2ba57e9c06ad933195ca31918876fe63036f2bb85570374bc26043c",
+      "source_mtime_ns": 1791347120956148399,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-resolve.log",
+      "path": "archive/evidence/b5/route-smoke-resolve.log",
+      "bytes": 1587,
+      "sha256": "7c68d57f7b7c9d25859fa6361350536a259bb3d976620d44fe41a277cdc81b74",
+      "source_mtime_ns": 1791347560943097494,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-resolve.sh",
+      "path": "archive/evidence/b5/route-smoke-resolve.sh",
+      "bytes": 5082,
+      "sha256": "a2a94d1ba152294bda93a39c3bda04f21ca8d723d79c3e5a8510a32cb20e4a05",
+      "source_mtime_ns": 1791347554617861923,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-screenshots-v2.log",
+      "path": "archive/evidence/b5/route-smoke-screenshots-v2.log",
+      "bytes": 671,
+      "sha256": "90b46c96266d6ccd29bd5ba3c4c7bae11e486f07abc1f22e5444776cc73f8dfd",
+      "source_mtime_ns": 1791347438351700464,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-screenshots-v2.sh",
+      "path": "archive/evidence/b5/route-smoke-screenshots-v2.sh",
+      "bytes": 4755,
+      "sha256": "ed61fcc37acf28cdec15314aeac4214604b1a2d31f48baab82735f3150fe13cd",
+      "source_mtime_ns": 1791347414105697192,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-screenshots.log",
+      "path": "archive/evidence/b5/route-smoke-screenshots.log",
+      "bytes": 2120,
+      "sha256": "41d27cce93cca8205f3b9d036478f105a34d757c471c677621d740138909fb7b",
+      "source_mtime_ns": 1791347199511290744,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/route-smoke-screenshots.sh",
+      "path": "archive/evidence/b5/route-smoke-screenshots.sh",
+      "bytes": 3997,
+      "sha256": "54b1582ca3c8a9afdb12c988972a62ff4b51e23d54dfcf9dd324f9ffae33eade",
+      "source_mtime_ns": 1791347165404553849,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/screenshots-detail.mjs",
+      "path": "archive/evidence/b5/screenshots-detail.mjs",
+      "bytes": 1998,
+      "sha256": "65140704038ab01aa9d99f92c491250f3a9bcb0432276507a7f0240b9a6e97b0",
+      "source_mtime_ns": 1791347471117788988,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/screenshots.mjs",
+      "path": "archive/evidence/b5/screenshots.mjs",
+      "bytes": 2105,
+      "sha256": "0a0b1c04b0a54233a848c5674233f5e5bba24a8b06b423368f3fe661405f4ece",
+      "source_mtime_ns": 1791347419684555928,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/shot-brain-panel.png",
+      "path": "archive/evidence/b5/shot-brain-panel.png",
+      "bytes": 199211,
+      "sha256": "ee7c6f20a8ac27ac9b0a16755d867329e2583be105694ca5fcf3b02fb4c5914e",
+      "source_mtime_ns": 1791347479636104304,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/shot-brain.png",
+      "path": "archive/evidence/b5/shot-brain.png",
+      "bytes": 179158,
+      "sha256": "22c10b7dacb20abe89c1c37e5396666f7eb87dca4c63b0fbbff505d577252cec",
+      "source_mtime_ns": 1791347438223160116,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/shot-describe-interpretation.png",
+      "path": "archive/evidence/b5/shot-describe-interpretation.png",
+      "bytes": 238251,
+      "sha256": "9908c28f85529ea1a8ef07f62654ade80ef8dd9d595ff00ce69753ac70826e40",
+      "source_mtime_ns": 1791347478839784753,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/shot-describe-result.png",
+      "path": "archive/evidence/b5/shot-describe-result.png",
+      "bytes": 220580,
+      "sha256": "69eb6083aa07d2b0b37fc2aea4d91be286a82aa5c5739f43ab937ddc1425bce9",
+      "source_mtime_ns": 1791347479008096630,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/shot-describe.png",
+      "path": "archive/evidence/b5/shot-describe.png",
+      "bytes": 508487,
+      "sha256": "69a6ed73393266933828b57dcd291c97a88d68f26d7a1ae4593a83d49ff8d34f",
+      "source_mtime_ns": 1791347437508275727,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/type-check-brain-final.log",
+      "path": "archive/evidence/b5/type-check-brain-final.log",
+      "bytes": 112,
+      "sha256": "eedd03b85fe74641a25ae6c9b5d883cd903c80419f7f0b9f09b7db8503d9ad2e",
+      "source_mtime_ns": 1791347584119974943,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/type-check-web-final.log",
+      "path": "archive/evidence/b5/type-check-web-final.log",
+      "bytes": 108,
+      "sha256": "069b567c13c7c6db12781aa1f3ced8b63998cd782e2bb441a7ff12359a9fc0f3",
+      "source_mtime_ns": 1791347586134038828,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/b5/web-build-final.log",
+      "path": "archive/evidence/b5/web-build-final.log",
+      "bytes": 1121,
+      "sha256": "bdea2ec33c99bd949acd14ef70c08aee9fae03adb2ad0ef7a556fa6eadbc17b2",
+      "source_mtime_ns": 1791347596027755205,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/baseline/BASELINE.md",
+      "path": "archive/evidence/baseline/BASELINE.md",
+      "bytes": 4314,
+      "sha256": "13c990db76ed224ac41479a45013755e9ce7f130f97c0748bd0807252a9cb219",
+      "source_mtime_ns": 1791345603575224501,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/baseline/brain-test-rerun-2026-10-06T2258CDT.log",
+      "path": "archive/evidence/baseline/brain-test-rerun-2026-10-06T2258CDT.log",
+      "bytes": 15022,
+      "sha256": "72fdc5970111644a6959410c54c2832e28f246489cea422cff48730f87f78f38",
+      "source_mtime_ns": 1791345595979213575,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/baseline/synamp-brain-test.log",
+      "path": "archive/evidence/baseline/synamp-brain-test.log",
+      "bytes": 14844,
+      "sha256": "be6a819ec2703c3cd079f21780022e8c5c2d643e74e5bdc39a35f295b6e7c4f3",
+      "source_mtime_ns": 1791345488155184715,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/baseline/synamp-librarian-test.log",
+      "path": "archive/evidence/baseline/synamp-librarian-test.log",
+      "bytes": 1585,
+      "sha256": "fcc6ea97958a6dcc167d32b7edb846f16e12e209a0485981a11a92fcabe63a54",
+      "source_mtime_ns": 1791345488155927590,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/baseline/synamp-typecheck.log",
+      "path": "archive/evidence/baseline/synamp-typecheck.log",
+      "bytes": 10335,
+      "sha256": "22f72ed208392fda74cc00b023b0469be778e596b85a5eb7edd1822d10e1031c",
+      "source_mtime_ns": 1791345488155636465,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/brain-lab/lab-run-2026-10-06T230647CDT.json",
+      "path": "archive/evidence/brain-lab/lab-run-2026-10-06T230647CDT.json",
+      "bytes": 21260,
+      "sha256": "650dc4813d6daf594dab7cca20087c481e212db347a25e496e548d13814061e4",
+      "source_mtime_ns": 1791346008153084353,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/brain-lab/lab-run-2026-10-06T230647CDT.log",
+      "path": "archive/evidence/brain-lab/lab-run-2026-10-06T230647CDT.log",
+      "bytes": 15008,
+      "sha256": "4882b3e0e10d0b0093ad7d9314173e6226066824696b6a53b3b1bdc6a018cfbf",
+      "source_mtime_ns": 1791346008153237771,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/brain-lab/lab-run-2026-10-06T230950CDT.json",
+      "path": "archive/evidence/brain-lab/lab-run-2026-10-06T230950CDT.json",
+      "bytes": 24706,
+      "sha256": "452f649b80ea0faa3cbc823221685280be1fd5c789d27b654a9ab47db92add1c",
+      "source_mtime_ns": 1791346190916473533,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/brain-lab/lab-run-2026-10-06T230950CDT.log",
+      "path": "archive/evidence/brain-lab/lab-run-2026-10-06T230950CDT.log",
+      "bytes": 17385,
+      "sha256": "41d9598575d38f3c967c6adac9620f88d413e9298fb0a9ece34cc7caad7594c9",
+      "source_mtime_ns": 1791346190916527826,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/p1-isolation-boundaries.log",
+      "path": "archive/evidence/c1/p1-isolation-boundaries.log",
+      "bytes": 1787,
+      "sha256": "5bdb059cffc81b80a573d63c6a30468d0ca4dbcb372e6059be9d865792782624",
+      "source_mtime_ns": 1791348382188118485,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/p2-bounds-hides-reset.log",
+      "path": "archive/evidence/c1/p2-bounds-hides-reset.log",
+      "bytes": 3934,
+      "sha256": "cf87bd547e56eb3f2e0890c53748bfc25f6c237ec976c0d55c9b4cda0b210079",
+      "source_mtime_ns": 1791348020752289973,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/p3-sequence-hash.log",
+      "path": "archive/evidence/c1/p3-sequence-hash.log",
+      "bytes": 3113,
+      "sha256": "bdc08c3e3c3a6b6eb67a01c494b28c19fff9bb0d5ebb03aeb6033267752e695e",
+      "source_mtime_ns": 1791348119089432591,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/p4-numbers-a3.log",
+      "path": "archive/evidence/c1/p4-numbers-a3.log",
+      "bytes": 3930,
+      "sha256": "215c37ed9972de4fe92e3bcf4451b2bad59c28714f80d614fae6a21bbd772d1f",
+      "source_mtime_ns": 1791348197808562400,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/p5-wave-integration.log",
+      "path": "archive/evidence/c1/p5-wave-integration.log",
+      "bytes": 219,
+      "sha256": "ec670d470a1ed0fdd250e14b834ef733c8f3efd77694a68c4e5f462f65b0d4d4",
+      "source_mtime_ns": 1791348233297843784,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/probes/import-test.mts",
+      "path": "archive/evidence/c1/probes/import-test.mts",
+      "bytes": 421,
+      "sha256": "e5453e31852f39a3569854faea3dee8f26161caa0e2efcd53b5c7224979ff916",
+      "source_mtime_ns": 1791347837656424437,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/probes/p1-isolation-boundaries.mts",
+      "path": "archive/evidence/c1/probes/p1-isolation-boundaries.mts",
+      "bytes": 13317,
+      "sha256": "a815e4e938045ee01e7241d4ee9fac283e922ae85812aae143112d9a4dcca762",
+      "source_mtime_ns": 1791347936665920801,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/probes/p2-bounds-hides-reset.mts",
+      "path": "archive/evidence/c1/probes/p2-bounds-hides-reset.mts",
+      "bytes": 17831,
+      "sha256": "234485fa427ab6dec32365c25d178f4d974f206ca104efcdfbefefdadb917a51",
+      "source_mtime_ns": 1791348015664363784,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/probes/p3-sequence-hash.mts",
+      "path": "archive/evidence/c1/probes/p3-sequence-hash.mts",
+      "bytes": 13130,
+      "sha256": "dc1303fdfcec27d0d1973a7ae97ad61d34e6130145109a2a806cfd8a4f7ccb76",
+      "source_mtime_ns": 1791348113039790706,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/probes/p4-numbers-a3.mts",
+      "path": "archive/evidence/c1/probes/p4-numbers-a3.mts",
+      "bytes": 16928,
+      "sha256": "4e67c7bf7a9615925bbd3292e0a63af371a25c88964d575ba7bad0c114298734",
+      "source_mtime_ns": 1791348194130619708,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/probes/p5-wave-integration.mts",
+      "path": "archive/evidence/c1/probes/p5-wave-integration.mts",
+      "bytes": 3236,
+      "sha256": "d24dcab4ec18950ff1fa19ad9cfc531aa39fe505688f54dcff9ccdfc48c3b98f",
+      "source_mtime_ns": 1791348229753801594,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/probes/wave-bug-repro.mts",
+      "path": "archive/evidence/c1/probes/wave-bug-repro.mts",
+      "bytes": 2028,
+      "sha256": "2c092775193fb1c9dac6f2ab0dad7592bf4ff96a690331302bf3dcf3e7aafd0d",
+      "source_mtime_ns": 1791348067847821489,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/runall.sh",
+      "path": "archive/evidence/c1/runall.sh",
+      "bytes": 1447,
+      "sha256": "9ff3d4490e4c22c7d73f639911404239b0dccc7f1c1664cf50dc06dfad914803",
+      "source_mtime_ns": 1791348367919992523,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/verification/c1-brain-test.log",
+      "path": "archive/evidence/c1/verification/c1-brain-test.log",
+      "bytes": 20347,
+      "sha256": "ea00cf3560adce0cb833487060308c8d718a327398714956404f851c5e81d832",
+      "source_mtime_ns": 1791348323379567994,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/verification/c1-lab-determinism-run2.log",
+      "path": "archive/evidence/c1/verification/c1-lab-determinism-run2.log",
+      "bytes": 18064,
+      "sha256": "072662bd5569ea0eab7e80708b458b1f205af0f5f292e73fad34f406e292f464",
+      "source_mtime_ns": 1791348323397644909,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/verification/c1-lab-final.json",
+      "path": "archive/evidence/c1/verification/c1-lab-final.json",
+      "bytes": 25665,
+      "sha256": "651c0c75a60061bcb9837c30625b4a5f92bb3b4dee3f7308405d40fa4191c31b",
+      "source_mtime_ns": 1791348323392368148,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/verification/c1-lab-final.log",
+      "path": "archive/evidence/c1/verification/c1-lab-final.log",
+      "bytes": 18113,
+      "sha256": "b3851cfa433da20b09270b87f2f4d49c94192c88eb0f37d109cf31e2e14c6a9a",
+      "source_mtime_ns": 1791348323388273514,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/verification/c1-lab-from-tmp-cwd.log",
+      "path": "archive/evidence/c1/verification/c1-lab-from-tmp-cwd.log",
+      "bytes": 18064,
+      "sha256": "0c38f703ea612e9bd4cb6d9e6545c324e0d7d2c5f220e8c09a99a93429ad62cd",
+      "source_mtime_ns": 1791348323402123669,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/verification/c1-outbound-grep.log",
+      "path": "archive/evidence/c1/verification/c1-outbound-grep.log",
+      "bytes": 253,
+      "sha256": "fb14040ac34a81c70527089c4a09e14715b3619dc9b6f0ea4b37ab6e1cd95dd9",
+      "source_mtime_ns": 1791348440954196216,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/verification/c1-root-typecheck.log",
+      "path": "archive/evidence/c1/verification/c1-root-typecheck.log",
+      "bytes": 10328,
+      "sha256": "be06342f3e66ebc811f19d98c96a35a0b5d61a9d358507571ef4ad93b276550a",
+      "source_mtime_ns": 1791348323395284904,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/verification/c1-tc-brain.log",
+      "path": "archive/evidence/c1/verification/c1-tc-brain.log",
+      "bytes": 112,
+      "sha256": "eedd03b85fe74641a25ae6c9b5d883cd903c80419f7f0b9f09b7db8503d9ad2e",
+      "source_mtime_ns": 1791348323382654585,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/verification/c1-tc-web.log",
+      "path": "archive/evidence/c1/verification/c1-tc-web.log",
+      "bytes": 108,
+      "sha256": "069b567c13c7c6db12781aa1f3ced8b63998cd782e2bb441a7ff12359a9fc0f3",
+      "source_mtime_ns": 1791348323385848800,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/verification/c1-webamp-typecheck.log",
+      "path": "archive/evidence/c1/verification/c1-webamp-typecheck.log",
+      "bytes": 9788,
+      "sha256": "ee3a252fe3ea5a916f8a78a10af46497b40946fee971065619437f8b4bd3e9e1",
+      "source_mtime_ns": 1791348325814038500,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c1/wave-bug-repro.log",
+      "path": "archive/evidence/c1/wave-bug-repro.log",
+      "bytes": 378,
+      "sha256": "fcbb5fa9b7343b3b5e4dab723ea674a38ce3290cc12b27fe536f10b0c9ad9e98",
+      "source_mtime_ns": 1791348067931787170,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c2/probe-hides.mts",
+      "path": "archive/evidence/c2/probe-hides.mts",
+      "bytes": 3939,
+      "sha256": "50fabba107f38633db7d1c55d4c9c082c2cf096f5a517d47c44774e1eba89206",
+      "source_mtime_ns": 1791347983240913323,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c2/probe-hides.out.txt",
+      "path": "archive/evidence/c2/probe-hides.out.txt",
+      "bytes": 835,
+      "sha256": "16675a3a22f59539fdee87e0b4c35dc00d9dc1a77dc8df7f544052d3ef38f80a",
+      "source_mtime_ns": 1791347986645636682,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c2/probe-interpret.mts",
+      "path": "archive/evidence/c2/probe-interpret.mts",
+      "bytes": 2448,
+      "sha256": "0ef2af6417288465e0fd8f0a0c78b7495e6d1c56d7a27f892db6558c89bf5c34",
+      "source_mtime_ns": 1791347825751985043,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c2/probe-interpret.out.txt",
+      "path": "archive/evidence/c2/probe-interpret.out.txt",
+      "bytes": 21996,
+      "sha256": "ba392219863d3020941a865cbf48b8a73ca92361a4f1dd8a107fe5eb551637d0",
+      "source_mtime_ns": 1791347829186143567,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/README.md",
+      "path": "archive/evidence/c3/README.md",
+      "bytes": 1936,
+      "sha256": "1bf73c6be8219ccc1679ded119ffadc7278b3e118bfb621895b47ba7f35cb71f",
+      "source_mtime_ns": 1791348328656768277,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe1-bundles.mjs",
+      "path": "archive/evidence/c3/probe1-bundles.mjs",
+      "bytes": 1977,
+      "sha256": "d9a36685e281a607c8c85eb45947406c5ec34fa21c666ceb4f8e706827babe3f",
+      "source_mtime_ns": 1791348299235897746,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe1-out.json",
+      "path": "archive/evidence/c3/probe1-out.json",
+      "bytes": 56472,
+      "sha256": "a811bf031d4b069de1e0306d737f4ffce976b55de3136b31dc3170c61e22c8b4",
+      "source_mtime_ns": 1791348299237555208,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe1-summary.txt",
+      "path": "archive/evidence/c3/probe1-summary.txt",
+      "bytes": 13396,
+      "sha256": "5c6397b0f6e1270fee714ba1c0decd7cad5a301731ae08248049d88ab1f9c15e",
+      "source_mtime_ns": 1791348299236995082,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe1.log",
+      "path": "archive/evidence/c3/probe1.log",
+      "bytes": 56472,
+      "sha256": "a811bf031d4b069de1e0306d737f4ffce976b55de3136b31dc3170c61e22c8b4",
+      "source_mtime_ns": 1791348304598094132,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2-neutrality.mjs",
+      "path": "archive/evidence/c3/probe2-neutrality.mjs",
+      "bytes": 3167,
+      "sha256": "798b36ae218506be1b3d5ce817fe79403ab13edb93f37a3e3f3f2a51918cef62",
+      "source_mtime_ns": 1791348299237882417,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2.log",
+      "path": "archive/evidence/c3/probe2.log",
+      "bytes": 1224,
+      "sha256": "0bbeb8f91a5caadf27986a88e28825ee5cccb93fcdf04ec41716a0ec5c102d10",
+      "source_mtime_ns": 1791348304707711206,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2b-detail.log",
+      "path": "archive/evidence/c3/probe2b-detail.log",
+      "bytes": 1250,
+      "sha256": "f3520cbea4e92db92f3488383a209cf9cf8885c7f426c610a80a2fe0b626b7fc",
+      "source_mtime_ns": 1791348305435137552,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2b-detail.mjs",
+      "path": "archive/evidence/c3/probe2b-detail.mjs",
+      "bytes": 1648,
+      "sha256": "7097f20bc700cb8449743fe088c2c6280e6a2f244c04087bc5226d91ecff7f17",
+      "source_mtime_ns": 1791348299238215168,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2c.log",
+      "path": "archive/evidence/c3/probe2c.log",
+      "bytes": 566,
+      "sha256": "be84ae817a18d8919894bae3a0239cd8f403c0f8e6341d0541d9fc22e3f5c511",
+      "source_mtime_ns": 1791348305536846233,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2c.mjs",
+      "path": "archive/evidence/c3/probe2c.mjs",
+      "bytes": 1290,
+      "sha256": "952f281ddd320f69fa8ad769a28322635648b707219b76dc4cd281e883a6d781",
+      "source_mtime_ns": 1791348299238540835,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2d.log",
+      "path": "archive/evidence/c3/probe2d.log",
+      "bytes": 1872,
+      "sha256": "20a9fa9faad22f8047414f1145999a2f02ea01ecb373f1add56ee12021384199",
+      "source_mtime_ns": 1791348305639146750,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2d.mjs",
+      "path": "archive/evidence/c3/probe2d.mjs",
+      "bytes": 3005,
+      "sha256": "38e1e1fac4981fc5e8410b35102b074b351916e260f873aff1ac856be12402de",
+      "source_mtime_ns": 1791348299238852336,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2e.log",
+      "path": "archive/evidence/c3/probe2e.log",
+      "bytes": 362,
+      "sha256": "583bbf260c21ec19cbfadd2101fdb610e5e3988850a01b810d6420b4ef9cd571",
+      "source_mtime_ns": 1791348305748638656,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2e.mjs",
+      "path": "archive/evidence/c3/probe2e.mjs",
+      "bytes": 2254,
+      "sha256": "22c9212e62770681bbbc21f0206e0a78e7e5f8a8ecda87cf90b29199030cb2d1",
+      "source_mtime_ns": 1791348299239233170,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2f.log",
+      "path": "archive/evidence/c3/probe2f.log",
+      "bytes": 211,
+      "sha256": "629222ca0992e3e8b23a85ed7aaa22528ce6e1af3c9d50528bde95ed5c89b64b",
+      "source_mtime_ns": 1791348305854540138,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe2f.mjs",
+      "path": "archive/evidence/c3/probe2f.mjs",
+      "bytes": 1960,
+      "sha256": "9e45fec6073b4b65cfac6e5fd8b0e5be8a1a4e22b240f53a89ab749b9fe3870f",
+      "source_mtime_ns": 1791348299239537796,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe3-declared.mjs",
+      "path": "archive/evidence/c3/probe3-declared.mjs",
+      "bytes": 3875,
+      "sha256": "58267d8a1f9a10ab12e921d5450d0a94887502b16ae3493e0d2530453e4f8984",
+      "source_mtime_ns": 1791348299239855422,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe3.log",
+      "path": "archive/evidence/c3/probe3.log",
+      "bytes": 1103,
+      "sha256": "91e1224d4ed524b52997f366f65fed9126cde202a53848984b729234a05ced21",
+      "source_mtime_ns": 1791348304815725568,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe3b.log",
+      "path": "archive/evidence/c3/probe3b.log",
+      "bytes": 33,
+      "sha256": "64d0eacc1b59c2375f4e6d2bcc41f8ab7776ce8751784bef5281827da541c30a",
+      "source_mtime_ns": 1791348305958370241,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe3b.mjs",
+      "path": "archive/evidence/c3/probe3b.mjs",
+      "bytes": 1109,
+      "sha256": "72eccaca12d891fbe45cf0d067fc947ae66957f5b7fc9034d12e0541eb62e4e7",
+      "source_mtime_ns": 1791348299240137131,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe3c.log",
+      "path": "archive/evidence/c3/probe3c.log",
+      "bytes": 796,
+      "sha256": "c348bf0ade6ca240a4fcdcc5cb3e6d211b01886764da6d9dae9ac007860e74cf",
+      "source_mtime_ns": 1791348306065034058,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe3c.mjs",
+      "path": "archive/evidence/c3/probe3c.mjs",
+      "bytes": 1811,
+      "sha256": "5933a97408f6d9db4849f1b987fbf5d050e6bfadefc7874a18cb121815136ed2",
+      "source_mtime_ns": 1791348299240473131,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe4-sequence.mjs",
+      "path": "archive/evidence/c3/probe4-sequence.mjs",
+      "bytes": 3843,
+      "sha256": "9562769d9d455dfbf71ff409dd024e559de55a5bbb4f79c72b3061f7053d7590",
+      "source_mtime_ns": 1791348299240801882,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe4.log",
+      "path": "archive/evidence/c3/probe4.log",
+      "bytes": 1595,
+      "sha256": "fcdf5e23aa059aa4cde174d23e75ac03301efbef423f025670d1cf63b899b2fb",
+      "source_mtime_ns": 1791348304927910731,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe5-learning.mjs",
+      "path": "archive/evidence/c3/probe5-learning.mjs",
+      "bytes": 7853,
+      "sha256": "fba231bab6a75cf6f1288818e6486dcb8ab575b396f67ddba01a80f437e0d164",
+      "source_mtime_ns": 1791348299241251425,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe5.log",
+      "path": "archive/evidence/c3/probe5.log",
+      "bytes": 2344,
+      "sha256": "ee1b3d3078cde4c32df24d51d23ceaffaba26e992036df8ae751e29c8a087de4",
+      "source_mtime_ns": 1791348305025563487,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe6.log",
+      "path": "archive/evidence/c3/probe6.log",
+      "bytes": 6466,
+      "sha256": "61cb64b37b0dd19b1d3bb1e144837a9dc9179582ad58562bac7014bf8d71370e",
+      "source_mtime_ns": 1791348305119881652,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe6.mjs",
+      "path": "archive/evidence/c3/probe6.mjs",
+      "bytes": 1984,
+      "sha256": "281ce3e1c81b322e02956e2da6e8828776fa873c33134e8c94c7ab5575c8c1a9",
+      "source_mtime_ns": 1791348299241587550,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe7-years.mjs",
+      "path": "archive/evidence/c3/probe7-years.mjs",
+      "bytes": 1164,
+      "sha256": "2b05d8e952c915f244f12ea91b06894914212dd6fb2785dce69ff92227aa7ae3",
+      "source_mtime_ns": 1791348299241881593,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe7.log",
+      "path": "archive/evidence/c3/probe7.log",
+      "bytes": 1457,
+      "sha256": "9106eb6d1abd79a90d4682e0232e252d41f2441dcb43d17b41a890b4b510106d",
+      "source_mtime_ns": 1791348305225320884,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe8-blends.mjs",
+      "path": "archive/evidence/c3/probe8-blends.mjs",
+      "bytes": 885,
+      "sha256": "848b2108a6f2b2ef6819d50582421c4dca4566aa8b0ca2f25509eb673dde5ca4",
+      "source_mtime_ns": 1791348299242194302,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe8.log",
+      "path": "archive/evidence/c3/probe8.log",
+      "bytes": 2940,
+      "sha256": "0242b0fdd58f8ae2e71e5cf0a38e9ef02ebb8d86d99c6037c811c98ceba5247d",
+      "source_mtime_ns": 1791348305326607314,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe9.log",
+      "path": "archive/evidence/c3/probe9.log",
+      "bytes": 366,
+      "sha256": "42a140ff6d0761eb10c77c5996110e76a06cc378a87a06bacec5425bf3f6934a",
+      "source_mtime_ns": 1791348306163962733,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c3/probe9.mjs",
+      "path": "archive/evidence/c3/probe9.mjs",
+      "bytes": 706,
+      "sha256": "5ccf1f8cda9e353d3c7bb08c78ae7638573dc9c2b33bce3686ffc32afe97a4c2",
+      "source_mtime_ns": 1791348299242478969,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-brain-test-fresh.log",
+      "path": "archive/evidence/c4/c4-brain-test-fresh.log",
+      "bytes": 21210,
+      "sha256": "38959c52883fe65fccfb45bef480d7404ea2b74ba9a83094207266c358cb6752",
+      "source_mtime_ns": 1791350511166723272,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-git-audit.txt",
+      "path": "archive/evidence/c4/c4-git-audit.txt",
+      "bytes": 3029,
+      "sha256": "744e25c7aae839bcf6f8c0e72187c5745f653fdcef836f3382ffa501391111b9",
+      "source_mtime_ns": 1791350511257705584,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-lab-fresh-json.log",
+      "path": "archive/evidence/c4/c4-lab-fresh-json.log",
+      "bytes": 22886,
+      "sha256": "c418ec05fc9a82db0da2ef4c3c0b90c025d63d9c11520965dd09bde732d02699",
+      "source_mtime_ns": 1791350565302510802,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-lab-fresh.json",
+      "path": "archive/evidence/c4/c4-lab-fresh.json",
+      "bytes": 32342,
+      "sha256": "b98d2a1fba5831c9c85e3bf5b14064dc90e0a21487a0b86fa19c4e430cdc2e16",
+      "source_mtime_ns": 1791350565299621858,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-lab-fresh.log",
+      "path": "archive/evidence/c4/c4-lab-fresh.log",
+      "bytes": 22826,
+      "sha256": "fd0c2f686e31edd61b40d7742474c574e3921ff4294ef8afb8d01b891329b043",
+      "source_mtime_ns": 1791350511176513948,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-rollback-smoke.log",
+      "path": "archive/evidence/c4/c4-rollback-smoke.log",
+      "bytes": 4019,
+      "sha256": "1c81aa2c33bf3fb93660f08d1c5459b700fd7ea5cba85de5fa8dea7a28f1fd00",
+      "source_mtime_ns": 1791350440021378534,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-rollback-smoke.sh",
+      "path": "archive/evidence/c4/c4-rollback-smoke.sh",
+      "bytes": 9106,
+      "sha256": "0295ec9de3a1656f6c128bb8f2d2366689384d9ab72a3de86fde0567836c61ef",
+      "source_mtime_ns": 1791350433107621627,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-smoke-auth.log",
+      "path": "archive/evidence/c4/c4-smoke-auth.log",
+      "bytes": 1036,
+      "sha256": "cbb423aa848b9baff7572a81b59f7c2554b0678d3429c8ff5ce8c5ae05ff24c6",
+      "source_mtime_ns": 1791350454003871469,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-smoke-auth.sh",
+      "path": "archive/evidence/c4/c4-smoke-auth.sh",
+      "bytes": 2732,
+      "sha256": "b221fd9acf27ca0d66cac6adc5ad5e911e3025f2b49cbf816c9b82eba3b6e002",
+      "source_mtime_ns": 1791350433107621669,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-typecheck-brain.log",
+      "path": "archive/evidence/c4/c4-typecheck-brain.log",
+      "bytes": 112,
+      "sha256": "eedd03b85fe74641a25ae6c9b5d883cd903c80419f7f0b9f09b7db8503d9ad2e",
+      "source_mtime_ns": 1791350511170177221,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/c4/c4-typecheck-web.log",
+      "path": "archive/evidence/c4/c4-typecheck-web.log",
+      "bytes": 108,
+      "sha256": "069b567c13c7c6db12781aa1f3ced8b63998cd782e2bb441a7ff12359a9fc0f3",
+      "source_mtime_ns": 1791350511174090467,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/exchange-logs/synamp-b2-brain-test.log",
+      "path": "archive/evidence/exchange-logs/synamp-b2-brain-test.log",
+      "bytes": 19694,
+      "sha256": "6be5456c54dfe57b5ddfe752ad11ffcbf4f21863675da58e14365651424693ad",
+      "source_mtime_ns": 1791346642127730500,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/exchange-logs/synamp-b2-learning-test.log",
+      "path": "archive/evidence/exchange-logs/synamp-b2-learning-test.log",
+      "bytes": 3532,
+      "sha256": "2d0237436063bd8641a5bdd17772be397712322453f938e04d0b4d6851c4f9c1",
+      "source_mtime_ns": 1791346642128181297,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/exchange-logs/synamp-b2-typecheck.log",
+      "path": "archive/evidence/exchange-logs/synamp-b2-typecheck.log",
+      "bytes": 112,
+      "sha256": "eedd03b85fe74641a25ae6c9b5d883cd903c80419f7f0b9f09b7db8503d9ad2e",
+      "source_mtime_ns": 1791346642128496925,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/exchange-logs/synamp-brain-test.log",
+      "path": "archive/evidence/exchange-logs/synamp-brain-test.log",
+      "bytes": 14844,
+      "sha256": "be6a819ec2703c3cd079f21780022e8c5c2d643e74e5bdc39a35f295b6e7c4f3",
+      "source_mtime_ns": 1791346642128916637,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/exchange-logs/synamp-librarian-test.log",
+      "path": "archive/evidence/exchange-logs/synamp-librarian-test.log",
+      "bytes": 1585,
+      "sha256": "fcc6ea97958a6dcc167d32b7edb846f16e12e209a0485981a11a92fcabe63a54",
+      "source_mtime_ns": 1791346642129821563,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/exchange-logs/synamp-typecheck.log",
+      "path": "archive/evidence/exchange-logs/synamp-typecheck.log",
+      "bytes": 10335,
+      "sha256": "22f72ed208392fda74cc00b023b0469be778e596b85a5eb7edd1822d10e1031c",
+      "source_mtime_ns": 1791346642129339809,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/EVIDENCE.md",
+      "path": "archive/evidence/final-lab/EVIDENCE.md",
+      "bytes": 3129,
+      "sha256": "2785560df42a5cb4799760f6864479d24e20637dc041e767e0da82416137adbf",
+      "source_mtime_ns": 1791350033671253725,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/cwd-run.json",
+      "path": "archive/evidence/final-lab/cwd-run.json",
+      "bytes": 32342,
+      "sha256": "4e91f4a553cf0adaa261e5265b6f6dd3ba7176746b1d04f3cb1ba3920bffbc8c",
+      "source_mtime_ns": 1791349989804039078,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/cwd-run.log",
+      "path": "archive/evidence/final-lab/cwd-run.log",
+      "bytes": 22984,
+      "sha256": "ac601fc858b48b6f41b9391a2ec073ff7e43a1c348e637a4f21c799be18b9cf8",
+      "source_mtime_ns": 1791349989804692584,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/determinism-run1.json",
+      "path": "archive/evidence/final-lab/determinism-run1.json",
+      "bytes": 32342,
+      "sha256": "9092531812ee0703dfefcf4aa1cbc8282d3aa041e958b37d884f36d48b2e4510",
+      "source_mtime_ns": 1791349988435233903,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/determinism-run2.json",
+      "path": "archive/evidence/final-lab/determinism-run2.json",
+      "bytes": 32342,
+      "sha256": "7986cbb8f1d9f355c381382ea24e7eccd96809c1f249f8f88d3a63a3527693fc",
+      "source_mtime_ns": 1791349989619806641,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/determinism.txt",
+      "path": "archive/evidence/final-lab/determinism.txt",
+      "bytes": 1524,
+      "sha256": "f3d4c8097a3e84be807552c55c3e61166e5c05fe873002145d5b1095eca3fd9d",
+      "source_mtime_ns": 1791350011246302292,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/hashes.txt",
+      "path": "archive/evidence/final-lab/hashes.txt",
+      "bytes": 4199,
+      "sha256": "e29191cde31639acee43371a96a2d38cc271e54c1f7240b37a97de5f831e4326",
+      "source_mtime_ns": 1791350017186346938,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/lab.json",
+      "path": "archive/evidence/final-lab/lab.json",
+      "bytes": 32342,
+      "sha256": "9092531812ee0703dfefcf4aa1cbc8282d3aa041e958b37d884f36d48b2e4510",
+      "source_mtime_ns": 1791349988427581331,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/lab.stdout.log",
+      "path": "archive/evidence/final-lab/lab.stdout.log",
+      "bytes": 22980,
+      "sha256": "2fa173dec18c4d642aaa9d2801a6de6cbc3e8795d5f34e3a445fb90ded0eab68",
+      "source_mtime_ns": 1791349988427924042,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/prerefresh-run.json",
+      "path": "archive/evidence/final-lab/prerefresh-run.json",
+      "bytes": 24651,
+      "sha256": "256d8875c37a9d96a3ab7c583db25bfd5c5e122806c8505b9ca7196b93e892d8",
+      "source_mtime_ns": 1791348078900145750,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/prerefresh-run.log",
+      "path": "archive/evidence/final-lab/prerefresh-run.log",
+      "bytes": 17200,
+      "sha256": "50f5ba8c00141fa13f9be14d2419a380a049b26b6fc401aaffce3b8204a24251",
+      "source_mtime_ns": 1791348078903663800,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/final-lab/run.json",
+      "path": "archive/evidence/final-lab/run.json",
+      "bytes": 3292,
+      "sha256": "19195ff569065680da4969d55e27b4677b1e66d665490f11f4c6fd205b0bde4a",
+      "source_mtime_ns": 1791350040797043580,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/after-brain-test-run2.log",
+      "path": "archive/evidence/h1/after-brain-test-run2.log",
+      "bytes": 21182,
+      "sha256": "be64aed630831c5a769a2969d177da30fc7270b05bd7ee827eec8de767d31cf9",
+      "source_mtime_ns": 1791349372359889647,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/after-brain-test.log",
+      "path": "archive/evidence/h1/after-brain-test.log",
+      "bytes": 21196,
+      "sha256": "d58c357077f67bae7d11c841e025256d2203a870a088674d9d189157f2c4f6d8",
+      "source_mtime_ns": 1791349336640537921,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/after-intent-cases.out",
+      "path": "archive/evidence/h1/after-intent-cases.out",
+      "bytes": 5863,
+      "sha256": "17086c25eff064e626169e3daae18f20748fdec414bf99fbb691db6bf0c343b8",
+      "source_mtime_ns": 1791349336645491302,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/after-p3-sequence.log",
+      "path": "archive/evidence/h1/after-p3-sequence.log",
+      "bytes": 3344,
+      "sha256": "c16c5f5295096d9fc367188475c7bd3dcac71d0c5c21895ef9c8f9437a9cfbe8",
+      "source_mtime_ns": 1791349336804333261,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/after-p5-wave.log",
+      "path": "archive/evidence/h1/after-p5-wave.log",
+      "bytes": 256,
+      "sha256": "56bc590445dd9c78e575c9b2f2d0fee46713382a0118b7e9c558c79d5bdee30f",
+      "source_mtime_ns": 1791349336728834278,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/before-brain-test.log",
+      "path": "archive/evidence/h1/before-brain-test.log",
+      "bytes": 20446,
+      "sha256": "51b20589a37a1416ae04e90185a51796ef0a8d4748763cfd06ba53d69df1ff0c",
+      "source_mtime_ns": 1791349336637168222,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/before-intent-cases.out",
+      "path": "archive/evidence/h1/before-intent-cases.out",
+      "bytes": 5520,
+      "sha256": "165e07b1c79031a60b2c03087539efbff1e8a227dbdd0ee1f199e37d0a5155d1",
+      "source_mtime_ns": 1791349336643049320,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/lab-after.log",
+      "path": "archive/evidence/h1/lab-after.log",
+      "bytes": 18116,
+      "sha256": "5e85f38d4d6aa105d617ca6d74d23599648f169aed823ecf558b76f2c37c6f92",
+      "source_mtime_ns": 1791349336648417456,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/probes/h1-edges.mts",
+      "path": "archive/evidence/h1/probes/h1-edges.mts",
+      "bytes": 2067,
+      "sha256": "0c46bd13feef2a50fc71c761d03420b4810ebd5cf3ce0c54957fd7f181f6c209",
+      "source_mtime_ns": 1791349336651465944,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/probes/h1-intent-before.mts",
+      "path": "archive/evidence/h1/probes/h1-intent-before.mts",
+      "bytes": 2346,
+      "sha256": "8baa02a413358ff3dc63ab6e0ca34e56a02f2fb1810a51d927b5b24af4633f70",
+      "source_mtime_ns": 1791349336651071190,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h1/probes/wave-current-check.mts",
+      "path": "archive/evidence/h1/probes/wave-current-check.mts",
+      "bytes": 2467,
+      "sha256": "19ca408de7d50061605ca9ca092532249baf376a99ca84fc07ec2b685b41fb6d",
+      "source_mtime_ns": 1791349336651929656,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h2/smoke-output.txt",
+      "path": "archive/evidence/h2/smoke-output.txt",
+      "bytes": 2187,
+      "sha256": "7a9824f0690ccef46d24de93e6371f71fa996f9995a49668c895114e04ab437d",
+      "source_mtime_ns": 1791349108960960858,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h2/smoke1-routes.mjs",
+      "path": "archive/evidence/h2/smoke1-routes.mjs",
+      "bytes": 7221,
+      "sha256": "2dd2920d025942c51c7027bae1af251021fc460385ce20219641de91860ecd6f",
+      "source_mtime_ns": 1791349108464369228,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h2/smoke2-playlist-explain.mjs",
+      "path": "archive/evidence/h2/smoke2-playlist-explain.mjs",
+      "bytes": 5977,
+      "sha256": "8d257fb069922b83d3b61ba2d31225c6667559f7885efd34e0a03a7cf1ea3101",
+      "source_mtime_ns": 1791349108467194984,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "evidence/h2/verify-output.txt",
+      "path": "archive/evidence/h2/verify-output.txt",
+      "bytes": 509,
+      "sha256": "a610ced93d18fa3f57517a979ede37ec52ce821b5824d015856f7e704601068a",
+      "source_mtime_ns": 1791349173324634252,
+      "role": "evidence",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "plan.md",
+      "path": "archive/plan.md",
+      "bytes": 12199,
+      "sha256": "87b59bf0cb80f6d8c2acb8de15b024d45fc56beb30953309e8763019479ff0b7",
+      "source_mtime_ns": 1791345356692417495,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/build.py",
+      "path": "archive/render/build.py",
+      "bytes": 6318,
+      "sha256": "583b34c4acd1e10cdae8630ab5a4584f9db38c5b4bd58a006e6efb12c478a94d",
+      "source_mtime_ns": 1791351575292112751,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/pdf.mjs",
+      "path": "archive/render/pdf.mjs",
+      "bytes": 972,
+      "sha256": "0634e5d7e78f6c13c019ea9064de5cc091bb548cec88ac02400b9dfb81a1dc4f",
+      "source_mtime_ns": 1791351533289761429,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/preview.html",
+      "path": "archive/render/preview.html",
+      "bytes": 120726,
+      "sha256": "29f7b729f2cc364999498ca7603779dd06ffd6e089d59b89dfeeac22f12cd70b",
+      "source_mtime_ns": 1791351414594184494,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/shot-ch2.png",
+      "path": "archive/render/shot-ch2.png",
+      "bytes": 323020,
+      "sha256": "eacfaf01971854fdf1e624d1b278329bef64c3663665d7ca8b40eea75df85546",
+      "source_mtime_ns": 1791351348295202987,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/shot-ch3.png",
+      "path": "archive/render/shot-ch3.png",
+      "bytes": 444591,
+      "sha256": "79fecd3422bc837c3da3b28fd9c62c5c565efee97e2bed90dcd527d688f7fefe",
+      "source_mtime_ns": 1791351350421223651,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/shot-ch4.png",
+      "path": "archive/render/shot-ch4.png",
+      "bytes": 366741,
+      "sha256": "6f0ee93dcfc634bd77cc7dfe4c2c8eda55cfbe09d135b1889567cffd411960f1",
+      "source_mtime_ns": 1791351419316084197,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/shot-ch5.png",
+      "path": "archive/render/shot-ch5.png",
+      "bytes": 427801,
+      "sha256": "4596db3451d7753aa823fd38dee570839fb704d2ab3f87a5792e6df4e09602b5",
+      "source_mtime_ns": 1791351374555220336,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/shot-ch5b.png",
+      "path": "archive/render/shot-ch5b.png",
+      "bytes": 422085,
+      "sha256": "34cf44b4662c6f27a0a7cf8e3310a61cb00d8a7c7122312a948a797e7c6c98a4",
+      "source_mtime_ns": 1791351417200611315,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/shot-cover.png",
+      "path": "archive/render/shot-cover.png",
+      "bytes": 149363,
+      "sha256": "7ad5f7f23955147197e9247be1276d72eded37911d9432aecd647352b53d200c",
+      "source_mtime_ns": 1791351346094126429,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/shot.mjs",
+      "path": "archive/render/shot.mjs",
+      "bytes": 1223,
+      "sha256": "89ef0e88903c7a8810a71f4cb84270c4bd353af8529c795f297024d76e2770d2",
+      "source_mtime_ns": 1791351343077801107,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "render/template.html",
+      "path": "archive/render/template.html",
+      "bytes": 10595,
+      "sha256": "1c1e8314a32577d2a1a110edbabfc09c2a12ea4317f409bc5bc643de1e9e5f89",
+      "source_mtime_ns": 1791351575293031299,
+      "role": "report",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/W1-ch1-translation.md",
+      "path": "archive/report-sources/W1-ch1-translation.md",
+      "bytes": 11455,
+      "sha256": "4a7b2d293aca294330aade42992587257a7a64e166d36a6531c44965f9db30cc",
+      "source_mtime_ns": 1791349749236911945,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/W2-ch2-learning.md",
+      "path": "archive/report-sources/W2-ch2-learning.md",
+      "bytes": 9602,
+      "sha256": "ef88d1f79fd12ad09999db9955260a22874fc7696d9f8e6484de9cd1fc22e844",
+      "source_mtime_ns": 1791349850730552160,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/W3-ch3-bias.md",
+      "path": "archive/report-sources/W3-ch3-bias.md",
+      "bytes": 10916,
+      "sha256": "7e9ee2f171591024cdbe749465c753bd06645d8267ebfa1b4e196d52acea2bb9",
+      "source_mtime_ns": 1791349887480591242,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/W4-ch4-verification.md",
+      "path": "archive/report-sources/W4-ch4-verification.md",
+      "bytes": 10900,
+      "sha256": "79bf691b8ab1d7def510e55b66504f205f03d04c5d0fa13394fff2f50c6d5bc9",
+      "source_mtime_ns": 1791350961531928962,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/W5-ch5-appendix.md",
+      "path": "archive/report-sources/W5-ch5-appendix.md",
+      "bytes": 52935,
+      "sha256": "31ae0e1feefa15180b708e277967202117f46582caffddd07e45d4e342e6a569",
+      "source_mtime_ns": 1791351414435525147,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/W6-exec-summary.md",
+      "path": "archive/report-sources/W6-exec-summary.md",
+      "bytes": 2797,
+      "sha256": "85d25dadb8003cca34044f0c15d275ca6a030bb8319b37003060647f2f9e6810",
+      "source_mtime_ns": 1791351529668755341,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/W7-agent-brief.md",
+      "path": "archive/report-sources/W7-agent-brief.md",
+      "bytes": 10429,
+      "sha256": "803a5f025f4d991290042870625481e101fe6f44859f971ec2a50649fa17c657",
+      "source_mtime_ns": 1791351127478269933,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/figures/FIGURES.md",
+      "path": "archive/report-sources/figures/FIGURES.md",
+      "bytes": 6026,
+      "sha256": "8a9c40d13389cf61f787360500bafc79944a93fab09fad1febf2eba88cfbebb4",
+      "source_mtime_ns": 1791351094769121184,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/figures/epochs.svg",
+      "path": "archive/report-sources/figures/epochs.svg",
+      "bytes": 4060,
+      "sha256": "7d3d63cf91541ce52d6d6fd201e223301732ec752d7f1944bf54c8d26faf767d",
+      "source_mtime_ns": 1791351171954058653,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/figures/flow.svg",
+      "path": "archive/report-sources/figures/flow.svg",
+      "bytes": 3869,
+      "sha256": "399e13201a1142121a5dcd18814c1d2642462be3ac439ed872a666034d9e0381",
+      "source_mtime_ns": 1791350861087615151,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/figures/modules.svg",
+      "path": "archive/report-sources/figures/modules.svg",
+      "bytes": 2936,
+      "sha256": "0b96a252ba85239c4ad002b89315cc2002c386366c8f79fcb46691b2ba784e91",
+      "source_mtime_ns": 1791351171954111695,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "report-sources/figures/reliability.svg",
+      "path": "archive/report-sources/figures/reliability.svg",
+      "bytes": 3321,
+      "sha256": "c91f659a35d123fef8d873823cb471b1915ce2b61db425bb802004cb2df4828c",
+      "source_mtime_ns": 1791351171954079737,
+      "role": "handoff-or-receipt",
+      "evidence_state": "historical-autoclaw-capture"
+    },
+    {
+      "original_path": "review.md",
+      "path": "archive/review.md",
+      "bytes": 7066,
+      "sha256": "1489ba2e784270eaab2b34b084f5c6212a629364456b6bf6f2e919f97f611432",
+      "source_mtime_ns": 1791351512057966819,
+      "role": "review",
+      "evidence_state": "historical-autoclaw-capture"
+    }
+  ],
+  "excluded": [
+    {
+      "path": ".DS_Store",
+      "reason": "macOS Finder metadata; no research content"
+    },
+    {
+      "path": "DELIVERY/.DS_Store",
+      "reason": "macOS Finder metadata; no research content"
+    },
+    {
+      "path": "DELIVERY/code/.DS_Store",
+      "reason": "macOS Finder metadata; no research content"
+    },
+    {
+      "path": "DELIVERY/report-kit/.DS_Store",
+      "reason": "macOS Finder metadata; no research content"
+    }
+  ]
+}

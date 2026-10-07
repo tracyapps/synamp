@@ -1,0 +1,33 @@
+{
+  "format": "synamp.visual-concept/1",
+  "created": "2026-10-07",
+  "source": "built-in image generation",
+  "asset": "galaxy-concept.png",
+  "data_status": "Illustrative invented counts, links and assets, not library evidence",
+  "approval": {
+    "response": "Yes\u2014start with planets and album/song drill-down",
+    "scope": "Separate Galaxy view with artist planets and album/song detail hierarchy",
+    "date": "2026-10-07"
+  },
+  "states": [
+    "desktop",
+    "phone portrait",
+    "phone landscape"
+  ],
+  "invariants": [
+    "Separate navigation",
+    "Graph dominant with direct labels",
+    "Song-file count determines area",
+    "Data caveat visible",
+    "Details stay accessible without hover",
+    "Keyboard and gesture alternatives",
+    "Mobile graph remains before details"
+  ],
+  "deviations": [
+    "No collaboration edges until artist identity review",
+    "No notes or tags until durable store",
+    "No invented album or artist artwork",
+    "Static deterministic layout in initial slice"
+  ],
+  "prompt_summary": "SynAmp charcoal/blue-gray/gold app context; bounded flat artist circles; desktop side card and mobile detail sheet; labeled illustrative data and candidate credit caveats; no glow, 3D, wallpaper or whole-graph hairball."
+}

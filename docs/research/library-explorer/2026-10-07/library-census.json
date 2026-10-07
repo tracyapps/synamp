@@ -1,0 +1,761 @@
+{
+  "format": "synamp.private-library-census/1",
+  "private": true,
+  "purpose": "Small private evidence sample for library-explorer and Galaxy design; not a full catalog export.",
+  "retrieved_at": "2026-10-07T15:16:56.355801+00:00",
+  "source": {
+    "path": "/Volumes/music/.synamp/library-signals.json",
+    "bytes": 31149418,
+    "sha256": "6cf1349bef646f2b4dfb05bb404400db80cacc92e03b28c3504f3e627e713d4c",
+    "mtime_utc": "2026-10-07T14:22:03.677961+00:00",
+    "format": "synamp.library-signals/1",
+    "exporter_version": "0.2.0",
+    "exported_at_utc": "2026-10-07T14:22:00.311521+00:00",
+    "export_counts": {
+      "catalog": 46173,
+      "exported": 46117,
+      "missing_on_disk": 56,
+      "outside_root": 0,
+      "no_results": 35947,
+      "withheld_stale": 2,
+      "failed": 4,
+      "tagged": 44437
+    },
+    "stable_during_read": true
+  },
+  "read_scope": {
+    "snapshot": "Full JSON parsed once for aggregate counts; no signals, credentials, or full track list copied.",
+    "filesystem": "One top-level directory listing and immediate album directory listings only for case-insensitive 2Pac-prefixed directories; existence checks only for <=24 illustrated album folders.",
+    "writes_to_music": false
+  },
+  "summary": {
+    "tracks": 46117,
+    "distinct_track_artist_labels": 5597,
+    "distinct_album_artist_labels": 1084,
+    "distinct_musicbrainz_release_ids": 14,
+    "export_artist_folder_labels": 4100,
+    "physical_top_level_directories": 4113,
+    "physical_top_level_hidden_directories": 0,
+    "folder_album_groups_matching_current_groupAlbums": 8387,
+    "metadata_source_counts": {
+      "tags": 44437,
+      "path": 1680
+    },
+    "explicit_featured_credit_tracks": 219,
+    "explicit_featured_credit_labels": 161,
+    "ambiguous_artist_labels_with_ampersand_comma_or_slash": 563,
+    "two_pac_credit_labels": 38,
+    "two_pac_prefix_folder_count": 17,
+    "dirty_harry_fragmentation": {
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "tracks": 34,
+      "physical_album_folders": 19,
+      "distinct_track_artist_labels": 19,
+      "album_artist_tracks": 0,
+      "musicbrainz_release_id_tracks": 0,
+      "year_counts": {
+        "2003": 34
+      }
+    }
+  },
+  "field_coverage": {
+    "path": {
+      "tracks": 46117,
+      "percent": 100.0
+    },
+    "artist": {
+      "tracks": 46044,
+      "percent": 99.842
+    },
+    "album": {
+      "tracks": 44025,
+      "percent": 95.464
+    },
+    "album_artist": {
+      "tracks": 10254,
+      "percent": 22.235
+    },
+    "year": {
+      "tracks": 36977,
+      "percent": 80.181
+    },
+    "mb_albumid": {
+      "tracks": 131,
+      "percent": 0.284
+    },
+    "track_no": {
+      "tracks": 40359,
+      "percent": 87.514
+    },
+    "track_total": {
+      "tracks": 22880,
+      "percent": 49.613
+    },
+    "disc_no": {
+      "tracks": 7563,
+      "percent": 16.4
+    },
+    "disc_total": {
+      "tracks": 6940,
+      "percent": 15.049
+    },
+    "genre": {
+      "tracks": 0,
+      "percent": 0.0
+    },
+    "play_count": {
+      "tracks": 0,
+      "percent": 0.0
+    },
+    "compilation": {
+      "tracks": 0,
+      "percent": 0.0
+    }
+  },
+  "largest_artist_label_samples": [
+    {
+      "artist_label": "Hans Zimmer",
+      "tracks": 958
+    },
+    {
+      "artist_label": "Stevie Wonder",
+      "tracks": 499
+    },
+    {
+      "artist_label": "Shakira",
+      "tracks": 462
+    },
+    {
+      "artist_label": "Brian Eno",
+      "tracks": 434
+    },
+    {
+      "artist_label": "Red Hot Chili Peppers",
+      "tracks": 422
+    },
+    {
+      "artist_label": "CC-music",
+      "tracks": 407
+    },
+    {
+      "artist_label": "A.R.Rahman",
+      "tracks": 387
+    },
+    {
+      "artist_label": "Bon Jovi",
+      "tracks": 362
+    },
+    {
+      "artist_label": "Buddha-Bar (CD Series)",
+      "tracks": 359
+    },
+    {
+      "artist_label": "Ani DiFranco",
+      "tracks": 348
+    },
+    {
+      "artist_label": "Olivia Newton-John",
+      "tracks": 313
+    },
+    {
+      "artist_label": "Unknown Artist (1)",
+      "tracks": 290
+    },
+    {
+      "artist_label": "Nina Simone",
+      "tracks": 281
+    },
+    {
+      "artist_label": "Ryan Adams",
+      "tracks": 271
+    },
+    {
+      "artist_label": "Cher",
+      "tracks": 258
+    },
+    {
+      "artist_label": "Gloria Estefan",
+      "tracks": 257
+    },
+    {
+      "artist_label": "Kate Bush",
+      "tracks": 242
+    },
+    {
+      "artist_label": "Melissa Ferrick",
+      "tracks": 222
+    },
+    {
+      "artist_label": "2Pac",
+      "tracks": 221
+    },
+    {
+      "artist_label": "Genesis",
+      "tracks": 217
+    }
+  ],
+  "physical_two_pac_samples": [
+    {
+      "artist_folder": "2Pac",
+      "album_subfolder_count": 23,
+      "sample_album_folders": [
+        "1 in 21",
+        "2Pacalypse Now (1992)",
+        "All Eyez On Me (Book 1)",
+        "All Eyez On Me (Book 2) (2001)",
+        "All Eyez On Me (Disc 2)",
+        "Better Dayz Disc 1 (2002)",
+        "Better Dayz Disc 2 (2002)",
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac & Outlawz",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Still I Rise (1999)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac and MC Breed",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Unknown Album"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Big Pun",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Bounty Killer, Wayn",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Bun B & Brooklyn",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Busta Rhymes",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Butch Cassidy",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Jadakiss, DMX, Butc",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Jodeci",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Jon B",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Left Eye",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Nappy Roots",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Scarface",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Wyclef",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2Pac feat. Xzibit",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Dirty Harry, Green Lantern, & (2003)"
+      ]
+    },
+    {
+      "artist_folder": "2pac & Treach_Riddler f",
+      "album_subfolder_count": 1,
+      "sample_album_folders": [
+        "Unknown Album"
+      ]
+    }
+  ],
+  "illustrative_relationships": [
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Big Pun",
+      "album_folder": "2Pac feat. Big Pun/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Big Pun"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Bounty Killer, Wayn",
+      "album_folder": "2Pac feat. Bounty Killer, Wayn/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Bounty Killer, Wayn"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Bun B & Brooklyn",
+      "album_folder": "2Pac feat. Bun B & Brooklyn/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Bun B & Brooklyn"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Busta Rhymes",
+      "album_folder": "2Pac feat. Busta Rhymes/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 2,
+      "credited_artists": [
+        "2Pac feat. Busta Rhymes"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Butch Cassidy",
+      "album_folder": "2Pac feat. Butch Cassidy/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Butch Cassidy"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Jadakiss, DMX, Butc",
+      "album_folder": "2Pac feat. Jadakiss, DMX, Butc/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Jadakiss, DMX, Butc"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Jodeci",
+      "album_folder": "2Pac feat. Jodeci/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Jodeci"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Jon B",
+      "album_folder": "2Pac feat. Jon B/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Jon B"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Left Eye",
+      "album_folder": "2Pac feat. Left Eye/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Left Eye"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Nappy Roots",
+      "album_folder": "2Pac feat. Nappy Roots/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Nappy Roots"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Scarface",
+      "album_folder": "2Pac feat. Scarface/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Scarface"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Wyclef",
+      "album_folder": "2Pac feat. Wyclef/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Wyclef"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac feat. Xzibit",
+      "album_folder": "2Pac feat. Xzibit/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac feat. Xzibit"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac",
+      "album_folder": "2Pac/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 11,
+      "credited_artists": [
+        "2Pac"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "Afeni Shakur",
+      "album_folder": "Afeni Shakur/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 1,
+      "credited_artists": [
+        "Afeni Shakur"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "Dirty Harry, Vlad, Green Lante",
+      "album_folder": "Dirty Harry, Vlad, Green Lante/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 2,
+      "credited_artists": [
+        "Dirty Harry, Vlad, Green Lante"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "Fat Joe",
+      "album_folder": "Fat Joe/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 2,
+      "credited_artists": [
+        "Fat Joe"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "Sway",
+      "album_folder": "Sway/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 2,
+      "credited_artists": [
+        "Sway"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "alicia keys_ADMIN_Jan-10-175846-2023_Conflict",
+      "album_folder": "alicia keys_ADMIN_Jan-10-175846-2023_Conflict/Dirty Harry, Green Lantern, & (2003)",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "track_count": 2,
+      "credited_artists": [
+        "Alicia Keys"
+      ],
+      "year": 2003,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac",
+      "album_folder": "2Pac/1 in 21",
+      "album_label": "1 in 21",
+      "track_count": 8,
+      "credited_artists": [
+        "2Pac"
+      ],
+      "year": null,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac",
+      "album_folder": "2Pac/2Pacalypse Now (1992)",
+      "album_label": "2Pacalypse Now (1992)",
+      "track_count": 13,
+      "credited_artists": [
+        "2Pac"
+      ],
+      "year": 1992,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac",
+      "album_folder": "2Pac/All Eyez On Me (Book 1)",
+      "album_label": "All Eyez On Me (Book 1)",
+      "track_count": 14,
+      "credited_artists": [
+        "2Pac"
+      ],
+      "year": null,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac",
+      "album_folder": "2Pac/All Eyez On Me (Book 2) (2001)",
+      "album_label": "All Eyez On Me (Book 2)",
+      "track_count": 12,
+      "credited_artists": [
+        "2Pac"
+      ],
+      "year": 2001,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "folder_album_membership",
+      "artist_folder": "2Pac",
+      "album_folder": "2Pac/All Eyez On Me (Disc 2)",
+      "album_label": "All Eyez On Me (Disc 2)",
+      "track_count": 1,
+      "credited_artists": [
+        "2Pac"
+      ],
+      "year": null,
+      "evidence": "export.path plus bounded directory existence check",
+      "physical_folder_exists": true
+    },
+    {
+      "kind": "inferred_featured_credit",
+      "base_artist_label": "2Pac",
+      "featured_credit_label": "Big Pun",
+      "raw_credit": "2Pac feat. Big Pun",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "evidence": "explicit feat/ft/featuring separator in exported track artist",
+      "confidence": "candidate",
+      "featured_credit_is_single_artist": false,
+      "note": "Keep the entire featured suffix as a credit until reviewed; commas and ampersands do not establish separate artists."
+    },
+    {
+      "kind": "inferred_featured_credit",
+      "base_artist_label": "2Pac",
+      "featured_credit_label": "Bounty Killer, Wayn",
+      "raw_credit": "2Pac feat. Bounty Killer, Wayn",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "evidence": "explicit feat/ft/featuring separator in exported track artist",
+      "confidence": "candidate",
+      "featured_credit_is_single_artist": false,
+      "note": "Keep the entire featured suffix as a credit until reviewed; commas and ampersands do not establish separate artists."
+    },
+    {
+      "kind": "inferred_featured_credit",
+      "base_artist_label": "2Pac",
+      "featured_credit_label": "Bun B & Brooklyn",
+      "raw_credit": "2Pac feat. Bun B & Brooklyn",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "evidence": "explicit feat/ft/featuring separator in exported track artist",
+      "confidence": "candidate",
+      "featured_credit_is_single_artist": false,
+      "note": "Keep the entire featured suffix as a credit until reviewed; commas and ampersands do not establish separate artists."
+    },
+    {
+      "kind": "inferred_featured_credit",
+      "base_artist_label": "2Pac",
+      "featured_credit_label": "Busta Rhymes",
+      "raw_credit": "2Pac feat. Busta Rhymes",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "evidence": "explicit feat/ft/featuring separator in exported track artist",
+      "confidence": "candidate",
+      "featured_credit_is_single_artist": false,
+      "note": "Keep the entire featured suffix as a credit until reviewed; commas and ampersands do not establish separate artists."
+    },
+    {
+      "kind": "inferred_featured_credit",
+      "base_artist_label": "2Pac",
+      "featured_credit_label": "Busta Rhymes",
+      "raw_credit": "2Pac feat. Busta Rhymes",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "evidence": "explicit feat/ft/featuring separator in exported track artist",
+      "confidence": "candidate",
+      "featured_credit_is_single_artist": false,
+      "note": "Keep the entire featured suffix as a credit until reviewed; commas and ampersands do not establish separate artists."
+    },
+    {
+      "kind": "inferred_featured_credit",
+      "base_artist_label": "2Pac",
+      "featured_credit_label": "Butch Cassidy",
+      "raw_credit": "2Pac feat. Butch Cassidy",
+      "album_label": "Dirty Harry, Green Lantern, &",
+      "evidence": "explicit feat/ft/featuring separator in exported track artist",
+      "confidence": "candidate",
+      "featured_credit_is_single_artist": false,
+      "note": "Keep the entire featured suffix as a credit until reviewed; commas and ampersands do not establish separate artists."
+    }
+  ],
+  "caveats": [
+    "Snapshot is a private point-in-time export; source may change after retrieval.",
+    "Counts are track records, not distinct songs or recordings; duplicate files may inflate planet size.",
+    "Artist labels and folder names are observations, not canonical artist identities.",
+    "Current album grouping is physical folder grouping with a CD/Disc/Disk numeric subfolder fold; album titles in different artist folders remain separate.",
+    "No live file tag scan or catalog cleanup was performed.",
+    "No listening events were read; most-played cannot be inferred from this export.",
+    "No genre, play_count, or compilation fields occur in the exported rows.",
+    "Featured-credit suffixes containing commas, ampersands, slash, or truncated-looking text remain unresolved; do not split those into asserted artists.",
+    "Shared album title and year do not prove a release identity; source metadata should be reviewed before physical grouping or renaming.",
+    "Keep this census out of a future public knowledge-base build or replace it with an explicitly approved anonymized fixture."
+  ],
+  "recommended_graph_contract": {
+    "version": "1",
+    "artist_node": [
+      "id (stable registry identity, not display spelling)",
+      "display_name",
+      "aliases[] with provenance and user overrides",
+      "track_count (document whether file records or distinct recordings)",
+      "album_count",
+      "listening_count (optional, evidence window stated)",
+      "metadata_confidence"
+    ],
+    "album_node": [
+      "id (release MBID when present; otherwise stable reviewed library release identity)",
+      "title",
+      "album_artist_ids[]",
+      "source_album_folder_keys[]",
+      "year",
+      "release_id (optional)",
+      "release_group_id (optional)",
+      "disc identities kept separate from album identity"
+    ],
+    "credit_edge": [
+      "source_artist_id",
+      "target_artist_id",
+      "kind (featured-credit | shared-release | same-track)",
+      "track_ids[] or aggregate count",
+      "raw_credit",
+      "evidence_source",
+      "confidence (verified | reviewed | candidate)"
+    ],
+    "hierarchy": [
+      "artist -> album -> track",
+      "artist -> credit combination -> track",
+      "grouping is a projection over the same underlying entities"
+    ],
+    "rules": [
+      "Resolve explicit feat/ft/featuring only as candidate base plus whole featured suffix.",
+      "Do not infer separate authoritative artist identities from &, commas, slash, and, or x.",
+      "Separate raw track Artist credits from release-level Album Artist identity.",
+      "Do not merge releases solely by title and year.",
+      "Default edges hidden or limited to selected-node neighborhood; include count and evidence so dense libraries stay readable.",
+      "Public concept data should use synthetic or approved anonymized aggregates."
+    ]
+  }
+}

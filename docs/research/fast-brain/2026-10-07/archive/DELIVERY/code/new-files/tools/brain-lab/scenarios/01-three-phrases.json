@@ -1,0 +1,23 @@
+{
+  "id": "01-three-phrases",
+  "kind": "phrase",
+  "title": "User's three example phrases — interpretation + draft→validate→evaluate",
+  "phrases": [
+    {
+      "text": "i need to focus",
+      "slug": "focus",
+      "intent": { "chosen_validates": true },
+      "pipeline": { "expect_validation": "ok", "min_strict": 1 }
+    },
+    {
+      "text": "pump me up to win this game",
+      "slug": "pump",
+      "intent": { "chosen_validates": true }
+    },
+    {
+      "text": "i want to dance",
+      "slug": "dance",
+      "intent": { "chosen_validates": true }
+    }
+  ]
+}

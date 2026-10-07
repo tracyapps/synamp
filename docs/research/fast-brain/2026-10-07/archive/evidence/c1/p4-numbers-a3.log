@@ -1,0 +1,42 @@
+== p4: constant tables vs A3 §3.2/§3.7 ==
+  PASS  P7/P8/P9: love +2.0, thumb up +1.0, thumb down -1.0 (dB: confidences .9)
+  PASS  P7: love half-life 180 d; playlist signals 30 d
+  PASS  P10/P11/P12/P13/P14 magnitudes (repeat 1.0/.7, full_play .5/.5, skip_early -.6/.5, skip_late -.1/.2, external .25/.5)
+  PASS  P16: not_now -1.0/.9
+  PASS  P3: h_E = 30 min
+  PASS  P18/P19/P20: gates & caps (β .5, γ .15, keeps ≥3, rejects ≥2, cov .6, axis cap .5, total cap 1.0)
+  PASS  P17 consts: π .35, cap .8, min-evidence ≥2
+  PASS  P21/P22/P23 thresholds: neg 3/2, artist 3/2/min2, not_now 3/2/2dp, ext 5/3, repeat 4/3; window 30 d
+== p4: P1 (gap), P3 (half-life), P5/P7 (bounds/anchors) ==
+  PASS  P1: 29:59 keeps (1 epoch)
+  PASS  P1: 30:01 splits (2 epochs)
+  PASS  P3: +60 min value ≤ 0.25× fresh (exact ratio observed) — ratio=0.25
+  PASS  P7: single love ⇒ bonus ≥ 0.10 (observed ≈ 0.1142, 'near-cap') — bonus=0.11424 (A3 text: 0.15·tanh(1.0) ≈ 0.114)
+  PASS  P7: part label is 'you loved this'
+  PASS  P5: 20 loves ⇒ |bonus| ≤ 0.15 — bonus=0.15000
+== p4: P12/P15 (skip rules) and P16 (not_now) ==
+  PASS  P12: k=1 small negative (-0.6·0.5·decay ≈ -0.3) — value=-0.2998844977102469
+  PASS  P15: k=2 hides (count exactly 2 triggers)
+  PASS  P16: not_now value -0.9·decay, hides at n=1, no L1 cell after the epoch
+== p4: P18 gates (keeps <3, coverage note) ==
+  PASS  P18: n=2 kept ⇒ no band + 'not learned yet' note — ["feature bands not learned yet: only 2 kept tracks this session (need 3)"]
+  PASS  P18: no feature part for a near candidate under the closed gate — []
+  PASS  P18: 3 keeps, bpm coverage 1/3 < 0.6 ⇒ honest 'tempo band not learned' note — ["tempo band not learned this session: 1 of 3 kept tracks have a usable value","loudness band not learned this session: too few loudness measurements in the library to standardize","crest factor band not learned this session: too few crest factor measurements in the library to standardize","note onsets band not learned this session: too few note onsets measurements in the library to standardize","percussiveness band not learned this session: too few percussiveness measurements in the library to standardize"]
+== p4: P19/P20 caps via an adversarial wide/identical-keep fixture ==
+  PASS  P20: multi-axis total clipped to 1.0 (feature total cap) — value=1 parts=[{"label":"tempo ~120 BPM — you kept 3 such tracks this session","value":0.47},{"label":"loudness ~-12.0 LUFS — you kept 3 such tracks this session","value":0.47},{"label":"crest factor ~8.0 dB — you kept 3 such tracks this session","value":0.47},{"label":"note onsets ~3.0 onsets/s — you kept 3 such tracks this session","value":0.47},{"label":"percussiveness ~0.50 — you kept 3 such tracks this session","value":0.47}]
+  PASS  P20: total cap fires (per-axis ≈0.47 × 5 axes would be ≈2.35 unclipped) — sum-of-parts=2.350
+== p4: P21/P22/P23 proposals boundaries ==
+  PASS  P21 boundary: 2 epochs ⇒ no proposal — []
+  PASS  P21: 3 epochs across 2 dates ⇒ exactly 1 proposal — ["track_repeat_skip:S"]
+  PASS  P21: evidence {epochs:3, dates:2} on the proposal — {"epochs":3,"dates":2,"dayparts":["morning","afternoon"]}
+  PASS  P21: proposal id stable 'pr1:' hash
+  PASS  P21: 3 epochs but 1 date ⇒ none (needs ≥2 dates)
+  PASS  P23: pattern older than the 30-day window ⇒ no proposal
+  PASS  P22: external_play 5 epochs/3 dates ⇒ proposal (artist-subject) — ["external_play_positive:Band Y"]
+  PASS  P22 boundary: 4 epochs ⇒ none
+  PASS  proposals scan closed epochs only (live epoch excluded: 2 closed ⇒ none even with a live third) — active=ep1:9f9dfc2ae289692 proposals=0
+== p4: P25 scope_persistence spot-check ==
+  PASS  P25: declared keeps the playlist thumb across the epoch end; global_only kills it
+  PASS  P25: global_only labels the epoch-scoped cell 'thumbs up (this session)'
+
+p4 summary: 33 pass, 0 fail

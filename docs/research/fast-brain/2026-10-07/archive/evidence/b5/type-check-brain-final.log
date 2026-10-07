@@ -1,0 +1,4 @@
+
+> @synamp/brain@0.0.0 type-check /Users/tapps/_dev/web-apps/SynAmp/apps/brain
+> tsc -p tsconfig.json --noEmit
+

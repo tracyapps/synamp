@@ -1,0 +1,7 @@
+n=1 → [UNDEFINED]   <-- BROKEN: undefined entry, length 1
+n=2 → [b, a]   (permutation ok)
+n=3 → [c, a, UNDEFINED]   <-- BROKEN: undefined entry, length 3
+n=4 → [c, a, d, b]   (permutation ok)
+n=5 → [d, a, e, b, UNDEFINED]   <-- BROKEN: undefined entry, length 5
+JSON of n=3 output: ["c","a",null]
+applied: [ 'arc wave: ordered by measured intensity (100% coverage)' ]

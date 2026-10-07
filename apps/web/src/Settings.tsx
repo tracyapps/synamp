@@ -16,7 +16,8 @@ type Values = {
   lastfm_api_secret: string; // "set" or ""
   public_url: string;
   upload_max_mb: number;
-  origins: Record<"musicbrainz_contact" | "lastfm_api_key" | "lastfm_api_secret" | "public_url" | "upload_max_mb", Origin>;
+  listening_policy: "epoch-v1" | "legacy-v1";
+  origins: Record<"musicbrainz_contact" | "lastfm_api_key" | "lastfm_api_secret" | "public_url" | "upload_max_mb" | "listening_policy", Origin>;
 };
 type View = { settings: Values; lastfm_configured: boolean; changed?: string[] };
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
@@ -33,6 +34,7 @@ export default function Settings({ request, startOpen = false }: { request: Requ
   const [contact, setContact] = useState("");
   const [publicUrl, setPublicUrl] = useState("");
   const [uploadMb, setUploadMb] = useState("");
+  const [listeningPolicy, setListeningPolicy] = useState<Values["listening_policy"]>("epoch-v1");
   const [apiKey, setApiKey] = useState("");
   const [secret, setSecret] = useState("");
   const [message, setMessage] = useState("");
@@ -45,6 +47,7 @@ export default function Settings({ request, startOpen = false }: { request: Requ
     setContact(next.settings.musicbrainz_contact);
     setPublicUrl(next.settings.public_url);
     setUploadMb(String(next.settings.upload_max_mb));
+    setListeningPolicy(next.settings.listening_policy);
     setApiKey("");
     setSecret("");
   }
@@ -71,6 +74,7 @@ export default function Settings({ request, startOpen = false }: { request: Requ
     if (contact.trim() !== s.musicbrainz_contact) changes.musicbrainz_contact = contact;
     if (publicUrl.trim() !== s.public_url) changes.public_url = publicUrl;
     if (uploadMb.trim() !== String(s.upload_max_mb)) changes.upload_max_mb = uploadMb;
+    if (listeningPolicy !== s.listening_policy) changes.listening_policy = listeningPolicy;
     if (apiKey.trim()) changes.lastfm_api_key = apiKey;
     if (secret.trim()) changes.lastfm_api_secret = secret;
     save(changes, "Saved. It’s in use now.");
@@ -142,6 +146,21 @@ export default function Settings({ request, startOpen = false }: { request: Requ
                 onChange={(event) => setUploadMb(event.target.value)} aria-describedby={`${id}-upload-hint`} />
               <p className="settings__hint" id={`${id}-upload-hint`}>
                 {hint("upload_max_mb", "For files added with Add music. 1 to 20480.")}
+              </p>
+            </fieldset>
+
+            <fieldset className="settings__group">
+              <legend>Learning</legend>
+              <label htmlFor={`${id}-learning`}>How listening shapes future lists</label>
+              <select id={`${id}-learning`} value={listeningPolicy} disabled={busy}
+                onChange={(event) => setListeningPolicy(event.target.value as Values["listening_policy"])}
+                aria-describedby={`${id}-learning-hint`}>
+                <option value="epoch-v1">Learn within this session</option>
+                <option value="legacy-v1">Use the earlier feedback policy</option>
+              </select>
+              <p className="settings__hint" id={`${id}-learning-hint`}>
+                Session learning forgets implicit signals after a listening break or day change. Loves, thumbs and removals keep their chosen scope.
+                The earlier policy uses the existing feedback rules without session learning. Switching keeps your history and current queue.
               </p>
             </fieldset>
 

@@ -1,0 +1,44 @@
+== p3: sequencing properties (sample library, 30-track strict list) ==
+  PASS  plan with arc validates
+  · strict=30 tracks, measured intensity on 30 (100%)
+  PASS  build: permutation only (same set, same length)
+  PASS  build: input array not mutated
+  PASS  build: unknown-intensity tracks keep their positions — [] vs []
+  PASS  build: measured sequence nondecreasing
+  FAIL  build: applied[] note sane — arc build: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage
+  PASS  cooldown: permutation only (same set, same length)
+  PASS  cooldown: input array not mutated
+  PASS  cooldown: unknown-intensity tracks keep their positions — [] vs []
+  PASS  cooldown: measured sequence nonincreasing
+  FAIL  cooldown: applied[] note sane — arc cooldown: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage
+  PASS  peak: permutation only (same set, same length)
+  PASS  peak: input array not mutated
+  PASS  peak: unknown-intensity tracks keep their positions — [] vs []
+  PASS  peak: rises then relaxes (unimodal)
+  PASS  peak: starts at the low end, turns at the max
+  FAIL  peak: applied[] note sane — arc peak: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage
+  PASS  wave: permutation only (same set, same length)
+  PASS  wave: input array not mutated
+  PASS  wave: unknown-intensity tracks keep their positions — [] vs []
+  PASS  wave: alternates upper/lower half starting high — first=0.433,0.224,0.444,0.311
+  FAIL  wave: applied[] note sane — arc wave: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage
+  PASS  flat: no-op with no notes
+  PASS  absent: no-op with no notes
+  PASS  determinism: two calls give identical order and notes
+== p3: coverage gate + unknown placement (custom fixture) ==
+  FAIL  60% coverage exactly opens the gate (3/5 = 60%) — arc build: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 60% coverage, 2 tracks without measurements kept in place order=lo,mid,u1,u2,hi
+  FAIL  coverage <60%: ranked order kept + honest note — arc build: not enough measured pace/energy data (40% coverage) — kept the ranked order
+  PASS  unknown tracks keep their indices while measured ascend around them — lo,u1,mid,u2,hi
+  PASS  wave on 3 measured (ODD): must be a permutation — BUG observed: shortened list with an undefined entry — observed=[hi,lo,mid] length=3 — root cause: wave loop bounded by upper.length drops a lower-half item; arrange() then shifts past the pool
+  PASS  wave on 2 measured (EVEN): permutation ok — hi,mid
+== p3: plan hash claims ==
+  PASS  all arc forms validate (flat/build/peak checked; cooldown/wave covered above)
+  PASS  build hash ≠ flat hash (arc now contributes to the SHA-256)
+  PASS  flat plan: sequencing {arc:flat} round-trips structurally
+  PASS  flat hash deterministic across calls — 98742cc014b4b9f6
+  PASS  omitting sequencing: plan carries no sequencing key
+  PASS  planHash is a pure function of the plan (no hidden registry drift within a run)
+  PASS  unknown arc rejected with a validator error — [{"path":"$.sequencing.arc","message":"Expected flat, build, cooldown, peak or wave"}]
+  PASS  non-string arc rejected
+
+p3 summary: 32 pass, 6 fail

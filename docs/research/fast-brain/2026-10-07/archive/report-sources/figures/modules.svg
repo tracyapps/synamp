@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" width="1200" height="440" role="img" aria-labelledby="modules-title modules-desc">
+  <title id="modules-title">File map of the fast-brain library</title>
+  <desc id="modules-desc">Nested file map: apps/brain/src contains the intent, learning, query and session modules plus index routes for /brain/session, /brain/forget, /brain/proposals and /plans/draft; tests live beside each module; apps/web/src holds BrainSession and Describe.</desc>
+
+  <g fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="24" y="40" width="816" height="376" rx="4"/>
+    <rect x="48" y="94" width="768" height="52" rx="3"/>
+    <rect x="48" y="156" width="768" height="52" rx="3"/>
+    <rect x="48" y="218" width="768" height="52" rx="3"/>
+    <rect x="48" y="280" width="768" height="52" rx="3"/>
+    <rect x="48" y="342" width="768" height="64" rx="3"/>
+    <rect x="880" y="40" width="296" height="116" rx="4"/>
+  </g>
+
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" font-weight="500" fill="#E8E6E1">
+    <text x="48" y="74">apps/brain/src/</text>
+    <text x="904" y="74">apps/web/src/</text>
+  </g>
+  <text x="816" y="74" text-anchor="end" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13.5" fill="#98A2AD">tests live beside each module (*.test.ts)</text>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" font-weight="500" fill="#E8E6E1">
+    <text x="68" y="124">intent/</text>
+    <text x="68" y="186">learning/</text>
+    <text x="68" y="248">query/</text>
+    <text x="68" y="310">session/</text>
+    <text x="68" y="378">index.ts</text>
+  </g>
+  <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" fill="#98A2AD">
+    <text x="250" y="124">lexicon.ts · interpret.ts</text>
+    <text x="250" y="186">epochs.ts · derive.ts · reliability.ts · proposals.ts · explore.ts</text>
+    <text x="250" y="248">sequence.ts · plan.ts · evaluate.ts</text>
+    <text x="250" y="310">events.ts<tspan font-family="ui-sans-serif, system-ui, sans-serif"> — </tspan><tspan fill="#D4A757">learning_reset</tspan><tspan font-family="ui-sans-serif, system-ui, sans-serif"> marker</tspan></text>
+    <text x="904" y="112">BrainSession.tsx</text>
+    <text x="904" y="138">Describe.tsx</text>
+  </g>
+  <text x="250" y="366" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" fill="#98A2AD"><tspan font-family="ui-sans-serif, system-ui, sans-serif">routes: </tspan>/brain/session · /brain/forget · /brain/proposals</text>
+  <text x="250" y="388" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13.5" fill="#98A2AD">/plans/draft<tspan font-family="ui-sans-serif, system-ui, sans-serif"> — interpretation</tspan></text>
+</svg>

@@ -302,3 +302,38 @@ workspace `evidence/final-lab/`)
 - Future scenario candidates: P1 gap boundary (29:59 vs 30:01), P5 flood bounds, `not_now` hide n=1, persistent
   remove/restore interplay, proposal thresholds, rollback diff (`epoch-v1` vs `heuristic-v1`), culture prompts
   with an expressible anchor (“samba party music”), ask-copy regression pins for C3 F-COPY-1.
+
+## Read-only session read-back
+
+`readback.mts` prepares FB07's first real-library inspection. It requires explicit
+library/event snapshots, a validated plan (or one specific prompt), playlist
+context when applicable, clock and timezone. It compares no-feedback, legacy and
+epoch rankings, and reports source hashes, denominators, measured/usable coverage,
+hides, underfill, reasons, proposals and runtime. It never appends an event.
+
+```sh
+node --experimental-strip-types tools/brain-lab/readback.mts \
+  --library /path/to/library.json --events /path/to/events.jsonl \
+  --prompt focus --now 2026-10-07T18:00:00Z --timezone America/Chicago \
+  --material real --out /separate/reports/session-01.json
+pnpm brain:readback:test
+pnpm brain:readback:type-check
+```
+
+Use `--plan /path/to/validated-plan.json` for a request with multiple readings or
+unresolved asks; the tool refuses to silently choose one. `--playlist ID` applies
+that playlist's explicit thumbs. `--material` is a user declaration, not proof
+that the input is real. Output defaults to stdout; `--out` is exclusive-create,
+mode 0600, and must be outside input store directories. Private reports carry
+track/event information and are not public knowledge-base content. Future events
+are excluded at the injected clock; malformed/deduplicated log rows are reflected
+in the denominators. If any input changes during replay, the tool fails.
+
+The runtime measurement varies; the rest of the policy output is replayable.
+Static replay exposes differences, not causal improvements or classifier
+accuracy. Candidate parameters remain unchanged until owner listening evidence.
+
+This tool reads the supplied library snapshot only; it does not load the running
+server's separate spot-check corrections or rename overlay stores. Include those
+in the frozen input if comparing with live app behavior. No real-library run or
+owner usefulness verdict has been established by its synthetic regression tests.

@@ -1,0 +1,367 @@
+- generic [ref=e3]:
+  - link "Skip to content" [ref=e4] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e5]:
+    - link "SynAmp, go to Library" [ref=e6] [cursor=pointer]:
+      - /url: "#/library"
+    - generic "Not built by Container Manager" [ref=e73]: Development copy
+  - generic [ref=e7]:
+    - navigation "SynAmp" [ref=e8]:
+      - group [ref=e9]:
+        - paragraph [ref=e10]: Listen
+        - link "Library" [ref=e11] [cursor=pointer]:
+          - /url: "#/library"
+        - link "Playlists" [ref=e14] [cursor=pointer]:
+          - /url: "#/playlists"
+        - link "Radio" [ref=e19] [cursor=pointer]:
+          - /url: "#/radio"
+        - link "Party" [ref=e22] [cursor=pointer]:
+          - /url: "#/party"
+      - group [ref=e25]:
+        - paragraph [ref=e26]: Understand
+        - link "The Brain" [ref=e27] [cursor=pointer]:
+          - /url: "#/brain"
+        - link "Library care" [ref=e30] [cursor=pointer]:
+          - /url: "#/care"
+      - group [ref=e33]:
+        - paragraph [ref=e34]: System
+        - link "Listen anywhere" [ref=e35] [cursor=pointer]:
+          - /url: "#/anywhere"
+        - link "Settings" [ref=e41] [cursor=pointer]:
+          - /url: "#/settings"
+    - main [ref=e45]:
+      - generic [ref=e254]:
+        - generic [ref=e255]:
+          - paragraph [ref=e256]: Listen
+          - heading "Playlists" [level=1] [ref=e258]
+          - paragraph [ref=e260]: "Describe a playlist in your own words, or build them by hand: folders, playlists, and roll-ups that combine a whole folder into one live list."
+        - region [ref=e261]:
+          - generic [ref=e263]:
+            - paragraph [ref=e264]: Smart playlist · draft parser
+            - heading "Describe what you want to hear" [level=2] [ref=e265]
+          - generic [ref=e266]:
+            - generic [ref=e267]: In your own words
+            - textbox "In your own words" [ref=e268]:
+              - /placeholder: e.g. I need to focus. no words, no piano, nothing too slow
+              - text: focus 1990–2005
+            - paragraph [ref=e269]: "“No …” rules are strict: a track is only included when it has been measured and passes."
+            - generic [ref=e270]:
+              - button "Preview" [ref=e341] [cursor=pointer]
+              - generic [ref=e271]: "Try:"
+              - button "I need to focus. no words, no piano, nothing too slow/relaxing." [ref=e272] [cursor=pointer]
+              - button "upbeat, between 110 and 130 bpm, no synths" [ref=e273] [cursor=pointer]
+              - button "exclude punk or country" [ref=e274] [cursor=pointer]
+              - button "chill electronic, no words" [ref=e275] [cursor=pointer]
+          - generic [ref=e342]:
+            - generic [ref=e343]:
+              - heading "What I understood" [level=3] [ref=e344]
+              - generic [ref=e345]:
+                - paragraph [ref=e346]:
+                  - generic [ref=e347]: partial
+                  - generic [ref=e348]: mostly clear — some parts rest on assumptions
+                - note [ref=e349]:
+                  - paragraph [ref=e350]: "A little more would sharpen this:"
+                  - list [ref=e351]:
+                    - listitem [ref=e352]:
+                      - text: I left “1990–2005” unused — if it matters, say it as an activity, a tempo range, or a tag.
+                      - generic [ref=e353]: — These words didn't map to anything measurable and were not guessed at.
+                - paragraph [ref=e354]:
+                  - text: "Read as:"
+                  - strong [ref=e355]: focus
+                - group [ref=e356]:
+                  - generic "Assumptions and limits" [ref=e357] [cursor=pointer]
+                - group [ref=e358]:
+                  - generic "How I read it (6)" [ref=e359] [cursor=pointer]
+              - list [ref=e360]:
+                - listitem [ref=e361]:
+                  - text: focus →
+                  - generic [ref=e362]: becomes
+                  - code [ref=e363]: prefer arousal 0.40–0.60 (soft)
+                - listitem [ref=e364]:
+                  - text: focus →
+                  - generic [ref=e365]: becomes
+                  - code [ref=e366]: prefer pulse_clarity ≥ 0.45 (soft)
+              - paragraph [ref=e367]: "“Focus” is a soft preference bundle: mid tempo, a steady pulse, low distraction, no mood imposition — nothing in it excludes a track."
+              - paragraph [ref=e368]: "Not understood yet, kept only as text for a future encoder: “1990–2005”."
+              - paragraph [ref=e369]: Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections.
+              - paragraph [ref=e370]: "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked."
+              - paragraph [ref=e371]: "Some library-relative bands were skipped for lack of measured data: “focus”: library-relative band for spectral_centroid skipped — only 0 measured track(s), need ≥ 3."
+              - group [ref=e372]:
+                - generic "Data notes (2)" [ref=e373]
+              - paragraph [ref=e374]: rule-based draft (no LLM yet)
+            - generic [ref=e375]:
+              - paragraph [ref=e376]:
+                - strong [ref=e377]: "24"
+                - text: tracks match every rule out of 60 in the library.
+              - list [ref=e378]:
+                - listitem [ref=e379]:
+                  - generic [aria-hidden] [ref=e380]: "1"
+                  - generic [ref=e381]:
+                    - generic [ref=e382]:
+                      - text: Lanterns Signal
+                      - generic [ref=e383]: Vera Okonkwo Trio · Tide Meridian
+                    - group [ref=e384]:
+                      - generic "Why it’s here" [ref=e385] [cursor=pointer]
+                - listitem [ref=e386]:
+                  - generic [aria-hidden] [ref=e387]: "2"
+                  - generic [ref=e388]:
+                    - generic [ref=e389]:
+                      - text: Hollow Glass
+                      - generic [ref=e390]: Glass Canal · Glass Sessions
+                    - group [ref=e391]:
+                      - generic "Why it’s here" [ref=e392] [cursor=pointer]
+                - listitem [ref=e393]:
+                  - generic [aria-hidden] [ref=e394]: "3"
+                  - generic [ref=e395]:
+                    - generic [ref=e396]:
+                      - text: Drift Field
+                      - generic [ref=e397]: Kite Theory · Morning Static
+                    - group [ref=e398]:
+                      - generic "Why it’s here" [ref=e399] [cursor=pointer]
+                - listitem [ref=e400]:
+                  - generic [aria-hidden] [ref=e401]: "4"
+                  - generic [ref=e402]:
+                    - generic [ref=e403]:
+                      - text: Circuit Glass
+                      - generic [ref=e404]: Marigold Unit · Velvet Drift
+                    - group [ref=e405]:
+                      - generic "Why it’s here" [ref=e406] [cursor=pointer]
+                - listitem [ref=e407]:
+                  - generic [aria-hidden] [ref=e408]: "5"
+                  - generic [ref=e409]:
+                    - generic [ref=e410]:
+                      - text: Engine Paper
+                      - generic [ref=e411]: Lumen Atlas · Copper Sessions
+                    - group [ref=e412]:
+                      - generic "Why it’s here" [ref=e413] [cursor=pointer]
+                - listitem [ref=e414]:
+                  - generic [aria-hidden] [ref=e415]: "6"
+                  - generic [ref=e416]:
+                    - generic [ref=e417]:
+                      - text: Echo Signal
+                      - generic [ref=e418]: Quiet Harbor · Quiet Echo
+                    - group [ref=e419]:
+                      - generic "Why it’s here" [ref=e420] [cursor=pointer]
+                - listitem [ref=e421]:
+                  - generic [aria-hidden] [ref=e422]: "7"
+                  - generic [ref=e423]:
+                    - generic [ref=e424]:
+                      - text: Morning Lanterns
+                      - generic [ref=e425]: Halftone Weather · Orbit Sessions
+                    - group [ref=e426]:
+                      - generic "Why it’s here" [ref=e427] [cursor=pointer]
+                - listitem [ref=e428]:
+                  - generic [aria-hidden] [ref=e429]: "8"
+                  - generic [ref=e430]:
+                    - generic [ref=e431]:
+                      - text: Quiet Paper
+                      - generic [ref=e432]: Copper Lanterns · Harbor Sessions
+                    - group [ref=e433]:
+                      - generic "Why it’s here" [ref=e434] [cursor=pointer]
+                - listitem [ref=e435]:
+                  - generic [aria-hidden] [ref=e436]: "9"
+                  - generic [ref=e437]:
+                    - generic [ref=e438]:
+                      - text: Circuit Hollow
+                      - generic [ref=e439]: Kite Theory · Window Sessions
+                    - group [ref=e440]:
+                      - generic "Why it’s here" [ref=e441] [cursor=pointer]
+                - listitem [ref=e442]:
+                  - generic [aria-hidden] [ref=e443]: "10"
+                  - generic [ref=e444]:
+                    - generic [ref=e445]:
+                      - text: Signal Circuit
+                      - generic [ref=e446]: Paper Satellites · Harbor Sessions
+                    - group [ref=e447]:
+                      - generic "Why it’s here" [ref=e448] [cursor=pointer]
+                - listitem [ref=e449]:
+                  - generic [aria-hidden] [ref=e450]: "11"
+                  - generic [ref=e451]:
+                    - generic [ref=e452]:
+                      - text: Circuit Circuit
+                      - generic [ref=e453]: Northbound Choir · Window Lanterns
+                    - group [ref=e454]:
+                      - generic "Why it’s here" [ref=e455] [cursor=pointer]
+                - listitem [ref=e456]:
+                  - generic [aria-hidden] [ref=e457]: "12"
+                  - generic [ref=e458]:
+                    - generic [ref=e459]:
+                      - text: Circuit Velvet
+                      - generic [ref=e460]: Vera Okonkwo Trio · Orbit Sessions
+                    - group [ref=e461]:
+                      - generic "Why it’s here" [ref=e462] [cursor=pointer]
+                - listitem [ref=e463]:
+                  - generic [aria-hidden] [ref=e464]: "13"
+                  - generic [ref=e465]:
+                    - generic [ref=e466]:
+                      - text: Tide Quiet
+                      - generic [ref=e467]: Static Orchard · Hollow Sessions
+                    - group [ref=e468]:
+                      - generic "Why it’s here" [ref=e469] [cursor=pointer]
+                - listitem [ref=e470]:
+                  - generic [aria-hidden] [ref=e471]: "14"
+                  - generic [ref=e472]:
+                    - generic [ref=e473]:
+                      - text: Engine Circuit
+                      - generic [ref=e474]: Halftone Weather · Northern Signal
+                    - group [ref=e475]:
+                      - generic "Why it’s here" [ref=e476] [cursor=pointer]
+                - listitem [ref=e477]:
+                  - generic [aria-hidden] [ref=e478]: "15"
+                  - generic [ref=e479]:
+                    - generic [ref=e480]:
+                      - text: Glass Lattice
+                      - generic [ref=e481]: Lumen Atlas · Morning Glass
+                    - group [ref=e482]:
+                      - generic "Why it’s here" [ref=e483] [cursor=pointer]
+                - listitem [ref=e484]:
+                  - generic [aria-hidden] [ref=e485]: "16"
+                  - generic [ref=e486]:
+                    - generic [ref=e487]:
+                      - text: Hollow Thread
+                      - generic [ref=e488]: Copper Lanterns · Drift Northern
+                    - group [ref=e489]:
+                      - generic "Why it’s here" [ref=e490] [cursor=pointer]
+                - listitem [ref=e491]:
+                  - generic [aria-hidden] [ref=e492]: "17"
+                  - generic [ref=e493]:
+                    - generic [ref=e494]:
+                      - text: Copper Lattice
+                      - generic [ref=e495]: Glass Canal · Signal Tide
+                    - group [ref=e496]:
+                      - generic "Why it’s here" [ref=e497] [cursor=pointer]
+                - listitem [ref=e498]:
+                  - generic [aria-hidden] [ref=e499]: "18"
+                  - generic [ref=e500]:
+                    - generic [ref=e501]:
+                      - text: Orbit Velvet
+                      - generic [ref=e502]: The Low Fences · Drift Sessions
+                    - group [ref=e503]:
+                      - generic "Why it’s here" [ref=e504] [cursor=pointer]
+                - listitem [ref=e505]:
+                  - generic [aria-hidden] [ref=e506]: "19"
+                  - generic [ref=e507]:
+                    - generic [ref=e508]:
+                      - text: Morning Thread
+                      - generic [ref=e509]: Marigold Unit · Glass Sessions
+                    - group [ref=e510]:
+                      - generic "Why it’s here" [ref=e511] [cursor=pointer]
+                - listitem [ref=e512]:
+                  - generic [aria-hidden] [ref=e513]: "20"
+                  - generic [ref=e514]:
+                    - generic [ref=e515]:
+                      - text: Ember Hollow
+                      - generic [ref=e516]: Northbound Choir · Meridian Sessions
+                    - group [ref=e517]:
+                      - generic "Why it’s here" [ref=e518] [cursor=pointer]
+                - listitem [ref=e519]:
+                  - generic [aria-hidden] [ref=e520]: "21"
+                  - generic [ref=e521]:
+                    - generic [ref=e522]:
+                      - text: Glass Ember
+                      - generic [ref=e523]: The Low Fences · Engine Morning
+                    - group [ref=e524]:
+                      - generic "Why it’s here" [ref=e525] [cursor=pointer]
+                - listitem [ref=e526]:
+                  - generic [aria-hidden] [ref=e527]: "22"
+                  - generic [ref=e528]:
+                    - generic [ref=e529]:
+                      - text: Hollow Drift
+                      - generic [ref=e530]: Quiet Harbor · Harbor Sessions
+                    - group [ref=e531]:
+                      - generic "Why it’s here" [ref=e532] [cursor=pointer]
+                - listitem [ref=e533]:
+                  - generic [aria-hidden] [ref=e534]: "23"
+                  - generic [ref=e535]:
+                    - generic [ref=e536]:
+                      - text: Ember Velvet
+                      - generic [ref=e537]: Static Orchard · Meridian Harbor
+                    - group [ref=e538]:
+                      - generic "Why it’s here" [ref=e539] [cursor=pointer]
+                - listitem [ref=e540]:
+                  - generic [aria-hidden] [ref=e541]: "24"
+                  - generic [ref=e542]:
+                    - generic [ref=e543]:
+                      - text: Lattice Thread
+                      - generic [ref=e544]: Paper Satellites · Velvet Quiet
+                    - group [ref=e545]:
+                      - generic "Why it’s here" [ref=e546] [cursor=pointer]
+            - generic [ref=e547]:
+              - generic [ref=e548]:
+                - text: Playlist name
+                - textbox "Playlist name" [ref=e549]: focus 1990–2005
+              - button "Save as smart playlist" [ref=e550] [cursor=pointer]
+              - paragraph [ref=e551]: Saves the rules, not the tracks — newly analysed music joins automatically.
+        - generic [ref=e276]:
+          - region [ref=e277]:
+            - generic [ref=e278]:
+              - heading "Collection" [level=2] [ref=e279]
+              - paragraph [ref=e280]: 0 items
+            - generic [ref=e281]:
+              - paragraph [ref=e282]: No playlists yet. Start below.
+              - generic [ref=e283]:
+                - heading "Create" [level=3] [ref=e284]
+                - generic [ref=e285]:
+                  - text: Name
+                  - textbox "Name" [ref=e286]:
+                    - /placeholder: e.g. Afternoon focus
+                - generic [ref=e287]:
+                  - text: Type
+                  - combobox "Type" [ref=e288]:
+                    - option "Playlist" [selected]
+                    - option "Folder"
+                    - option "Roll-up"
+                - generic [ref=e289]:
+                  - text: Inside folder
+                  - combobox "Inside folder" [ref=e290]:
+                    - option "Collection (top level)" [selected]
+                - button "Create playlist" [ref=e291] [cursor=pointer]
+          - region "Playlist detail" [ref=e292]:
+            - generic [ref=e293]:
+              - heading "Select a playlist" [level=3] [ref=e299]
+              - paragraph [ref=e300]: Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole folder into one live list.
+        - region [ref=e301]:
+          - generic [ref=e303]:
+            - heading "Bring your playlists across" [level=2] [ref=e304]
+            - paragraph [ref=e305]: From iTunes, Music, Winamp, foobar2000, VLC and most other players
+          - generic [ref=e306]:
+            - paragraph [ref=e307]: Choose a playlist file and SynAmp finds each song in your library — even if it has moved, been renamed or ripped again since.
+            - list [ref=e308]:
+              - listitem [ref=e309]:
+                - strong [ref=e310]: iTunes or Music
+                - text: ": File → Library →"
+                - emphasis [ref=e311]: Export Library…
+                - text: — brings every playlist and folder at once.
+              - listitem [ref=e312]:
+                - strong [ref=e313]: One playlist
+                - text: "from any player: save or export it as"
+                - code [ref=e314]: .m3u
+                - text: or
+                - code [ref=e315]: .m3u8
+                - text: .
+            - button "Choose a playlist file…" [ref=e317] [cursor=pointer]
+            - status [ref=e321]
+        - region [ref=e322]:
+          - generic [ref=e324]:
+            - heading "On your phone" [level=2] [ref=e325]
+            - paragraph [ref=e326]: Your playlists in Symfonium, play:Sub, Feishin and other Subsonic apps
+          - generic [ref=e327]:
+            - generic [ref=e328]:
+              - paragraph [ref=e329]:
+                - text: Phone apps get their playlists from Navidrome, and Navidrome keeps a separate set for each account. Sign in with the
+                - strong [ref=e330]: Navidrome account your phone uses
+                - text: and SynAmp will put every playlist there — folders become part of the name, like “Evenings › Slow burn”.
+              - generic [ref=e331]:
+                - generic [ref=e332]:
+                  - text: Navidrome user name
+                  - textbox "Navidrome user name" [ref=e333]
+                - generic [ref=e334]:
+                  - text: Password
+                  - textbox "Password" [ref=e335]
+                - button "Sign in and send" [ref=e336] [cursor=pointer]
+              - paragraph [ref=e339]: SynAmp checks the password with Navidrome and keeps only a scrambled token, never the password itself.
+            - status [ref=e340]
+  - region "Player" [ref=e66]:
+    - generic [ref=e69]:
+      - paragraph [ref=e70]: Nothing playing
+      - paragraph [ref=e71]: Press Play on an album or a playlist.

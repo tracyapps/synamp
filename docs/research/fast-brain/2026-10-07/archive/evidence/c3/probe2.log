@@ -1,0 +1,13 @@
+======================================================================
+PROMPT: I need to focus | constraints: goal_focus_1(w=0.264), goal_focus_2(w=0.088), goal_focus_3(w=0.088), goal_focus_4(w=0.088), goal_focus_5(w=0.058), goal_focus_6(w=0.058), goal_focus_7(w=0.058), goal_focus_9(w=0.088), goal_focus_10(w=0.147)
+same order scaled vs raw: true
+bundle share: scaled 100.0% of total weight; raw 100.0%
+score spread: scaled 0.455 raw 0.455
+======================================================================
+PROMPT: I need to focus, some jazz | constraints: genre_hint(w=0.3), goal_focus_1(w=0.264), goal_focus_2(w=0.088), goal_focus_3(w=0.088), goal_focus_4(w=0.088), goal_focus_5(w=0.058), goal_focus_6(w=0.058), goal_focus_7(w=0.058), goal_focus_9(w=0.088), goal_focus_10(w=0.147)
+same order scaled vs raw: false
+first divergence at position 6: scaled=sample-048 raw=sample-054
+scaled top10: sample-031,sample-045,sample-018,sample-059,sample-008,sample-039,sample-048,sample-054,sample-034,sample-001
+raw    top10: sample-031,sample-045,sample-018,sample-059,sample-008,sample-039,sample-054,sample-001,sample-048,sample-058
+bundle share: scaled 75.7% of total weight; raw 84.2%
+score spread: scaled 0.588 raw 0.541

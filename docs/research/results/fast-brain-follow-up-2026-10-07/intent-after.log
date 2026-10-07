@@ -1,0 +1,27 @@
+✔ unrecognised numbers remain visible rather than making a request look specific (19.299916ms)
+✔ reading notes follow the goals actually applied to each reading (1.579291ms)
+✔ flagship focus prompt — specific, one valid reading carrying the research bundle (1.044292ms)
+✔ each user example phrase fires its goal with a valid reading (1.827917ms)
+✔ vague request — no readings, asks carry the next step (nothing fabricated) (0.277208ms)
+✔ surface verbs stay glue: “play me something good” stays vague (0.931625ms)
+✔ contradictory “fast relaxing bangers” — the documented pair yields two readings (0.777708ms)
+✔ impossible / hyper-specific asks stay honest (0.541209ms)
+✔ determinism: identical inputs produce deep-equal interpretations (2.264584ms)
+✔ user exclusions survive supersession and stay hard (0.577583ms)
+✔ lexicon: nine goals, soft-only bundles ≤ 1.0 emitted total (≤ 0.5 per term), refs everywhere (0.153291ms)
+✔ opposing goals yield two readings; the dropped side's draft proxies are set aside (0.626042ms)
+✔ blend: calm + sleep merge into one reading with a cooldown arc (0.394667ms)
+✔ drive keeps its medium feel: the draft “energetic” arousal proxy is superseded, never kept twice (0.404917ms)
+✔ genre context guard: “the house” is a room, “house music” is a genre (1.49475ms)
+✔ “workout then sleep” builds the first phase only and asks about the second (0.4645ms)
+✔ catharsis covers angry language too (A1 §2.1 C): angry/anger/furious/rage (1.357125ms)
+✔ copy corrections (C3 F-COPY-1): softened claims, no broken year example, no “lift me” promise (0.153208ms)
+✔ lexicon regressions: drive supersedes the energy proxy; angry words are catharsis triggers (0.034ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 118.60175

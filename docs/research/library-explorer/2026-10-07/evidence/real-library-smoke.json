@@ -1,0 +1,70 @@
+{
+  "private": true,
+  "read_only": true,
+  "retrieved_at": "2026-10-07T15:40:18.338Z",
+  "source": "/Volumes/music/.synamp/library-signals.json",
+  "sha256": "841a7afdcec34972f501c49998bf5af1127a42240b4f2f8415aed79cc216f54e",
+  "bytes": 31288475,
+  "files": 46117,
+  "limits": "Single Mac process observations; excludes JSON loading, network, rendering, NAS performance and owner music listening.",
+  "checks": [
+    {
+      "seam": "explore",
+      "options": {
+        "types": "album"
+      },
+      "ms": 187,
+      "total": 8387,
+      "returned": 60,
+      "groups": 0
+    },
+    {
+      "seam": "explore",
+      "options": {
+        "types": "song,album,artist",
+        "q": "2pac"
+      },
+      "ms": 61,
+      "total": 361,
+      "returned": 60,
+      "groups": 0
+    },
+    {
+      "seam": "explore",
+      "options": {
+        "types": "song",
+        "q": "fleetwod",
+        "mode": "fuzzy"
+      },
+      "ms": 132,
+      "total": 109,
+      "returned": 60,
+      "groups": 0
+    },
+    {
+      "seam": "explore",
+      "options": {
+        "types": "song",
+        "group": "album_artist",
+        "limit": "1"
+      },
+      "ms": 249,
+      "total": 46117,
+      "returned": 1,
+      "groups": 4673
+    },
+    {
+      "seam": "galaxy",
+      "ms": 89,
+      "total": 5490,
+      "returned": 24
+    },
+    {
+      "seam": "artist-detail",
+      "name": "2Pac",
+      "files": 236,
+      "folders": 37,
+      "truncated": false
+    }
+  ]
+}

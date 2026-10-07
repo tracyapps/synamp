@@ -1,13 +1,12 @@
 # Fast learning brain — goals in, session-scoped learning out
 
-Status: 2026-10-06, branch `feat/fast-learning-brain` (working tree; no commits at
-receipt time). Translation (`src/intent/`), session-scoped learning (`src/learning/`),
-arc sequencing (`src/query/sequence.ts`) and the verification harness
-(`tools/brain-lab/`) landed with the engineering receipts B1/B2/B4. The integration
-pass wires the endpoints, the resolve seam, the settings and the web readout named
-under “Integration points” below — those names are the frozen contract for this
-slice (most of the wiring landed in the working tree while this document was
-finalised; see “Evidence states”). Read “Evidence states” before quoting any number.
+Status: merged into `main` on 2026-10-07 as `be308a56` (feature commit
+`66cbe4e8`). The detailed contract below records the Autoclaw implementation;
+its evidence sections are historical captures. Read the
+[current follow-up](FAST-BRAIN-FOLLOW-UP.md) for `intent-v2`, surfaced reading
+notes, playlist-context readout, policy UI, fresh verification and remaining work.
+The [research library](../../research/index.html) preserves the complete original
+report, research packs, reviews, source kit and evidence with checksums.
 
 ## Current boundary
 
@@ -262,7 +261,7 @@ route-level smoke are the verification round's job):
 - **An explicit yes before anything crosses an epoch.** Proposals change nothing
   until confirmed; only explicit signals persist; forget is one call.
 
-## Evidence states
+## Evidence states — historical Autoclaw capture
 
 **Confirmed** (code in the working tree; receipts B1/B2/B4/B4b):
 
@@ -342,8 +341,8 @@ session tunes it under a new policy version.
 
 - **Branch.** The slice ships as a single commit on `feat/fast-learning-brain`
   (see the delivery manifest for the hash); `git diff main..feat/fast-learning-brain`
-  produces the full patch; revert = reset the branch to `b6ea5ce1`. Nothing
-  migrates data, so reverting is safe.
+  produces the full patch; current code rollback requires a reviewed revert of the intended change. Do not
+  reset merged `main` to the historical base; use the runtime policy switch first.
 - **Runtime switch.** Setting `listening_policy` = `epoch-v1` (default) |
   `legacy-v1`; the legacy path is the untouched `heuristic-v1` derivation — same
   log either way, so switching re-derives.

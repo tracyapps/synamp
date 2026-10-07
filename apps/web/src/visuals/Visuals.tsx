@@ -40,6 +40,15 @@ export default function Visuals({ open, onClose }: { open: boolean; onClose: () 
     if (!el) return;
     if (open && !el.open) el.showModal();
     if (!open && el.open) el.close();
+    if (!open) return;
+    const surfaces = [document.documentElement, document.body];
+    const overflow = surfaces.map((surface) => ({ value: surface.style.getPropertyValue("overflow"), priority: surface.style.getPropertyPriority("overflow") }));
+    surfaces.forEach((surface) => surface.style.setProperty("overflow", "hidden"));
+    return () => surfaces.forEach((surface, index) => {
+      const previous = overflow[index]!;
+      if (previous.value) surface.style.setProperty("overflow", previous.value, previous.priority);
+      else surface.style.removeProperty("overflow");
+    });
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function start() {
@@ -50,7 +59,12 @@ export default function Visuals({ open, onClose }: { open: boolean; onClose: () 
       const el = canvas.current!;
       const ctx = audioContext();
       const rect = el.getBoundingClientRect();
-      const viz = butterchurn.createVisualizer(ctx, el, { width: rect.width, height: rect.height, pixelRatio: Math.min(window.devicePixelRatio || 1, 2) });
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      el.width = Math.max(1, Math.round(rect.width * ratio));
+      el.height = Math.max(1, Math.round(rect.height * ratio));
+      // Butterchurn's screen viewport uses width/height directly; pixelRatio
+      // only scales its internal textures. Both must match the canvas pixels.
+      const viz = butterchurn.createVisualizer(ctx, el, { width: el.width, height: el.height, pixelRatio: 1 });
       const presets = presetPack.getPresets();
       const list = Object.keys(presets).sort(() => Math.random() - 0.5);
       engine.current = { viz, presets, node: null };
@@ -80,15 +94,27 @@ export default function Visuals({ open, onClose }: { open: boolean; onClose: () 
   useEffect(() => {
     if (!started || !open) return;
     let frame = 0;
-    const draw = () => { engine.current?.viz.render(); frame = requestAnimationFrame(draw); };
-    frame = requestAnimationFrame(draw);
     const el = canvas.current!;
-    const observer = new ResizeObserver(() => {
+    let ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const resize = () => {
       const rect = el.getBoundingClientRect();
-      el.width = rect.width * Math.min(window.devicePixelRatio || 1, 2);
-      el.height = rect.height * Math.min(window.devicePixelRatio || 1, 2);
-      engine.current?.viz.setRendererSize(rect.width, rect.height);
-    });
+      ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(1, Math.round(rect.width * ratio));
+      const height = Math.max(1, Math.round(rect.height * ratio));
+      if (el.width === width && el.height === height) return;
+      el.width = width;
+      el.height = height;
+      engine.current?.viz.setRendererSize(width, height);
+    };
+    const draw = () => {
+      // Moving between displays can change pixel density without changing CSS size.
+      if (ratio !== Math.min(window.devicePixelRatio || 1, 2)) resize();
+      engine.current?.viz.render();
+      frame = requestAnimationFrame(draw);
+    };
+    resize();
+    frame = requestAnimationFrame(draw);
+    const observer = new ResizeObserver(resize);
     observer.observe(el);
     return () => { cancelAnimationFrame(frame); observer.disconnect(); };
   }, [started, open]);

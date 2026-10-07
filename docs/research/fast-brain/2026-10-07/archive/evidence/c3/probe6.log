@@ -1,0 +1,55 @@
+=== emitted weight arithmetic (research → emitted), ignoring missing-library skips
+focus      raw=1.70 scale=0.588 emitted=[0.264, 0.088, 0.088, 0.088, 0.058, 0.058, 0.058, 0.058, 0.088, 0.147] sum=0.995
+   truncation loss per term: 0.0007, 0.0002, 0.0002, 0.0002, 0.0008, 0.0008, 0.0008, 0.0008, 0.0002, 0.0001
+pump_up    raw=2.10 scale=0.476 emitted=[0.166, 0.142, 0.119, 0.095, 0.095, 0.095, 0.071, 0.071, 0.142] sum=0.996
+   truncation loss per term: 0.0007, 0.0009, 0.0000, 0.0002, 0.0002, 0.0002, 0.0004, 0.0004, 0.0009
+dance      raw=2.00 scale=0.500 emitted=[0.15, 0.15, 0.15, 0.075, 0.075, 0.05, 0.1, 0.05, 0.2] sum=1.000
+   truncation loss per term: 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000
+calm       raw=2.15 scale=0.465 emitted=[0.186, 0.139, 0.139, 0.116, 0.069, 0.093, 0.046, 0.069, 0.139] sum=0.996
+   truncation loss per term: 0.0000, 0.0005, 0.0005, 0.0003, 0.0008, 0.0000, 0.0005, 0.0008, 0.0005
+sleep      raw=2.35 scale=0.426 emitted=[0.191, 0.127, 0.127, 0.106, 0.063, 0.085, 0.042, 0.063, 0.063, 0.127] sum=0.994
+   truncation loss per term: 0.0005, 0.0007, 0.0007, 0.0004, 0.0008, 0.0001, 0.0006, 0.0008, 0.0008, 0.0007
+catharsis  raw=0.75 scale=1.000 emitted=[0.25, 0.15, 0.15, 0.1, 0.1] sum=0.750
+   truncation loss per term: 0.0000, 0.0000, 0.0000, 0.0000, 0.0000
+nostalgia  raw=0.55 scale=1.000 emitted=[0.25, 0.15, 0.1, 0.05] sum=0.550
+   truncation loss per term: 0.0000, 0.0000, 0.0000, 0.0000
+drive      raw=0.60 scale=1.000 emitted=[0.3, 0.1, 0.1, 0.1] sum=0.600
+   truncation loss per term: 0.0000, 0.0000, 0.0000, 0.0000
+chores     raw=0.90 scale=1.000 emitted=[0.25, 0.2, 0.15, 0.1, 0.1, 0.1] sum=0.900
+   truncation loss per term: 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000
+
+=== supersede-check: "feeling pumped up" -> partial, readings=1, chosen=0
+  reading[0] "pump up" conf=0.6
+    constraints: goal_pump_up_1(bpm between [125,140] w=0.166); goal_pump_up_2(percussiveness gte 0.5 w=0.142); goal_pump_up_3(pulse_clarity gte 0.55 w=0.119); goal_pump_up_4(beat_grid_strength gte 0.5 w=0.095); goal_pump_up_5(onset_rate gte 4.14 w=0.095); goal_pump_up_6(lufs_integrated gte -12.7 w=0.095); goal_pump_up_8(beat_interval_cv lte 0.06 w=0.071); goal_pump_up_9(arousal gte 0.6 w=0.142)
+    assumptions: ["“Pump up” becomes an exercise/pre-task bundle: fast steady tempo, prominent percussion, loud and bright — preferences, not filters.","Self-selected music outperforms preselected; your loves and repeats in this session will move the list more than these defaults (MP-3).","Not understood yet, kept only as text for a future encoder: “feeling”.","Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections."]
+  asks: [
+  'I left “feeling” unused — if it matters, say it as an activity, a tempo range, or a tag.'
+]
+
+=== supersede-check: "I'm driving to work" -> partial, readings=1, chosen=0
+  reading[0] "drive" conf=0.6
+    constraints: energetic(arousal gte 0.6 w=0.6); goal_drive_1(bpm between [95,135] w=0.3); goal_drive_2(lufs_integrated gte -14.7 w=0.1); goal_drive_3(onset_rate between [2.27,5.34] w=0.1); goal_drive_4(percussiveness gte 0.33 w=0.1)
+    assumptions: ["“Drive” keeps a medium, engaged feel: slow/low-energy material can increase fatigue on long drives (MP-31).","“Energy” was read as arousal, not tempo. Microtiming is the other candidate proxy once it is validated.","Not understood yet, kept only as text for a future encoder: “'m work”.","Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections."]
+  asks: [
+  "I left “'m work” unused — if it matters, say it as an activity, a tempo range, or a tag."
+]
+
+=== pair: "fast relaxing bangers" -> contradictory, readings=2, chosen=0
+  reading[0] "energetic but soft" conf=0.5
+    constraints: goal_fastsoft_1(percussiveness lte 0.35 w=0.3); goal_fastsoft_2(lufs_integrated lte -13.8 w=0.25); mod_fast(bpm gte 120 w=0.2)
+    assumptions: ["Not understood yet, kept only as text for a future encoder: “bangers”.","“fast” was read as a tempo preference (bpm ≥ 120), not a goal.","Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections.","Read as “energetic but soft”: keep the fast tempo (fast) and soften the texture — low loudness and light percussion — instead of keeping it calm."]
+  reading[1] "literally calm" conf=0.5
+    constraints: goal_calm_1(bpm between [55,80] w=0.186); goal_calm_2(percussiveness lte 0.35 w=0.139); goal_calm_3(onset_rate lte 2.98 w=0.139); goal_calm_4(lufs_integrated lte -13.8 w=0.116); goal_calm_5(loudness_range lte 8.7 w=0.069); goal_calm_8(beat_interval_cv lte 0.05 w=0.069); goal_calm_9(arousal lte 0.4 w=0.139)
+  asks: [
+  '“fast” and “relaxing” pull opposite ways — should it be fast but soft-edged, or actually calm?'
+]
+
+=== pair: "pump me up but keep it calm" -> contradictory, readings=2, chosen=0
+  reading[0] "pump up" conf=0.5
+    constraints: goal_pump_up_1(bpm between [125,140] w=0.166); goal_pump_up_2(percussiveness gte 0.5 w=0.142); goal_pump_up_3(pulse_clarity gte 0.55 w=0.119); goal_pump_up_4(beat_grid_strength gte 0.5 w=0.095); goal_pump_up_5(onset_rate gte 4.14 w=0.095); goal_pump_up_6(lufs_integrated gte -12.7 w=0.095); goal_pump_up_8(beat_interval_cv lte 0.06 w=0.071); goal_pump_up_9(arousal gte 0.6 w=0.142)
+    assumptions: ["“Pump up” becomes an exercise/pre-task bundle: fast steady tempo, prominent percussion, loud and bright — preferences, not filters.","Self-selected music outperforms preselected; your loves and repeats in this session will move the list more than these defaults (MP-3).","Not understood yet, kept only as text for a future encoder: “keep”.","Tempo/energy bands are research starting points, not universal — they adapt from your feedback and from spot-check corrections."]
+  reading[1] "calm" conf=0.5
+    constraints: goal_calm_1(bpm between [55,80] w=0.186); goal_calm_2(percussiveness lte 0.35 w=0.139); goal_calm_3(onset_rate lte 2.98 w=0.139); goal_calm_4(lufs_integrated lte -13.8 w=0.116); goal_calm_5(loudness_range lte 8.7 w=0.069); goal_calm_8(beat_interval_cv lte 0.05 w=0.069); goal_calm_9(arousal lte 0.4 w=0.139)
+  asks: [
+  'You asked for both “pump up” and “calm” — they pull in opposite directions. Which should lead?'
+]

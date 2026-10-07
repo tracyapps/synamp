@@ -1,0 +1,33 @@
+===== smoke1: routes (F3 accept shape, F4 draft/evaluate parity, F8) — 2026-10-07T04:58:28Z =====
+ok - proposal present: track_repeat_skip pr1:84de4598d8fb
+     suggested_action: Keeps it out of suggestions everywhere (a global thumbs-down) — or exclude it from that playlist instead
+ok - live epoch hides sample-005 (brain/session)
+ok - draft validates; chosen reading: focus
+ok - draft preview counts.hidden_by_session = 1
+ok - draft preview: hidden empty, hidden_by_you = 0 (no masquerade)
+ok - draft preview: sample-005 absent from strict
+ok - /plans/evaluate parity: hidden_by_session = 1 (matches draft preview)
+ok - evaluate: hidden empty; counts.hidden_by_you = 0
+ok - sequencing_applied: ["arc build: ordered by measured pace/energy proxy (bpm, onsets, percussion, loudness) — 100% coverage"]
+ok - accept 200
+ok - accepted proposal gone from readout
+ok - accept event shape (F3): {"id":"proposal-pr1-84de4598d8fb","ts":1791349108704,"signal":"thumb_down","track_id":"sample-001","scope":"global","session_id":"61245596-dcda-4730-a3cb-7f81359c03be","source":"server","policy_version":"epoch-v1","detail":{"proposal_id":"pr1:84de4598d8fb"}}
+ok - no second proposal to test dismiss (fine)
+smoke dir: /var/folders/13/3zn8b6vd17z766yjjvjn_zjm0000gn/T/synamp-smoke-i41jBl
+server log tail: synamp-brain listening on http://127.0.0.1:3973
+
+===== smoke2: smart-playlist explain (F4 persistent vs session) — 2026-10-07T04:58:28Z =====
+ok - smart playlist created: 85d03f5d-277f-4935-9031-79857edef31d
+ok - remove recorded (persistent, playlist scope)
+ok - explain: sample-004 is 'Removed by you' (restorable list)
+ok - explain: epoch hide sample-005 is NOT in the restore list
+ok - explain: hidden_by_you = 1
+ok - explain: hidden_by_session = 1
+ok - explain: both hidden tracks absent from strict
+ok - explain carries sequencing_applied (F8 surface)
+ok - restore recorded
+ok - after restore: restore list empty
+ok - after restore: sample-005 still session-hidden (no dead Restore exists)
+ok - after restore: sample-004 back in strict
+smoke dir: /var/folders/13/3zn8b6vd17z766yjjvjn_zjm0000gn/T/synamp-smoke2-NS3aFL
+server log tail: synamp-brain listening on http://127.0.0.1:3974

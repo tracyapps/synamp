@@ -1,0 +1,21 @@
+
+> @synamp/web@0.0.0 build /Users/tapps/_dev/web-apps/SynAmp/apps/web
+> tsc -p tsconfig.json --noEmit && vite build
+
+vite v6.4.3 building for production...
+transforming...
+✓ 136 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                   0.91 kB │ gzip:   0.47 kB
+dist/assets/synamp-wordmark-DYGcsW_8.svg         27.46 kB │ gzip:   9.03 kB
+dist/assets/synamp-mark-Mpuqj83A.svg             63.56 kB │ gzip:  23.55 kB
+dist/assets/Visuals-BrWnqZJo.css                  1.28 kB │ gzip:   0.59 kB
+dist/assets/index-DTZYwP-h.css                   70.20 kB │ gzip:  13.99 kB
+dist/assets/_commonjsHelpers-CqkleIqs.js          0.12 kB │ gzip:   0.13 kB
+dist/assets/Visuals-C1oHa1ao.js                   5.29 kB │ gzip:   2.11 kB
+dist/assets/browser-C-3SCi0V.js                  25.77 kB │ gzip:  10.14 kB
+dist/assets/butterchurn-DEdoJIEc.js             198.26 kB │ gzip:  44.92 kB
+dist/assets/index-CUhIkn0u.js                   363.40 kB │ gzip: 108.25 kB
+dist/assets/butterchurnPresets.min-zQja_U1f.js  645.86 kB │ gzip: 122.49 kB
+✓ built in 1.13s

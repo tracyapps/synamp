@@ -1,0 +1,52 @@
+
+--- S1 live after 2x skip(sample-001), 1x skip(sample-002)
+epoch: ep1:ef6b7b2c… 2026-03-10 evening ev=3
+notes: ["skip side not learned yet: only 1 skipped track this session (need 2)"]
+hides: ["sample-001"]
+proposals: []
+adjust sample-001: {"value":-0.4874815266380662,"parts":[{"label":"skipped early this session","value":-0.49}]}
+adjust sample-002 (1 skip): {"value":-0.4258186826085799,"parts":[{"label":"skipped early this session","value":-0.26},{"label":"other tracks by Lumen Atlas this session","value":-0.17}]}
+
+--- S1 58min later (epoch closed)
+epoch: null
+notes: ["no active session — learning is paused"]
+hides: []
+proposals: []
+adjust sample-001 after close: {"value":0,"parts":[]}
+
+--- S1 next-day epoch active; old skips must be gone
+epoch: ep1:156beb82… 2026-03-11 morning ev=1
+notes: ["feature bands not learned yet: only 1 kept track this session (need 3)"]
+hides: []
+proposals: []
+adjust sample-001 in new epoch: {"value":0,"parts":[]}
+
+--- S2 not_now live
+epoch: ep1:d0ce8e1e… 2026-03-10 evening ev=1
+notes: ["skip side not learned yet: only 1 skipped track this session (need 2)"]
+hides: ["sample-004"]
+proposals: []
+adjust sample-004: {"value":-0.7143304733856898,"parts":[{"label":"not now — hidden until this session ends","value":-0.71}]}
+
+--- S2 not_now after epoch end (+60min)
+epoch: null
+notes: ["no active session — learning is paused"]
+hides: []
+proposals: []
+adjust sample-004 closed: {"value":0,"parts":[]}
+
+--- S3 repeat x1 vs x3
+x1: {"value":0.4949747468305833,"parts":[{"label":"replayed this session","value":0.49}]}
+x3: {"value":1.6741942177176907,"parts":[{"label":"replayed this session","value":1.67}]}
+monotonic increase, no negative part: true
+
+--- S4a two epochs across 2 dates -> 0 proposals (expect 0)
+--- S4b three epochs 3 dates -> [ 'track_repeat_skip ev=3/3' ] (expect 1)
+--- S4c three SAME-DAY epochs (3 sessions, 1 date) -> 0 proposals (expect 0 — 'mood ≠ habit')
+--- S4d 4 epochs, last ACTIVE -> 1 proposal(s) from closed epochs (expect 1; evidence excludes live)
+--- S4e not_now 3 nights (dayparts=1) -> 0 (expect 0)
+--- S4f + one morning -> [
+  'not_now_pattern {"epochs":4,"dates":4,"dayparts":["morning","night"]}'
+] (expect 1)
+--- S4g repeats in 3 epochs -> 0 (expect 0; needs 4/3)
+--- S4h repeats in 4 epochs/3 dates -> [ 'repeat_positive' ] (expect repeat_positive)

@@ -1,0 +1,4 @@
+
+> synamp@0.0.0-next-87012d8d brain:readback:type-check /Users/tapps/_dev/web-apps/SynAmp
+> tsc -p tools/brain-lab/tsconfig.readback.json
+

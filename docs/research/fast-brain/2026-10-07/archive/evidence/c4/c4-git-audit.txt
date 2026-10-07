@@ -1,0 +1,77 @@
+# C4 git audit — 2026-10-07 00:21 CDT
+
+## rev-parse main feat/fast-learning-brain
+b6ea5ce1d891f084854407fba1f65ee5febc9e28
+b6ea5ce1d891f084854407fba1f65ee5febc9e28
+
+## git diff --stat main..feat/fast-learning-brain (documented PATCH.diff command dry-run)
+(EMPTY — 0 lines)
+
+## git diff --stat main (tree vs working)
+ apps/brain/README.md               |  35 ++++++-
+ apps/brain/src/index.ts            | 194 +++++++++++++++++++++++++++++++++++--
+ apps/brain/src/query/evaluate.ts   |  30 +++++-
+ apps/brain/src/query/plan.ts       |   9 +-
+ apps/brain/src/query/query.test.ts |  16 +++
+ apps/brain/src/session/events.ts   |  14 ++-
+ apps/brain/src/session/feedback.ts |   8 +-
+ apps/brain/src/settings.test.ts    |  26 ++++-
+ apps/brain/src/settings.ts         |  15 +++
+ apps/web/src/App.tsx               |   2 +
+ apps/web/src/Describe.tsx          |  86 +++++++++++++++-
+ apps/web/src/styles/describe.css   |  28 ++++++
+ docs/synamp/DECISIONS.md           |  12 +++
+ docs/synamp/plans/AGENT-ROADMAP.md |  34 +++++++
+ 14 files changed, 483 insertions(+), 26 deletions(-)
+
+## git status --porcelain --untracked-files=all
+ M apps/brain/README.md
+ M apps/brain/src/index.ts
+ M apps/brain/src/query/evaluate.ts
+ M apps/brain/src/query/plan.ts
+ M apps/brain/src/query/query.test.ts
+ M apps/brain/src/session/events.ts
+ M apps/brain/src/session/feedback.ts
+ M apps/brain/src/settings.test.ts
+ M apps/brain/src/settings.ts
+ M apps/web/src/App.tsx
+ M apps/web/src/Describe.tsx
+ M apps/web/src/styles/describe.css
+ M docs/synamp/DECISIONS.md
+ M docs/synamp/plans/AGENT-ROADMAP.md
+?? apps/brain/src/intent/intent.test.ts
+?? apps/brain/src/intent/interpret.ts
+?? apps/brain/src/intent/lexicon.ts
+?? apps/brain/src/learning/derive.test.ts
+?? apps/brain/src/learning/derive.ts
+?? apps/brain/src/learning/epochs.test.ts
+?? apps/brain/src/learning/epochs.ts
+?? apps/brain/src/learning/explore.test.ts
+?? apps/brain/src/learning/explore.ts
+?? apps/brain/src/learning/proposals.test.ts
+?? apps/brain/src/learning/proposals.ts
+?? apps/brain/src/learning/reliability.test.ts
+?? apps/brain/src/learning/reliability.ts
+?? apps/brain/src/learning/types.ts
+?? apps/brain/src/query/hide-union.test.ts
+?? apps/brain/src/query/sequence.test.ts
+?? apps/brain/src/query/sequence.ts
+?? apps/brain/src/session/feedback.test.ts
+?? apps/web/src/BrainSession.tsx
+?? apps/web/src/styles/brain.css
+?? docs/synamp/plans/FAST-LEARNING-BRAIN.md
+?? tools/brain-lab/README.md
+?? tools/brain-lab/lab.mts
+?? tools/brain-lab/lib/checks.mts
+?? tools/brain-lab/lib/events.mts
+?? tools/brain-lab/lib/modules.mts
+?? tools/brain-lab/lib/runner.mts
+?? tools/brain-lab/lib/util.mts
+?? tools/brain-lab/scenarios/01-three-phrases.json
+?? tools/brain-lab/scenarios/02-vague.json
+?? tools/brain-lab/scenarios/03-contradictory.json
+?? tools/brain-lab/scenarios/04-impossible.json
+?? tools/brain-lab/scenarios/05-fast-learning.json
+?? tools/brain-lab/scenarios/06-isolation.json
+?? tools/brain-lab/scenarios/07-forget.json
+?? tools/brain-lab/scenarios/08-culture-guardrails.json

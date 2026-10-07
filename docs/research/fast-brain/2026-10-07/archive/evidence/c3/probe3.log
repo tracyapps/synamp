@@ -1,0 +1,13 @@
+emitted constraints: goal_focus_1(w=0.264), goal_focus_2(w=0.088), goal_focus_3(w=0.088), goal_focus_4(w=0.088), goal_focus_5(w=0.058), goal_focus_6(w=0.058), goal_focus_7(w=0.058), goal_focus_9(w=0.088), goal_focus_10(w=0.147)
+
+WITH declared (full): position of B = 8
+WITHOUT declared  : position of B = 12
+full  top12: sample-017,sample-024,sample-034,sample-045,sample-015,sample-004,sample-047,sample-026,sample-054,sample-059,sample-057,sample-031
+w/o d top12: sample-017,sample-024,sample-034,sample-045,sample-015,sample-005,sample-047,sample-030,sample-057,sample-031,sample-059,sample-037
+
+total soft weight: full=0.937 (declared mass=0.411) vs without=0.526
+produced-term share of the average: full=56.1% vs without=100%
+=> any produced-term score gap is diluted by factor 0.561 while declared terms are unmeasured
+B=sample-054 with love bonus: position 8 (full) vs 12 (no declared)
+  pair B vs sample-026: full scores B=0.659 sample-026=0.543 | without scores B=0.694 sample-026=undefined
+  pair B vs sample-037: full scores B=0.659 sample-037=0.633 | without scores B=0.694 sample-037=0.737

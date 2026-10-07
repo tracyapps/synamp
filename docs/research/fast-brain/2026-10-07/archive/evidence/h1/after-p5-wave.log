@@ -1,0 +1,4 @@
+resolved tracks: ["three","one","two"]
+contains undefined: false
+GET /resolve payload would serialize as: {"tracks":["three","one","two"]}
+queue build ok (unexpected): [{"rank":0,"track_id":"three"},{"rank":1,"track_id":"one"},{"rank":2,"track_id":"two"}]

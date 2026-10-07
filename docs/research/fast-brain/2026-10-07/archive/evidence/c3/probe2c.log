@@ -1,0 +1,13 @@
+index | scaled id/score            | raw id/score
+ 0 | sample-031  0.918 | sample-031  0.908
+ 1 | sample-045  0.796 | sample-045  0.829
+ 2 | sample-018  0.592 | sample-018  0.603
+ 3 | sample-059  0.699 | sample-059  0.721
+ 4 | sample-008  0.676 | sample-008  0.695
+ 5 | sample-039  0.726 | sample-039  0.751
+ 6 | sample-048  0.512 | sample-054  0.643
+ 7 | sample-054  0.579 | sample-001  0.608
+ 8 | sample-034  0.807 | sample-048  0.513
+ 9 | sample-001  0.547 | sample-058  0.694
+10 | sample-058  0.625 | sample-034  0.786
+11 | sample-015  0.434 | sample-015  0.483

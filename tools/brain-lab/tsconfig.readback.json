@@ -1,0 +1,5 @@
+{
+  "extends": "../../apps/brain/tsconfig.json",
+  "compilerOptions": { "typeRoots": ["../../apps/brain/node_modules/@types"] },
+  "include": ["readback.mts", "readback.test.mts"]
+}

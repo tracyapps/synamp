@@ -1,0 +1,6 @@
+# C1 outbound/telemetry grep (run 2026-10-06 23:47 CDT)
+# pattern: fetch(|XMLHttpRequest|https?://|require(.*http|node:http|node:https|node:net|node:dns|node:child_process
+# scope: new modules + new web files
+MATCHES: 0
+# URL literals in new modules:
+0

@@ -1,0 +1,7 @@
+sample-048: scaled score=0.512 rank=6 | raw score=0.513 rank=8
+sample-054: scaled score=0.579 rank=7 | raw score=0.643 rank=6
+sample-001: scaled score=0.547 rank=9 | raw score=0.608 rank=7
+sample-058: scaled score=0.625 rank=10 | raw score=0.694 rank=9
+scaled order: sample-031,sample-045,sample-018,sample-059,sample-008,sample-039,sample-048,sample-054,sample-034,sample-001,sample-058,sample-015,sample-038,sample-005,sample-024,sample-027,sample-053,sample-010,sample-043,sample-050,sample-019,sample-030,sample-023,sample-011
+raw    order: sample-031,sample-045,sample-018,sample-059,sample-008,sample-039,sample-054,sample-001,sample-048,sample-058,sample-034,sample-015,sample-038,sample-005,sample-030,sample-024,sample-053,sample-043,sample-010,sample-019,sample-050,sample-027,sample-023,sample-011
+constraints: genre_hint:genrein["jazz"]@0.3 | goal_focus_1:vocal_fractionlte0.1@0.264 | goal_focus_2:bpmbetween[85,125]@0.088 | goal_focus_3:pulse_claritygte0.5@0.088 | goal_focus_4:onset_ratelte4@0.088 | goal_focus_5:dynamic_complexitylte8@0.058 | goal_focus_6:lufs_integratedbetween[-16.4,-10.4]@0.058 | goal_focus_7:spectral_flatnesslte0.3@0.058 | goal_focus_9:beat_interval_cvlte0.05@0.088 | goal_focus_10:arousalbetween[0.3,0.65]@0.147

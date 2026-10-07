@@ -29,6 +29,7 @@ import { visualsSupported } from "./visuals/support";
 
 // The visuals (and MilkDrop's presets) load only when first opened.
 const Visuals = lazy(() => import("./visuals/Visuals"));
+const Galaxy = lazy(() => import("./Galaxy"));
 
 /*
  * The app shell: top bar, side navigation, one screen at a time, and the player
@@ -36,10 +37,11 @@ const Visuals = lazy(() => import("./visuals/Visuals"));
  * so the browser's Back button and bookmarks work.
  */
 
-type ScreenId = "library" | "playlists" | "radio" | "party" | "care" | "brain" | "anywhere" | "settings";
+type ScreenId = "library" | "galaxy" | "playlists" | "radio" | "party" | "care" | "brain" | "anywhere" | "settings";
 const NAV: Array<{ group: string; items: Array<{ id: ScreenId; label: string; icon: IconName }> }> = [
   { group: "Listen", items: [
     { id: "library", label: "Library", icon: "library" },
+    { id: "galaxy", label: "Galaxy", icon: "shuffle" },
     { id: "playlists", label: "Playlists", icon: "playlists" },
     { id: "radio", label: "Radio", icon: "radio" },
     { id: "party", label: "Party", icon: "phone" },
@@ -131,11 +133,14 @@ export default function App() {
   switch (screen) {
     case "library":
       body = <div className="screen">
-        <ScreenHead id={headingId} eyebrow="Listen" title="Library"><p>Everything you own, by album. Search, play, or add songs to a playlist.</p></ScreenHead>
+        <ScreenHead id={headingId} eyebrow="Listen" title="Library"><p>Search, group, and explore the music you own.</p></ScreenHead>
         <UpdateNotice request={call} />
         <LibraryHealth request={call} />
         <Library request={call} play={play} playlists={nodes} />
       </div>;
+      break;
+    case "galaxy":
+      body = <div className="screen galaxy-screen"><h1 id={headingId} tabIndex={-1} className="galaxy-heading">Galaxy</h1><Suspense fallback={<p role="status">Opening Galaxy…</p>}><Galaxy request={call} play={play} playlists={nodes} /></Suspense></div>;
       break;
     case "playlists":
       body = <Playlists request={call} upload={upload} nodes={nodes} loading={loading} refreshNodes={refreshNodes} play={play} headingId={headingId} />;
@@ -157,7 +162,7 @@ export default function App() {
     case "brain":
       body = <div className="screen">
         <ScreenHead id={headingId} eyebrow="Understand" title="The Brain"><p>What SynAmp has learned from listening to your music and to you — and a way to double-check it.</p></ScreenHead>
-        <BrainSession request={call} session={session} startOpen />
+        <BrainSession request={call} session={session} playlistName={(id) => nodes.find((node) => node.id === id)?.name} startOpen />
         <SpotCheck request={call} startOpen />
         <Listening request={call} />
       </div>;

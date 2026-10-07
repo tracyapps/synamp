@@ -1,0 +1,126 @@
+- generic [ref=e3]:
+  - link "Skip to content" [ref=e4] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e5]:
+    - link "SynAmp, go to Library" [ref=e6] [cursor=pointer]:
+      - /url: "#/library"
+    - generic "Not built by Container Manager" [ref=e73]: Development copy
+  - generic [ref=e7]:
+    - navigation "SynAmp" [ref=e8]:
+      - group [ref=e9]:
+        - paragraph [ref=e10]: Listen
+        - link "Library" [ref=e11] [cursor=pointer]:
+          - /url: "#/library"
+        - link "Playlists" [ref=e14] [cursor=pointer]:
+          - /url: "#/playlists"
+        - link "Radio" [ref=e19] [cursor=pointer]:
+          - /url: "#/radio"
+        - link "Party" [ref=e22] [cursor=pointer]:
+          - /url: "#/party"
+      - group [ref=e25]:
+        - paragraph [ref=e26]: Understand
+        - link "The Brain" [ref=e27] [cursor=pointer]:
+          - /url: "#/brain"
+        - link "Library care" [ref=e30] [cursor=pointer]:
+          - /url: "#/care"
+      - group [ref=e33]:
+        - paragraph [ref=e34]: System
+        - link "Listen anywhere" [ref=e35] [cursor=pointer]:
+          - /url: "#/anywhere"
+        - link "Settings" [ref=e41] [cursor=pointer]:
+          - /url: "#/settings"
+    - main [ref=e45]:
+      - generic [ref=e254]:
+        - generic [ref=e255]:
+          - paragraph [ref=e256]: Listen
+          - heading "Playlists" [active] [level=1] [ref=e258]
+          - paragraph [ref=e260]: "Describe a playlist in your own words, or build them by hand: folders, playlists, and roll-ups that combine a whole folder into one live list."
+        - region [ref=e261]:
+          - generic [ref=e263]:
+            - paragraph [ref=e264]: Smart playlist · draft parser
+            - heading "Describe what you want to hear" [level=2] [ref=e265]
+          - generic [ref=e266]:
+            - generic [ref=e267]: In your own words
+            - textbox "In your own words" [ref=e268]:
+              - /placeholder: e.g. I need to focus. no words, no piano, nothing too slow
+            - paragraph [ref=e269]: "“No …” rules are strict: a track is only included when it has been measured and passes."
+            - generic [ref=e270]:
+              - button "Preview" [disabled]
+              - generic [ref=e271]: "Try:"
+              - button "I need to focus. no words, no piano, nothing too slow/relaxing." [ref=e272] [cursor=pointer]
+              - button "upbeat, between 110 and 130 bpm, no synths" [ref=e273] [cursor=pointer]
+              - button "exclude punk or country" [ref=e274] [cursor=pointer]
+              - button "chill electronic, no words" [ref=e275] [cursor=pointer]
+        - generic [ref=e276]:
+          - region [ref=e277]:
+            - generic [ref=e278]:
+              - heading "Collection" [level=2] [ref=e279]
+              - paragraph [ref=e280]: 0 items
+            - generic [ref=e281]:
+              - paragraph [ref=e282]: No playlists yet. Start below.
+              - generic [ref=e283]:
+                - heading "Create" [level=3] [ref=e284]
+                - generic [ref=e285]:
+                  - text: Name
+                  - textbox "Name" [ref=e286]:
+                    - /placeholder: e.g. Afternoon focus
+                - generic [ref=e287]:
+                  - text: Type
+                  - combobox "Type" [ref=e288]:
+                    - option "Playlist" [selected]
+                    - option "Folder"
+                    - option "Roll-up"
+                - generic [ref=e289]:
+                  - text: Inside folder
+                  - combobox "Inside folder" [ref=e290]:
+                    - option "Collection (top level)" [selected]
+                - button "Create playlist" [ref=e291] [cursor=pointer]
+          - region "Playlist detail" [ref=e292]:
+            - generic [ref=e293]:
+              - heading "Select a playlist" [level=3] [ref=e299]
+              - paragraph [ref=e300]: Create a playlist to collect tracks, or a folder to group them. Roll-ups turn a whole folder into one live list.
+        - region [ref=e301]:
+          - generic [ref=e303]:
+            - heading "Bring your playlists across" [level=2] [ref=e304]
+            - paragraph [ref=e305]: From iTunes, Music, Winamp, foobar2000, VLC and most other players
+          - generic [ref=e306]:
+            - paragraph [ref=e307]: Choose a playlist file and SynAmp finds each song in your library — even if it has moved, been renamed or ripped again since.
+            - list [ref=e308]:
+              - listitem [ref=e309]:
+                - strong [ref=e310]: iTunes or Music
+                - text: ": File → Library →"
+                - emphasis [ref=e311]: Export Library…
+                - text: — brings every playlist and folder at once.
+              - listitem [ref=e312]:
+                - strong [ref=e313]: One playlist
+                - text: "from any player: save or export it as"
+                - code [ref=e314]: .m3u
+                - text: or
+                - code [ref=e315]: .m3u8
+                - text: .
+            - button "Choose a playlist file…" [ref=e317] [cursor=pointer]
+            - status [ref=e321]
+        - region [ref=e322]:
+          - generic [ref=e324]:
+            - heading "On your phone" [level=2] [ref=e325]
+            - paragraph [ref=e326]: Your playlists in Symfonium, play:Sub, Feishin and other Subsonic apps
+          - generic [ref=e327]:
+            - generic [ref=e328]:
+              - paragraph [ref=e329]:
+                - text: Phone apps get their playlists from Navidrome, and Navidrome keeps a separate set for each account. Sign in with the
+                - strong [ref=e330]: Navidrome account your phone uses
+                - text: and SynAmp will put every playlist there — folders become part of the name, like “Evenings › Slow burn”.
+              - generic [ref=e331]:
+                - generic [ref=e332]:
+                  - text: Navidrome user name
+                  - textbox "Navidrome user name" [ref=e333]
+                - generic [ref=e334]:
+                  - text: Password
+                  - textbox "Password" [ref=e335]
+                - button "Sign in and send" [ref=e336] [cursor=pointer]
+              - paragraph [ref=e339]: SynAmp checks the password with Navidrome and keeps only a scrambled token, never the password itself.
+            - status [ref=e340]
+  - region "Player" [ref=e66]:
+    - generic [ref=e69]:
+      - paragraph [ref=e70]: Nothing playing
+      - paragraph [ref=e71]: Press Play on an album or a playlist.

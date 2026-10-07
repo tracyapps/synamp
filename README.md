@@ -48,6 +48,13 @@ The plan itself, including the decisions this pivot rests on, is in
 The NAS is a Synology DS1825+ (AMD Ryzen V1500B, x86-64, no GPU). Anything that
 needs a GPU runs on a separate "brain machine" instead.
 
+## Research library
+
+[Open the research library](docs/research/index.html) for the fast-learning report,
+original source packs, current work queue, corrections and full provenance appendix.
+[Current research handoff](docs/synamp/plans/FAST-BRAIN-FOLLOW-UP.md) connects those
+findings to implementation and the next experiments.
+
 ## Development
 
 Requires Node.js ≥ 22 and pnpm 9.

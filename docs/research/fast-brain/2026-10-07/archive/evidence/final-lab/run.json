@@ -1,0 +1,119 @@
+{
+  "format": "synamp.brain-lab.final-lab/1",
+  "captured_at_local": "2026-10-07T00:14:00-05:00",
+  "captured_at_utc": "2026-10-07T05:14:00Z",
+  "post_hotfixes": "H1 / H2 / H3 (lab re-synced by H4)",
+  "repo": {
+    "root": "/Users/tapps/_dev/web-apps/SynAmp",
+    "branch": "feat/fast-learning-brain",
+    "head": "b6ea5ce1d891f084854407fba1f65ee5febc9e28",
+    "working_tree": "dirty (B1/B2/B5/B4b + H1/H2/H3 edits uncommitted; no commits made, per task)"
+  },
+  "node": "v24.13.0",
+  "runs": {
+    "canonical": {
+      "command": "cd /Users/tapps/_dev/web-apps/SynAmp && node --experimental-strip-types tools/brain-lab/lab.mts --json <evidence>/lab.json",
+      "exit_code": 0,
+      "generated_at": "2026-10-07T05:13:08.308Z",
+      "scenarios": {
+        "total": 8,
+        "pass": 8
+      },
+      "checks": {
+        "emitted": 91,
+        "pass": 86,
+        "fail": 0,
+        "pending": 0,
+        "skip": 5
+      },
+      "result": "OK — all checks pass"
+    },
+    "determinism": {
+      "runs": [
+        "lab.json (run 1)",
+        "determinism-run2.json (run 2)"
+      ],
+      "raw_diff": "generated_at only (2026-10-07T05:13:08.308Z vs 2026-10-07T05:13:09.506Z)",
+      "normalized_equal": true,
+      "normalized_content_sha256": "c81b8753ddf79b61a023bf45a66bd581bef1a6634ef4199bd4b8e2335dfdb831"
+    },
+    "cwd_independence": {
+      "command": "cd /tmp && node --experimental-strip-types /Users/tapps/_dev/web-apps/SynAmp/tools/brain-lab/lab.mts --json <evidence>/cwd-run.json",
+      "exit_code": 0,
+      "normalized_equal_to_canonical": true
+    }
+  },
+  "per_scenario": [
+    {
+      "id": "01-three-phrases",
+      "status": "pass",
+      "pass": 16,
+      "fail": 0,
+      "skip": 2
+    },
+    {
+      "id": "02-vague",
+      "status": "pass",
+      "pass": 8,
+      "fail": 0,
+      "skip": 2
+    },
+    {
+      "id": "03-contradictory",
+      "status": "pass",
+      "pass": 5,
+      "fail": 0
+    },
+    {
+      "id": "04-impossible",
+      "status": "pass",
+      "pass": 10,
+      "fail": 0,
+      "skip": 1
+    },
+    {
+      "id": "05-fast-learning",
+      "status": "pass",
+      "pass": 15,
+      "fail": 0
+    },
+    {
+      "id": "06-isolation",
+      "status": "pass",
+      "pass": 8,
+      "fail": 0
+    },
+    {
+      "id": "07-forget",
+      "status": "pass",
+      "pass": 8,
+      "fail": 0
+    },
+    {
+      "id": "08-culture-guardrails",
+      "status": "pass",
+      "pass": 16,
+      "fail": 0
+    }
+  ],
+  "changes_vs_b4b": [
+    "learning-resolve-hidden → learning-resolve-hidden-by-session (new C2 F4 display contract: counts.hidden_by_session; persistent hidden[] untouched by session hides)",
+    "+4 sequence-wave-* checks in scenario 05 (C1-F1 regression: odd counts full permutations no undefined; even byte path kept; post-H1-2 applied[] wording)",
+    "+scenario 08-culture-guardrails (+16 checks; C2 E1 seed; defensive pins)",
+    "scenarios 7 → 8; emitted checks 71 → 91; fail 1 → 0"
+  ],
+  "artifacts": [
+    "lab.json",
+    "lab.stdout.log",
+    "determinism-run1.json",
+    "determinism-run2.json",
+    "determinism.txt",
+    "cwd-run.json",
+    "cwd-run.log",
+    "hashes.txt",
+    "run.json",
+    "EVIDENCE.md",
+    "prerefresh-run.json (historical, pre-B4b)",
+    "prerefresh-run.log (historical, pre-B4b)"
+  ]
+}

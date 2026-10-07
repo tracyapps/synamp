@@ -52,6 +52,29 @@ function fixtureLibrary(): Library {
 
 const library = fixtureLibrary();
 
+test("unrecognised numbers remain visible rather than making a request look specific", () => {
+  for (const prompt of ["nostalgia 1990–2005", "focus 17", "focus 0.7", "focus 90–120"]) {
+    const result = interpretGoal(prompt, { library });
+    assert.equal(result.accuracy, "partial", prompt);
+    assert.ok(result.audit.some((entry) => entry.kind === "unparsed" && /\d/.test(entry.phrase)), prompt);
+    assert.ok(result.asks.length > 0, prompt);
+  }
+  const supported = interpretGoal("focus between 90 and 120 bpm", { library });
+  assert.equal(supported.accuracy, "specific");
+  assert.ok(!supported.audit.some((entry) => entry.kind === "unparsed" && /\d/.test(entry.phrase)));
+});
+
+test("reading notes follow the goals actually applied to each reading", () => {
+  const focus = interpretGoal("focus", { library }).readings[0]!;
+  assert.deepEqual(focus.caveats, GOAL_BY_ID.get("focus")!.caveats);
+  assert.ok(focus.culture_notes.some((line) => line.includes("Western metre/tempo")));
+  assert.ok(focus.culture_notes.includes(GOAL_BY_ID.get("focus")!.culture[0]!));
+  const phases = interpretGoal("workout then sleep", { library }).readings[0]!;
+  assert.ok(phases.caveats.includes(GOAL_BY_ID.get("pump_up")!.caveats[0]!));
+  assert.ok(!phases.caveats.includes(GOAL_BY_ID.get("sleep")!.caveats[0]!));
+  assert.deepEqual(interpretGoal("between 90 and 120 bpm", { library }).readings[0]!.culture_notes, []);
+});
+
 function validated(plan: unknown): QueryPlan {
   const result = validatePlan(plan);
   if (!result.ok) assert.fail(`plan failed validation: ${JSON.stringify(result.errors)}`);
@@ -100,7 +123,7 @@ function assertSane(out: GoalInterpretation): void {
     assert.equal(out.chosen_index, -1, "no readings ⇒ chosen_index -1");
   }
   assert.ok(out.asks.length <= 3, "at most 3 asks");
-  assert.equal(out.parser, "intent-v1 (rule-based: draftPlan + goal lexicon; no LLM)");
+  assert.equal(out.parser, "intent-v2 (rule-based: draftPlan + goal lexicon; no LLM)");
 }
 
 test("flagship focus prompt — specific, one valid reading carrying the research bundle", () => {

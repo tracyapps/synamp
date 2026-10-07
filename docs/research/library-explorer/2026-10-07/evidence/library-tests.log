@@ -1,0 +1,31 @@
+✔ fold drops accents, case and punctuation (0.490292ms)
+✔ albums sort by artist (ignoring 'The'), then year; title and year sorts work (7.021292ms)
+✔ album search matches every word across title, artist and year, accents ignored (0.151125ms)
+✔ album paging and summary (0.086875ms)
+✔ an album's tracks come back in play order; disc folders fold into the album (0.229375ms)
+✔ track search ranks title matches first and needs every word (0.18075ms)
+✔ shuffled keeps every item and leaves the input alone (0.097333ms)
+✔ album identity keeps folders separate but searches every track credit (7.332583ms)
+✔ all entity types include loose songs and artist summaries keep full credits separate (0.15ms)
+✔ exact matching is normalized whole field, glob is anchored with literal punctuation (0.180541ms)
+✔ fuzzy matching catches bounded misspellings without broad short-token guesses (0.168625ms)
+✔ AND/OR rule logic and exclusions have explicit semantics (0.140583ms)
+✔ year range always intersects text logic, excludes missing dates, validates bounds (0.239958ms)
+✔ group totals cover all matches before paging; multi-genre memberships are explicit (0.140625ms)
+✔ sort and pagination are deterministic and bounded (0.095209ms)
+✔ invalid rules fail plainly and never become an unrestricted search (0.094417ms)
+✔ year text stays searchable and non-Latin queries never collapse to empty (0.471292ms)
+✔ wildcards cannot create regex backtracking and ? matches one Unicode character (0.231333ms)
+✔ Galaxy groups only explicit featured-credit candidates, retains punctuation band identities and source folders (7.671917ms)
+✔ Galaxy search spans full artist pool and raw featured credits, random reaches artists beyond first page (6.89ms)
+✔ Galaxy sort count, finite bounds and same-version independent library isolation (0.399125ms)
+✔ Galaxy caps detail track payload and reports truncation while retaining full file counts (5.256375ms)
+✔ Unicode artist searches retain their script, reject oversized searches, and leave raw identities separate (0.527291ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 103.436166

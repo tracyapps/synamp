@@ -1,0 +1,30 @@
+=== throwback, years 1990 to 2005
+  accuracy: partial readings: 1
+   constraints: goal_nostalgia_2(valence between [0.4,0.8]); goal_nostalgia_3(bpm between [70,120]); goal_nostalgia_4(mode in ["major"])
+  draft uparsed: ["throwback","years 1990 to 2005"] unsupported: []
+  asks: [
+  'I left “years 1990 2005” unused — if it matters, say it as an activity, a tempo range, or a tag.'
+]
+  residue audit: [ 'years 1990 2005' ]
+=== nostalgic music from 1990 to 2005
+  accuracy: partial readings: 1
+   constraints: goal_nostalgia_2(valence between [0.4,0.8]); goal_nostalgia_3(bpm between [70,120]); goal_nostalgia_4(mode in ["major"])
+  draft uparsed: ["nostalgic from 1990 to 2005"] unsupported: []
+  asks: [
+  'I left “from 1990 2005” unused — if it matters, say it as an activity, a tempo range, or a tag.'
+]
+  residue audit: [ 'from 1990 2005' ]
+=== back in the day, 1990-2005
+  accuracy: specific readings: 1
+   constraints: goal_nostalgia_2(valence between [0.4,0.8]); goal_nostalgia_3(bpm between [70,120]); goal_nostalgia_4(mode in ["major"])
+  draft uparsed: ["back in day"] unsupported: []
+  asks: []
+  residue audit: []
+=== music from 1990 to 2005
+  accuracy: impossible readings: 0
+  draft uparsed: ["from 1990 to 2005"] unsupported: []
+  asks: [
+  '“from 1990 2005” is too specific for what I can measure today.',
+  'Give me one anchor I can measure — an activity, a tempo range, or a tag.'
+]
+  residue audit: [ 'from 1990 2005' ]

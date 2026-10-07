@@ -1,0 +1,56 @@
+{
+  "policy_version": "epoch-v1",
+  "listening_policy": "epoch-v1",
+  "events": 2,
+  "epoch": {
+    "id": "ep1:990a924b69de8ea",
+    "t_start": 1791347125367,
+    "t_end": 1791347125567,
+    "first_event_id": "smoke-queue-0001:exposure:36395ecd-5870-47ee-aeef-5963ce7e2287",
+    "event_count": 14,
+    "session_ids": [
+      "0bdfa6da-0009-4912-90d3-73aad0be63b7"
+    ],
+    "daypart": "night",
+    "date": "2026-10-06"
+  },
+  "hides": [
+    "sample-001"
+  ],
+  "proposals": [],
+  "reliability_notes": [
+    "skip side not learned yet: only 1 skipped track this session (need 2)"
+  ],
+  "queue_adjustments": [
+    {
+      "track_id": "sample-001",
+      "value": -0.5999832492773354,
+      "parts": [
+        {
+          "label": "skipped early this session",
+          "value": -0.6
+        }
+      ]
+    },
+    {
+      "track_id": "sample-002",
+      "value": -0.20999413724706736,
+      "parts": [
+        {
+          "label": "other tracks by Lumen Atlas this session",
+          "value": -0.21
+        }
+      ]
+    },
+    {
+      "track_id": "sample-003",
+      "value": -0.20999413724706736,
+      "parts": [
+        {
+          "label": "other tracks by Lumen Atlas this session",
+          "value": -0.21
+        }
+      ]
+    }
+  ]
+}

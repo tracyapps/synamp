@@ -1,0 +1,130 @@
+- generic [ref=e3]:
+  - link "Skip to content" [ref=e4] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e5]:
+    - link "SynAmp, go to Library" [ref=e6] [cursor=pointer]:
+      - /url: "#/library"
+    - generic "Not built by Container Manager" [ref=e73]: Development copy
+  - generic [ref=e7]:
+    - navigation "SynAmp" [ref=e8]:
+      - group [ref=e9]:
+        - paragraph [ref=e10]: Listen
+        - link "Library" [ref=e11] [cursor=pointer]:
+          - /url: "#/library"
+        - link "Playlists" [ref=e14] [cursor=pointer]:
+          - /url: "#/playlists"
+        - link "Radio" [ref=e19] [cursor=pointer]:
+          - /url: "#/radio"
+        - link "Party" [ref=e22] [cursor=pointer]:
+          - /url: "#/party"
+      - group [ref=e25]:
+        - paragraph [ref=e26]: Understand
+        - link "The Brain" [ref=e27] [cursor=pointer]:
+          - /url: "#/brain"
+        - link "Library care" [ref=e30] [cursor=pointer]:
+          - /url: "#/care"
+      - group [ref=e33]:
+        - paragraph [ref=e34]: System
+        - link "Listen anywhere" [ref=e35] [cursor=pointer]:
+          - /url: "#/anywhere"
+        - link "Settings" [ref=e41] [cursor=pointer]:
+          - /url: "#/settings"
+    - main [ref=e45]:
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - paragraph [ref=e48]: System
+          - heading "Settings" [active] [level=1] [ref=e74]
+          - paragraph [ref=e52]: Everything you can change without touching a config file.
+        - region [ref=e75]:
+          - generic [ref=e77]:
+            - heading "Playback on this device" [level=2] [ref=e78]
+            - paragraph [ref=e79]: For SynAmp’s player in this browser. Phone apps have their own settings.
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - text: Crossfade between songs
+              - combobox "Crossfade between songs" [ref=e83]:
+                - option "Off — the next song starts straight away" [selected]
+                - option "2 seconds"
+                - option "4 seconds"
+                - option "6 seconds"
+                - option "8 seconds"
+                - option "12 seconds"
+            - paragraph [ref=e84]: Either way, SynAmp lines up the next song while this one plays, so there’s no wait while it loads.
+            - switch "Play albums straight through" [checked] [disabled] [ref=e85]
+            - paragraph [ref=e88]: No crossfade between two songs from the same album, so live albums and DJ mixes flow the way they were made.
+        - region [ref=e89]:
+          - heading [level=2] [ref=e90]:
+            - button "Settings" [expanded] [ref=e91] [cursor=pointer]:
+              - generic [aria-hidden] [ref=e93]: −
+          - generic [ref=e95]:
+            - paragraph [ref=e96]: Changes take effect as soon as you save. Clearing a field goes back to the server file’s value.
+            - group "MusicBrainz" [ref=e97]:
+              - generic [ref=e99]: Contact for MusicBrainz
+              - textbox "Contact for MusicBrainz" [ref=e100]
+              - paragraph [ref=e101]: Not set. An email or web address. MusicBrainz asks for one so they can reach you if something goes wrong; it’s sent only to musicbrainz.org. Needed for missing tracks and discography gaps.
+            - group "Last.fm" [ref=e102]:
+              - paragraph [ref=e104]:
+                - text: Needed only for scrobbling. Create an API account at
+                - link "last.fm/api/account/create (opens in a new tab)" [ref=e105] [cursor=pointer]:
+                  - /url: https://www.last.fm/api/account/create
+                  - text: last.fm/api/account/create
+                  - generic [ref=e106]: (opens in a new tab)
+                - text: ", then paste the two values here."
+              - generic [ref=e107]: API key
+              - textbox "API key" [ref=e108]:
+                - /placeholder: 32 letters and numbers
+              - paragraph [ref=e109]: Not set.
+              - generic [ref=e110]: Shared secret
+              - textbox "Shared secret" [ref=e111]:
+                - /placeholder: 32 letters and numbers
+              - paragraph [ref=e112]: Not set.
+            - group "This server" [ref=e113]:
+              - generic [ref=e115]: SynAmp’s address
+              - textbox "SynAmp’s address" [ref=e116]:
+                - /placeholder: http://127.0.0.1:39822
+              - paragraph [ref=e117]: Not set. Where Last.fm sends you back after signing in. Leave empty to use the address in your browser.
+              - generic [ref=e118]: Largest file you can add (MB)
+              - spinbutton "Largest file you can add (MB)" [ref=e119]: "2048"
+              - paragraph [ref=e120]: From the server file (deploy/.env). For files added with Add music. 1 to 20480.
+            - group "Learning" [ref=e121]:
+              - generic [ref=e123]: How listening shapes future lists
+              - combobox "How listening shapes future lists" [ref=e124]:
+                - option "Learn within this session"
+                - option "Use the earlier feedback policy" [selected]
+              - paragraph [ref=e125]: Session learning forgets implicit signals after a listening break or day change. Loves, thumbs and removals keep their chosen scope. The earlier policy uses the existing feedback rules without session learning. Switching keeps your history and current queue.
+            - group "About this install" [ref=e126]:
+              - paragraph [ref=e128]: This copy wasn’t built by Container Manager (development), so there’s no version to show.
+              - paragraph [ref=e129]:
+                - text: "To update: copy the new version to the NAS ("
+                - code [ref=e130]: synamp-sync
+                - text: "on the Mac), then:"
+              - list [ref=e131]:
+                - listitem [ref=e132]:
+                  - link "Open DSM (opens in a new tab)" [ref=e133] [cursor=pointer]:
+                    - /url: http://127.0.0.1:5000/
+                    - text: Open DSM
+                    - generic [ref=e134]: (opens in a new tab)
+                  - text: ", then"
+                  - strong [ref=e135]: Container Manager
+                  - text: →
+                  - strong [ref=e136]: Project
+                  - text: .
+                - listitem [ref=e137]:
+                  - text: Select
+                  - strong [ref=e138]: synamp
+                  - text: ", then"
+                  - strong [ref=e139]: Action
+                  - text: →
+                  - strong [ref=e140]: Build
+                  - text: .
+              - generic [ref=e141]:
+                - button "Check for an update" [ref=e142] [cursor=pointer]
+                - status
+            - button "Save settings" [ref=e144] [cursor=pointer]
+            - alert
+            - status
+            - paragraph [ref=e145]: "Folders, passwords, the access token and the user the containers run as stay in the server file: they’re about the install itself."
+  - region "Player" [ref=e66]:
+    - generic [ref=e69]:
+      - paragraph [ref=e70]: Nothing playing
+      - paragraph [ref=e71]: Press Play on an album or a playlist.

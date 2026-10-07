@@ -1,0 +1,26 @@
+### boot with PLAYLIST_API_TOKEN=*** (scratch :3922)
+GET  /health (no token)                 → 200 (200; public)
+GET  /api/v1/brain/session (no token)   → 401 (401)
+GET  /api/v1/brain/session (token)      → 200 (200)
+POST /api/v1/brain/forget (no token)    → 401 (401)
+POST /api/v1/brain/forget (token)       → 200 (200)
+POST /api/v1/brain/proposals (no token) → 401 (401)
+POST /api/v1/brain/proposals (token,bad)→ 400 (400)
+GET  /api/v1/events (no token)          → 401 (401)
+GET  /api/v1/events (token)             → 200 (200)
+POST /api/v1/settings (no token)        → 401 (401)
+POST /api/v1/settings (token, {})       → 200 (200)
+with-token /brain/session head:
+{
+  "policy_version": "epoch-v1",
+  "listening_policy": "epoch-v1",
+  "events": 1,
+  "epoch": {
+    "id": "ep1:76d2f37b7fec432",
+    "t_start": 1791350453926,
+    "t_end": 1791350453926,
+    "first_event_id": "97f4b950-3a8e-4183-8052-2f4eb913570e",
+    "event_count": 1,
+    "session_ids": [
+      "e
+### done (auth smoke) — server killed by trap

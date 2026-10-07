@@ -1,0 +1,48 @@
+# brain-lab final-lab fingerprints — refreshed 2026-10-07 00:14 CDT (UTC 05:14) — POST hotfixes H1/H2/H3
+# repo: /Users/tapps/_dev/web-apps/SynAmp @ feat/fast-learning-brain (HEAD b6ea5ce1d891f084854407fba1f65ee5febc9e28; working tree dirty — no commits)
+# tool: shasum -a 256 (macOS). Same curated module set as the B4b capture (values refreshed), plus scenario 08.
+
+## apps/brain/src/intent/*
+3aaab45ef30bab2ded216d8e3546c8da955874053e6f9c37141f3df3ab8cbba2  apps/brain/src/intent/intent.test.ts
+6ae4b4e2a10f3e95cf60882a1d48bc9fb3df2e64006ca601bf2cc9ed711d5c3c  apps/brain/src/intent/interpret.ts
+2c0efcfdffa22c80eb8c4613af5437ae14bddd4e602b25fd5829b565b76ab3b9  apps/brain/src/intent/lexicon.ts
+
+## apps/brain/src/learning/*
+9d06e7bb284a14f7e9b7a2f4dc83de77b51e64263f0aa1ee584aefef0fe80e9a  apps/brain/src/learning/derive.test.ts
+d54438d7291d725577ba412a39a8630e7427e300b2d11b07aaa21cfb9bafa0ca  apps/brain/src/learning/derive.ts
+8f76c120b7229930677aeb46403c736fed57fbe8e162fd2a50fa4ff49a8ece95  apps/brain/src/learning/epochs.test.ts
+f27742d28f22f810f0bf240fe9ed0a81b6defc1470dcb5484557a438775c34e1  apps/brain/src/learning/epochs.ts
+8ad054a475c0937412a27ebc18f5d47b2d0abeacafcdeb07bff257a84a5c3863  apps/brain/src/learning/explore.test.ts
+4d206ffff5e7bab516fd5adbf34cb365c8c8b53647b51f291063709fca78f74e  apps/brain/src/learning/explore.ts
+2bf891c96dcf51e2edfc9eb26f015e69708d325d15191dbeb0217fd1e554c8a0  apps/brain/src/learning/proposals.test.ts
+135ad5f474f652bebd8b0a848dccb8e523edf9a28f0640f5c196ec44726510e0  apps/brain/src/learning/proposals.ts
+195d48789020bf10ba0fd49fc60aff996a287410499764bc6f9e30c6f7fa0ec0  apps/brain/src/learning/reliability.test.ts
+bd9339e8842722d88ab5e5e8c9b37a459bff48dd57143ba3988f15bfa34f17a5  apps/brain/src/learning/reliability.ts
+af41278d074615117f95dd09503cac94357c829de9cccecee86f3ff2be9d43ab  apps/brain/src/learning/types.ts
+
+## apps/brain/src/query/{plan,sequence,evaluate}.ts
+a6e84443a2eab983fd00861cb34f7bd339e3d4c07b1758cdb057f1812ac5168e  apps/brain/src/query/plan.ts
+183309950d681e5cecd5c1e8ab4e58a6fdd711bf92d5faa738b9d3a8807c8d10  apps/brain/src/query/sequence.ts
+8d67deec5373b1f586658e1f6a54074d079e9dfad73f1e7f366fb5f854905d30  apps/brain/src/query/evaluate.ts
+
+## apps/brain/src/index.ts + session/{events,feedback}.ts
+4f9d6258786816926768992dcee5d05505fe0104f0c5e74ff893a128811fd7c8  apps/brain/src/index.ts
+4ace21e8db550d6bf19c5c9746b04315bfa98f3bfad1a15ee959f120ad9b708e  apps/brain/src/session/events.ts
+9ca928d326178d85dceeb890469f7fc8ea4142a1a18eceb4f96279d2558200ad  apps/brain/src/session/feedback.ts
+
+## harness — tools/brain-lab/** (instrument pins; completeness)
+15ec6d7ce321c1178cff46945bb5dca13c539f98a7584aecfbb88ca812658862  tools/brain-lab/lab.mts
+2f81fff735547ad07218c0b91b6284b84cde5475cd25f3279475476b5c3b2cb9  tools/brain-lab/README.md
+38e42bd2680400b95a24aa23c47900158f60298788556ce6ff152e21dded1896  tools/brain-lab/lib/checks.mts
+804ccf7fa6e31f25681a3ff0d4a1a305b8081650f266719bc46424a3eed79a5d  tools/brain-lab/lib/events.mts
+6295765583ec25e1d83de1e9b1edd8ede78fa6ad245570bff1e3fdebd42cd156  tools/brain-lab/lib/modules.mts
+c1ac68294c74b5287610c0abd71cbe09ae518cd80b5f685af938102db159d082  tools/brain-lab/lib/runner.mts
+867b8fd4bd2dc7451b2cb385da6828f09981067fe848ce8f5cb3ba38e8ebedbd  tools/brain-lab/lib/util.mts
+b0e780b684d24d8eedc1257caa77889414650668a7fc325d5f9c95af0b31b061  tools/brain-lab/scenarios/01-three-phrases.json
+afb6eeb8e9a4cd6ebcf203b3daa5fb3123809e80f925ad30b38729887f8e00c7  tools/brain-lab/scenarios/02-vague.json
+42ed30b8c5a281280aebf2235e42796d61a25466990558f0acb0b9f5493792c4  tools/brain-lab/scenarios/03-contradictory.json
+3ef12f7ab70c2f10e7ca271fde86a17e7911537a52afaa2d5c3457b3a6344191  tools/brain-lab/scenarios/04-impossible.json
+3beb2bc2361221a7baeeec24c7d83dbdd78cca1d94a720d327eed9251750471e  tools/brain-lab/scenarios/05-fast-learning.json
+2ad890fd2a0f5cc0175fb6f5e07f560133fb78dd5a1ce8dba7df71fecb122e65  tools/brain-lab/scenarios/06-isolation.json
+73848b8bc600d7c975fd8e389829d4aaba3e02b9bd552934ebc7519b5199211c  tools/brain-lab/scenarios/07-forget.json
+06846882f284ba36b8325260850f051f2f494373ed31fc4fb01de51c0ee4adae  tools/brain-lab/scenarios/08-culture-guardrails.json

@@ -1,0 +1,49 @@
+== p2: flood bounds (20 loves + 20 skips + 20 repeats, composed) ==
+  PASS  raw values are finite for loved/skipped/repeated
+  PASS  all parts finite, numbers only
+  PASS  composed bonus |0.15·tanh(v/2)| ≤ 0.15 for floods — loved=0.15000 skipped=-0.14925 repeated=0.15000
+  PASS  flood stays under the saturated bound with a small epsilon (never exceeds W)
+  PASS  entity-only propagation: a track loved (L1) 20× moves no artist part on its neighbour (A3 eq. 2) — sample-002 parts=[]
+  PASS  artist cap: repeated-track flood gives the artist neighbour the +0.8 clipped part, never more — part=0.8 value=0.8
+  PASS  p2 plan validates
+  PASS  evaluate: flooded loved track keeps the same ONE saturated bonus (score_breakdown.feedback ≤ 0.15) — breakdown={"base":1,"feedback":0.15}
+  PASS  evaluate: the flood-hidden track is hidden (not in strict), hidden_by_you counts it — hidden_by_you=1
+  PASS  evaluate: repeated flood track is present with bounded bonus
+== p2: artist min-evidence semantics (P17 table vs A3 §3.3(b) prose) ==
+  PASS  single event on one other track → artist gate closed (≤ 0.11) — B2=0
+  PASS  2 events / 2 distinct tracks, raw sum 1.4 → visible π-scaled part ≈ 0.49 — B3={"value":0.48446514931963597,"parts":[{"label":"other tracks by The Band this session","value":0.48}]}
+  PASS  code semantics: min-evidence is ≥2 EVENTS (P17 table wording) — 2 events on 1 track open the gate — B2={"value":0.1730232676141557,"parts":[{"label":"other tracks by The Band this session","value":0.17}]} (A3 §3.3(b) prose says '≥2 distinct tracks' → would be 0)
+  PASS  artist cap 0.8 holds under a 20-event flood — part=0.8
+== p2: hide lifecycle ==
+  PASS  k=1: no hide, small negative (≈ -0.3·decay) — hides=0 value=-0.29655420610586886
+  PASS  k=2: hide appears, both skips score (−0.6·decay) — hides=Y value=-0.5897021966361427
+  PASS  not_now thumb_down hides at n=1 and never persists
+  PASS  not_now value is 0 after the epoch ends
+  PASS  remove with reason not_now → epoch hide only (no persistent removed cell)
+  PASS  hide expiry boundary: live at exactly +30:00, cleared at +30:00.001
+  PASS  after the epoch: skipped track value back to 0 (killed, not decayed)
+== p2: removes (persistent) + restore/undo ==
+  PASS  remove hides from its playlist only
+  PASS  restore undoes the remove (last write wins)
+  PASS  remove after restore hides again
+  PASS  persistent removes survive the epoch ending (they are L1)
+== p2: learning_reset (B2 §5.4 semantics) ==
+  PASS  reset: pre-reset skips no longer score OR hide
+  PASS  reset: post-reset evidence still scores — Z=-0.2998844977102469
+  PASS  reset: L1 explicit love survives (documented decision — flagged for review)
+  PASS  reset: L1 persistent remove survives (playlist hide intact)
+  PASS  reset note present
+  PASS  reset: hides recompute from the remainder — post-reset pair hides Z again
+  PASS  marker with NO detail applies (tolerated)
+  PASS  marker with detail.scope='global' is ignored (epoch hides survive)
+  PASS  two markers: only evidence after the LAST marker counts (Y,Z silent; Q scores)
+== p2: hard-rule inviolability (maxed bonus vs explicit exclusion) ==
+  PASS  no-piano plan validates
+  PASS  premise: sample-033 has a maxed raw value — value=59.99999659042196
+  PASS  maxed bonus cannot put an excluded (piano) track into strict — tracks=sample-026,sample-028,sample-029,sample-001,sample-003,sample-004,sample-005,sample-012,sample-013,sample-016
+  PASS  maxed bonus cannot put it into near_miss either (hard guard is on the union)
+  PASS  positive control: the flooded admitted track carries a saturated bonus (≤ 0.15) — breakdown={"base":0,"feedback":0.15}
+  PASS  artist propagation reaches an admitted neighbour through the pipeline (small, bounded) — breakdown={"base":0,"feedback":0.057}
+  PASS  every strict bonus stays within W=0.15
+
+p2 summary: 41 pass, 0 fail

@@ -1,0 +1,39 @@
+# Final capture — frozen tree (post-commit)
+Date: 2026-10-07T05:38:08Z UTC
+HEAD: 66cbe4e8814892203490b0213d88b84aa8cd5f20
+
+## Brain test suite
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'Ani Difranco/Dilate/01 Untouchable Face.mp3', 'Ani Difranco/Dilate/folder.jpg', 'Ani Difranco/Evolve/01 Promised Land.mp3', 'Ani Difranco/notes.txt' ],
+    expected: [ 'Ani DiFranco/Dilate/01 Untouchable Face.mp3', 'Ani DiFranco/Dilate/folder.jpg', 'Ani DiFranco/Evolve/01 Promised Land.mp3', 'Ani DiFranco/notes.txt' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+/Users/tapps/_dev/web-apps/SynAmp/apps/brain:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @synamp/brain@0.0.0 test: `node --experimental-strip-types --test src/*.test.ts src/*/*.test.ts`
+Exit status 1
+
+## Type-checks
+brain type-check exit=0
+web type-check exit=0
+
+## Brain lab (canonical)
+
+══════════════════════════════════════════════════════════════
+[brain-lab] SUMMARY — scenarios: 8 (8 pass, 0 partial, 0 pending, 0 fail)
+[brain-lab] checks: 86 pass · 0 fail · 0 pending · 5 skip
+[brain-lab] RESULT: OK — all checks pass
+
+## Working tree (porcelain lines)
+       0
+
+## Runner summary (extracted)
+ℹ tests 218
+ℹ suites 0
+ℹ pass 216
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 1103.716875

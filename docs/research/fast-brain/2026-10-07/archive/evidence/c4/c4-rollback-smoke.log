@@ -1,0 +1,85 @@
+### boot scratch: PLAYLIST_DATA_PATH=/tmp/synamp-c4/rollback/playlists.json LIBRARY_SIGNALS_PATH=/Users/tapps/_dev/web-apps/SynAmp/apps/brain/fixtures/library.sample.json BRAIN_PORT=3921 BRAIN_HOST=127.0.0.1
+server pid 23747 | /health: {
+  "status": "ok",
+  "service": "synamp-brain",
+  "uptimeMs": 165
+} | server log: synamp-brain listening on http://127.0.0.1:3921
+
+### [1] epoch mode: queue + two early skips → session hide
+policy_version: epoch-v1 | listening_policy: epoch-v1 | hides: ["sample-001"]
+epoch: night 2026-10-07 | events: 2
+sample-001 adj: {"track_id":"sample-001","value":-0.5999837113585513,"parts":[{"label":"skipped early this session","value":-0.6}]}
+PASS-EXPECT: policy_version=epoch-v1; hides=[sample-001]
+
+### [2] rollback switch → legacy-v1 (settings, no restart)
+settings changed: ["listening_policy"] | listening_policy now: legacy-v1
+policy_version: heuristic-v1 | listening_policy: legacy-v1 | epoch: null | hides: [] | proposals: 0
+sample-001 adj (legacy): {"track_id":"sample-001","value":0,"parts":[]}
+events-route policy_version: heuristic-v1
+draft preview feedback_policy: heuristic-v1 | accuracy: specific
+PASS-EXPECT: heuristic-v1 everywhere; epoch null; hides []
+
+### [3] switch back to epoch-v1 → hide re-derives (log untouched)
+back to epoch → policy_version: epoch-v1 | hides: ["sample-001"]
+PASS-EXPECT: hides=[sample-001] again
+
+### [4] forget — append-only proof + clears epoch learning
+after forget → hides: [] | adjustments with parts: 0
+notes: ["session learning was reset — only what happened after the reset counts","nothing learned yet this session"]
+events lines: 14 → 15 | first-line hash unchanged: yes
+last event: learning_reset | scope: none | detail: {"scope":"epoch"} | policy_version: epoch-v1
+re-GET after forget → hides: []
+PASS-EXPECT: hides [] after forget; +1 line only; first line unchanged; tail learning_reset
+
+### [5] error paths (expect codes in parentheses)
+forget scope=all        → 400 (400) :: {
+  "error": "scope must be \"epoch\" — the event log is never edited, only marked"
+}
+forget scope=session    → 400 (400) :: {
+  "error": "scope must be \"epoch\" — the event log is never edited, only marked"
+}
+forget {} default epoch → 200 (200)
+forget empty body       → 400 (400) :: {
+  "error": "Invalid JSON object"
+}
+GET  forget (wrong verb)→ 404 (404)
+proposals no id         → 400 (400) :: {
+  "error": "id is required"
+}
+proposals bad action    → 400 (400) :: {
+  "error": "action must be \"accept\" or \"dismiss\""
+}
+proposals unknown id    → 404 (404) :: {
+  "error": "No suggestion with that id"
+}
+draft 501 chars         → 400 (400) :: {
+  "error": "prompt must be 1–500 characters"
+}
+draft 500 chars         → 200 (200 boundary)
+draft whitespace-only   → 400 (400) :: {
+  "error": "prompt must be 1–500 characters"
+}
+draft invalid JSON      → 400 (400) :: {
+  "error": "Invalid JSON object"
+}
+settings bogus policy   → 400 (400) :: {
+  "error": "The listening policy must be \"epoch-v1\" (session learning) or \"legacy-v1\" (the v1 re-ranker)"
+}
+
+### scratch state files
+total 144
+drwxr-xr-x@ 14 tapps  wheel    448 Oct  7 00:20 .
+drwxr-xr-x@  8 tapps  wheel    256 Oct  7 00:20 ..
+-rw-r--r--@  1 tapps  wheel  21762 Oct  7 00:20 draft-legacy.json
+-rw-------@  1 tapps  wheel   4742 Oct  7 00:20 events.jsonl
+-rw-r--r--@  1 tapps  wheel    878 Oct  7 00:20 forget.json
+-rw-r--r--@  1 tapps  wheel    114 Oct  7 00:20 last.json
+-rw-r--r--@  1 tapps  wheel    834 Oct  7 00:20 queue1.json
+-rw-r--r--@  1 tapps  wheel    834 Oct  7 00:20 queue2.json
+-rw-r--r--@  1 tapps  wheel   1241 Oct  7 00:20 readout-epoch-1.json
+-rw-r--r--@  1 tapps  wheel    439 Oct  7 00:20 readout-legacy.json
+-rw-r--r--@  1 tapps  wheel     48 Oct  7 00:20 server.log
+-rw-------@  1 tapps  wheel    683 Oct  7 00:20 session.json
+-rw-r--r--@  1 tapps  wheel    493 Oct  7 00:20 settings-legacy.json
+-rw-------@  1 tapps  wheel     74 Oct  7 00:20 settings.json
+### done (rollback smoke) — server killed by trap

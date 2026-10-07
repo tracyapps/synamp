@@ -1,0 +1,76 @@
+.galaxy { padding-bottom: 8px; }
+.galaxy-heading { margin: 0 0 12px; font-size: 1.5rem; }
+.galaxy__mode { font-size: .8125rem; color: var(--muted); }
+.galaxy__toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0 16px; }
+.galaxy__search { flex: 1 1 230px; }
+.galaxy__toolbar > label:not(.galaxy__search) { display: flex; gap: 8px; align-items: center; }
+.galaxy__toolbar .select { width: auto; }
+.galaxy__workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 330px); border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
+.galaxy__map-area { min-width: 0; background: #111622; }
+.galaxy__map-controls { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: .8125rem; color: var(--muted); }
+.galaxy__map-controls > div { display: flex; align-items: center; gap: 6px; }
+.galaxy__map-controls output { width: 45px; text-align: center; }
+.galaxy__canvas { display: block; width: 100%; height: auto; min-height: 360px; max-height: 640px; touch-action: none; user-select: none; cursor: grab; background-image: radial-gradient(circle, #69728c50 1px, transparent 1.4px), radial-gradient(circle, #5b668530 1px, transparent 1.5px); background-size: 113px 97px, 157px 143px; background-position: 23px 9px, 58px 56px; }
+.galaxy__canvas:active { cursor: grabbing; }
+.galaxy__planet { cursor: pointer; outline: none; }
+.galaxy__orb { stroke: #818ab7; stroke-width: 1.6; }
+.galaxy__planet:hover .galaxy__orb { stroke: #c9cfee; stroke-width: 2.8; }
+.galaxy__planet.is-selected .galaxy__orb { stroke: var(--gold, #f1c25d); stroke-width: 3.5; }
+.galaxy__planet:focus-visible .galaxy__target { stroke: #fff; stroke-width: 3; stroke-dasharray: 5 3; }
+.galaxy__label { font-size: 15px; fill: #e5e7f3; font-weight: 500; }
+.galaxy__count { font-size: 12px; fill: #bbc2d8; }
+.galaxy__empty { font-size: 22px; fill: #c7cfdf; }
+.galaxy__legend { margin: 0; padding: 10px 12px; color: var(--muted); font-size: .75rem; line-height: 1.5; border-top: 1px solid var(--border); }
+.galaxy__paging { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; font-size: .75rem; color: var(--muted); flex-wrap: wrap; }
+.galaxy__list { border-top: 1px solid var(--border); padding: 8px 12px; }
+.galaxy__list summary, .galaxy__credits summary, .galaxy__loose summary { cursor: pointer; min-height: 36px; display: list-item; padding: 8px 0; font-size: .875rem; }
+.galaxy__list ul { padding: 0; margin: 4px 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.galaxy__list button { width: 100%; display: flex; justify-content: space-between; text-align: left; gap: 10px; }
+.galaxy__list button span { color: var(--muted); font-size: .75rem; white-space: nowrap; }
+.galaxy__details { border-left: 1px solid var(--border); padding: 18px; background: var(--surface-2); min-width: 0; max-height: 850px; overflow-y: auto; }
+.galaxy__artist-head { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+.galaxy__avatar { display: grid; place-items: center; flex: none; width: 56px; height: 56px; border: 2px solid var(--gold, #f1c25d); border-radius: 50%; background: #242c40; font-size: 1.5rem; color: #e7eaff; }
+.galaxy__artist-head h3 { margin: 0; font-size: 1.2rem; overflow-wrap: anywhere; }
+.galaxy__artist-head p { margin: 5px 0 0; font-size: .8125rem; color: var(--muted); }
+.galaxy__details h4 { font-size: .875rem; padding-bottom: 10px; border-bottom: 2px solid var(--gold, #f1c25d); margin: 18px 0 4px; }
+.galaxy__credits, .galaxy__limit { font-size: .8125rem; color: var(--muted); }
+.galaxy__credits ul { padding-left: 20px; overflow-wrap: anywhere; }
+.galaxy__albums { list-style: none; margin: 0; padding: 0; }
+.galaxy__albums > li { border-bottom: 1px solid var(--border); }
+.galaxy__album { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 0; border: 0; background: none; color: var(--fg); text-align: left; cursor: pointer; }
+.galaxy__album:hover { color: var(--gold); }
+.galaxy__album > span:nth-child(2) { flex: 1; min-width: 0; }
+.galaxy__album strong { display: block; font-size: .875rem; font-weight: 500; overflow-wrap: anywhere; }
+.galaxy__album small { display: block; color: var(--muted); margin-top: 3px; font-size: .75rem; }
+.galaxy__album-art { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border: 1px solid var(--border); background: linear-gradient(145deg, #383548, #21293f); border-radius: 3px; color: #9aa3c5; }
+.galaxy__album-songs { padding: 0 0 10px; }
+.galaxy__folder { font-size: .6875rem; color: var(--muted); overflow-wrap: anywhere; margin: 0 0 10px; }
+.galaxy__tracks { padding: 0; margin: 8px 0 0; list-style: none; }
+.galaxy__tracks li { border-top: 1px solid var(--border); padding: 4px 0; }
+.galaxy__song { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; color: var(--fg); font-size: .8125rem; background: none; border: 0; padding: 6px 0; text-align: left; cursor: pointer; }
+.galaxy__song > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.galaxy__song small { display: block; color: var(--muted); font-size: .75rem; }
+.galaxy__song .mono { flex: none; font-size: .6875rem; color: var(--muted); }
+.galaxy__tracks .add-to { width: 100%; max-width: 100%; min-height: 36px; margin-bottom: 5px; }
+.galaxy__welcome { display: grid; align-content: center; min-height: 280px; color: var(--muted); }
+.galaxy__welcome > span { font-size: 3rem; color: #9fa8cf; }
+.galaxy__welcome h3 { color: var(--fg); margin: 8px 0; }
+.galaxy__welcome p { font-size: .875rem; line-height: 1.6; margin: 0; }
+.galaxy__status { min-height: 1.4em; margin: 10px 0 0; font-size: .875rem; color: var(--muted); }
+@media (max-width: 950px) {
+  .galaxy__workspace { grid-template-columns: minmax(0, 1fr); }
+  .galaxy__details { border-left: 0; border-top: 1px solid var(--border); max-height: none; }
+  .galaxy__welcome { min-height: 140px; }
+  .galaxy__canvas { min-height: 280px; }
+}
+@media (max-width: 600px) {
+  .galaxy .section-card__head { align-items: flex-start; flex-wrap: wrap; gap: 8px; }
+  .galaxy__search { flex-basis: 100%; }
+  .galaxy__toolbar { gap: 8px; }
+  .galaxy__toolbar > button { margin-left: auto; }
+  .galaxy__canvas { min-height: 250px; }
+  .galaxy__map-controls > span { width: 100%; }
+  .galaxy__details { padding: 14px; }
+  .galaxy__paging { justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) { .galaxy * { scroll-behavior: auto; transition: none; } }
