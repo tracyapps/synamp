@@ -107,8 +107,10 @@ export type Evaluation = {
     unknown_by: Record<string, number>;
     unverified_by: Record<string, number>;
     capped: number;
-    /** Tracks you removed from this playlist (hidden, restorable). */
+    /** Persistent playlist removes only ("Removed by you", restorable). */
     hidden_by_you: number;
+    /** Epoch hides only (skip ×2 / not now): they clear when the session ends (or via Forget this session). */
+    hidden_by_session: number;
   };
   relaxations_applied: Array<{ step: number; action: string; target: string; detail: string }>;
   underfilled: boolean;
@@ -119,6 +121,7 @@ export type Evaluation = {
   missing_exemplars: string[];
   /** Feedback policy applied, if any (see session/feedback.ts). */
   feedback_policy?: string;
+  /** Persistent playlist removes, restorable with a playlist-scoped restore. Session hides are NOT listed here — they are reported as counts.hidden_by_session (C2 F4). */
   hidden: Array<{ id: string; title: string; artist?: string }>;
 };
 
@@ -285,6 +288,12 @@ export type EvaluateOptions = {
   feedback?: FeedbackView;
   /** The saved playlist being evaluated, for playlist-scoped feedback. */
   playlistId?: string;
+  /**
+   * Epoch-scoped hides from the learning layer (skip x2 / not_now while a session is live).
+   * Structural on purpose — query code must not import from learning/**; the combined
+   * epoch view (learning/derive.ts) is passed in by the caller (index.ts).
+   */
+  adaptive?: { epochHides?(): ReadonlySet<string> };
 };
 
 export function evaluatePlan(validated: ValidatedPlan, library: Library, options: EvaluateOptions = {}): Evaluation {
@@ -336,8 +345,22 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library, options
   }
 
   // Removed-from-this-playlist is a hard, playlist-only exclusion applied after the rules.
-  const hiddenIds = options.feedback && options.playlistId ? options.feedback.removed(options.playlistId) : new Set<string>();
-  const hidden = pass.strict.filter((row) => hiddenIds.has(row.track.id)).map((row) => row.track);
+  // Epoch hides (adaptive.epochHides) apply to every resolve while their session is live.
+  // The union keeps legacy behaviour identical: with no adaptive hook and no playlistId,
+  // removed("") is empty by construction, exactly as before.
+  //
+  // Display split (C2 F4): `hidden` / counts.hidden_by_you carry PERSISTENT removes only —
+  // those are the ones a playlist-scoped Restore can undo. Epoch hides still leave `strict`
+  // (the exclusion union is unchanged) but are counted separately (counts.hidden_by_session),
+  // so no surface can label a system hide "Removed by you" or offer a restore that cannot work.
+  const removedIds = new Set<string>(options.feedback ? options.feedback.removed(options.playlistId ?? "") : []);
+  const epochHiddenIds = new Set<string>(options.adaptive?.epochHides?.() ?? []);
+  const hiddenIds = new Set<string>([...removedIds, ...epochHiddenIds]);
+  const hidden = pass.strict.filter((row) => removedIds.has(row.track.id)).map((row) => row.track);
+  // A track that is both removed and epoch-hidden is reported once, under "Removed by you"
+  // (that is the lasting one); the session count only holds hides that actually clear
+  // when the session ends.
+  const hiddenBySession = pass.strict.filter((row) => epochHiddenIds.has(row.track.id) && !removedIds.has(row.track.id)).length;
   if (hiddenIds.size) pass = { ...pass, strict: pass.strict.filter((row) => !hiddenIds.has(row.track.id)) };
 
   // --- scoring ---
@@ -473,6 +496,7 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library, options
       strict_total: pass.strict.length,
       excluded_by: excludedBy, unknown_by: unknownBy, unverified_by: unverifiedBy, capped,
       hidden_by_you: hidden.length,
+      hidden_by_session: hiddenBySession,
     },
     relaxations_applied: relaxations,
     underfilled: chosen.length < plan.relaxation.min_results,

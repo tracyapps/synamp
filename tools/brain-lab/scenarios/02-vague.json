@@ -1,0 +1,18 @@
+{
+  "id": "02-vague",
+  "kind": "phrase",
+  "title": "Vague request — interpretation must admit underspecification",
+  "note": "Resolved (B1 fix, re-verified by B4b 2026-10-07): 'play me something good' now classifies accuracy=vague — the intent-v1 filler/quality lexicon ignores generic tokens ('play', 'good', 'something'). Both probes pass. History (B4, 2026-10-06 23:07): it was observed as accuracy=impossible because the residue token 'play' counted as a content claim; the canonical probe 'some music please' already classified vague.",
+  "phrases": [
+    {
+      "text": "some music please",
+      "slug": "vague-canonical",
+      "intent": { "expect_accuracy": "vague" }
+    },
+    {
+      "text": "play me something good",
+      "slug": "vague-play",
+      "intent": { "expect_accuracy": "vague" }
+    }
+  ]
+}

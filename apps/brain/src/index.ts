@@ -18,9 +18,15 @@ import { PlaylistError, PlaylistStore } from "./playlists.ts";
 import type { CreateNode, TrackRef } from "./playlists.ts";
 import { draftPlan } from "./query/draft.ts";
 import { evaluatePlan } from "./query/evaluate.ts";
+import type { Evaluation, EvaluateOptions } from "./query/evaluate.ts";
 import { LibrarySource } from "./query/library.ts";
 import { validatePlan } from "./query/plan.ts";
+import type { QueryPlan } from "./query/plan.ts";
 import { REGISTRY_VERSION, SIGNALS } from "./query/signals.ts";
+import { sequenceTracks } from "./query/sequence.ts";
+import { interpretGoal } from "./intent/interpret.ts";
+import { deriveEpochPolicy } from "./learning/derive.ts";
+import type { EpochPolicyView, Proposal } from "./learning/types.ts";
 import { EventLog } from "./session/events.ts";
 import { deriveFeedback, FeedbackError, recordFeedback } from "./session/feedback.ts";
 import type { FeedbackInput, FeedbackView } from "./session/feedback.ts";
@@ -57,7 +63,8 @@ import { AnalyzerControl, AnalyzerError } from "./library/analyzer.ts";
 import { artistStats, chooseArtist, DiscographyChecker, DiscographyError, discographyReport, DiscographyStore } from "./library/discography.ts";
 import type { ArtistStat } from "./library/discography.ts";
 import { open as openFile, mkdir, rename as renameFile, unlink, stat as statFile } from "node:fs/promises";
-import { randomBytes } from "node:crypto";
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { randomBytes, randomUUID } from "node:crypto";
 import { posix } from "node:path";
 import type { Decision } from "./library/organise.ts";
 
@@ -73,7 +80,7 @@ const missingNotes = new MissingNotes(join(dataDir, "missing-notes.json"));
 /** Settings changed in the web app (Settings panel); deploy/.env gives the starting values. */
 const runtime = new RuntimeSettings(join(dataDir, "settings.json"), {
   musicbrainzContact: config.musicbrainzContact, lastfmApiKey: config.lastfmApiKey, lastfmApiSecret: config.lastfmApiSecret,
-  publicUrl: config.publicUrl, uploadMaxMb: Math.round(config.uploadMaxBytes / 1048576),
+  publicUrl: config.publicUrl, uploadMaxMb: Math.round(config.uploadMaxBytes / 1048576), listeningPolicy: "epoch-v1",
 });
 /** Which code is running, and whether a newer copy on the NAS is waiting for Build. */
 const versionCheck = new VersionCheck(config.buildInfoPath, config.sourcePath);
@@ -315,16 +322,52 @@ function sendPage(res: ServerResponse, status: number, title: string, message: s
   res.end(html);
 }
 
-/** Derived feedback, recomputed only when the log grows. */
+/** Derived feedback for the legacy rollback (`listening_policy = "legacy-v1"`), recomputed only when the log grows. */
 let feedbackCache: { size: number; version: string; view: FeedbackView } | undefined;
 function feedback(): FeedbackView {
   const size = events.all().length;
   const version = currentLibrary().version;
   if (!feedbackCache || feedbackCache.size !== size || feedbackCache.version !== version) {
-    feedbackCache = { size, version, view: deriveFeedback(events.all(), Date.now(), (id) => library.canonicalId(id)) };
+    feedbackCache = { size, version, view: deriveFeedback(events.all(), Date.now(), (id) => library.canonicalId(id), "heuristic-v1") };
   }
   return feedbackCache.view;
 }
+
+/** The active policy's view carries the epoch surface in epoch mode and nothing extra in legacy mode. */
+type ActivePolicyView = FeedbackView & Partial<Pick<EpochPolicyView, "epoch" | "epochHides" | "proposals" | "reliabilityNotes">>;
+/**
+ * The active learning policy's combined view (decision 3). Epoch mode is derived fresh per
+ * call: `now` drives decay and hide expiry, so a view is never cached across time (B2 §6.7;
+ * the derivation is O(n) and this scale is small). Legacy mode reuses the cached v1 view.
+ */
+function activePolicyView(): ActivePolicyView {
+  if (runtime.listeningPolicy === "legacy-v1") return feedback();
+  return deriveEpochPolicy(events.all(), {
+    now: Date.now(),
+    library: currentLibrary(),
+    canonical: (id) => library.canonicalId(id),
+    scopePersistence: "declared",
+  });
+}
+/** EvaluateOptions for the active policy: epoch mode passes the one combined view in both slots. */
+function policyOptions(playlistId?: string): EvaluateOptions {
+  const view = activePolicyView();
+  return {
+    feedback: view,
+    ...(playlistId !== undefined ? { playlistId } : {}),
+    ...(runtime.listeningPolicy === "legacy-v1" ? {} : { adaptive: view }),
+  };
+}
+
+/** Post-evaluate arc sequencing (B1): strict tier only, synchronous, set-preserving. */
+type SequencedEvaluation = Evaluation & { sequencing_applied?: string[] };
+function applySequencing(evaluation: Evaluation, plan: QueryPlan): SequencedEvaluation {
+  const sequenced = sequenceTracks(evaluation.strict, plan, { library: currentLibrary() });
+  return sequenced.applied.length
+    ? { ...evaluation, strict: sequenced.tracks, sequencing_applied: sequenced.applied }
+    : { ...evaluation, strict: sequenced.tracks };
+}
+
 /**
  * Saved plans are re-validated on use, so a registry change that retires a field
  * surfaces as an error instead of a silently different playlist.
@@ -332,13 +375,95 @@ function feedback(): FeedbackView {
 function evaluateSaved(plan: unknown, playlistId: string) {
   const checked = validatePlan(plan);
   if (!checked.ok) throw new PlaylistError("This smart playlist's saved plan is no longer valid; re-create it", 409);
-  return evaluatePlan(checked, currentLibrary(), { feedback: feedback(), playlistId });
+  const evaluation = evaluatePlan(checked, currentLibrary(), policyOptions(playlistId));
+  return applySequencing(evaluation, checked.plan);
 }
 const playlists = new PlaylistStore(config.playlistDataPath, {
   // Re-evaluated on every read: a newly analysed track joins without a restart.
   resolveSmart: (plan, _hash, playlistId) => evaluateSaved(plan, playlistId).strict
     .map((track) => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) })),
 });
+
+// --- the session brain: epoch readout, forget, cross-epoch proposals ---------
+
+/**
+ * Decisions on cross-epoch suggestions, kept beside the other app data. The event log
+ * is append-only; a decided suggestion is recorded here and filtered from the readout.
+ */
+class ProposalDecisions {
+  private path: string;
+  private decisions: Record<string, { action: "accept" | "dismiss"; at: number }>;
+  constructor(path: string) {
+    this.path = path;
+    try {
+      const loaded = JSON.parse(readFileSync(path, "utf8")) as { decisions?: Record<string, { action: "accept" | "dismiss"; at: number }> };
+      this.decisions = loaded.decisions ?? {};
+    } catch { this.decisions = {}; }
+  }
+  get(id: string): { action: "accept" | "dismiss"; at: number } | undefined { return this.decisions[id]; }
+  record(id: string, action: "accept" | "dismiss"): void {
+    this.decisions = { ...this.decisions, [id]: { action, at: Date.now() } };
+    mkdirSync(dirname(this.path), { recursive: true });
+    const temp = `${this.path}.${randomBytes(6).toString("hex")}.tmp`;
+    writeFileSync(temp, JSON.stringify({ format: "synamp.brain-proposals/1", decisions: this.decisions }) + "\n", { mode: 0o600 });
+    renameSync(temp, this.path);
+  }
+}
+const proposalDecisions = new ProposalDecisions(join(dataDir, "brain-proposals.json"));
+
+/**
+ * Accepting a suggestion writes one explicit signal — the suggestion itself changes
+ * nothing until confirmed (A3 §3.4). The event id is stable, so a retried accept
+ * dedupes instead of double-writing.
+ *
+ * Log honesty (C2 F3): the event carries NO `reason` — reason codes are user-authored
+ * only, and accepting a suggestion is not a statement about why it was wrong.
+ * Provenance lives in `detail.proposal_id`.
+ */
+function applyProposalAccept(proposal: Proposal): void {
+  const signal =
+    proposal.kind === "track_repeat_skip" || proposal.kind === "not_now_pattern" ? "thumb_down" as const :
+    proposal.kind === "repeat_positive" ? "thumb_up" as const :
+    proposal.kind === "external_play_positive" && proposal.subject_type === "track" ? "thumb_up" as const :
+    null;
+  // artist_repeat_skip — and an artist-level external-play suggestion — has no track to
+  // stamp: a thumbs event keyed by an artist name could never match a track, so the
+  // decision is recorded only and the UI says the fix is a playlist edit / follow.
+  if (!signal) return;
+  events.append({
+    id: `proposal-${proposal.id.replace(/[^A-Za-z0-9_-]/g, "-")}`,
+    ts: Date.now(), signal, track_id: proposal.subject, scope: "global",
+    session_id: sessions.get().id, source: "server", policy_version: POLICY_VERSION,
+    detail: { proposal_id: proposal.id },
+  });
+}
+
+/**
+ * The session-brain readout: active policy, epoch context, hides, undecided proposals,
+ * reliability notes, and per-track adjustments for the current queue (≤50, canonical ids).
+ */
+function brainSessionView() {
+  const view = activePolicyView();
+  const canonical = (id: string) => library.canonicalId(id);
+  const seen = new Set<string>();
+  const queueAdjustments: Array<{ track_id: string; value: number; parts: Array<{ label: string; value: number }> }> = [];
+  for (const entry of sessions.get().queue.slice(0, 50)) {
+    const trackId = canonical(entry.track_id);
+    if (seen.has(trackId)) continue;
+    seen.add(trackId);
+    queueAdjustments.push({ track_id: trackId, ...view.adjust(trackId) });
+  }
+  return {
+    policy_version: view.policy_version,
+    listening_policy: runtime.listeningPolicy,
+    events: view.events,
+    epoch: view.epoch ?? null,
+    hides: view.epochHides ? [...view.epochHides()].sort() : [],
+    proposals: (view.proposals ? view.proposals() : []).filter((item) => !proposalDecisions.get(item.id)),
+    reliability_notes: view.reliabilityNotes ? view.reliabilityNotes() : [],
+    queue_adjustments: queueAdjustments,
+  };
+}
 
 /** The session as clients see it: each entry says whether it can be streamed, and from where. */
 function sessionView(session: Session) {
@@ -529,7 +654,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -906,7 +1031,39 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/events" && req.method === "GET") {
     const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") ?? 50) || 50));
     const visible = events.all().filter((event) => event.signal !== "receipt" && event.signal !== "exposure");
-    return send(res, 200, { policy_version: feedback().policy_version, total: visible.length, events: visible.slice(-limit).reverse() });
+    return send(res, 200, { policy_version: activePolicyView().policy_version, total: visible.length, events: visible.slice(-limit).reverse() });
+  }
+
+  // --- the session brain: epoch learning readout, forget, proposals ------------
+  if (path === "/api/v1/brain/session" && req.method === "GET") {
+    return send(res, 200, brainSessionView());
+  }
+  if (path === "/api/v1/brain/forget" && req.method === "POST") {
+    const input = await body(req);
+    const scope = String(input.scope ?? "epoch");
+    if (scope !== "epoch") throw new PlaylistError('scope must be "epoch" — the event log is never edited, only marked');
+    // Append-only forget (decision 1): the marker bounds the ACTIVE epoch's evidence on the
+    // next derivation; loves/thumbs/removes (the explicit cross-epoch channel) survive it.
+    events.append({
+      id: randomUUID(), ts: Date.now(), signal: "learning_reset", track_id: "", scope: "none",
+      session_id: sessions.get().id, source: "server", policy_version: POLICY_VERSION,
+      detail: { scope: "epoch" },
+    });
+    return send(res, 200, brainSessionView());
+  }
+  if (path === "/api/v1/brain/proposals" && req.method === "POST") {
+    const input = await body(req);
+    const id = typeof input.id === "string" ? input.id : "";
+    const action = input.action;
+    if (!id) throw new PlaylistError("id is required");
+    if (action !== "accept" && action !== "dismiss") throw new PlaylistError('action must be "accept" or "dismiss"');
+    const proposal = (activePolicyView().proposals?.() ?? []).find((item) => item.id === id);
+    if (!proposal) throw new PlaylistError("No suggestion with that id", 404);
+    const decided = proposalDecisions.get(id);
+    if (decided && decided.action !== action) throw new PlaylistError("That suggestion was already decided", 409);
+    if (action === "accept") applyProposalAccept(proposal); // idempotent: stable event id
+    if (!decided) proposalDecisions.record(id, action);
+    return send(res, 200, brainSessionView());
   }
 
   // --- natural-language plans ---------------------------------------------
@@ -917,20 +1074,37 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     }
     const lib = currentLibrary();
     const draft = draftPlan(input.prompt, lib);
-    const checked = validatePlan(draft.plan);
+    // B1: translate the goal language. The chosen reading supersedes the raw draft when the
+    // interpreter found one; reading plans stay server-side (only summaries leave).
+    const interpretation = interpretGoal(input.prompt, { library: lib, now: Date.now() });
+    const chosen = interpretation.chosen_index >= 0 && interpretation.chosen_index < interpretation.readings.length
+      ? interpretation.readings[interpretation.chosen_index] : undefined;
+    const checked = chosen ? validatePlan(chosen.plan) : validatePlan(draft.plan);
     return send(res, 200, {
       parser: "rule-based draft (no LLM yet)",
       recognized: draft.recognized,
       unparsed: draft.unparsed,
       encoder_text: draft.encoder_text,
       validation: checked,
-      preview: checked.ok ? evaluatePlan(checked, lib, { feedback: feedback() }) : null,
+      interpretation: {
+        parser: interpretation.parser,
+        accuracy: interpretation.accuracy,
+        chosen_index: interpretation.chosen_index,
+        readings: interpretation.readings.map((reading, index) => ({
+          label: reading.label, confidence: reading.confidence, assumptions: reading.assumptions,
+          chosen: index === interpretation.chosen_index,
+        })),
+        asks: interpretation.asks,
+        audit: interpretation.audit,
+      },
+      preview: checked.ok ? applySequencing(evaluatePlan(checked, lib, policyOptions()), checked.plan) : null,
     });
   }
   if (path === "/api/v1/plans/evaluate" && req.method === "POST") {
     const checked = validatePlan((await body(req)).plan);
     if (!checked.ok) return send(res, 422, { validation: checked });
-    return send(res, 200, { validation: checked, result: evaluatePlan(checked, currentLibrary(), { feedback: feedback() }) });
+    const evaluation = applySequencing(evaluatePlan(checked, currentLibrary(), policyOptions()), checked.plan);
+    return send(res, 200, { validation: checked, result: evaluation });
   }
   if (path === "/api/v1/library" && req.method === "GET") {
     const lib = currentLibrary();

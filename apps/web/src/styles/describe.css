@@ -20,6 +20,29 @@
 .describe__warnings ul { padding-left: 18px; }
 .describe__parser { font: 11px var(--font-mono); letter-spacing: .06em; margin-top: 16px; }
 
+/* Goal interpretation (B1) rendered by Describe.tsx: accuracy line, alternative readings,
+   asks, and the audit trail. Additive; same tokens, no new colours. */
+.describe__interpretation { margin: 0 0 12px; }
+.describe__accuracy-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; margin: 0 0 8px; font-size: 13px; }
+.describe__accuracy { font: 500 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; border: 1px solid var(--border-strong); border-radius: var(--r-pill); padding: 2px 10px; }
+.describe__accuracy--specific { color: var(--success-ink); border-color: rgba(0, 230, 118, 0.4); }
+.describe__accuracy--partial { color: var(--warn-ink); border-color: rgba(255, 176, 32, 0.4); }
+.describe__accuracy--contradictory { color: var(--lavender-ink); border-color: rgba(171, 81, 255, 0.45); }
+.describe__accuracy--vague { color: var(--muted); }
+.describe__accuracy--impossible { color: var(--danger-ink); border-color: rgba(255, 92, 87, 0.4); }
+.describe__readings { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.describe__readings li { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 10px; }
+.describe__readings li.is-chosen { border-color: var(--gold); background: var(--gold-wash); }
+.describe__readings small { margin-left: auto; font: 12px var(--font-mono); color: var(--muted); }
+.describe__chosen { font: 500 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--gold); }
+.describe__single-reading { margin: 0 0 10px; font-size: 14px; }
+.describe__asks ul { margin: 4px 0 12px; padding-left: 18px; font-size: 14px; }
+.describe__asks small { color: var(--muted); }
+.describe__audit { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+.describe__audit summary { cursor: pointer; width: fit-content; }
+.describe__audit ul { margin: 8px 0 0; }
+.describe__audit-kind { display: block; margin-top: 2px; font: 10px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+
 .notice ul { margin: 6px 0 0; padding-left: 18px; }
 
 .smart-result__summary { margin: 0 0 12px; font-size: 15px; }
@@ -28,6 +51,11 @@
 .smart-counts div { display: flex; gap: 6px; }
 .smart-counts dt { color: var(--text); }
 .smart-counts dd { margin: 0; color: var(--muted); }
+
+/* C2 F4/F8: session hides are one muted line (never a Restore), and the arc note is
+   one muted line under the counts — reuses tokens, no new colours. */
+.describe__session-hides { margin: 0 0 12px; font-size: 13px; }
+.describe__sequencing { margin: 0 0 12px; font-size: 13px; }
 
 .smart-list { list-style: none; padding: 0; margin: 8px 0 0; }
 .smart-list > li { display: flex; gap: 14px; border-top: 1px solid var(--hair); padding: 10px 0; }

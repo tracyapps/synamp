@@ -16,12 +16,16 @@ export class SettingsError extends Error {
   status = 400;
 }
 
+/** Which learning policy derives the event log: epoch-scoped (default) or the v1 rollback. */
+export type ListeningPolicy = "epoch-v1" | "legacy-v1";
+
 export type Defaults = {
   musicbrainzContact: string;
   lastfmApiKey: string;
   lastfmApiSecret: string;
   publicUrl: string;
   uploadMaxMb: number;
+  listeningPolicy: ListeningPolicy;
 };
 type Saved = Partial<{
   musicbrainz_contact: string;
@@ -29,6 +33,7 @@ type Saved = Partial<{
   lastfm_api_secret: string;
   public_url: string;
   upload_max_mb: number;
+  listening_policy: ListeningPolicy;
 }>;
 export type Field = keyof Required<Saved>;
 export type Origin = "app" | "server" | "unset";
@@ -54,6 +59,7 @@ export class RuntimeSettings {
   get publicUrl(): string { return this.saved.public_url ?? this.defaults.publicUrl; }
   get uploadMaxMb(): number { return this.saved.upload_max_mb ?? this.defaults.uploadMaxMb; }
   get uploadMaxBytes(): number { return this.uploadMaxMb * 1024 * 1024; }
+  get listeningPolicy(): ListeningPolicy { return this.saved.listening_policy ?? this.defaults.listeningPolicy; }
 
   private origin(field: Field, fallback: string | number): Origin {
     if (this.saved[field] !== undefined) return "app";
@@ -69,12 +75,14 @@ export class RuntimeSettings {
       lastfm_api_secret: this.lastfmApiSecret ? "set" : "",
       public_url: this.publicUrl,
       upload_max_mb: this.uploadMaxMb,
+      listening_policy: this.listeningPolicy,
       origins: {
         musicbrainz_contact: this.origin("musicbrainz_contact", this.defaults.musicbrainzContact),
         lastfm_api_key: this.origin("lastfm_api_key", this.defaults.lastfmApiKey),
         lastfm_api_secret: this.origin("lastfm_api_secret", this.defaults.lastfmApiSecret),
         public_url: this.origin("public_url", this.defaults.publicUrl),
         upload_max_mb: this.origin("upload_max_mb", this.defaults.uploadMaxMb),
+        listening_policy: this.origin("listening_policy", this.defaults.listeningPolicy),
       },
     };
   }
@@ -128,6 +136,13 @@ export class RuntimeSettings {
         if (!Number.isInteger(mb) || mb < 1 || mb > 20_480) throw new SettingsError("The upload limit should be a whole number of MB between 1 and 20480");
         set("upload_max_mb", mb);
       }
+    }
+    const policy = textOf("listening_policy");
+    if (policy !== undefined) {
+      if (policy && policy !== "epoch-v1" && policy !== "legacy-v1") {
+        throw new SettingsError('The listening policy must be "epoch-v1" (session learning) or "legacy-v1" (the v1 re-ranker)');
+      }
+      set("listening_policy", policy ? (policy as ListeningPolicy) : undefined);
     }
     if (!changed.length) return [];
     this.saved = next;

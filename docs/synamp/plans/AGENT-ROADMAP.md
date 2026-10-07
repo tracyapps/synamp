@@ -527,3 +527,38 @@ processes: plan → pick → bad pick refused → approve → apply → files as
 → undo → every file back. **Unverified:** the 0.15 bit-error threshold on real
 transcodes and remasters (only synthetic audio so far); the web panel was
 type-checked, not seen in a browser.
+
+### 2026-10-06 — Fast learning brain: goals in, session-scoped learning out
+
+New plan: [FAST-LEARNING-BRAIN.md](FAST-LEARNING-BRAIN.md). Translation layer
+(`src/intent/`): nine-goal lexicon + `interpretGoal()` classify asks as specific /
+partial / contradictory / vague / impossible — every reading passes `validatePlan()`,
+contradictions return two readings, vague/impossible return plain-language asks,
+never an invented plan. Session-scoped learning (`src/learning/`, policy
+`epoch-v1`): epochs derived from the event log (30-min idle gap, local day, session
+change; 30-min live window), implicit evidence masked at the epoch boundary,
+persistent explicit cells + epoch evidence + artist propagation + reliability-
+weighted centroids combined into one bounded value applied inside the strict tier,
+repeat-skip / not-now hides, cross-epoch proposals as the only channel that outlives
+a session, exploration default OFF. Non-flat arcs (`query/sequence.ts`, accepted by
+`plan.ts`) close the roadmap's sequencing extension target; harness
+`tools/brain-lab/` (one command, 8 scenarios).
+
+- **Confirmed:** Brain 218 tests — 216 pass + 1 pre-existing macOS librarian
+  case-fold failure + 1 skip (both carried from the 149-test baseline; B1's
+  earlier 205 and the 210/208 review capture are superseded — 218/216 is the
+  final capture); new intent/sequencing and learning tests green; type-check
+  exit 0 (brain + web). Lab: 8 scenarios · 86 checks — 0 fail · 0 pending · 5
+  documented skips (final capture; the earlier 64-check capture's single red was
+  fixed with a regression test — re-run green and byte-identical modulo the
+  timestamp). Isolation, half-life, flood bounds and
+  determinism are test-asserted (scenario 06: same stream at now+16 h byte-identical
+  to baseline).
+- **Not done:** P4 producers (declared fields stay unknown on real music — the wall
+  for “no words”-style goals); proposals unproven (thresholds the most speculative
+  constants); every magnitude untuned.
+- **Unverified:** real music, real listening — fixtures only; reliability weights
+  exist for bpm only.
+- **Next smallest experiment:** one real-library session, then read
+  `GET /api/v1/brain/session` and check that hides, adjustments and proposals match
+  what you meant — tune the P-values only after that.

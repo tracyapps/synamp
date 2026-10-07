@@ -8,13 +8,26 @@ type ResultTrack = {
   near_miss?: { constraint: string; phrase: string; label: string };
 };
 type Ask = { ask: string; reason: string; nearest_supported?: string; unenforced?: boolean };
+/* Goal interpretation (brain /plans/draft `interpretation`) — summaries only, no raw plans. */
+type InterpretationReading = { label: string; confidence: number; assumptions: string[]; chosen: boolean };
+type Interpretation = {
+  parser: string;
+  accuracy: "specific" | "partial" | "vague" | "contradictory" | "impossible";
+  chosen_index: number;
+  readings: InterpretationReading[];
+  asks: Ask[];
+  audit: Array<{ phrase: string; becomes: string; kind: "hard" | "soft" | "goal" | "exclusion" | "unparsed" | "note" }>;
+};
 export type Evaluation = {
   plan_hash: string; library_version: string;
   strict: ResultTrack[]; near_miss: ResultTrack[];
-  counts: { library: number; strict_total: number; excluded_by: Record<string, number>; unknown_by: Record<string, number>; unverified_by: Record<string, number>; capped: number; hidden_by_you: number };
+  counts: { library: number; strict_total: number; excluded_by: Record<string, number>; unknown_by: Record<string, number>; unverified_by: Record<string, number>; capped: number; hidden_by_you: number; hidden_by_session: number };
+  /** Persistent playlist removes only (Restore works on these). Session hides are counted separately. */
   hidden: Array<{ id: string; title: string; artist?: string }>;
   relaxations_applied: Array<{ detail: string }>;
   underfilled: boolean; unenforced: Ask[]; unsupported: Ask[]; warnings: string[]; missing_exemplars: string[];
+  /** Arc notes from /plans/draft, /plans/evaluate and the smart-playlist explain (only when an arc re-ordered). */
+  sequencing_applied?: string[];
 };
 type Constraint = { id: string; source_phrase: string; hard: boolean; explicit_exclusion?: boolean };
 type DraftResponse = {
@@ -23,6 +36,7 @@ type DraftResponse = {
   unparsed: string[];
   validation: { ok: true; plan: { constraints: Constraint[]; assumptions?: string[] }; hash: string; warnings: string[] }
     | { ok: false; errors: Array<{ path: string; message: string }>; unsupported: Ask[] };
+  interpretation?: Interpretation;
   preview: Evaluation | null;
 };
 
@@ -34,6 +48,67 @@ const EXAMPLES = [
   "exclude punk or country",
   "chill electronic, no words",
 ];
+
+const ACCURACY_HINT: Record<Interpretation["accuracy"], string> = {
+  specific: "a clear request",
+  partial: "mostly clear — some parts rest on assumptions",
+  contradictory: "this pulls two ways — see the readings",
+  vague: "not enough to act on yet",
+  impossible: "it names something I can’t measure",
+};
+
+/**
+ * C2 F6: the interpreter's confidence is a heuristic rule constant, not a calibrated
+ * probability — so it is shown as a word, never as a fabricated “N% sure”.
+ */
+const confidenceWord = (confidence: number): string =>
+  confidence >= 0.6 ? "likely" : confidence >= 0.35 ? "possibly" : "a guess";
+
+/** How the interpreter read the request: accuracy, alternative readings, asks, and the audit trail. */
+function InterpretationView({ interpretation }: { interpretation: Interpretation }) {
+  const { accuracy, readings, asks, audit } = interpretation;
+  return (
+    <div className="describe__interpretation">
+      <p className="describe__accuracy-line">
+        <span className={`describe__accuracy describe__accuracy--${accuracy}`}>{accuracy}</span>
+        <span className="muted">{ACCURACY_HINT[accuracy]}</span>
+      </p>
+      {readings.length === 0 && asks.length > 0 && (
+        <div className="describe__asks" role="note">
+          <p className="muted">A little more would sharpen this:</p>
+          <ul>{asks.map((ask) => <li key={ask.ask}>{ask.ask}<small> — {ask.reason}</small></li>)}</ul>
+        </div>
+      )}
+      {readings.length > 1 && (
+        <ul className="describe__readings">
+          {readings.map((reading) => (
+            <li key={reading.label} className={reading.chosen ? "is-chosen" : undefined}>
+              <span>{reading.label}</span>
+              {reading.chosen && <span className="describe__chosen">applied</span>}
+              <small>{confidenceWord(reading.confidence)}</small>
+            </li>
+          ))}
+        </ul>
+      )}
+      {readings.length === 1 && readings[0] && (
+        <p className="describe__single-reading">Read as: <strong>{readings[0].label}</strong></p>
+      )}
+      {audit.length > 0 && (
+        <details className="describe__audit">
+          <summary>How I read it ({audit.length})</summary>
+          <ul className="rules">
+            {audit.map((entry, index) => (
+              <li key={`${entry.phrase}-${index}`}>
+                <q>{entry.phrase}</q> <span aria-hidden="true">→</span><span className="visually-hidden">becomes</span> <code>{entry.becomes}</code>
+                <span className="describe__audit-kind">{entry.kind}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </div>
+  );
+}
 
 function TrackList({ tracks, nearMiss = false }: { tracks: ResultTrack[]; nearMiss?: boolean }) {
   return (
@@ -89,7 +164,15 @@ export function ResultView({ result, labels, onRestore }: { result: Evaluation; 
           {result.counts.hidden_by_you > 0 && <div><dt>Removed by you</dt><dd>{result.counts.hidden_by_you} hidden</dd></div>}
         </dl>
       )}
+      {result.counts.hidden_by_session > 0 && (
+        <p className="muted describe__session-hides">
+          {result.counts.hidden_by_session} hidden while this session lasts — clears when the session ends (use “Forget this session” on The Brain to clear now).
+        </p>
+      )}
       {result.relaxations_applied.length > 0 && <p className="muted">Loosened as the plan allowed: {result.relaxations_applied.map((step) => step.detail).join("; ")}.</p>}
+      {result.sequencing_applied && result.sequencing_applied.length > 0 && (
+        <p className="muted describe__sequencing">Order: {result.sequencing_applied.join("; ")}</p>
+      )}
       {result.strict.length > 0 ? <TrackList tracks={result.strict} /> : <p className="muted">No track satisfies every rule yet.</p>}
       {onRestore && result.hidden.length > 0 && (
         <details className="hidden-by-you">
@@ -166,6 +249,7 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
         <div className="describe__out">
           <div className="describe__understood">
             <h3>What I understood</h3>
+            {draft.interpretation && <InterpretationView interpretation={draft.interpretation} />}
             {draft.recognized.length ? (
               <ul className="rules">{draft.recognized.map((item, index) => <li key={index}><q>{item.phrase}</q> <span aria-hidden="true">→</span><span className="visually-hidden">becomes</span> <code>{item.becomes}</code></li>)}</ul>
             ) : <p className="muted">Nothing I can turn into a rule yet.</p>}

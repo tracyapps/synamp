@@ -1,0 +1,19 @@
+{
+  "id": "04-impossible",
+  "kind": "phrase",
+  "title": "Hyper-specific / impossible ask — unsatisfiable combination of demands",
+  "note": "Two probes. 'songs with exactly three clarinets' is hyper-specific with nothing enforceable: expected accuracy=impossible, with asks carrying the next step (never a dead end). 'instrumentals with heavy lead vocals over 300 bpm' is a mixed impossible ask whose vocals half intent-v1 cannot yet express as a claim; asserted only that the answer stays honest — accuracy in [partial, impossible, contradictory] (never specific) — and that the library resolve underfills instead of faking results.",
+  "phrases": [
+    {
+      "text": "songs with exactly three clarinets",
+      "slug": "impossible-clarinets",
+      "intent": { "expect_accuracy": "impossible" }
+    },
+    {
+      "text": "instrumentals with heavy lead vocals over 300 bpm",
+      "slug": "impossible-vocals",
+      "intent": { "expect_accuracy_in": ["partial", "impossible", "contradictory"] },
+      "pipeline": { "expect_underfilled": true }
+    }
+  ]
+}

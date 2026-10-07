@@ -92,6 +92,18 @@ docs/synamp/            This plan
 docs/roadmap/           Generated visual roadmap
 ```
 
+### D8 — Culture-sourced defaults & guardrails *(accepted 2026-10-06)*
+From A2 (§4.2–4.4): research-derived bands and goal profiles ship only as labelled
+starting points — soft, library-relative, adapted through bounded feedback and
+spot-check corrections, never laws. No tradition- or people-named default, profile
+or copy ships; attribution (named traditions and peoples) lives in the research
+appendix, not in code — the lexicon cites it by rule id; its culture notes are
+metadata. No sacred or restricted knowledge is inferred, encoded or described
+(ceremonial function is never deduced from audio). Reliability honesty: suspect
+measurements are damped or refused with an explicit note. Nothing crosses a
+listening epoch without an explicit yes; proposals change nothing until accepted.
+*Revisit if:* a tradition-named feature or surfaced culture copy is proposed — A2 §4.3 consultation + decision record first.
+
 ## Open items (not blocking)
 
 - Final licence pass before any distribution (D6).
