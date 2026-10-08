@@ -14,7 +14,7 @@
  *      Nothing here invents a reason or a track.
  */
 
-import { SIGNALS } from "./signals.ts";
+import { SIGNALS, STAGE_ABOUT } from "./signals.ts";
 import type { SignalSpec } from "./signals.ts";
 import type { Constraint, Expr, Predicate, QueryPlan, UnknownPolicy, UnsupportedAsk, ValidatedPlan } from "./plan.ts";
 import { feedbackBonus } from "../session/feedback.ts";
@@ -117,6 +117,8 @@ export type Evaluation = {
   /** Hard asks the system could not enforce. A UI must show these. */
   unenforced: UnsupportedAsk[];
   unsupported: UnsupportedAsk[];
+  /** Rules that depend on analysis SynAmp can't do yet (see blindSpots). */
+  blind_spots: BlindSpot[];
   warnings: string[];
   missing_exemplars: string[];
   /** Feedback policy applied, if any (see session/feedback.ts). */
@@ -485,6 +487,7 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library, options
 
   const unsupported = plan.unsupported ?? [];
   return {
+    blind_spots: blindSpots(plan.constraints),
     plan_hash: validated.hash,
     registry: validated.registry,
     library_version: library.version,
@@ -507,4 +510,35 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library, options
     ...(options.feedback ? { feedback_policy: options.feedback.policy_version } : {}),
     hidden: hidden.map((track) => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) })),
   };
+}
+
+/**
+ * Rules that lean on something no analysis stage measures yet ("no words" needs
+ * a voice stage). Grouped by stage so the app can say plainly what SynAmp can't
+ * hear yet, instead of leaving an empty or odd-looking result unexplained.
+ */
+export type BlindSpot = { stage: string; about: string; phrases: string[]; hard: boolean };
+export function blindSpots(constraints: ReadonlyArray<{ source_phrase: string; hard: boolean; where: unknown }>): BlindSpot[] {
+  const byStage = new Map<string, BlindSpot>();
+  const fields = (expr: unknown, out: Set<string>): Set<string> => {
+    if (Array.isArray(expr)) { for (const item of expr) fields(item, out); return out; }
+    if (expr && typeof expr === "object") {
+      for (const [key, value] of Object.entries(expr as Record<string, unknown>)) {
+        if (key === "field" && typeof value === "string") out.add(value);
+        else fields(value, out);
+      }
+    }
+    return out;
+  };
+  for (const constraint of constraints) {
+    for (const field of fields(constraint.where, new Set())) {
+      const spec = SIGNALS.get(field);
+      if (!spec || spec.status !== "declared") continue;
+      const spot: BlindSpot = byStage.get(spec.stage) ?? { stage: spec.stage, about: STAGE_ABOUT[spec.stage] ?? spec.stage, phrases: [], hard: false };
+      if (!spot.phrases.includes(constraint.source_phrase)) spot.phrases.push(constraint.source_phrase);
+      spot.hard ||= constraint.hard;
+      byStage.set(spec.stage, spot);
+    }
+  }
+  return [...byStage.values()];
 }

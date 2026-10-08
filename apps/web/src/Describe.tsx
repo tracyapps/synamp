@@ -1,5 +1,6 @@
 import { useId, useState } from "react";
 import "./styles/describe.css";
+import { Callout } from "./ui/kit";
 
 /* Shapes mirror apps/brain/src/query/evaluate.ts — kept minimal on purpose. */
 type ResultTrack = {
@@ -18,6 +19,10 @@ type Interpretation = {
   asks: Ask[];
   audit: Array<{ phrase: string; becomes: string; kind: "hard" | "soft" | "goal" | "exclusion" | "unparsed" | "note" }>;
 };
+/** "a", "a and b", "a, b and c" */
+const list = (items: string[], word = "and") => items.length > 1 ? `${items.slice(0, -1).join(", ")}${word === "or" ? "," : ""} ${word} ${items.at(-1)}` : items[0] ?? "";
+const quoted = (phrases: string[]) => list(phrases.map((phrase) => `“${phrase}”`)) || "this";
+
 export type Evaluation = {
   plan_hash: string; library_version: string;
   strict: ResultTrack[]; near_miss: ResultTrack[];
@@ -26,6 +31,8 @@ export type Evaluation = {
   hidden: Array<{ id: string; title: string; artist?: string }>;
   relaxations_applied: Array<{ detail: string }>;
   underfilled: boolean; unenforced: Ask[]; unsupported: Ask[]; warnings: string[]; missing_exemplars: string[];
+  /** Rules that need analysis SynAmp can't do yet (older brains don't send this). */
+  blind_spots?: Array<{ stage: string; about: string; phrases: string[]; hard: boolean }>;
   /** Arc notes from /plans/draft, /plans/evaluate and the smart-playlist explain (only when an arc re-ordered). */
   sequencing_applied?: string[];
 };
@@ -151,6 +158,9 @@ export function ResultView({ result, labels, onRestore }: { result: Evaluation; 
   const nearId = useId();
   const name = (id: string) => labels?.[id] ? `“${labels[id]}”` : id;
   const excluded = Object.entries(result.counts.excluded_by).sort((a, b) => b[1] - a[1]);
+  const spots = result.blind_spots ?? [];
+  const hardPhrases = [...new Set(spots.filter((spot) => spot.hard).flatMap((spot) => spot.phrases))];
+  const softPhrases = [...new Set(spots.flatMap((spot) => spot.phrases))].filter((phrase) => !hardPhrases.includes(phrase));
   return (
     <div className="smart-result">
       {result.unenforced.length > 0 && (
@@ -158,6 +168,14 @@ export function ResultView({ result, labels, onRestore }: { result: Evaluation; 
           <strong>Not enforced:</strong>
           <ul>{result.unenforced.map((ask) => <li key={ask.ask}>{ask.ask} — {ask.reason}</li>)}</ul>
         </div>
+      )}
+      {spots.length > 0 && (
+        <Callout tone="warn">
+          <p><strong>SynAmp can’t hear {list(spots.map((spot) => spot.about), "or")} yet.</strong>
+            {hardPhrases.length > 0 && <> So {quoted(hardPhrases)} can’t be checked, and no song can pass {hardPhrases.length === 1 ? "it" : "them"} — that’s why nothing is found.</>}
+            {softPhrases.length > 0 && <> {hardPhrases.length ? "And" : "So"} {quoted(softPhrases)} only partly works: these picks lean on what SynAmp can measure (tempo, steadiness, loudness, brightness), so expect some songs that don’t fit.</>}
+            {" "}The listening step for this is being built; once your library has been through it, {hardPhrases.length + softPhrases.length > 1 ? "these rules" : "this"} will work fully.</p>
+        </Callout>
       )}
       <p className="smart-result__summary" aria-live="polite">
         <strong>{result.strict.length}</strong> {result.strict.length === 1 ? "track matches" : "tracks match"} every rule

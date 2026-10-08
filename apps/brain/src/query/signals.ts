@@ -192,3 +192,12 @@ export function lookupField(name: string): FieldLookup {
   }
   return { ok: false, reason: `Unknown field "${name}".` };
 }
+
+/** What each not-yet-built analysis stage would tell us, in plain words (for "SynAmp can't hear … yet"). */
+export const STAGE_ABOUT: Readonly<Record<string, string>> = {
+  voice: "whether a song has singing or words",
+  instruments: "which instruments are playing",
+  semantic: "a song’s mood and energy",
+  tonal: "key, chords and harmony",
+  structure: "how a song is built (verses, repeats, changes)",
+};
