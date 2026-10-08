@@ -35,7 +35,7 @@ goal: Play your own music anywhere — phone, car, computer — so a streaming s
 - [x] A guided checklist to listen away from home, privately, with no port forwarding
 - [~] Lock-screen controls, background play and CarPlay through phone apps you already know
 - [x] Bring your existing playlists across
-- [ ] Lighter streams on mobile data, full quality at home
+- [x] Lighter streams on mobile data, full quality at home
 
 ## Library care
 id: library-care
@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-07 — Lighter streams on mobile data: SynAmp’s player switches to a smaller stream away from home and keeps full quality at home, and Listen anywhere shows how to do the same in your phone app
 - 2026-10-06 — Put radio stations in your playlists, right next to your own music
 - 2026-10-06 — Party mode: guests scan a code to ask for songs and vote, a big “now playing” screen for the TV, and every request waits for your yes
 - 2026-10-06 — SynAmp’s own player works from your lock screen, headphone buttons and keyboard media keys

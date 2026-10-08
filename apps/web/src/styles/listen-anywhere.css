@@ -23,3 +23,7 @@
 .anywhere__address-label { font-size: 13px; color: var(--muted); min-width: 9em; }
 .anywhere__address code { flex: 1; font-size: 13px; overflow-wrap: anywhere; }
 .anywhere__apps { margin: 4px 0; padding-left: 18px; font-size: 14px; }
+.anywhere__tip { margin: 12px 0; padding: 12px 14px; border-left: 3px solid var(--accent); background: var(--surface-2); border-radius: 0 8px 8px 0; }
+.anywhere__tip h4 { margin: 0 0 6px; font: 400 15px var(--font-display); color: var(--text); }
+.anywhere__tip p { margin: 0 0 8px; }
+.anywhere__tip p:last-child { margin-bottom: 0; }

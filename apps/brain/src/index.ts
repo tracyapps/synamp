@@ -33,6 +33,7 @@ import type { FeedbackInput, FeedbackView } from "./session/feedback.ts";
 import { SessionError, SessionStore } from "./session/session.ts";
 import type { Session } from "./session/session.ts";
 import { resolveInside, sendFile, StreamSigner } from "./session/stream.ts";
+import { LIGHTER_KBPS, lighterAvailable, planLighter, probeSeconds, sendLighter } from "./session/lighter.ts";
 import { POLICY_VERSION } from "./session/events.ts";
 import type { ListeningEvent } from "./session/events.ts";
 import { relativeFromReported, trackIdForPath } from "./subsonic/identity.ts";
@@ -678,6 +679,12 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const track = currentLibrary().tracks.find((item) => item.id === trackId);
     const file = track?.path ? resolveInside(config.libraryPath, track.path) : null;
     if (!file) return send(res, 404, { error: "no audio file for this track" });
+    // quality=lighter: a smaller copy for mobile data (the player decides when; see playback-prefs.ts).
+    if (url.searchParams.get("quality") === "lighter" && lighterAvailable()) {
+      const seconds = track!.duration_s ?? track!.audio_duration_s ?? await probeSeconds(file) ?? undefined;
+      const plan = planLighter(file, seconds);
+      if (plan.kind === "lighter") return sendLighter(req, res, file, plan);
+    }
     return sendFile(req, res, file);
   }
   const radioListen = path.match(/^\/api\/v1\/listen\/radio\/([^/]+)$/);
@@ -1011,6 +1018,8 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return send(res, 200, { job: { id: job.id, status: job.status } });
   }
 
+  // Can this brain make lighter streams (is ffmpeg here)? The Settings screen says so either way.
+  if (path === "/api/v1/listening/streams" && req.method === "GET") return send(res, 200, { lighter: lighterAvailable(), kbps: LIGHTER_KBPS });
   if (path === "/api/v1/listening" && req.method === "GET") {
     const external = events.all().filter((event) => event.source === "subsonic");
     const byClient: Record<string, number> = {};

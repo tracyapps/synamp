@@ -14,8 +14,10 @@ COPY web/src ./web/src
 COPY web/index.html web/package.json web/package-lock.json ./web/
 RUN node --experimental-strip-types brain/src/version.ts /apps > /build.json
 
-# 2. The brain itself.
+# 2. The brain itself. ffmpeg makes the lighter streams for mobile data
+#    (src/session/lighter.ts); without it the player just gets the original files.
 FROM node:22-alpine
+RUN apk add --no-cache ffmpeg
 WORKDIR /app
 COPY brain/src ./src
 COPY --from=fingerprint /build.json ./build.json
