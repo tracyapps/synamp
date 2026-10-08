@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-08 — Choose how much of your Mac the analysis may use, with more at night or while you’re away from the Mac, and plain advice on when to change it
 - 2026-10-08 — SynAmp now listens for singing and instruments, so “no words” and “no piano” work as your library gets listened to
 - 2026-10-08 — Ambient and other beatless music no longer gets a made-up tempo, and analysis runs several songs at once on your Mac, so it finishes days sooner
 - 2026-10-08 — Library: save the filters you use as named views, share a link to them, and turn every song that matches into a playlist in one go

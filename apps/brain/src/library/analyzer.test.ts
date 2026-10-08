@@ -28,9 +28,9 @@ test("buttons queue commands; the worker takes one at a time and reports back", 
     const second = control.claim({}, 30)!;
     assert.equal(second.id, analyze.id);
     assert.throws(() => control.request("analyze"), /already running/);
-    assert.deepEqual(control.check(second.id), { stop: false });
+    assert.equal(control.check(second.id).stop, false);
     control.stop(40);
-    assert.deepEqual(control.check(second.id), { stop: true }, "Pause: the worker stops after the current track");
+    assert.equal(control.check(second.id).stop, true, "Pause: the worker stops after the current track");
     control.complete(second.id, { status: "stopped", summary: "analysed 120 tracks" }, 50);
     assert.equal(control.claim({}, 60), null);
 
@@ -83,5 +83,32 @@ test("while analysis waits for a library list update, the web app sees how far a
     control.setActivity(job.id, { activity: { kind: "export" } }, 7);
     control.complete(job.id, { status: "done" }, 8);
     assert.equal(control.view(8).recent[0]!.activity, undefined, "a finished command carries none");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("memory for analysis: steady, more at set hours, or more while you're away", () => {
+  const dir = temp();
+  try {
+    const control = new AnalyzerControl(join(dir, "control.json"));
+    assert.deepEqual(control.memory(), { mode: "steady", normal_gb: null, more_gb: null, from: "22:00", to: "07:00", away_minutes: 10 }, "recommended until you choose");
+    control.setSettings({ memory: { normal_gb: 8 } });
+    control.setSettings({ memory: { mode: "hours", more_gb: 24, from: "23:30", to: "06:00" } });
+    const saved = new AnalyzerControl(join(dir, "control.json"));
+    assert.deepEqual(saved.memory(), { mode: "hours", normal_gb: 8, more_gb: 24, from: "23:30", to: "06:00", away_minutes: 10 }, "kept, and earlier choices survive a partial change");
+    assert.equal(saved.view().settings.update_after_librarian, true);
+    saved.setSettings({ memory: { normal_gb: null } });
+    assert.equal(saved.memory().normal_gb, null, "back to the recommendation");
+    assert.throws(() => saved.setSettings({ memory: { mode: "turbo" } }), /mode must be/);
+    assert.throws(() => saved.setSettings({ memory: { normal_gb: 0 } }), /between 1 and 1024/);
+    assert.throws(() => saved.setSettings({ memory: { from: "25:00" } }), /time like 22:00/);
+    assert.throws(() => saved.setSettings({ memory: { from: "06:00", to: "06:00" } }), /same/);
+
+    const command = saved.request("analyze", "you", 1);
+    saved.claim({ host: "mac", memory_gb: 48, cores: 14, memory_now: { gb: 8, songs: 2, why: "normal" } }, 2);
+    assert.equal(saved.view(2).worker!.memory_gb, 48);
+    assert.deepEqual(saved.view(2).worker!.memory_now, { gb: 8, songs: 2, why: "normal", at: 2 });
+    const answer = saved.check(command.id, { memory_now: { gb: 24, songs: 8, why: "hours" } }, 3);
+    assert.equal(answer.memory.mode, "hours", "the worker hears the setting while it analyses");
+    assert.equal(saved.view(3).worker!.memory_now!.why, "hours");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

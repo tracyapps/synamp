@@ -191,7 +191,7 @@ def test_a_changed_stage_is_redone_and_only_that_stage(tmp_path: Path) -> None:
     assert {"identity", "dsp_core", "beat"} <= redone.stages_done
     db.close()
     assert run_analyze(config, progress=quiet)["outdated"] == 0, "nothing left to redo"
-    assert pipeline.analysis_processes(1) == 1
+    assert pipeline.analysis_processes(1, 30.0) == 1, "ANALYZER_WORKERS=1 still means one at a time"
 
 
 def test_several_tracks_at_once(tmp_path: Path, monkeypatch) -> None:
@@ -205,7 +205,7 @@ def test_several_tracks_at_once(tmp_path: Path, monkeypatch) -> None:
     corrupt(library / "bad.flac")
     config = config_for(library, tmp_path)
     run_scan(config, progress=quiet)
-    monkeypatch.setattr(pipeline, "analysis_processes", lambda _configured: 3)
+    monkeypatch.setattr(pipeline, "analysis_processes", lambda *_args: 3)
     lines: list[str] = []
     summary = run_analyze(config, progress=lines.append)
     assert summary["processes"] == 3
@@ -229,7 +229,7 @@ def test_pause_with_several_processes_lets_started_tracks_finish(tmp_path: Path,
         sine(library / f"{n}.flac", seconds=2.0)
     config = config_for(library, tmp_path)
     run_scan(config, progress=quiet)
-    monkeypatch.setattr(pipeline, "analysis_processes", lambda _configured: 2)
+    monkeypatch.setattr(pipeline, "analysis_processes", lambda *_args: 2)
     asked = {"n": 0}
 
     def stop_after_first_round() -> bool:
@@ -253,7 +253,7 @@ def test_a_long_recording_is_analysed_on_its_own(tmp_path: Path, monkeypatch) ->
         sine(library / f"{n}.flac", seconds=2.0)
     config = config_for(library, tmp_path)
     run_scan(config, progress=quiet)
-    monkeypatch.setattr(pipeline, "analysis_processes", lambda _configured: 3)
+    monkeypatch.setattr(pipeline, "analysis_processes", lambda *_args: 3)
     monkeypatch.setattr(pipeline, "is_long_recording", lambda path: path.name == "2.flac")
     lines: list[str] = []
     summary = run_analyze(config, progress=lines.append)
@@ -264,3 +264,39 @@ def test_a_long_recording_is_analysed_on_its_own(tmp_path: Path, monkeypatch) ->
     if any("long recording" in line for line in lines):
         held_at = next(i for i, line in enumerate(lines) if "long recording" in line)
         assert "2.flac" in lines[held_at - 1]
+
+
+def test_memory_setting_decides_how_many_songs_at_once() -> None:
+    from synamp_analyzer import pipeline
+
+    mac = {"memory_gb": 48.0, "cores": 14}
+    assert pipeline.recommended_memory_gb(48.0) == 12 and pipeline.recommended_memory_gb(8.0) == 3
+    assert pipeline.analysis_processes(16, None, mac) == 4, "recommended on a 48 GB Mac: 12 GB → 4 songs"
+    assert pipeline.analysis_processes(16, 3, mac) == 1
+    assert pipeline.analysis_processes(16, 30, mac) == 10
+    assert pipeline.analysis_processes(16, 200, mac) == 12, "never more than the cores minus two"
+    assert pipeline.analysis_processes(16, 2, {"memory_gb": 8.0, "cores": 8}) == 1, "always at least one"
+    assert pipeline.analysis_processes(16, 100, {"memory_gb": 16.0, "cores": 10}) == 4, "never past the Mac's memory minus 4 GB"
+
+
+def test_a_change_of_memory_setting_applies_during_a_run(tmp_path: Path, monkeypatch) -> None:
+    from synamp_analyzer import pipeline
+
+    library = tmp_path / "music"
+    library.mkdir()
+    for n in range(8):
+        sine(library / f"{n}.flac", seconds=2.0)
+    import dataclasses
+    config = dataclasses.replace(config_for(library, tmp_path), workers=16)
+    run_scan(config, progress=quiet)
+    monkeypatch.setattr(pipeline, "machine", lambda: {"memory_gb": 64.0, "cores": 16})
+    asked = {"n": 0}
+
+    def setting() -> float:
+        asked["n"] += 1
+        return 3.0 if asked["n"] < 3 else 9.0  # one song at first, then three
+
+    lines: list[str] = []
+    summary = run_analyze(config, progress=lines.append, memory_gb=setting)
+    assert summary["completed"] == 8 and summary["processes"] == 3
+    assert any("3 tracks at a time from now on" in line for line in lines)

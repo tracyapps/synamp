@@ -52,8 +52,10 @@ class AnalyzerConfig:
     benefit. Note the model-free block deliberately ignores this: loudness
     range, crest factor and clipping density are whole-recording properties."""
 
-    workers: int = 4
-    """Parallel decode/analyse processes. Keep below the CPU core count."""
+    workers: int = 16
+    """The most songs analysed at once, whatever the memory setting allows
+    (ANALYZER_WORKERS). How many actually run is set by the memory you give
+    analysis in the web app's Settings, and by the Mac's cores."""
 
     walk_workers: int = 8
     """Concurrent directory listings while scanning.
@@ -100,7 +102,7 @@ class AnalyzerConfig:
             cache_dir=cache_dir,
             db_path=Path(_env("ANALYZER_DB_PATH", str(cache_dir / "analyzer.sqlite3"))),
             sample_seconds=float(_env("ANALYZER_SAMPLE_SECONDS", "60")),
-            workers=int(_env("ANALYZER_WORKERS", "4")),
+            workers=int(_env("ANALYZER_WORKERS", "16")),
             walk_workers=int(_env("ANALYZER_WALK_WORKERS", "8")),
             max_attempts=int(_env("ANALYZER_MAX_ATTEMPTS", "3")),
             rename_journal=Path(os.environ["RENAME_JOURNAL_PATH"]) if os.environ.get("RENAME_JOURNAL_PATH") else None,

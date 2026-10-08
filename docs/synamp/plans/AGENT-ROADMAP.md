@@ -653,3 +653,17 @@ Annie Lennox, Madonna, Dave Matthews) 0/29 pass; Eno's own songs 7/8 caught
 
 Next: owner labels (a "has words?" spot-check like the tempo one) to calibrate
 the 0.10 threshold; confirm the weights licence before any distribution.
+
+### 2026-10-08 — Settings: memory for analysis (steady, set hours, or while away)
+
+Settings → "Analysis on your Mac". Brain: `AnalyzerControl.settings.memory`
+`{mode: steady|hours|away, normal_gb|null, more_gb|null, from, to, away_minutes}`
+(null = recommended), sent to the worker with every claim and analysis check;
+the worker reports `memory_gb`, `cores` and `memory_now {gb, songs, why}`.
+Worker: `allowance.py` works out "right now" on the Mac (its clock; HIDIdleTime
+from `ioreg` for "away") and `run_analyze(memory_gb=callable)` follows changes
+mid-run (fewer songs as started ones finish; the process pool is rebuilt when
+idle). Songs at once = memory ÷ 3 GB, within cores − 2, memory − 4 GB and
+ANALYZER_WORKERS (default now 16). Recommended: a quarter of the Mac (3–12 GB);
+"more" recommended: half, keeping 8 GB. The web mirrors the arithmetic in
+`apps/web/src/analysis-memory.ts` (tests: tools/analysis-memory.test.mts).

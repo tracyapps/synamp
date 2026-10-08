@@ -270,19 +270,36 @@ def backfill_fingerprints(db: Database, should_stop=None, progress=print, on_tra
     return filled
 
 
-def analysis_processes(configured: int) -> int:
-    """How many tracks to analyse at once: what's configured, within what the machine can take.
+PER_SONG_GB = 3.0
+"""Memory one song in analysis needs, roughly: the decoded audio, its spectrogram
+and the listening model. Long recordings need more, so they run on their own."""
 
-    Each process holds one decoded track and its spectrogram (up to ~2.5 GB for a
-    long recording), so memory sets the ceiling as much as cores do. Two cores
-    stay free for the rest of the Mac.
-    """
-    cores = os.cpu_count() or 1
+
+def machine() -> dict[str, float | int]:
+    """This Mac's memory (GB) and cores, for the web app's memory setting."""
     try:
         memory_gb = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1024**3
     except (ValueError, OSError, AttributeError):
         memory_gb = 8.0
-    return max(1, min(configured, cores - 2, int(memory_gb // 12) or 1))
+    return {"memory_gb": round(memory_gb, 1), "cores": os.cpu_count() or 1}
+
+
+def recommended_memory_gb(total_gb: float) -> int:
+    """A quarter of the Mac's memory, at least one song's worth, at most 12 GB."""
+    return int(max(PER_SONG_GB, min(12.0, total_gb * 0.25)))
+
+
+def analysis_processes(cap: int, memory_gb: float | None = None, info: dict | None = None) -> int:
+    """How many songs to analyse at once: what the memory setting pays for, within the cores.
+
+    `memory_gb` is the owner's setting (None = recommended for this Mac). Two cores
+    stay free for everything else, and `cap` (ANALYZER_WORKERS) is a hard ceiling.
+    """
+    info = info or machine()
+    total = float(info["memory_gb"])
+    budget = recommended_memory_gb(total) if memory_gb is None else min(float(memory_gb), max(PER_SONG_GB, total - 4.0))
+    by_memory = int(budget // PER_SONG_GB)
+    return max(1, min(cap, int(info["cores"]) - 2, by_memory))
 
 
 LONG_RECORDING_SECONDS = 15 * 60
@@ -369,8 +386,13 @@ def run_analyze(
     progress=print,
     reporter: ProgressReporter | None = None,
     should_stop=None,
+    memory_gb=None,
 ) -> dict[str, int]:
     """Drain the queue. Returns a summary of what happened.
+
+    `memory_gb` — the memory analysis may use, from the web app's Settings: a
+    number, None (recommended for this Mac), or a function returning either,
+    asked as the run goes so a change takes effect without restarting.
 
     `should_stop` (optional) is asked before each track; returning True ends the
     run cleanly, as if the queue were empty (the worker's Pause button). With
@@ -400,7 +422,9 @@ def run_analyze(
     in_flight: dict[object, tuple[Job, bool]] = {}
     held: Job | None = None
     current = {"name": ""}
-    processes = analysis_processes(cfg.workers)
+    allowance = memory_gb if callable(memory_gb) else (lambda: memory_gb)
+    capacity = lambda: analysis_processes(cfg.workers, allowance())  # noqa: E731
+    processes = capacity()
     summary["processes"] = processes
     stages = active_stages()
     if "voice" not in stages:
@@ -435,13 +459,15 @@ def run_analyze(
     fingerprints_filled = False
     pool = None
 
-    def new_pool():
+    pool_size = 0
+
+    def new_pool(size: int):
         import multiprocessing
         from concurrent.futures import ProcessPoolExecutor
-        return ProcessPoolExecutor(max_workers=processes, mp_context=multiprocessing.get_context("spawn"))
+        return ProcessPoolExecutor(max_workers=size, mp_context=multiprocessing.get_context("spawn"))
 
     if processes > 1:
-        pool = new_pool()
+        pool, pool_size = new_pool(processes), processes
         progress(f"  analysing {processes} tracks at a time")
 
     try:
@@ -457,10 +483,24 @@ def run_analyze(
                     reporter.report(db, "analyzing", run_state())
                 summary["fingerprints_filled"] = backfill_fingerprints(db, should_stop, progress, on_track)
                 current["name"] = ""
+            # The memory setting may have changed: follow it. Fewer songs at once
+            # takes effect as started songs finish; a new pool releases the memory
+            # of processes no longer needed.
+            if not stopping:
+                wanted = capacity()
+                if wanted != processes:
+                    progress(f"  memory setting changed: {wanted} {'track' if wanted == 1 else 'tracks'} at a time from now on")
+                    processes = wanted
+                    summary["processes"] = wanted
+                if pool is not None and not in_flight and processes != pool_size:
+                    pool.shutdown(wait=True)
+                    pool, pool_size = (new_pool(processes), processes) if processes > 1 else (None, 0)
+                elif pool is None and processes > 1 and not in_flight:
+                    pool, pool_size = new_pool(processes), processes
             # Start tracks until every process is busy (one at a time without a pool).
             # A very long recording (a 60-minute ambient piece) can need ~10 GB on
             # its own, so it runs alone: nothing else starts while it's going.
-            room = processes if pool else 1
+            room = min(processes, pool_size) if pool else 1
             while not stopping and (limit is None or summary["claimed"] < limit or held is not None):
                 if any(long for _job, long in in_flight.values()):
                     break
@@ -495,7 +535,7 @@ def run_analyze(
                     future = pool.submit(*args)
                 except Exception:  # the pool broke (a process was killed): start a fresh one
                     pool.shutdown(wait=False, cancel_futures=True)
-                    pool = new_pool()
+                    pool = new_pool(pool_size)
                     future = pool.submit(*args)
                 in_flight[future] = (job, is_long_recording(job.track_path))
                 current["name"] = ", ".join(item.track_path.name for item, _long in in_flight.values())

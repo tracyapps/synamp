@@ -36,6 +36,7 @@ from pathlib import Path
 from . import __version__
 from .config import AnalyzerConfig
 from .export import write_export
+from .allowance import Allowance
 from .pipeline import run_analyze, run_scan
 from .store import Database
 
@@ -96,8 +97,11 @@ def default_export_path(cfg: AnalyzerConfig) -> Path:
 
 class Worker:
     def __init__(self, cfg: AnalyzerConfig, brain: Brain, export_path: Path | None = None,
-                 log=print, sleep=time.sleep, now=time.time, mount=None, keep_awake=None, stamp=code_stamp):
+                 log=print, sleep=time.sleep, now=time.time, mount=None, keep_awake=None, stamp=code_stamp,
+                 allowance: Allowance | None = None):
         self.cfg = cfg
+        # How much memory analysis may use now (Settings in the web app); decides songs at once.
+        self.allowance = allowance or Allowance(cap=cfg.workers)
         self.brain = brain
         self.export_path = export_path or default_export_path(cfg)
         self.log = log
@@ -139,6 +143,7 @@ class Worker:
             "version": __version__, "host": socket.gethostname(), "state": state,
             "library_path": str(self.cfg.library_path), "library_ok": self.library_ok(),
             "export_path": str(self.export_path), "journal": str(self.cfg.rename_journal or ""),
+            **self.allowance.info, "memory_now": self.allowance.now(),
             **({"problem": problem} if problem else {}),
         }
 
@@ -184,7 +189,9 @@ class Worker:
             if now - state["checked"] >= CHECK_EVERY_S:
                 state["checked"] = now
                 try:
-                    state["stop"] = bool(self.brain.post(f"/api/v1/analyzer/commands/{command_id}/check", {}).get("stop"))
+                    answer = self.brain.post(f"/api/v1/analyzer/commands/{command_id}/check", {"memory_now": self.allowance.now()})
+                    state["stop"] = bool(answer.get("stop"))
+                    self.allowance.update(answer.get("memory"))
                 except BrainError as error:
                     self.log(f"worker: {error} (carrying on)")
                 if not state["stop"] and self.code_changed():
@@ -202,7 +209,7 @@ class Worker:
 
         awake = self.keep_awake()
         try:
-            summary = run_analyze(self.cfg, progress=self.log, should_stop=should_stop)
+            summary = run_analyze(self.cfg, progress=self.log, should_stop=should_stop, memory_gb=self.allowance.gb)
         finally:
             if awake is not None:
                 awake.terminate()
@@ -251,6 +258,7 @@ class Worker:
         """One round: say hello, and run a command if there is one. Returns what happened."""
         problem = None if self.library_ok() else self.ensure_library()
         claimed = self.brain.post("/api/v1/analyzer/claim", {"worker": self.about("idle", problem)})
+        self.allowance.update(claimed.get("memory"))
         command = claimed.get("command")
         if not command:
             return "idle"
