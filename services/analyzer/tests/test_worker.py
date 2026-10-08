@@ -122,7 +122,7 @@ def test_login_item_runs_the_worker_with_the_settings_file() -> None:
     plist = agent_plist(Path("/Users/tapps/SynAmp/services/analyzer"), Path("/Users/tapps/SynAmp-data/env.sh"),
                         "/opt/homebrew/bin/uv", Path("/Users/tapps/SynAmp-data/worker.log"))
     assert f"<string>{AGENT_LABEL}</string>" in plist
-    assert "source '/Users/tapps/SynAmp-data/env.sh' &amp;&amp; cd '/Users/tapps/SynAmp/services/analyzer' &amp;&amp; exec '/opt/homebrew/bin/uv' run synamp-analyze worker" in plist
+    assert "source '/Users/tapps/SynAmp-data/env.sh' &amp;&amp; cd '/Users/tapps/SynAmp/services/analyzer' &amp;&amp; exec '/opt/homebrew/bin/uv' run --extra listen synamp-analyze worker" in plist
     assert "<key>RunAtLoad</key><true/>" in plist and "<key>KeepAlive</key><true/>" in plist
 
 

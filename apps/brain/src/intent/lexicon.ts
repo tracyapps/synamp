@@ -110,9 +110,9 @@ const focus: Goal = {
     "deep work", "homework", "work session", "get work done",
   ],
   constraints: [
-    { n: 1, field: "vocal_fraction", op: "lte", band: { kind: "abs", value: 0.1 }, researchWeight: 0.45, declared: true,
+    { n: 1, field: "vocal_fraction", op: "lte", band: { kind: "abs", value: 0.1 }, researchWeight: 0.45,
       proxy: "no-words → low vocal_fraction",
-      mechanism: "Lyrics/voice are the reliable distraction lever for verbal work (irrelevant-speech effect); liking it doesn't rescue it; no producer yet — inert on real data.", refs: ["MP-20", "MP-21", "MP-22"] },
+      mechanism: "Lyrics/voice are the reliable distraction lever for verbal work (irrelevant-speech effect); liking it doesn't rescue it. Measured by the voice stage (songs not yet listened to stay neutral).", refs: ["MP-20", "MP-21", "MP-22"] },
     { n: 2, field: "bpm", op: "between", band: { kind: "abs", value: [85, 125] }, researchWeight: 0.15,
       mechanism: "Mid-arousal optimum; avoid extremes that over/under-stimulate. Band = design assumption.", refs: ["MP-32", "MP-22"] },
     { n: 3, field: "pulse_clarity", op: "gte", band: { kind: "abs", value: 0.5 }, researchWeight: 0.15,
@@ -328,9 +328,9 @@ const sleep: Goal = {
       mechanism: "Tonal/repetitive patterns. Band = design assumption.", refs: ["MP-1"] },
     { n: 8, field: "beat_interval_cv", op: "lte", band: { kind: "abs", value: 0.05 }, researchWeight: 0.15,
       mechanism: "“Regular pulsation” (gated).", refs: ["MP-1"] },
-    { n: 9, field: "vocal_fraction", op: "lte", band: { kind: "abs", value: 0.4 }, researchWeight: 0.15, declared: true,
+    { n: 9, field: "vocal_fraction", op: "lte", band: { kind: "abs", value: 0.4 }, researchWeight: 0.15,
       proxy: "sleep → less speech-like audio",
-      mechanism: "For sleep onset, speech-like audio is the distraction mechanism (extrapolated from the irrelevant-speech effect; design assumption); no producer yet — inert on real data.", refs: ["MP-20"] },
+      mechanism: "For sleep onset, speech-like audio is the distraction mechanism (extrapolated from the irrelevant-speech effect; design assumption). Measured by the voice stage.", refs: ["MP-20"] },
     { n: 10, field: "arousal", op: "lte", band: { kind: "abs", value: 0.4 }, researchWeight: 0.3, declared: true,
       proxy: "sleep → arousal (low)",
       mechanism: "Wind-down to sleep; no producer yet — inert on real data.", refs: ["MP-26"] },
@@ -582,7 +582,7 @@ export const SHARED_ASSUMPTIONS = {
   calibration:
     "Tempo/energy bands are research starting points, not universal — they stay soft and learn from your session feedback and spot-check corrections.",
   declared:
-    "Some preferences use fields with no producer yet (e.g. vocal_fraction, arousal, danceability): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
+    "Some preferences use fields with no producer yet (e.g. arousal, danceability, mood): no producer yet — inert on real data until those analyzer stages land. Recorded, not faked.",
 };
 
 export const SHARED_CULTURE_NOTES: readonly string[] = [

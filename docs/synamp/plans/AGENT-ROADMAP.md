@@ -628,3 +628,28 @@ efficiency core (~29 s a track).
 - **Still open:** onset_rate barely separates ambient from pop (3.5–5.9/s at
   the 10th–90th percentile); the beat stage's own gate (insufficient pulse
   evidence on 91%); voice/instrument producer (next).
+
+### 2026-10-08 — voice stage (P4 first producer): singing/speech and instruments
+
+`services/analyzer/src/synamp_analyzer/listen.py`, stage `voice` (revision 1),
+opt-in extra `listen` (torch, torchlibrosa); the launchd agent runs
+`uv run --extra listen`. Model: PANNs CNN14 (code MIT, network reimplemented in
+listen.py and checked identical to the reference `panns_inference` outputs on
+the owner's Mac; weights Zenodo 3987831, SHA-256 0dc499e4…, downloaded once to
+~/panns_data). **Weights licence / AudioSet terms not yet confirmed — private,
+owner-only until they are.**
+
+Fields: `vocal_fraction` (share of ≤30 ten-second windows with any singing or
+speech class > 0.10), `instrumental` = 1 − vocal_fraction, `instruments.<name>`
+(share of windows with that instrument > 0.10), `voice_peak`, `voice_method`.
+Exported flat as `instruments.piano` etc. (export.EXPORTED_GROUPS).
+
+Check on the owner's library ("no words" = vocal_fraction ≤ 0.10): instrumental
+Eno/Budd/Balmorhea 19/19 pass; sung pop/rock/folk (Cher, Bon Jovi, Ani DiFranco,
+Annie Lennox, Madonna, Dave Matthews) 0/29 pass; Eno's own songs 7/8 caught
+(missed: "Third Uncle", voice buried in the mix). Wordless choirs count as voice
+(Music for Airports 2/1). Piano is clear on piano pieces (Music for 3 Pianos
+0.95). About 5 s a song on CPU (2 threads per process).
+
+Next: owner labels (a "has words?" spot-check like the tempo one) to calibrate
+the 0.10 threshold; confirm the weights licence before any distribution.

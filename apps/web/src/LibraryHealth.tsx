@@ -42,6 +42,7 @@ const STAGE_NAMES: Record<string, string> = {
   identity: "Recognising songs (identity)",
   dsp_core: "Sound measurements",
   beat: "Beat & timing",
+  voice: "Singing & instruments",
 };
 const n = (value: number) => value.toLocaleString();
 const pct = (part: number, whole: number) => (whole ? Math.min(100, (100 * part) / whole) : 0);
