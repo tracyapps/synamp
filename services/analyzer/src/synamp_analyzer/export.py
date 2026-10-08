@@ -71,12 +71,20 @@ EXPORTED_SIGNALS: dict[str, tuple[str, ...]] = {
         "beat_grid_strength", "beat_interval_cv", "tempo_drift",
         "microtiming_tightness", "microtiming_signed", "swing_ratio",
     ),
+    "voice": ("vocal_fraction", "instrumental"),
 }
 
 STATUS_FIELDS: dict[str, tuple[str, ...]] = {
     # Status strings the brain uses to gate eligibility (not signals themselves).
     "dsp_core": ("tempo_status",),
     "beat": ("beat_status", "timing_status", "beat_method"),
+    "voice": ("voice_method",),
+}
+
+# Stage outputs that are a mapping of name -> number, exported flat as "<group>.<name>"
+# (instruments.piano …). Each name must be registered in the brain as well.
+EXPORTED_GROUPS: dict[str, tuple[str, ...]] = {
+    "voice": ("instruments",),
 }
 
 # Top-level folders whose children are not one artist.
@@ -343,6 +351,10 @@ def build_export(db: Database, library_root: Path, read_file_tags: bool = True, 
                 value = payload.get(name)
                 if _finite(value):
                     signals[name] = float(value)
+            for group in EXPORTED_GROUPS.get(stage, ()):
+                for key, value in (payload.get(group) or {}).items():
+                    if _finite(value):
+                        signals[f"{group}.{key}"] = float(value)
             for name in STATUS_FIELDS.get(stage, ()):
                 value = payload.get(name)
                 if isinstance(value, str) and value:

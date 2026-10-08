@@ -22,12 +22,12 @@ from pathlib import Path
 # Stages run in this order. A track resumes at the first stage missing from
 # `stages_done`, so adding a stage is the only change needed to back-fill it.
 # `identity` runs first so a retagged or moved file can reuse earlier analysis.
-STAGES: tuple[str, ...] = ("identity", "dsp_core", "beat")
+STAGES: tuple[str, ...] = ("identity", "dsp_core", "beat", "voice")
 
 # The method each stage runs at. Raise a stage's number when its measurements
 # change meaning (a better algorithm, a fixed bug): tracks done at an older
 # revision get just that stage redone (pipeline.requeue_outdated). Missing = 1.
-STAGE_REVISIONS: dict[str, int] = {"identity": 1, "dsp_core": 2, "beat": 1}
+STAGE_REVISIONS: dict[str, int] = {"identity": 1, "dsp_core": 2, "beat": 1, "voice": 1}
 
 
 @dataclass(frozen=True)
@@ -166,12 +166,16 @@ class AnalysisResult:
 
     # --- vocal / instrumental --------------------------------------------
     instrumental: float | None = None
-    """0..1 confidence the track has no vocals — the 'no words' filter."""
+    """1 − vocal_fraction — the 'no words' filter."""
     vocal_fraction: float | None = None
-    """Fraction of frames containing singing. Filled by a future `voice` stage."""
+    """Share of 10-second windows with singing or speech (the `voice` stage, listen.py)."""
+    voice_peak: float | None = None
+    """The strongest singing/speech probability in any window (for calibration)."""
+    voice_method: str | None = None
+    voice_windows: int | None = None
 
     instruments: dict[str, float] = field(default_factory=dict)
-    """Per-instrument confidences, e.g. {"piano": 0.82}. The 'no piano' filter."""
+    """Share of windows where each instrument is heard, e.g. {"piano": 0.82}. The 'no piano' filter."""
 
     # --- high-level semantic ---------------------------------------------
     # Filled by: a future `semantic` stage (learned heads).

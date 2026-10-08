@@ -71,7 +71,7 @@ goal: The part nobody else has: "make me a playlist that sounds like this."
 - [~] Listens to every song in your library: tempo, energy, loudness, rhythm
 - [x] Learns from what you skip, love and remove
 - [x] Double-check the measurements yourself: tap along to the beat
-- [ ] Knows which songs have words, and which have piano (or guitar, or horns)
+- [~] Knows which songs have words, and which have piano (or guitar, or horns)
 - [ ] "Sounds like these two songs"
 - [ ] Understands moods and lyrics
 
@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-08 — SynAmp now listens for singing and instruments, so “no words” and “no piano” work as your library gets listened to
 - 2026-10-08 — Ambient and other beatless music no longer gets a made-up tempo, and analysis runs several songs at once on your Mac, so it finishes days sooner
 - 2026-10-08 — Library: save the filters you use as named views, share a link to them, and turn every song that matches into a playlist in one go
 - 2026-10-07 — Library care: tick proposals (shift-click for a whole run) and approve or skip them together, and long lists of problems from a batch fold into one line

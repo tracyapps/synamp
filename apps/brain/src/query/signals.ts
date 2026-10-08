@@ -97,13 +97,17 @@ const SPECS: SignalSpec[] = [
   { field: "spectral_flatness", kind: "number", status: "produced", stage: "dsp_core", range: [0, 1], nearMiss: 0.02, audio: true, nullMeaning: "not measured" },
   { field: "spectral_tilt", kind: "number", status: "produced", stage: "dsp_core", unit: "dB/log-Hz", range: [-60, 20], nearMiss: 1, audio: true, nullMeaning: "not measured" },
 
-  // --- declared, no producer yet -------------------------------------------
-  { field: "vocal_fraction", kind: "number", status: "declared", stage: "voice", range: [0, 1], nearMiss: 0.08, audio: true, nullMeaning: "voice stage not run" },
-  { field: "instrumental", kind: "number", status: "declared", stage: "voice", range: [0, 1], nearMiss: 0.1, audio: true, nullMeaning: "voice stage not run" },
+  // --- voice stage (singing/speech and instruments) ----------------------
+  { field: "vocal_fraction", kind: "number", status: "produced", stage: "voice", range: [0, 1], nearMiss: 0.08, audio: true, nullMeaning: "not listened to yet",
+    note: "Share of 10-second windows where an AudioSet tagger (PANNs CNN14) hears singing or speech above 0.10. Wordless choirs count as voice; a voice buried deep in the mix can be missed." },
+  { field: "instrumental", kind: "number", status: "produced", stage: "voice", range: [0, 1], nearMiss: 0.1, audio: true, nullMeaning: "not listened to yet",
+    note: "1 − vocal_fraction." },
   ...INSTRUMENTS.map((name): SignalSpec => ({
-    field: `instruments.${name}`, kind: "number", status: "declared", stage: "instruments", range: [0, 1], nearMiss: 0.2, audio: true,
-    nullMeaning: "instrument detector not run — absence is NOT evidence of no " + name.replace(/_/g, " "),
+    field: `instruments.${name}`, kind: "number", status: "produced", stage: "voice", range: [0, 1], nearMiss: 0.2, audio: true,
+    nullMeaning: "not listened to yet — absence is NOT evidence of no " + name.replace(/_/g, " "),
+    note: "Share of 10-second windows where the tagger hears this instrument above 0.10.",
   })),
+  // --- declared, no producer yet -------------------------------------------
   { field: "arousal", kind: "number", status: "declared", stage: "semantic", range: [0, 1], nearMiss: 0.05, audio: true, nullMeaning: "semantic stage not run" },
   { field: "valence", kind: "number", status: "declared", stage: "semantic", range: [0, 1], nearMiss: 0.05, audio: true, nullMeaning: "semantic stage not run" },
   { field: "danceability", kind: "number", status: "declared", stage: "semantic", range: [0, 1], nearMiss: 0.05, audio: true, nullMeaning: "semantic stage not run" },

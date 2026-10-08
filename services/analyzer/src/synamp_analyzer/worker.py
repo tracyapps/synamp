@@ -315,7 +315,8 @@ def agent_plist(analyzer_dir: Path, env_file: Path, uv: str, log_file: Path) -> 
     18.6 s a track instead of ~3.5 s). A high nice value still lets everything
     you're doing on the Mac go first.
     """
-    command = f"source '{env_file}' && cd '{analyzer_dir}' && exec '{uv}' run synamp-analyze worker"
+    # --extra listen: the voice stage's model libraries (owner-only; see pyproject.toml).
+    command = f"source '{env_file}' && cd '{analyzer_dir}' && exec '{uv}' run --extra listen synamp-analyze worker"
     esc = lambda text: text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")  # noqa: E731
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

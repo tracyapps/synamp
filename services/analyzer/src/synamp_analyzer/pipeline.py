@@ -172,7 +172,7 @@ def run_scan(cfg: AnalyzerConfig, progress=print) -> dict[str, int]:
         # measurements describe audio that is no longer on disk.
         counts["requeued"] = queue.reset([Path(p) for p in stale])
         # Tracks finished before a new stage existed get just that stage.
-        counts["backfilled"] = queue.requeue_incomplete(STAGES)
+        counts["backfilled"] = queue.requeue_incomplete(active_stages())
         ProgressReporter(cfg.brain_url, cfg.brain_token, cfg.library_path).report(
             db, "idle", {"last_scan": {key: int(value) for key, value in counts.items()}, "scanned_at": time.time()}, force=True)
         return counts
@@ -180,8 +180,16 @@ def run_scan(cfg: AnalyzerConfig, progress=print) -> dict[str, int]:
         db.close()
 
 
+def active_stages() -> tuple[str, ...]:
+    """The stages that can run on this machine now. `voice` needs its listening
+    model (downloaded once); without it the other stages still run and voice
+    waits for a later run."""
+    from . import listen
+    return STAGES if listen.available() else tuple(stage for stage in STAGES if stage != "voice")
+
+
 def run_stages(
-    result: AnalysisResult, persist, progress=print, after_stage=None
+    result: AnalysisResult, persist, progress=print, after_stage=None, stages: tuple[str, ...] = STAGES
 ) -> AnalysisResult:
     """Run every outstanding stage for one track, persisting after each one.
 
@@ -190,7 +198,7 @@ def run_stages(
     stage as finished once its results are durable. An interruption between the
     two costs one recomputed stage, which is the cheap direction to fail in.
     """
-    for stage in STAGES:
+    for stage in stages:
         if stage in result.stages_done:
             continue
         started = time.time()
@@ -207,6 +215,11 @@ def run_stages(
             fields = extract_beat(result.track_path)
             for key, value in fields.items():
                 setattr(result, key, value)
+        elif stage == "voice":
+            from .listen import extract_voice
+
+            for key, value in extract_voice(result.track_path).items():
+                setattr(result, key, value)
         else:  # pragma: no cover - guards against a stage being added without a runner
             raise NotImplementedError(f"no runner for stage {stage!r}")
         result.stages_done.add(stage)
@@ -216,7 +229,7 @@ def run_stages(
             after_stage(stage)
         progress(
             f"    {stage} in {time.time() - started:.1f}s "
-            f"({len(result.stages_done)}/{len(STAGES)} stages)"
+            f"({len(result.stages_done & set(STAGES))}/{len(STAGES)} stages)"
         )
     return result
 
@@ -290,7 +303,7 @@ def is_long_recording(path: Path) -> bool:
         return False
 
 
-def analyze_job(db: Database, queue: JobQueue, job: Job, progress=print) -> str | None:
+def analyze_job(db: Database, queue: JobQueue, job: Job, progress=print, stages: tuple[str, ...] = STAGES) -> str | None:
     """Run one claimed job's outstanding stages and mark it done.
 
     Returns which kind of reuse happened ("kept_after_retag", "moved",
@@ -322,13 +335,15 @@ def analyze_job(db: Database, queue: JobQueue, job: Job, progress=print) -> str 
                 persist(done)
             progress(f"    same audio as before ({reused.replace('_', ' ')}): kept existing analysis")
 
-    run_stages(result, persist, progress=progress, after_stage=after_stage)
+    run_stages(result, persist, progress=progress, after_stage=after_stage, stages=stages)
     save_result(db, result, __version__)
+    # Done even if a stage couldn't run here yet (no listening model): the next run
+    # that can do it reopens the track for just that stage (requeue_incomplete).
     queue.complete(job)
     return reused_kind[0] if reused_kind else None
 
 
-def _analyze_in_process(db_path: str, max_attempts: int, track_path: str, stages_done: list[str]) -> dict:
+def _analyze_in_process(db_path: str, max_attempts: int, track_path: str, stages_done: list[str], stages: tuple[str, ...] = STAGES) -> dict:
     """One job in a separate process (parallel analysis). Opens its own database connection."""
     lines: list[str] = []
     db = Database(Path(db_path))
@@ -336,7 +351,7 @@ def _analyze_in_process(db_path: str, max_attempts: int, track_path: str, stages
         queue = JobQueue(db, max_attempts)
         job = Job(track_path=Path(track_path), stages_done=set(stages_done))
         try:
-            reused = analyze_job(db, queue, job, progress=lines.append)
+            reused = analyze_job(db, queue, job, progress=lines.append, stages=stages)
             return {"ok": True, "reused": reused, "lines": lines}
         except Exception as exc:  # one bad file must not stop the run
             error = f"{type(exc).__name__}: {exc}"
@@ -387,6 +402,12 @@ def run_analyze(
     current = {"name": ""}
     processes = analysis_processes(cfg.workers)
     summary["processes"] = processes
+    stages = active_stages()
+    if "voice" not in stages:
+        progress("  listening model not available: singing and instruments wait for a later run")
+    else:
+        # Songs finished before a stage existed (or while it couldn't run) get just that stage.
+        summary["backfilled"] = queue.requeue_incomplete(stages)
 
     def run_state() -> dict:
         remaining = db.conn.execute("SELECT COUNT(*) FROM jobs WHERE state IN ('pending', 'running')").fetchone()[0]
@@ -462,14 +483,14 @@ def run_analyze(
                 if pool is None:
                     current["name"] = job.track_path.name
                     try:
-                        reused = analyze_job(db, queue, job, progress)
+                        reused = analyze_job(db, queue, job, progress, stages=stages)
                         finished(job, {"ok": True, "reused": reused})
                     except Exception as exc:  # one bad file must not stop the run
                         queue.fail(job, f"{type(exc).__name__}: {exc}")
                         finished(job, {"ok": False, "error": f"{type(exc).__name__}: {exc}"})
                     reporter.report(db, "analyzing", run_state())
                     break
-                args = (_analyze_in_process, str(cfg.db_path), cfg.max_attempts, str(job.track_path), sorted(job.stages_done))
+                args = (_analyze_in_process, str(cfg.db_path), cfg.max_attempts, str(job.track_path), sorted(job.stages_done), stages)
                 try:
                     future = pool.submit(*args)
                 except Exception:  # the pool broke (a process was killed): start a fresh one

@@ -23,18 +23,27 @@ dependencies = [
     "tinytag>=2.0",
 ]
 
-# Deliberately NOT declared yet — model-backed stages land behind the same
-# stage machinery, and the licence triage has to happen first:
+# Model-backed stages are opt-in extras, so the default install stays inside D6:
+#   listen (voice stage: singing/speech + instruments, listen.py)
+#     torch ......... BSD-3-Clause      torchlibrosa .. MIT      librosa .. ISC
+#     weights ....... PANNs CNN14 (Zenodo 3987831), downloaded at first use to
+#                     ~/panns_data and checked by SHA-256. Weights licence and
+#                     AudioSet terms NOT yet confirmed: private, owner-only use
+#                     until they are; never bundled or redistributed.
+# Still to triage:
 #   audio embeddings .... a permissively-licensed encoder (non-commercial
 #                         weights like MERT/MuQ may only ever be a private,
 #                         non-distributed option)
-#   instrument/vocal .... AudioSet-class tagging
 #   lyrics .............. LRCLIB (data licence unverified) or local ASR
 # See the sound-booth and brain dossiers for the trade.
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+]
+listen = [
+    "torch>=2.4",
+    "torchlibrosa>=0.1.0",
 ]
 
 [project.scripts]
