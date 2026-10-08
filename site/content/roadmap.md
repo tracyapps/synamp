@@ -49,7 +49,7 @@ goal: Leave your library better than SynAmp found it — tidy, complete, and saf
 - [x] Add new music by dragging it in
 - [x] Find albums you don't have yet from the artists you love
 - [x] Spot second copies of the same song and keep the better one (the other is set aside, never deleted)
-- [ ] Fix song details inside the files (artist, album, track numbers)
+- [x] Fix song details inside the files (artist, album, track numbers)
 - [ ] Add music straight from Dropbox
 
 ## Playlists that scale
@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-08 — SynAmp can fix song details inside your MP3 and FLAC files (album, year, track numbers…) from MusicBrainz: you review every change, and Undo puts the old details back exactly
 - 2026-10-08 — The Library scrolls smoothly through your whole collection: no more “Show more”, and dragging the scrollbar to the middle of 100,000 songs shows them straight away
 - 2026-10-08 — Library care: settings show “Saved” right where you changed them, duplicate copies keep the cleaner file name, single CDs no longer get “1-01” names, and “Open in Finder” for albums and the duplicates folder
 - 2026-10-08 — “Sounds like these songs”: pick up to five songs and get a playlist that sounds like them, as your library gets listened to

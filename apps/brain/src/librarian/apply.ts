@@ -6,7 +6,8 @@
  *     overwrite something is refused before a single file is touched.
  *   - Never overwrite. A copy set aside in `incoming/_duplicates/` that meets
  *     an earlier set-aside of the same name gets " (2)" added instead.
- *   - Renames only; nothing is re-encoded or retagged. When a
+ *   - Renames only here; nothing is re-encoded. (Song details are written by
+ *     tags-apply.ts, with its own checks and backups.) When a
  *     rename can't cross disks (incoming/ on another mount), the file is copied,
  *     the copy's checksum compared with the original, and only then is the
  *     original removed.
@@ -23,7 +24,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { appendFileSync, closeSync, constants, copyFileSync, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readSync, renameSync, rmdirSync, statSync, unlinkSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 import { reverseMove } from "../library/organise.ts";
-import type { Area, FolderMove, JobDecision, Move } from "../library/organise.ts";
+import type { Area, FolderMove, JobDecision, Move, Written } from "../library/organise.ts";
 import { isSafeRelative, JUNK_FILE } from "../library/naming.ts";
 import { SET_ASIDE_FOLDER } from "../library/duplicates.ts";
 
@@ -54,6 +55,8 @@ export type DecisionResult = {
   id: string;
   status: "applied" | "failed";
   moved: Move[];
+  /** Song details written (or, undoing, put back): see tags-apply.ts. */
+  written?: Written[];
   errors: string[];
   notes: string[];
 };

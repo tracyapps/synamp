@@ -15,11 +15,22 @@ import { DUPLICATES_FOLDER, type Finder, folderOf, type Folder, macName } from "
 
 type Status = "proposed" | "approved" | "skipped";
 type Decision = {
-  id: string; kind: "artist" | "album" | "import"; title: string; changes: string[]; conflicts: string[];
+  id: string; kind: "artist" | "album" | "import" | "tags"; title: string; changes: string[]; conflicts: string[];
   preview: Array<{ from: string; to: string }>; status: Status; changed: boolean;
   move_count: number; moves: Array<{ from: string; to: string; to_area?: "incoming" }>;
   /** Copies of one recording that met here: which stays, which is set aside. */
   duplicates?: DuplicatePair[];
+  /** Song details written into files (kind "tags"): the first 60 files, and how many in all. */
+  edits?: DetailEdit[]; edit_count?: number;
+  /** Worth knowing, not blocking (files left out, and why). */
+  notes?: string[];
+};
+type DetailValues = Partial<Record<DetailField, string | number>>;
+type DetailField = "title" | "artist" | "album_artist" | "album" | "track_no" | "track_total" | "disc_no" | "disc_total" | "year";
+type DetailEdit = { path: string; now: DetailValues; set: DetailValues };
+const DETAIL_LABEL: Record<DetailField, string> = {
+  title: "Title", artist: "Artist", album_artist: "Album artist", album: "Album", track_no: "Track number",
+  track_total: "Tracks on the disc", disc_no: "Disc number", disc_total: "Number of discs", year: "Year",
 };
 type DuplicateCopy = { id: string; path: string; quality: string };
 type DuplicatePair = { pair: string; how: "identical" | "recording"; keep: DuplicateCopy; aside: DuplicateCopy; why: string; chosen_by: "SynAmp" | "you" };
@@ -31,9 +42,12 @@ type Batch = {
   id: string; created_at: number; finished_at?: number; status: "queued" | "running" | "done" | "partial" | "failed";
   decisions: Outcome[]; undo?: { status: "queued" | "running" | "done" | "partial"; requested_at: number };
 };
-type Settings = { merge_artists: boolean; add_year: boolean; number_tracks: boolean; fold_disc_folders: boolean; set_aside_duplicates: boolean; compilations_folder: string };
+type Settings = { merge_artists: boolean; add_year: boolean; number_tracks: boolean; fold_disc_folders: boolean; set_aside_duplicates: boolean; compilations_folder: string;
+  fill_missing_details: boolean; fix_track_numbers: boolean; match_mb_spelling: boolean };
 type View = {
-  summary: { total: number; proposed: number; approved: number; skipped: number; conflicts: number; changed: number; artist: number; album: number; import: number; approved_moves: number; set_aside: number };
+  summary: { total: number; proposed: number; approved: number; skipped: number; conflicts: number; changed: number; artist: number; album: number; import: number; tags?: number; approved_moves: number; approved_edits?: number; set_aside: number };
+  /** Files whose song details are still being read (proposals fill in as they are). */
+  details_reading?: number;
   settings: Settings; matching: number; offset: number; decisions: Decision[]; batches: Batch[]; busy: boolean;
   librarian: { last_seen: number; online: boolean; root?: string; incoming?: string; journal?: string; version?: string } | null;
   pending_export: boolean;
@@ -95,24 +109,54 @@ type Reveal = (folder: Folder, at: string) => void;
 function Moves({ decision, finder, saved, reveal }: { decision: Decision; finder?: Finder | null; saved: SaveState; reveal: Reveal }) {
   const [open, setOpen] = useState(false);
   const id = useId();
+  const details = decision.kind === "tags";
+  const count = details ? decision.edit_count ?? decision.edits?.length ?? 0 : decision.move_count;
+  const shown = details ? decision.edits?.length ?? 0 : decision.moves.length;
   return (
     <div className="organise__moves">
       <div className="organise__moves-actions">
         <button type="button" className="btn btn--ghost btn--sm" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
-          {open ? "Hide" : "Show"} {n(decision.move_count)} file {decision.move_count === 1 ? "move" : "moves"}
+          {open ? "Hide" : "Show"} {details ? <>what changes in {n(count)} {count === 1 ? "file" : "files"}</> : <>{n(count)} file {count === 1 ? "move" : "moves"}</>}
         </button>
         <FinderButton finder={finder} folder={folderOf(decision)} at={`finder-${decision.id}`} saved={saved} reveal={reveal} />
       </div>
       {open && <div id={id}>
-        <table>
+        {details ? <DetailsTable decision={decision} /> : <table>
           <caption className="visually-hidden">Files moved by: {decision.title}</caption>
           <thead><tr><th scope="col">Now</th><th scope="col">Becomes</th></tr></thead>
           <tbody>{decision.moves.map((move) => <tr key={move.from}><td><code>{move.from}</code></td>
             <td>{move.to_area && <span className="organise__aside-tag">Set aside: </span>}<code>{move.to_area ? `${move.to_area}/` : ""}{move.to}</code></td></tr>)}</tbody>
-        </table>
-        {decision.move_count > decision.moves.length && <p className="muted">…and {n(decision.move_count - decision.moves.length)} more.</p>}
+        </table>}
+        {count > shown && <p className="muted">…and {n(count - shown)} more.</p>}
       </div>}
     </div>
+  );
+}
+
+/** Song details: one row per detail that changes, grouped by file. */
+function DetailsTable({ decision }: { decision: Decision }) {
+  const fields = Object.keys(DETAIL_LABEL) as DetailField[];
+  return (
+    <table className="organise__details">
+      <caption className="visually-hidden">Song details written by: {decision.title}</caption>
+      <thead><tr><th scope="col">File</th><th scope="col">Detail</th><th scope="col">Now</th><th scope="col">Becomes</th></tr></thead>
+      {(decision.edits ?? []).map((edit) => {
+        const changed = fields.filter((field) => edit.set[field] !== undefined);
+        const file = edit.path.slice(edit.path.lastIndexOf("/") + 1);
+        return (
+          <tbody key={edit.path}>
+            {changed.map((field, index) => (
+              <tr key={field}>
+                {index === 0 && <th scope="rowgroup" rowSpan={changed.length}><code>{file}</code></th>}
+                <td>{DETAIL_LABEL[field]}</td>
+                <td>{edit.now[field] === undefined ? <span className="muted">empty</span> : String(edit.now[field])}</td>
+                <td className="organise__becomes">{String(edit.set[field])}</td>
+              </tr>
+            ))}
+          </tbody>
+        );
+      })}
+    </table>
   );
 }
 
@@ -177,7 +221,7 @@ function DecisionCard({ decision, review, keep, selected, onSelect, saved, finde
           {/* Shift-click selects everything between this and the last one you clicked. */}
           <input type="checkbox" className="organise__select" checked={selected} aria-labelledby={`d-${decision.id}`}
             onChange={() => undefined} onClick={(event) => onSelect(decision.id, event.shiftKey)} />
-          <h4 id={`d-${decision.id}`}><span className="organise__kind">{decision.kind === "artist" ? "Merge" : decision.kind === "import" ? "New" : "Album"}</span> {decision.title}</h4>
+          <h4 id={`d-${decision.id}`}><span className="organise__kind">{decision.kind === "artist" ? "Merge" : decision.kind === "import" ? "New" : decision.kind === "tags" ? "Details" : "Album"}</span> {decision.title}</h4>
         </div>
         <div className="organise__choice" role="group" aria-label={`Decision for ${decision.title}`}>
           {choice("approved", "Approve", blocked)}{choice("skipped", "Skip")}{choice("proposed", "Decide later")}
@@ -185,6 +229,7 @@ function DecisionCard({ decision, review, keep, selected, onSelect, saved, finde
       </div>
       {decision.changed && <p className="organise__note">This proposal changed since you last reviewed it, so it needs a fresh look.</p>}
       <ul className="organise__changes">{decision.changes.map((change) => <li key={change}>{change}</li>)}</ul>
+      {decision.notes?.length ? <ul className="organise__notes muted">{decision.notes.map((note) => <li key={note}>{note}</li>)}</ul> : null}
       {decision.preview.filter((p) => p.from !== p.to).map((p) => (
         <p key={p.from} className="organise__preview"><code>{p.from}</code> <span aria-hidden="true">→</span><span className="visually-hidden">becomes</span> <code>{p.to}</code></p>
       ))}
@@ -249,7 +294,7 @@ function SettingsForm({ settings, save, saved }: { settings: Settings; save: (ne
   );
   return (
     <details className="organise__settings">
-      <summary>Naming settings</summary>
+      <summary>Naming and song-detail settings</summary>
       <form onSubmit={(e) => { e.preventDefault(); save(draft); }}>
         <fieldset>
           <legend className="visually-hidden">What to propose</legend>
@@ -258,6 +303,13 @@ function SettingsForm({ settings, save, saved }: { settings: Settings; save: (ne
           {box("number_tracks", "Number track files", "01 - Title, or 1-01 - Title on multi-disc albums")}
           {box("fold_disc_folders", "Bring disc folders into the album", "CD1/ and CD2/ become one folder")}
           {box("set_aside_duplicates", "Set aside second copies of the same recording", "When a merge meets an identical recording, keep the better copy and move the other to incoming/_duplicates (never deleted)")}
+        </fieldset>
+        <fieldset>
+          <legend>Song details inside the files</legend>
+          <p className="muted organise__fieldset-hint">From the album’s MusicBrainz match, only when SynAmp is sure it’s the right album. Only the details change: cover art, lyrics and everything else in the file stay as they are, and the old details are kept so Undo puts them back. MP3 and FLAC for now.</p>
+          {box("fill_missing_details", "Fill in missing details", "Album, album artist, year, track and disc numbers the file doesn’t have")}
+          {box("fix_track_numbers", "Correct track and disc numbers", "When the file’s number doesn’t match its place on the album")}
+          {box("match_mb_spelling", "Use MusicBrainz’s spelling", "Album, album artist and song titles spelled exactly as on MusicBrainz (off unless you want it)")}
         </fieldset>
         <label>Compilations folder
           <input value={draft.compilations_folder} onChange={(e) => setDraft({ ...draft, compilations_folder: e.target.value })} placeholder="leave empty to keep compilations where they are" />
@@ -274,7 +326,7 @@ function SettingsForm({ settings, save, saved }: { settings: Settings; save: (ne
 export default function OrganiseLibrary({ request, upload, startOpen = false }: { request: Request; upload: Upload; startOpen?: boolean }) {
   const [open, setOpen] = useState(startOpen);
   const [view, setView] = useState<View | null>(null);
-  const [kind, setKind] = useState<"all" | "artist" | "album" | "import">("all");
+  const [kind, setKind] = useState<"all" | "artist" | "album" | "import" | "tags">("all");
   const [status, setStatus] = useState<"all" | Status | "conflict" | "duplicates">("proposed");
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
@@ -376,6 +428,7 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
               </p>
             </div>
             {view.progress && <BatchProgress progress={view.progress} online={!!lib?.online} paused={!!view.paused} />}
+            {(view.details_reading ?? 0) > 0 && <p className="muted" role="status">Reading song details from {n(view.details_reading!)} more {view.details_reading === 1 ? "file" : "files"} (read-only); song-detail proposals appear as they’re read.</p>}
             {view.pending_export && <p className="muted">Some moved files are still listed at their old place by the last analyzer export. They already play from the new place; the next analyzer scan and export makes it permanent.</p>}
           </div>
 
@@ -387,7 +440,7 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
 
           <div className="organise__filters">
             <div className="organise__kinds" role="group" aria-label="Show">
-              {([["all", `All (${n(s!.total)})`], ["import", `New music (${n(s!.import)})`], ["artist", `Artist merges (${n(s!.artist)})`], ["album", `Albums (${n(s!.album)})`]] as const).map(([key, label]) => (
+              {([["all", `All (${n(s!.total)})`], ["import", `New music (${n(s!.import)})`], ["artist", `Artist merges (${n(s!.artist)})`], ["album", `Albums (${n(s!.album)})`], ["tags", `Song details (${n(s!.tags ?? 0)})`]] as const).map(([key, label]) => (
                 <button key={key} type="button" className={`chip ${kind === key ? "is-on" : ""}`} aria-pressed={kind === key} onClick={() => { setKind(key); setOffset(0); }}>{label}</button>
               ))}
             </div>
@@ -439,7 +492,7 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
 
           <div className="organise__apply">
             {view.busy ? <p>The librarian is working on a batch — progress is shown at the top of this panel.</p> : confirming === "apply" ? <>
-              <p><strong>Apply {n(s!.approved)} approved {s!.approved === 1 ? "change" : "changes"}?</strong> This renames or moves {n(s!.approved_moves)} music files, plus the artwork beside them. It can be undone from the list below.</p>
+              <p><strong>Apply {n(s!.approved)} approved {s!.approved === 1 ? "change" : "changes"}?</strong>{s!.approved_moves ? <> This renames or moves {n(s!.approved_moves)} music files, plus the artwork beside them.</> : null}{s!.approved_edits ? <> It writes song details into {n(s!.approved_edits)} files (the old details are kept).</> : null} It can be undone from the list below.</p>
               <button type="button" className="btn btn--primary" onClick={() => { setConfirming(null); send("/organise/apply", {}, "Sent to the librarian."); }}>Yes, apply</button>
               <button type="button" className="btn btn--ghost btn--sm" onClick={() => setConfirming(null)}>Cancel</button>
             </> : <button type="button" className="btn btn--primary" disabled={!s!.approved} onClick={() => setConfirming("apply")}>
