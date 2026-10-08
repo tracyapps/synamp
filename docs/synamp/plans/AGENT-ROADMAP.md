@@ -701,3 +701,20 @@ and Cher — plausibly alike in sound).
   reveal thread (POST /api/v1/analyzer/reveals every 3 s, also during analysis) runs `open` on the folder
   inside the already-mounted share (smb:// links were tried: Finder mounts each subfolder as its own volume).
   Only paths inside the library or incoming/; nearest existing parent if the folder isn't there.
+
+### 2026-10-08 — Smooth scrolling through 100,000 songs (Library)
+
+- Web: `library-window.ts` (pure; tools/library-window.test.mts) + `useLibraryWindow.ts`. Only rows near the
+  screen are drawn; gaps (spacer rows/items) keep the scrollbar the full length. Heights are measured with a
+  ResizeObserver (wrapped titles, opened albums), unmeasured rows use the running average, "Loading…"
+  stand-ins are drawn at the expected height and never measured. When rows above the screen change height,
+  the hook keeps the first visible row in place (CSS scroll anchoring is off: Safari lacks it). The row with
+  keyboard focus is always drawn. Scroll events are caught on `document` in the capture phase (the app scrolls
+  `.app__main`, not the window). Pages of 100 are fetched only for what's near the screen; a changed
+  `library_version` reloads the view. Table: `aria-rowcount`/`aria-rowindex`; list/grid: `aria-setsize`/`aria-posinset`.
+  Grid: a "line" is a row of cards (`cardsPerRow`).
+- Brain `explore.ts`: the filtered+sorted result is remembered per library and filter (last 8), sort keys and
+  folded text are worked out once (Intl.Collator), and the default view is warmed after start and each export.
+  100k songs: first build ~2.7 s (warmed in the background), later pages ~1 ms, a new sort ~75 ms, a search ~0.3 s.
+- Known limits: a screen reader's browse mode reads only the drawn rows (row numbers say "of 100,000");
+  the table header doesn't stick (the table's horizontal scroller prevents it).

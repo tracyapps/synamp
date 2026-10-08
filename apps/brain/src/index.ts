@@ -1344,6 +1344,20 @@ server.listen(config.port, config.host, () => {
   console.log(`synamp-brain listening on http://${config.host}:${config.port}`);
 });
 
+// Get the Library screen's lists ready in a quiet moment (after start, and after
+// each analyzer export), so opening the Library doesn't wait for it.
+let warmed = "";
+const warmLibrary = () => {
+  try {
+    const lib = currentLibrary();
+    if (lib.version === warmed || !lib.tracks.length) return;
+    warmed = lib.version;
+    explore(lib, {});
+  } catch { /* the library isn't readable yet: try again later */ }
+};
+setTimeout(warmLibrary, 2_000).unref();
+setInterval(warmLibrary, 60_000).unref();
+
 // Stop (Container Manager, docker stop) means stop now. Every store is written
 // atomically as it changes, so there is nothing to flush. Without this, Node
 // as the container's first process ignores the request and Stop hangs.

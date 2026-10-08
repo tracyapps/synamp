@@ -1,11 +1,15 @@
 import { useId, useRef, useState } from "react";
-import type { PointerEvent, ReactNode } from "react";
+import type { FocusEvent, PointerEvent, ReactNode, Ref } from "react";
+import type { Piece } from "./library-window";
 import Icon from "./ui/Icon";
 import { columnNames, columnWidth, defaultWidths, moveColumn } from "./library-table";
 import type { Column, SortColumn } from "./library-table";
 export type LibraryRow = { key: string; type: "song" | "album" | "artist"; title: string; artist?: string; album_artist?: string; album?: string; year?: number; count: number; duration_s?: number; genres: string[] };
 
-type Props = { rows: LibraryRow[]; columns: Column[]; order: Column[]; widths: Record<Column, number>; sort: string; direction: string;
+/** Only the rows near the screen are drawn (see useLibraryWindow); `pieces` says which, with gaps for the rest. */
+type Props = { pieces: Piece[]; rowAt: (index: number) => LibraryRow | undefined; total: number;
+  body: { containerRef: Ref<HTMLElement | null>; onFocus: (event: FocusEvent) => void; onBlur: (event: FocusEvent) => void; expected: (index: number) => number };
+  columns: Column[]; order: Column[]; widths: Record<Column, number>; sort: string; direction: string;
   setColumns: (columns: Column[]) => void; setOrder: (order: Column[]) => void; setWidths: (widths: Record<Column, number>) => void;
   onSort: (column: SortColumn) => void; cell: (row: LibraryRow, column: Exclude<Column, "actions">) => ReactNode; actions: (row: LibraryRow) => ReactNode };
 
@@ -16,7 +20,7 @@ function PixelWidth({ column, width, change }: { column: Column; width: number; 
     onBlur={() => { if (draft?.trim()) change(Number(draft)); setDraft(null); }} onKeyDown={event => { if (event.key === "Enter") event.currentTarget.blur(); }} /><span aria-hidden="true">px</span></label>;
 }
 
-export default function LibraryTable({ rows, columns, order, widths, sort, direction, setColumns, setOrder, setWidths, onSort, cell, actions }: Props) {
+export default function LibraryTable({ pieces, rowAt, total, body, columns, order, widths, sort, direction, setColumns, setOrder, setWidths, onSort, cell, actions }: Props) {
   const settings = useRef<HTMLDialogElement>(null);
   const settingsId = useId();
   const resize = useRef<{ pointer: number; column: Column; start: number; width: number } | null>(null);
@@ -57,9 +61,9 @@ export default function LibraryTable({ rows, columns, order, widths, sort, direc
       </li>)}</ol>
       <div className="browse__column-footer"><button className="btn btn--quiet btn--sm" onClick={() => { setOrder(Object.keys(columnNames) as Column[]); setWidths({ ...defaultWidths }); }}>Reset order and widths</button><button className="btn btn--primary btn--sm" onClick={() => settings.current?.close()}>Done</button></div>
     </dialog>
-    <div className="browse__table-wrap" tabIndex={0} role="region" aria-label="Library table, scroll horizontally for more columns"><table className="table browse__table" style={{ width: visible.reduce((sum, column) => sum + widths[column], 0) }}><caption className="visually-hidden">Library results. Sort headings with Enter. Column move handles support left and right arrow keys; resize handles also support arrow keys.</caption>
+    <div className="browse__table-wrap" tabIndex={0} role="region" aria-label="Library table, scroll horizontally for more columns"><table className="table browse__table" aria-rowcount={total + 1} style={{ width: visible.reduce((sum, column) => sum + widths[column], 0) }}><caption className="visually-hidden">Library results. Sort headings with Enter. Column move handles support left and right arrow keys; resize handles also support arrow keys.</caption>
       <colgroup>{visible.map(column => <col key={column} style={{ width: widths[column] }} />)}</colgroup>
-      <thead><tr>{visible.map(column => <th key={column} scope="col" data-column={column} className={dropTarget === column ? "is-drop-target" : ""} aria-sort={column === "actions" ? undefined : sort === column ? direction === "asc" ? "ascending" : "descending" : "none"}
+      <thead><tr aria-rowindex={1}>{visible.map(column => <th key={column} scope="col" data-column={column} className={dropTarget === column ? "is-drop-target" : ""} aria-sort={column === "actions" ? undefined : sort === column ? direction === "asc" ? "ascending" : "descending" : "none"}
         onDragOver={event => { if (dragged.current) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setDropTarget(column); } }}
         onDragLeave={() => setDropTarget(null)} onDrop={event => { event.preventDefault(); const source = dragged.current; if (source) setOrder(moveColumn(order, source, column)); dragged.current = null; setDropTarget(null); }}>
         <div className="browse__column-heading"><button className="browse__column-grip" draggable aria-label={`Move ${columnNames[column]} column`} title="Drag to reorder, or use left/right arrow keys"
@@ -71,7 +75,12 @@ export default function LibraryTable({ rows, columns, order, widths, sort, direc
           onPointerDown={event => startResize(event, column)} onPointerMove={moveResize} onPointerUp={endResize} onPointerCancel={endResize} onLostPointerCapture={() => { resize.current = null; }}
           onKeyDown={event => { if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) { event.preventDefault(); changeWidth(column, event.key === "Home" ? 80 : event.key === "End" ? 800 : widths[column] + (event.key === "ArrowLeft" ? -10 : 10)); } }} />
       </th>)}</tr></thead>
-      <tbody>{rows.map(row => <tr key={`${row.type}:${row.key}`}>{visible.map(column => column === "title" ? <th key={column} scope="row" data-column={column}>{row.title}</th> : <td key={column} data-column={column}>{column === "actions" ? actions(row) : cell(row, column)}</td>)}</tr>)}</tbody>
+      <tbody ref={body.containerRef as Ref<HTMLTableSectionElement>} onFocus={body.onFocus} onBlur={body.onBlur}>{pieces.map(piece => {
+        if (piece.kind === "gap") return <tr key={`gap-${piece.from}`} className="browse__spacer" aria-hidden="true"><td colSpan={visible.length} style={{ height: piece.height }} /></tr>;
+        const row = rowAt(piece.index);
+        if (!row) return <tr key={`wait-${piece.index}`} data-index={piece.index} data-waiting="" aria-rowindex={piece.index + 2} className="browse__waiting" style={{ height: body.expected(piece.index) }}><th scope="row" colSpan={visible.length}><span className="muted">Loading…</span></th></tr>;
+        return <tr key={`${row.type}:${row.key}`} data-index={piece.index} aria-rowindex={piece.index + 2}>{visible.map(column => column === "title" ? <th key={column} scope="row" data-column={column}>{row.title}</th> : <td key={column} data-column={column}>{column === "actions" ? actions(row) : cell(row, column)}</td>)}</tr>;
+      })}</tbody>
     </table></div>
   </>;
 }

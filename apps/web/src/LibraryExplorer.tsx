@@ -1,4 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { cardsPerRow, PAGE_SIZE, pagesFor } from "./library-window";
+import type { Piece } from "./library-window";
+import type { Ref } from "react";
+import { useLibraryWindow } from "./useLibraryWindow";
 import type { Request } from "./api";
 import type { PlaylistNode } from "./Playlists";
 import { AddToPlaylist, AlbumRow, clock, useDebounced } from "./LibraryParts";
@@ -14,7 +18,10 @@ import type { LibraryViewState } from "./library-view-state";
 
 type Kind = "song" | "album" | "artist";
 type Row = { key: string; type: Kind; title: string; artist?: string; album_artist?: string; album?: string; year?: number; count: number; duration_s?: number; genres: string[] };
-type Page = { total: number; matched_total: number; rows: Row[]; groups: { label: string; count: number }[]; group_memberships_overlap: boolean };
+type Page = { library_version?: string; total: number; matched_total: number; rows: Row[]; groups: { label: string; count: number }[]; group_memberships_overlap: boolean };
+/** Starting guesses for a row's height (px) before any are drawn; real heights are measured. */
+const ESTIMATE = { table: 50, list: 65, grid: 150 } as const;
+const GRID_MIN = 230, GRID_GAP = 14;
 type Rule = LibraryViewState["rules"][number];
 const modes = { contains: "Contains words", exact: "Exact field", glob: "Wildcard (* / ?)", fuzzy: "Similar spelling" };
 function preferences() {
@@ -43,6 +50,11 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
   const [order, setOrder] = useState(initial.order);
   const [widths, setWidths] = useState(initial.widths);
   const [page, setPage] = useState<Page | null>(null);
+  /** Pages of results fetched so far, by page number: only the ones near the screen are ever asked for. */
+  const [pages, setPages] = useState<Map<number, Row[]>>(() => new Map());
+  const asked = useRef(new Set<number>());
+  const listBox = useRef<HTMLDivElement>(null);
+  const [perRow, setPerRow] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -55,16 +67,40 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
   const stale = settled !== params;
   useEffect(() => { try { localStorage.setItem(TABLE_KEY, JSON.stringify({ view, columns, order, widths, sort, direction })); } catch { /* private mode */ } }, [view, columns, order, widths, sort, direction]);
 
-  async function load(offset = 0) {
+  /** A new search, filter or sort: the first page, and the count. */
+  async function load() {
     const id = ++ticket.current;
     pending.current = true; setBusy(true);
     try {
-      const result = await request<Page>(`/library/explore?${settled}&offset=${offset}&limit=60`);
+      const result = await request<Page>(`/library/explore?${settled}&offset=0&limit=${PAGE_SIZE}`);
       if (id !== ticket.current) return;
-      setPage(current => offset && current ? { ...result, rows: [...current.rows, ...result.rows] } : result);
+      asked.current = new Set([0]);
+      setPages(new Map([[0, result.rows]]));
+      setPage(result);
+      // Scrolled down into the old results: go back to the top of the new ones.
+      const box = listBox.current;
+      if (box && box.getBoundingClientRect().top < 0) box.scrollIntoView({ block: "start" });
       setError("");
     } catch (cause) { if (id === ticket.current) setError((cause as Error).message); }
     finally { if (id === ticket.current) { pending.current = false; setBusy(false); } }
+  }
+  /** More rows as they come near the screen (quietly: the list stays usable). */
+  async function fetchPage(number: number) {
+    const id = ticket.current;
+    asked.current.add(number);
+    try {
+      const result = await request<Page>(`/library/explore?${settled}&offset=${number * PAGE_SIZE}&limit=${PAGE_SIZE}`);
+      if (id !== ticket.current) return;
+      if (page?.library_version && result.library_version !== page.library_version) {
+        // The library changed underneath (an analysis export): start this view again from the new list.
+        void load();
+        return;
+      }
+      setPages(current => new Map(current).set(number, result.rows));
+    } catch (cause) {
+      asked.current.delete(number);
+      if (id === ticket.current) setError((cause as Error).message);
+    }
   }
   useEffect(() => {
     // Invalidate immediately on input change, including during the debounce.
@@ -84,6 +120,35 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
       {row.type === "song" && actionable && <AddToPlaylist request={request} track={{ id: row.key, title: row.title, artist: row.artist }} playlists={playlists} onAdded={say} />}</div>;
   const cell = (row: Row, column: Exclude<Column, "actions">) => column === "duration" ? row.duration_s === 0 ? "0:00" : clock(row.duration_s) || "—" : column === "genre" ? row.genres.join(", ") || "—" : row[column] ?? "—";
   function reset() { apply(defaultLibraryView({ view, sort, direction })); }
+
+  // Grid: how many cards fit across, so a "line" of the window is one row of cards.
+  useEffect(() => {
+    const element = listBox.current;
+    if (!element || view !== "grid") { setPerRow(1); return; }
+    const measure = () => setPerRow(cardsPerRow(element.clientWidth, GRID_MIN, GRID_GAP));
+    measure();
+    const watch = new ResizeObserver(measure);
+    watch.observe(element);
+    return () => watch.disconnect();
+  }, [view]);
+  const total = page?.total ?? 0;
+  const win = useLibraryWindow({ total, perLine: view === "grid" ? perRow : 1, estimate: ESTIMATE[view], gap: view === "grid" ? GRID_GAP : 0, reset: `${settled}|${view}|${page?.library_version}` });
+  useEffect(() => {
+    if (!page || stale) return;
+    for (const number of pagesFor(win.first, win.last, total)) if (!asked.current.has(number)) void fetchPage(number);
+  }, [win.first, win.last, total, page, stale]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rowAt = (index: number): Row | undefined => pages.get(Math.floor(index / PAGE_SIZE))?.[index % PAGE_SIZE];
+  const listItem = (piece: Piece) => {
+    if (piece.kind === "gap") {
+      const height = view === "grid" ? Math.max(0, piece.height - GRID_GAP) : piece.height;
+      return <li key={`gap-${piece.from}`} className="browse__spacer" aria-hidden="true" style={{ height }} />;
+    }
+    const row = rowAt(piece.index);
+    const position = { "data-index": piece.index, "aria-posinset": piece.index + 1, "aria-setsize": total };
+    if (!row) return <li key={`wait-${piece.index}`} className="album browse__waiting" data-waiting="" style={{ height: win.expected(piece.index) }} {...position}><div className="album__row"><span className="album__art" aria-hidden="true" /><p className="muted album__meta">Loading…</p></div></li>;
+    return row.type === "album" ? <AlbumRow key={`album:${row.key}`} itemProps={position} album={{ key: row.key, title: row.title, artist: row.artist ?? "Unknown", year: row.year, tracks: row.count, duration_s: row.duration_s }} request={request} play={play} playlists={playlists} say={say} disabled={!actionable} />
+      : <li className="album" key={`${row.type}:${row.key}`} {...position}><div className="album__row"><span className="album__art" aria-hidden="true" /><div className="album__text"><p className="album__title">{row.title}</p><p className="album__meta">{row.type} · {row.artist}{row.year ? ` · ${row.year}` : ""}{row.type !== "song" ? ` · ${row.count} songs` : ""}{row.duration_s ? ` · ${clock(row.duration_s)}` : ""}</p>{row.type === "song" && <p className="album__meta">{row.album}</p>}</div>{actions(row)}</div></li>;
+  };
 
   return <section className="section-card browse" aria-labelledby="browse-title">
     <div className="section-card__head"><div><h2 id="browse-title" className="section-card__title">Library</h2>
@@ -124,13 +189,11 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
       {group !== "none" && <p className="muted browse__hint">Group counts cover every matching result{page?.group_memberships_overlap ? "; an item can belong to more than one group" : ""}. Album titles are browsing groups; separate folder releases keep their identity.</p>}
       <p className="browse__status" role="status">{message}</p>
       {error && <p className="alert" role="alert">{error} <button className="btn btn--quiet btn--sm" onClick={() => load()}>Retry</button></p>}
-      <div aria-busy={busy} className={busy || error ? "browse__updating" : ""}>
+      <div aria-busy={busy} className={busy || error ? "browse__updating" : ""} ref={listBox}>
         {page?.total === 0 && <p className="muted">{types.length ? "No results match these filters." : "Choose at least one type in Advanced filters."}</p>}
-        {view === "table" ? <LibraryTable rows={page?.rows ?? []} columns={columns} order={order} widths={widths} sort={sort} direction={direction} setColumns={setColumns} setOrder={setOrder} setWidths={setWidths} cell={cell} actions={actions} onSort={column => { setSort(column); setDirection(sort === column && direction === "asc" ? "desc" : "asc"); }} />
-          : <ul className={`albums browse__results ${view === "grid" ? "browse__grid" : ""}`} aria-label="Library results">{page?.rows.map(row => row.type === "album" ? <AlbumRow key={`album:${row.key}`} album={{ key: row.key, title: row.title, artist: row.artist ?? "Unknown", year: row.year, tracks: row.count, duration_s: row.duration_s }} request={request} play={play} playlists={playlists} say={say} disabled={!actionable} />
-            : <li className="album" key={`${row.type}:${row.key}`}><div className="album__row"><span className="album__art" aria-hidden="true" /><div className="album__text"><p className="album__title">{row.title}</p><p className="album__meta">{row.type} · {row.artist}{row.year ? ` · ${row.year}` : ""}{row.type !== "song" ? ` · ${row.count} songs` : ""}{row.duration_s ? ` · ${clock(row.duration_s)}` : ""}</p>{row.type === "song" && <p className="album__meta">{row.album}</p>}</div>{actions(row)}</div></li>)}</ul>}
+        {view === "table" ? <LibraryTable pieces={win.pieces} rowAt={rowAt} total={total} body={win} columns={columns} order={order} widths={widths} sort={sort} direction={direction} setColumns={setColumns} setOrder={setOrder} setWidths={setWidths} cell={cell} actions={actions} onSort={column => { setSort(column); setDirection(sort === column && direction === "asc" ? "desc" : "asc"); }} />
+          : <ul ref={win.containerRef as Ref<HTMLUListElement>} onFocus={win.onFocus} onBlur={win.onBlur} className={`albums browse__results ${view === "grid" ? "browse__grid" : ""}`} aria-label={`Library results, ${total.toLocaleString()}`}>{win.pieces.map(listItem)}</ul>}
       </div>
-      {page && page.rows.length < page.total && <div className="browse__more"><button className="btn btn--ghost" disabled={!actionable} onClick={() => { if (!pending.current) void load(page.rows.length); }}>Show more</button><span className="muted mono">{page.rows.length.toLocaleString()} of {page.total.toLocaleString()}</span></div>}
     </div>
   </section>;
 }

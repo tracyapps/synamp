@@ -103,3 +103,18 @@ test("wildcards cannot create regex backtracking and ? matches one Unicode chara
   assert.equal(explore(long, { types: "song", q: "*a".repeat(60) + "b", mode: "glob" }).total, 0);
   assert.equal(explore(long, { types: "song", q: "?", mode: "glob" }).total, 1);
 });
+
+test("long lists: pages of one view line up exactly, and a changed library or filter is never served from memory", () => {
+  const many: Library = { version: "many-1", tracks: Array.from({ length: 450 }, (_, i) => ({
+    id: `m${i}`, title: `Song ${String(i).padStart(3, "0")}`, artist: `Artist ${i % 7}`, album: `Album ${i % 30}`, path: `A${i % 7}/B${i % 30}/${i}.mp3`, year: 1990 + (i % 20),
+  })) };
+  const options = { types: "song", sort: "title" };
+  const all = explore(many, { ...options, limit: "200" }).rows.concat(explore(many, { ...options, offset: "200", limit: "200" }).rows, explore(many, { ...options, offset: "400", limit: "200" }).rows);
+  assert.equal(all.length, 450);
+  assert.equal(new Set(all.map((row) => row.key)).size, 450, "no row twice, none missing");
+  assert.deepEqual(all.slice(0, 2).map((row) => row.title), ["Song 000", "Song 001"]);
+  assert.equal(explore(many, { ...options, direction: "desc", limit: "1" }).rows[0]!.title, "Song 449", "another sort is its own list");
+  assert.equal(explore(many, { ...options, q: "Song 44", limit: "200" }).total, 14, "044, 144, 244, 344 and 440–449");
+  const changed: Library = { version: "many-2", tracks: many.tracks.slice(0, 10) };
+  assert.equal(explore(changed, options).total, 10, "a new library is filtered afresh");
+});

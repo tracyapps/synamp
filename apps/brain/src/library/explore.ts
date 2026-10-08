@@ -12,7 +12,9 @@ export type ExplorerRow = {
   key: string; type: Kind; title: string; artist?: string; album_artist?: string;
   album?: string; year?: number; count: number; duration_s?: number; genres: string[];
 };
-type Entity = { row: ExplorerRow; values: Record<Field, string[]>; years: number[]; albums: string[]; albumArtists: string[] };
+type Entity = { row: ExplorerRow; values: Record<Field, string[]>; years: number[]; albums: string[]; albumArtists: string[];
+  /** Sort text per column, worked out once (folding text is the slow part of sorting 100k rows). */
+  keys?: Partial<Record<string, string>> };
 export type ExploreOptions = Partial<Record<"q" | "types" | "mode" | "logic" | "rules" | "from" | "to" | "sort" | "direction" | "group" | "group_key" | "offset" | "limit", string>>;
 const fields: Field[] = ["any", "title", "artist", "album_artist", "album", "genre"];
 const modes: Mode[] = ["contains", "exact", "glob", "fuzzy"];
@@ -24,9 +26,22 @@ function knownDuration(tracks: Library["tracks"]): number | undefined {
   return values.length ? values.reduce((sum, duration) => sum + duration, 0) : undefined;
 }
 let cache: { library: Library; entities: Entity[] } | undefined;
+/** Folded/normalised field text, worked out once per distinct string (names repeat a lot). Cleared with the entities. */
+const folded = new Map<string, string>(), normed = new Map<string, string>();
+const foldOnce = (value: string) => { let out = folded.get(value); if (out === undefined) { out = fold(value); folded.set(value, out); } return out; };
+const normOnce = (value: string) => { let out = normed.get(value); if (out === undefined) { out = norm(value); normed.set(value, out); } return out; };
+/**
+ * The last few filtered-and-sorted results, so scrolling a long list asks only
+ * for a slice: the first page of a view does the work, the rest are instant.
+ */
+const selections = new Map<string, ReturnType<typeof select>>();
+let selectionsFor: Library | undefined;
+const SELECTIONS_KEPT = 8;
+const collator = new Intl.Collator();
 
 function entities(library: Library): Entity[] {
   if (cache?.library === library) return cache.entities;
+  folded.clear(); normed.clear();
   const result: Entity[] = [];
   const units = groupAlbums(library);
   const byTrack = new Map(units.flatMap(unit => unit.tracks.map(track => [track.id, unit] as const)));
@@ -105,10 +120,10 @@ function matcher(rule: Rule): (entity: Entity) => boolean {
   const words = fold(rule.value).split(" ").filter(Boolean);
   return entity => {
     const values = entity.values[rule.field];
-    const matched = rule.mode === "exact" ? values.some(value => norm(value) === pattern)
-      : rule.mode === "glob" ? values.some(value => wildcard(pattern, norm(value)))
-      : rule.mode === "fuzzy" ? words.every(word => values.some(value => fold(value).split(" ").some(token => near(word, token))))
-      : words.every(word => values.some(value => fold(value).includes(word)));
+    const matched = rule.mode === "exact" ? values.some(value => normOnce(value) === pattern)
+      : rule.mode === "glob" ? values.some(value => wildcard(pattern, normOnce(value)))
+      : rule.mode === "fuzzy" ? words.every(word => values.some(value => foldOnce(value).split(" ").some(token => near(word, token))))
+      : words.every(word => values.some(value => foldOnce(value).includes(word)));
     return rule.not ? !matched : matched;
   };
 }
@@ -119,8 +134,20 @@ function number(value: string | undefined, name: string, fallback: number, min: 
   return Number(value);
 }
 
-/** Shared filter/group/sort pipeline; playlist selection projects it onto songs. */
+/** Shared filter/group/sort pipeline; playlist selection projects it onto songs. Remembered per library and filter. */
 function selection(library: Library, options: ExploreOptions, songsOnly = false) {
+  if (selectionsFor !== library) { selections.clear(); selectionsFor = library; }
+  const { offset: _offset, limit: _limit, ...rest } = options;
+  const key = JSON.stringify([songsOnly, Object.entries(rest).filter(([, v]) => v !== undefined).sort(([a], [b]) => a.localeCompare(b))]);
+  const known = selections.get(key);
+  if (known) { selections.delete(key); selections.set(key, known); return known; }
+  const result = select(library, options, songsOnly);
+  selections.set(key, result);
+  for (const old of selections.keys()) { if (selections.size <= SELECTIONS_KEPT) break; selections.delete(old); }
+  return result;
+}
+
+function select(library: Library, options: ExploreOptions, songsOnly: boolean) {
   const kinds = options.types === undefined ? ["album"] : options.types.split(",").filter(Boolean);
   if (kinds.some(kind => !["song", "album", "artist"].includes(kind))) throw new BrowseError("Invalid entity type");
   if (songsOnly && !kinds.length) throw new BrowseError("Choose at least one entity type");
@@ -168,17 +195,22 @@ function selection(library: Library, options: ExploreOptions, songsOnly = false)
   const direction = options.direction ?? (sort === "year" || sort === "count" ? "desc" : "asc");
   if (direction !== "asc" && direction !== "desc") throw new BrowseError("Invalid sort direction");
   const sign = direction === "desc" ? -1 : 1;
-  const text = (value: string) => fold(value).replace(/^(the|a|an) /, "");
+  const text = (value: string) => foldOnce(value).replace(/^(the|a|an) /, "");
   const value = (row: ExplorerRow): string | number | undefined => sort === "duration" ? row.duration_s
       : sort === "genre" ? row.genres.join(", ") || undefined : row[sort as "title" | "type" | "artist" | "album_artist" | "album" | "year" | "count"];
+  /** Folded sort text for this entity and column, kept on the entity for next time. */
+  const keyOf = (entity: Entity, column: string, raw: unknown) => {
+    const keys = (entity.keys ??= {});
+    return keys[column] ??= text(String(raw ?? ""));
+  };
   selected.sort((a, b) => {
     const x = a.row, y = b.row;
     const xv = value(x), yv = value(y);
     const missingX = xv === undefined || xv === "", missingY = yv === undefined || yv === "";
     // Unknown values remain at the end when reversing the sort.
     if (missingX !== missingY) return missingX ? 1 : -1;
-    const cmp = typeof xv === "number" && typeof yv === "number" ? xv - yv : text(String(xv ?? "")).localeCompare(text(String(yv ?? "")));
-    return sign * cmp || text(x.title).localeCompare(text(y.title)) || x.type.localeCompare(y.type) || x.key.localeCompare(y.key);
+    const cmp = typeof xv === "number" && typeof yv === "number" ? xv - yv : collator.compare(keyOf(a, sort, xv), keyOf(b, sort, yv));
+    return sign * cmp || collator.compare(keyOf(a, "title", x.title), keyOf(b, "title", y.title)) || x.type.localeCompare(y.type) || x.key.localeCompare(y.key);
   });
   return { selected, matched, groups, group };
 }
