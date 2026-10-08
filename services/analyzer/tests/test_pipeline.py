@@ -157,3 +157,110 @@ def test_missing_file_is_marked_not_deleted(tmp_path: Path) -> None:
 
     assert rescan["missing"] == 1
     assert rescan["scanned"] == 0
+
+
+def test_a_changed_stage_is_redone_and_only_that_stage(tmp_path: Path) -> None:
+    """dsp_core moved to revision 2: tracks analysed before redo just dsp_core."""
+    import json as _json
+    from synamp_analyzer import pipeline
+
+    library = tmp_path / "music"
+    library.mkdir()
+    sine(library / "one.flac", seconds=3.0)
+    config = config_for(library, tmp_path)
+    run_scan(config, progress=quiet)
+    assert run_analyze(config, progress=quiet)["completed"] == 1
+
+    db = Database(config.db_path)
+    row = db.conn.execute("SELECT payload FROM results").fetchone()
+    payload = _json.loads(row["payload"])
+    assert payload["stage_revisions"]["dsp_core"] == 2, "new results record the revision they ran at"
+    # Pretend it ran at revision 1 (results from before stage revisions existed).
+    payload.pop("stage_revisions")
+    db.conn.execute("UPDATE results SET payload = ?", (_json.dumps(payload),))
+    db.conn.commit()
+    identity_hash = payload["audio_hash"]
+    db.close()
+
+    summary = run_analyze(config, progress=quiet)
+    assert summary["outdated"] == 1 and summary["completed"] == 1
+    db = Database(config.db_path)
+    redone = load_result(db, library / "one.flac")
+    assert redone.stage_revisions["dsp_core"] == 2
+    assert redone.audio_hash == identity_hash, "identity was kept, not recomputed"
+    assert {"identity", "dsp_core", "beat"} <= redone.stages_done
+    db.close()
+    assert run_analyze(config, progress=quiet)["outdated"] == 0, "nothing left to redo"
+    assert pipeline.analysis_processes(1) == 1
+
+
+def test_several_tracks_at_once(tmp_path: Path, monkeypatch) -> None:
+    """With more than one process, every track is analysed once and results match the serial run."""
+    from synamp_analyzer import pipeline
+
+    library = tmp_path / "music"
+    library.mkdir()
+    for n in range(5):
+        sine(library / f"{n}.flac", seconds=2.0, frequency=220.0 + 50 * n)
+    corrupt(library / "bad.flac")
+    config = config_for(library, tmp_path)
+    run_scan(config, progress=quiet)
+    monkeypatch.setattr(pipeline, "analysis_processes", lambda _configured: 3)
+    lines: list[str] = []
+    summary = run_analyze(config, progress=lines.append)
+    assert summary["processes"] == 3
+    assert summary["completed"] == 5 and summary["failed"] == 1
+    assert any("3 tracks at a time" in line for line in lines)
+    db = Database(config.db_path)
+    states = dict(db.conn.execute("SELECT state, COUNT(*) FROM jobs GROUP BY state").fetchall())
+    assert states.get("done") == 5 and not states.get("running")
+    for n in range(5):
+        result = load_result(db, library / f"{n}.flac")
+        assert result is not None and result.spectral_centroid is not None
+    db.close()
+
+
+def test_pause_with_several_processes_lets_started_tracks_finish(tmp_path: Path, monkeypatch) -> None:
+    from synamp_analyzer import pipeline
+
+    library = tmp_path / "music"
+    library.mkdir()
+    for n in range(8):
+        sine(library / f"{n}.flac", seconds=2.0)
+    config = config_for(library, tmp_path)
+    run_scan(config, progress=quiet)
+    monkeypatch.setattr(pipeline, "analysis_processes", lambda _configured: 2)
+    asked = {"n": 0}
+
+    def stop_after_first_round() -> bool:
+        asked["n"] += 1
+        return asked["n"] > 1
+
+    summary = run_analyze(config, progress=quiet, should_stop=stop_after_first_round)
+    assert summary.get("stopped") == 1
+    assert summary["claimed"] == 2 and summary["completed"] == 2, "the two started tracks finish; nothing new starts"
+    db = Database(config.db_path)
+    assert db.conn.execute("SELECT COUNT(*) FROM jobs WHERE state = 'running'").fetchone()[0] == 0
+    db.close()
+
+
+def test_a_long_recording_is_analysed_on_its_own(tmp_path: Path, monkeypatch) -> None:
+    from synamp_analyzer import pipeline
+
+    library = tmp_path / "music"
+    library.mkdir()
+    for n in range(6):
+        sine(library / f"{n}.flac", seconds=2.0)
+    config = config_for(library, tmp_path)
+    run_scan(config, progress=quiet)
+    monkeypatch.setattr(pipeline, "analysis_processes", lambda _configured: 3)
+    monkeypatch.setattr(pipeline, "is_long_recording", lambda path: path.name == "2.flac")
+    lines: list[str] = []
+    summary = run_analyze(config, progress=lines.append)
+    assert summary["completed"] == 6 and summary["failed"] == 0
+    db = Database(config.db_path)
+    assert db.conn.execute("SELECT COUNT(*) FROM jobs WHERE state != 'done'").fetchone()[0] == 0
+    db.close()
+    if any("long recording" in line for line in lines):
+        held_at = next(i for i, line in enumerate(lines) if "long recording" in line)
+        assert "2.flac" in lines[held_at - 1]

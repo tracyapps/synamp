@@ -24,6 +24,11 @@ from pathlib import Path
 # `identity` runs first so a retagged or moved file can reuse earlier analysis.
 STAGES: tuple[str, ...] = ("identity", "dsp_core", "beat")
 
+# The method each stage runs at. Raise a stage's number when its measurements
+# change meaning (a better algorithm, a fixed bug): tracks done at an older
+# revision get just that stage redone (pipeline.requeue_outdated). Missing = 1.
+STAGE_REVISIONS: dict[str, int] = {"identity": 1, "dsp_core": 2, "beat": 1}
+
 
 @dataclass(frozen=True)
 class Track:
@@ -49,6 +54,9 @@ class AnalysisResult:
     """
 
     track_path: Path
+
+    stage_revisions: dict[str, int] = field(default_factory=dict)
+    """The STAGE_REVISIONS each finished stage ran at (missing = 1)."""
 
     # --- identity -----------------------------------------------------------
     # Filled by: identity (see identity.py). Not a signal: never used to rank.
@@ -93,8 +101,17 @@ class AnalysisResult:
     onset_rate: float | None = None
     """Onsets per second — 'busyness'."""
     pulse_clarity: float | None = None
-    """0..1 — how stable and easy to follow the beat is. Separates groovable
-    from floating, which tempo alone cannot do."""
+    """0..1 — how strongly the music repeats at a beat-like period (median over
+    8-second windows). Separates groovable from floating, which tempo alone
+    cannot do. dsp_core revision 2; revision 1 used a whole-track
+    autocorrelation that read sustained pads as "periodic"."""
+    pulse_steadiness: float | None = None
+    """0..1 — share of 8-second windows that agree on the same tempo (octaves
+    allowed). A song with a steady beat agrees with itself; ambient and
+    free-time music doesn't."""
+    tempo_status: str | None = None
+    """dsp_core: "measured", "no_steady_beat" (bpm and tempo_confidence are then
+    left empty on purpose) or "too_short"."""
     percussiveness: float | None = None
     """0..1 — percussive-to-harmonic energy ratio."""
     microtiming_tightness: float | None = None

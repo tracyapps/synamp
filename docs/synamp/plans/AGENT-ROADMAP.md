@@ -603,3 +603,28 @@ checks. Public exports must exclude private catalog samples and operational logs
 LE03a/LE08a source slice: `apps/web/src/library-view-state.ts`, `useLibraryView.ts`, `SavedLibraryViews.tsx`, `FilterPlaylistDialog.tsx`, `LibraryExplorer.tsx`, query-aware `App.tsx`; backend `library/explorer-selection.ts`, shared explorer selection, `PlaylistStore.createSnapshot`, and authenticated routes in `index.ts`. Integrator owns UI/state/schema; one backend owner owns persistence. No active analyzer or NAS state changes.
 
 [Canonical acceptance and remaining dependencies](LIBRARY-EXPLORER.md#october-7-tester-workflow-follow-up) and [fresh receipt](../../research/library-explorer/2026-10-07/saved-views-playlists-verification.md): named local views and version-1 links restore refresh/Back/Forward; full-filter song preview precedes atomic manual playlist creation; retries are idempotent within the 10-minute server receipt. Corrupt state remains intact until reset. Large selections reject explicitly above 100k; never truncate. IDs must still exist; ongoing analysis signal changes are allowed. Nested pivots, annotations, reviewed release identity, graph paths and richer Galaxy layouts remain separately planned. Deployment and tester onboarding on the live build remain unverified and require their own bounded rollout.
+
+
+### 2026-10-08 — dsp_core revision 2, stage revisions, parallel analysis
+
+Investigation (12k of 46k analysed): "no words" can never match (no voice
+producer); focus fell back on tempo/loudness; dsp_core rev 1 gave every track a
+confident tempo (Music for Airports 1/1: 121 BPM, confidence 1.0); the beat stage
+refused 91% of tracks; the launchd agent ran as ProcessType Background on one
+efficiency core (~29 s a track).
+
+- **dsp_core rev 2:** `pulse_clarity` = median beat-period autocorrelation
+  contrast over 8 s windows of a 1 s-detrended log-flux envelope;
+  `pulse_steadiness` = share of windows agreeing on tempo (octaves allowed);
+  `tempo_status` measured / no_steady_beat / too_short; bpm and
+  tempo_confidence only with a steady beat (clarity ≥ 0.30, steadiness ≥ 0.50).
+  On ~100 owner songs: ~9/10 beat-led songs measured, 3/19 ambient (those with
+  a real pulse), 0 classical.
+- **Stage revisions (P1, minimal):** `models.STAGE_REVISIONS`; results record
+  `stage_revisions`; `requeue_outdated` reopens only the outdated stage.
+- **Parallel analysis:** `cfg.workers` (default 4) capped by cores − 2 and
+  RAM/12 GB; spawn process pool; recordings over 15 minutes run alone.
+  Agent plist: ProcessType Standard, Nice 10 (reinstall the agent once).
+- **Still open:** onset_rate barely separates ambient from pop (3.5–5.9/s at
+  the 10th–90th percentile); the beat stage's own gate (insufficient pulse
+  evidence on 91%); voice/instrument producer (next).

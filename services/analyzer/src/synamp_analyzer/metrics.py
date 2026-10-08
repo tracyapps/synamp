@@ -347,6 +347,81 @@ def tempo_estimate(mono: np.ndarray, sample_rate: int) -> dict[str, float | None
     return out
 
 
+# A steady beat, as dsp_core revision 2 decides it. Chosen on ~100 songs from
+# the owner's library (2026-10-08): about 9 in 10 beat-led pop/rock/hip-hop
+# songs pass; 3 of 19 Eno/Budd ambient pieces (ones with a real repeating
+# pulse); no classical. Ballads that drift and live recordings are the misses.
+STEADY_PULSE_MIN = 0.30
+STEADY_AGREEMENT_MIN = 0.50
+PULSE_WINDOW_S = 8.0
+PULSE_HOP_S = 4.0
+
+
+def pulse_envelope(mono: np.ndarray, sample_rate: int) -> tuple[np.ndarray, float]:
+    """Log-compressed spectral flux, with the slow swell taken out.
+
+    Computed on a ~22 kHz copy at ~86 frames/s (plenty for beats up to 240 BPM).
+    The 1-second moving average is subtracted because sustained pads and slow
+    crescendos make a raw flux envelope look periodic at every lag — that is
+    what made revision 1 call Music for Airports 121 BPM, fully confident.
+    """
+    step = max(1, sample_rate // 22050)
+    if step > 1:
+        mono = signal.decimate(mono, step, ftype="fir")
+        sample_rate //= step
+    hop, n_fft = 256, 1024
+    if mono.size < n_fft * 4:
+        return np.zeros(0, dtype=np.float64), sample_rate / hop
+    _, _, spectrum = signal.stft(mono, fs=sample_rate, nperseg=n_fft, noverlap=n_fft - hop, boundary=None)
+    magnitude = np.log1p(100.0 * np.abs(spectrum))
+    flux = np.maximum(np.diff(magnitude, axis=1), 0.0).sum(axis=0)
+    frame_rate = sample_rate / hop
+    width = max(3, int(frame_rate))
+    if flux.size <= width:
+        return np.zeros(0, dtype=np.float64), frame_rate
+    trend = np.convolve(flux, np.ones(width) / width, mode="same")
+    return np.maximum(flux - trend, 0.0), frame_rate
+
+
+def pulse_measures(mono: np.ndarray, sample_rate: int) -> dict[str, float | bool | None]:
+    """Is there a steady beat? Strength and agreement of the pulse across windows.
+
+    For each 8-second window (4-second hop): the autocorrelation peak in the
+    40–240 BPM range, minus the median of that range (so "everything is a bit
+    correlated" scores near 0), and the tempo of that peak. Across windows:
+    `pulse_clarity` = median peak contrast; `pulse_steadiness` = share of
+    windows within ~4% of the median tempo, counting double and half time as
+    the same.
+    """
+    out: dict[str, float | bool | None] = {"pulse_clarity": None, "pulse_steadiness": None, "steady_beat": None}
+    envelope, frame_rate = pulse_envelope(mono, sample_rate)
+    window, hop = int(PULSE_WINDOW_S * frame_rate), int(PULSE_HOP_S * frame_rate)
+    lo, hi = max(1, int(frame_rate * 60 / 240)), int(frame_rate * 60 / 40)
+    if envelope.size < window or hi >= window:
+        return out
+    contrasts, tempi = [], []
+    for start in range(0, envelope.size - window + 1, hop):
+        segment = envelope[start:start + window]
+        segment = segment - segment.mean()
+        correlation = signal.correlate(segment, segment, mode="full", method="fft")[segment.size - 1:]
+        if correlation[0] <= 0:
+            continue
+        band = correlation[lo:hi + 1] / correlation[0]
+        best = int(np.argmax(band))
+        contrasts.append(float(band[best] - np.median(band)))
+        tempi.append(60.0 * frame_rate / (lo + best))
+    if not contrasts:
+        return out
+    tempi_arr = np.asarray(tempi)
+    octave = np.log2(tempi_arr / float(np.median(tempi_arr)))
+    distance = np.minimum(np.abs(octave), np.minimum(np.abs(octave - 1), np.abs(octave + 1)))
+    clarity = float(min(1.0, max(0.0, np.median(contrasts))))
+    steadiness = float(np.mean(distance < 0.06))
+    out.update(pulse_clarity=clarity, pulse_steadiness=steadiness,
+               steady_beat=clarity >= STEADY_PULSE_MIN and steadiness >= STEADY_AGREEMENT_MIN)
+    return out
+
+
 def onset_envelope(mono: np.ndarray, sample_rate: int) -> tuple[np.ndarray, float]:
     """Spectral-flux onset envelope and its frame rate.
 
@@ -405,6 +480,19 @@ def extract_dsp_core(path: Path) -> dict[str, object]:
     fields.update(loudness_metrics(mono, sample_rate))
     fields.update(spectral_features(mono, sample_rate))
     fields.update(tempo_estimate(mono, sample_rate))
+    # Revision 2: a tempo only when there is a steady beat to have one. Beatless
+    # music gets an honest empty tempo instead of a confident 120-ish number.
+    pulse = pulse_measures(mono, sample_rate)
+    fields["pulse_clarity"] = pulse["pulse_clarity"]
+    fields["pulse_steadiness"] = pulse["pulse_steadiness"]
+    if pulse["steady_beat"] is None:
+        fields["tempo_status"] = "too_short"
+        fields["bpm"] = fields["tempo_confidence"] = None
+    elif not pulse["steady_beat"]:
+        fields["tempo_status"] = "no_steady_beat"
+        fields["bpm"] = fields["tempo_confidence"] = None
+    else:
+        fields["tempo_status"] = "measured" if fields.get("bpm") is not None else "no_steady_beat"
     fields["dynamic_complexity"] = dynamic_complexity(mono, sample_rate)
     fields["clipping_density"] = clipping_density(mono)
 

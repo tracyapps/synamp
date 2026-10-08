@@ -66,9 +66,12 @@ export const MOODS = [
 const SPECS: SignalSpec[] = [
   // --- rhythm / timing ---------------------------------------------------
   { field: "bpm", kind: "number", status: "produced", stage: "dsp_core", unit: "BPM", range: [20, 300], nearMiss: 6, audio: true,
-    nullMeaning: "tempo not estimated", note: "Provisional dsp_core estimate; octave errors (60/120/240) are possible. Check tempo_confidence." },
-  { field: "tempo_confidence", kind: "number", status: "produced", stage: "dsp_core", range: [0, 1], nearMiss: 0.1, audio: true, nullMeaning: "tempo not estimated" },
-  { field: "pulse_clarity", kind: "number", status: "produced", stage: "dsp_core", range: [0, 1], nearMiss: 0.08, audio: true, nullMeaning: "not measured" },
+    nullMeaning: "no steady beat to measure", note: "dsp_core revision 2 gives a tempo only when there is a steady beat (tempo_status \"measured\"); beatless music is left empty. Octave errors (60/120/240) are still possible. Check tempo_confidence." },
+  { field: "tempo_confidence", kind: "number", status: "produced", stage: "dsp_core", range: [0, 1], nearMiss: 0.1, audio: true, nullMeaning: "no steady beat to measure" },
+  { field: "pulse_clarity", kind: "number", status: "produced", stage: "dsp_core", range: [0, 1], nearMiss: 0.08, audio: true, nullMeaning: "not measured",
+    note: "Revision 2: median beat-period repetition over 8-second windows (around 0.5 for beat-led songs, under 0.2 for ambient and most classical)." },
+  { field: "pulse_steadiness", kind: "number", status: "produced", stage: "dsp_core", range: [0, 1], nearMiss: 0.08, audio: true, nullMeaning: "not measured",
+    note: "Share of 8-second windows agreeing on one tempo (double/half time count as the same). A steady beat: pulse_clarity ≥ 0.30 and pulse_steadiness ≥ 0.50." },
   { field: "onset_rate", kind: "number", status: "produced", stage: "dsp_core", unit: "onsets/s", range: [0, 50], nearMiss: 0.5, audio: true, nullMeaning: "not measured" },
   { field: "percussiveness", kind: "number", status: "produced", stage: "dsp_core", range: [0, 1], nearMiss: 0.08, audio: true, nullMeaning: "not measured" },
   { field: "beat_grid_strength", kind: "number", status: "produced", stage: "beat", range: [0, 1], nearMiss: 0.08, audio: true, eligibleWhen: TRACKED,
