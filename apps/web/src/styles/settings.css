@@ -33,3 +33,28 @@
 .playback__choice-label { display: block; }
 .playback__choice-hint { display: block; font-size: 0.875rem; }
 .playback__now { margin: 4px 0 0; font-size: 0.875rem; }
+
+/* Settings → Analysis on your Mac */
+.memory { display: grid; gap: 12px; max-width: 640px; }
+.memory__now { margin: 0; font-size: 0.9375rem; }
+.memory__amount { display: grid; gap: 6px; }
+.memory__amount label { font: 400 15px var(--font-display); color: var(--text); }
+.memory__amount input[type="range"] { width: 100%; min-height: 32px; }
+.memory__out { font: 0.875rem var(--font-mono); color: var(--text); }
+.memory__hint, .memory__said { margin: 0; font-size: 0.875rem; }
+.memory__row { margin-top: -4px; font-size: 0.875rem; }
+.memory__when { border: 0; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; }
+.memory__when legend { font: 400 15px var(--font-display); color: var(--text); padding: 0; margin-bottom: 4px; }
+.memory__choice { display: flex; gap: 10px; align-items: center; cursor: pointer; }
+.memory__choice input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.memory__times, .memory__away { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 0.9375rem; }
+.memory__times label { display: flex; gap: 8px; align-items: center; }
+.memory__times input { width: auto; }
+.memory__away .muted, .memory__times .muted { flex-basis: 100%; font-size: 0.875rem; }
+.memory__help { font-size: 0.9375rem; }
+.memory__help summary { cursor: pointer; color: var(--accent); padding: 4px 0; }
+.memory__help summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.memory__help ul { margin: 4px 0 8px; padding-left: 20px; }
+.memory__help p { margin: 6px 0; }
+.memory__away, .memory__times label { font: 0.9375rem var(--font-sans); letter-spacing: normal; text-transform: none; color: var(--text); }
+.memory__away select { width: auto; }

@@ -18,6 +18,7 @@ import SpotCheck from "./SpotCheck";
 import BrainSession from "./BrainSession";
 import ListenAnywhere from "./ListenAnywhere";
 import PlaybackSettings from "./PlaybackSettings";
+import AnalysisMemory from "./AnalysisMemory";
 import { newId } from "./ids";
 import { AccessError, makeApi } from "./api";
 import Icon from "./ui/Icon";
@@ -177,6 +178,7 @@ export default function App() {
       body = <div className="screen">
         <ScreenHead id={headingId} eyebrow="System" title="Settings"><p>Everything you can change without touching a config file.</p></ScreenHead>
         <PlaybackSettings request={call} />
+        <AnalysisMemory request={call} />
         <Settings request={call} startOpen />
       </div>;
       break;

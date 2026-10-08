@@ -851,10 +851,10 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   }
   if (path === "/api/v1/analyzer/claim" && req.method === "POST") {
     const input = await body(req);
-    return send(res, 200, { command: analyzerControl.claim(input.worker) });
+    return send(res, 200, { command: analyzerControl.claim(input.worker), memory: analyzerControl.memory() });
   }
   const analyzerCheck = path.match(/^\/api\/v1\/analyzer\/commands\/(a_[0-9a-f]{12})\/check$/);
-  if (analyzerCheck && req.method === "POST") return send(res, 200, analyzerControl.check(analyzerCheck[1]!));
+  if (analyzerCheck && req.method === "POST") return send(res, 200, analyzerControl.check(analyzerCheck[1]!, await body(req)));
   const analyzerDone = path.match(/^\/api\/v1\/analyzer\/commands\/(a_[0-9a-f]{12})$/);
   if (analyzerDone && req.method === "POST") {
     const command = analyzerControl.complete(analyzerDone[1]!, await body(req));

@@ -21,6 +21,8 @@ class FakeBrain:
         self.reports: dict[str, dict] = {}
         self.hellos: list[dict] = []
         self.checks = 0
+        self.check_bodies: list[dict] = []
+        self.memory = {"mode": "steady", "normal_gb": 3}
         self.stop_after_checks = stop_after_checks
         self.down = down
 
@@ -29,10 +31,11 @@ class FakeBrain:
             raise BrainError("can't reach the brain")
         if path == "/api/v1/analyzer/claim":
             self.hellos.append(body["worker"])
-            return {"command": self.commands.pop(0) if self.commands else None}
+            return {"command": self.commands.pop(0) if self.commands else None, "memory": self.memory}
         if path.endswith("/check"):
             self.checks += 1
-            return {"stop": self.stop_after_checks is not None and self.checks >= self.stop_after_checks}
+            self.check_bodies.append(body)
+            return {"stop": self.stop_after_checks is not None and self.checks >= self.stop_after_checks, "memory": self.memory}
         self.reports[path.rsplit("/", 1)[1]] = body
         return {}
 
@@ -216,3 +219,19 @@ def test_activity_never_stops_the_work_when_the_brain_is_old_or_away(tmp_path: P
     worker, _lines = make(cfg, brain)
     assert worker.once() == "done"
     assert brain.reports["a_00000000000a"]["status"] == "done"
+
+
+def test_the_worker_says_what_this_mac_has_and_follows_the_memory_setting(tmp_path: Path) -> None:
+    cfg, _music = library(tmp_path, count=4)
+    brain = FakeBrain([{"id": "a_000000000002", "action": "scan"}, {"id": "a_000000000003", "action": "analyze"}],
+                      stop_after_checks=2)
+    worker, _lines = make(cfg, brain, now=Clock())
+    worker.once()
+    hello = brain.hellos[0]
+    assert hello["memory_gb"] > 0 and hello["cores"] >= 1, "the web app shows how much memory this Mac has"
+    assert worker.allowance.settings["normal_gb"] == 3, "picked up with the command"
+    assert hello["memory_now"]["why"] == "normal"
+    brain.memory = {"mode": "steady", "normal_gb": 6}
+    worker.once()
+    assert brain.check_bodies and "memory_now" in brain.check_bodies[0], "it reports what it's using while it works"
+    assert worker.allowance.settings["normal_gb"] == 6, "a change arrives during analysis"

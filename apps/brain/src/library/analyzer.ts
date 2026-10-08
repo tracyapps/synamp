@@ -37,10 +37,31 @@ export type Activity = { kind: "export"; done?: number; total?: number; at: numb
 export type WorkerSeen = {
   last_seen: number; host?: string; version?: string; state?: string;
   library_path?: string; library_ok?: boolean; export_path?: string; journal?: string; problem?: string;
+  /** The Mac: total memory (GB) and cores, for the memory setting. */
+  memory_gb?: number; cores?: number;
+  /** What analysis is allowed right now, as the worker worked it out (it knows the clock and whether you're at the Mac). */
+  memory_now?: { gb: number; songs: number; why: "normal" | "hours" | "away"; at: number };
 };
+
+/**
+ * How much of the Mac analysis may use (Settings → Analysis on your Mac).
+ * `normal_gb` all the time, or more (`more_gb`) at set hours or while you're away
+ * from the Mac. Null = SynAmp's recommendation for that Mac. The worker applies it.
+ */
+export type MemorySettings = {
+  mode: "steady" | "hours" | "away";
+  normal_gb: number | null;
+  more_gb: number | null;
+  /** "22:00"–"07:00" on the Mac's own clock; may run past midnight. */
+  from: string;
+  to: string;
+  /** Minutes without keyboard or mouse before "away" counts. */
+  away_minutes: number;
+};
+export const DEFAULT_MEMORY: MemorySettings = { mode: "steady", normal_gb: null, more_gb: null, from: "22:00", to: "07:00", away_minutes: 10 };
 type State = {
   format: "synamp.analyzer-control/1";
-  settings: { update_after_librarian: boolean };
+  settings: { update_after_librarian: boolean; memory: MemorySettings };
   commands: Command[];
   worker?: WorkerSeen;
 };
@@ -62,7 +83,7 @@ export class AnalyzerControl {
     try { loaded = JSON.parse(readFileSync(path, "utf8")) as Partial<State>; } catch { /* first run */ }
     this.state = {
       format: "synamp.analyzer-control/1",
-      settings: { update_after_librarian: true, ...(loaded.settings ?? {}) },
+      settings: { update_after_librarian: true, ...(loaded.settings ?? {}), memory: { ...DEFAULT_MEMORY, ...(loaded.settings?.memory ?? {}) } },
       commands: loaded.commands ?? [],
       ...(loaded.worker ? { worker: loaded.worker } : {}),
     };
@@ -104,8 +125,12 @@ export class AnalyzerControl {
       if (typeof input.update_after_librarian !== "boolean") throw new AnalyzerError("update_after_librarian must be true or false");
       this.state.settings.update_after_librarian = input.update_after_librarian;
     }
+    if (input.memory !== undefined) this.state.settings.memory = checkMemory(input.memory, this.state.settings.memory);
     this.save();
   }
+
+  /** What the worker needs to decide how many songs to analyse at once. */
+  memory(): MemorySettings { return this.state.settings.memory; }
 
   /** The worker checks in; hand it the next command (one at a time). */
   claim(about: unknown, now = Date.now()): Command | null {
@@ -120,6 +145,9 @@ export class AnalyzerControl {
       ...(text(raw.export_path) ? { export_path: text(raw.export_path) } : {}),
       ...(text(raw.journal) !== undefined ? { journal: text(raw.journal) } : {}),
       ...(text(raw.problem) ? { problem: text(raw.problem) } : {}),
+      ...(gb(raw.memory_gb) !== undefined ? { memory_gb: gb(raw.memory_gb) } : {}),
+      ...(typeof raw.cores === "number" && Number.isInteger(raw.cores) && raw.cores > 0 && raw.cores < 1024 ? { cores: raw.cores } : {}),
+      ...(nowFrom(raw.memory_now, now) ? { memory_now: nowFrom(raw.memory_now, now)! } : {}),
     };
     // The worker only asks when it's free, so anything still "running" was interrupted (Mac asleep, restarted).
     for (const command of this.state.commands) {
@@ -135,11 +163,15 @@ export class AnalyzerControl {
     return next ?? null;
   }
 
-  /** Asked by the worker during a long analysis. */
-  check(id: string, now = Date.now()): { stop: boolean } {
+  /** Asked by the worker during a long analysis: stop? and the current memory setting. It says what it's using now. */
+  check(id: string, input: unknown = {}, now = Date.now()): { stop: boolean; memory: MemorySettings } {
     const command = this.state.commands.find((c) => c.id === id);
-    if (this.state.worker) this.state.worker.last_seen = now;
-    return { stop: !command || command.status !== "running" || !!command.stop };
+    if (this.state.worker) {
+      this.state.worker.last_seen = now;
+      const reported = nowFrom((input && typeof input === "object" ? input as Record<string, unknown> : {}).memory_now, now);
+      if (reported) this.state.worker.memory_now = reported;
+    }
+    return { stop: !command || command.status !== "running" || !!command.stop, memory: this.state.settings.memory };
   }
 
   /**
@@ -203,4 +235,46 @@ export class AnalyzerControl {
       settings: this.state.settings,
     };
   }
+}
+
+const gb = (value: unknown) => (typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 4096 ? Math.round(value * 10) / 10 : undefined);
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function nowFrom(value: unknown, at: number): WorkerSeen["memory_now"] | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const raw = value as Record<string, unknown>;
+  const amount = gb(raw.gb);
+  const songs = typeof raw.songs === "number" && Number.isInteger(raw.songs) && raw.songs > 0 && raw.songs < 1024 ? raw.songs : undefined;
+  const why = raw.why === "hours" || raw.why === "away" || raw.why === "normal" ? raw.why : undefined;
+  return amount !== undefined && songs !== undefined && why ? { gb: amount, songs, why, at } : undefined;
+}
+
+/** Check a memory setting from the web app; anything left out keeps its current value. */
+export function checkMemory(input: unknown, current: MemorySettings = DEFAULT_MEMORY): MemorySettings {
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new AnalyzerError("memory must be an object");
+  const raw = input as Record<string, unknown>;
+  const next = { ...current };
+  if (raw.mode !== undefined) {
+    if (raw.mode !== "steady" && raw.mode !== "hours" && raw.mode !== "away") throw new AnalyzerError('memory.mode must be "steady", "hours" or "away"');
+    next.mode = raw.mode;
+  }
+  for (const key of ["normal_gb", "more_gb"] as const) {
+    if (raw[key] === undefined) continue;
+    if (raw[key] === null) { next[key] = null; continue; }
+    const value = raw[key];
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 1 || value > 1024) throw new AnalyzerError(`memory.${key} must be between 1 and 1024 GB, or null for the recommendation`);
+    next[key] = Math.round(value);
+  }
+  for (const key of ["from", "to"] as const) {
+    if (raw[key] === undefined) continue;
+    if (typeof raw[key] !== "string" || !TIME.test(raw[key] as string)) throw new AnalyzerError(`memory.${key} must be a time like 22:00`);
+    next[key] = raw[key] as string;
+  }
+  if (raw.away_minutes !== undefined) {
+    const value = raw.away_minutes;
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > 240) throw new AnalyzerError("memory.away_minutes must be 1–240");
+    next.away_minutes = value;
+  }
+  if (next.mode === "hours" && next.from === next.to) throw new AnalyzerError("The start and end times are the same");
+  return next;
 }
