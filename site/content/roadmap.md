@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-07 — Library care: tick proposals (shift-click for a whole run) and approve or skip them together, and long lists of problems from a batch fold into one line
 - 2026-10-07 — Visuals: heart the looks you love, hide the ones you don’t, jump to any look from a list, and let them change by themselves through just your favourites
 - 2026-10-07 — Lighter streams on mobile data: SynAmp’s player switches to a smaller stream away from home and keeps full quality at home, and Listen anywhere shows how to do the same in your phone app
 - 2026-10-06 — Put radio stations in your playlists, right next to your own music
