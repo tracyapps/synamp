@@ -218,7 +218,7 @@ export default function App() {
         playlistName={(id) => nodes.find((node) => node.id === id)?.name}
         onChanged={() => { refreshNodes().catch(() => undefined); }} />
       </div>
-      {visuals && <Suspense fallback={null}><Visuals open={visuals} onClose={() => setVisuals(false)} /></Suspense>}
+      {visuals && <Suspense fallback={null}><Visuals open={visuals} onClose={() => setVisuals(false)} request={call} /></Suspense>}
     </div>
   );
 }

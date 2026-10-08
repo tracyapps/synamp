@@ -49,6 +49,7 @@ import { RuntimeSettings, SettingsError } from "./settings.ts";
 import { VersionCheck } from "./version.ts";
 import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
 import { otherAppPlays, pingCore, SetupError, SetupStore } from "./setup.ts";
+import { LooksError, LooksStore } from "./visuals/looks.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
 import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
 import { albumFolder, groupAlbums } from "./library/albums.ts";
@@ -95,6 +96,8 @@ const organise = new OrganiseStore(join(dataDir, "organise.json"));
 const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
 /** "Listen anywhere": the Phase 1 checklist (Navidrome, Tailscale, apps). */
 const setup = new SetupStore(join(dataDir, "setup.json"));
+/** MilkDrop looks you love or hide, the same on every screen. */
+const looks = new LooksStore(join(dataDir, "visual-looks.json"));
 
 // --- your playlists in your phone apps (Navidrome) ------------------------------
 const phonePlaylists = new PlaylistSync(join(dataDir, "phone-playlists.json"), { coreUrl: config.coreUrl, coreMusicPath: config.coreMusicPath });
@@ -658,7 +661,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain", "/api/v1/visuals"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -898,6 +901,12 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // --- this install: version, and whether an update is waiting for Build -------
   if (path === "/api/v1/system" && req.method === "GET") {
     return send(res, 200, { version: versionCheck.view(Date.now(), url.searchParams.has("fresh") ? 0 : 60_000) });
+  }
+
+  // --- visuals: favourite and hidden looks -------------------------------------------
+  if (path === "/api/v1/visuals/looks" && (req.method === "GET" || req.method === "POST")) {
+    if (req.method === "POST") looks.update(await body(req));
+    return send(res, 200, looks.view());
   }
 
   // --- listen anywhere: the Phase 1 checklist ------------------------------------
@@ -1282,7 +1291,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
