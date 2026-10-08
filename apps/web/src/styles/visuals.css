@@ -18,3 +18,60 @@ dialog.visuals::backdrop { background: var(--ink); }
 }
 .visuals__name { margin: 0; font: 0.8125rem var(--font-mono); color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 240px; }
 .visuals__bar .switch { min-height: 36px; font-size: 0.875rem; }
+
+/* The look on screen: heart, name, hide. */
+.visuals__now { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 280px; }
+.visuals__now .visuals__name { flex: 1 1 auto; }
+.visuals__heart {
+  display: inline-grid; place-items: center; flex: none; width: 36px; height: 36px; padding: 0; border: 1px solid transparent; border-radius: 50%;
+  background: transparent; color: var(--muted); cursor: pointer;
+}
+.visuals__heart:hover { color: var(--fg); background: var(--ghost-hi); }
+.visuals__heart.is-on { color: var(--gold); }
+.visuals__heart.is-on path { fill: currentColor; }
+.visuals__heart:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* All looks / my favourites: two radios that look like one control. */
+.visuals__pool { display: inline-flex; align-items: center; gap: 2px; margin: 0; padding: 3px; border: 1px solid var(--border); border-radius: var(--r-pill); background: var(--well); }
+.visuals__pool legend { float: left; margin: 0 8px 0 10px; padding: 0; font-size: 0.8125rem; color: var(--muted); }
+.visuals__pool label { position: relative; }
+.visuals__pool input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.visuals__pool span { display: block; padding: 6px 12px; border-radius: var(--r-pill); font-size: 0.875rem; color: var(--muted); }
+.visuals__pool input:checked + span { background: var(--surface-2); color: var(--fg); }
+.visuals__pool input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 1px; }
+.visuals__said { flex: 1 1 100%; margin: 0; font-size: 0.8125rem; color: var(--muted); min-height: 1em; }
+.visuals__said:empty { display: none; }
+
+/* The list of every look. */
+.visuals__looks {
+  position: absolute; top: 16px; right: 16px; bottom: 16px; width: min(420px, calc(100% - 32px)); display: flex; flex-direction: column; gap: 10px;
+  padding: 14px; background: var(--glass-solid); border: 1px solid var(--border-strong); border-radius: var(--r-md);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); z-index: 2;
+}
+.visuals__looks-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.visuals__looks h3 { margin: 0; font-size: 1.125rem; }
+.visuals__search { display: grid; gap: 4px; font-size: 0.875rem; }
+.visuals__filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; border: 0; }
+.visuals__filter label { position: relative; }
+.visuals__filter input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.visuals__filter label > span { display: inline-flex; gap: 6px; padding: 5px 12px; border: 1px solid var(--border); border-radius: var(--r-pill); font-size: 0.875rem; color: var(--muted); }
+.visuals__filter input:checked + span { border-color: var(--gold); color: var(--gold); background: rgba(255, 205, 0, 0.14); }
+.visuals__filter input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
+.visuals__count { font-family: var(--font-mono); font-size: 0.75rem; }
+.visuals__found { margin: 0; font-size: 0.8125rem; color: var(--muted); }
+.visuals__list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+.visuals__list li { display: flex; align-items: center; gap: 4px; padding: 2px 0; border-bottom: 1px solid var(--border); content-visibility: auto; contain-intrinsic-size: auto 44px; }
+.visuals__list li.is-current { background: var(--ghost-hi); }
+.visuals__pick {
+  flex: 1 1 auto; min-width: 0; min-height: 40px; padding: 6px 8px; border: 0; background: transparent; color: var(--fg); text-align: left;
+  font: 0.8125rem var(--font-mono); overflow-wrap: anywhere; cursor: pointer; border-radius: var(--r-sm, 6px);
+}
+.visuals__pick:hover { background: var(--ghost-hi); }
+.visuals__pick[aria-current="true"] { color: var(--gold); }
+.visuals__pick:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+/* Wide screens: the list sits beside the bar, never over it. */
+@media (min-width: 641px) { .visuals.has-list .visuals__bar { right: calc(min(420px, 100% - 32px) + 32px); } }
+@media (max-width: 640px) {
+  .visuals__looks { top: 8px; right: 8px; left: 8px; width: auto; bottom: auto; max-height: calc(100dvh - 300px); }
+  .visuals__bar { left: 8px; right: 8px; bottom: 8px; }
+}
