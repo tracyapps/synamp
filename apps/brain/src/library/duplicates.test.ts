@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import type { Library, LibraryTrack } from "../query/evaluate.ts";
-import { betterCopy, describeQuality, pairKey, sameRecording, sketchDistance } from "./duplicates.ts";
+import { betterCopy, copyNumber, describeQuality, pairKey, sameRecording, sketchDistance } from "./duplicates.ts";
 import { buildPlan, DEFAULT_SETTINGS, OrganiseStore } from "./organise.ts";
 
 /** A deterministic pseudo-random sketch, and a copy with a few bits flipped (another encode of the same audio). */
@@ -70,6 +70,14 @@ test("better copy: lossless, then resolution, then bitrate, then tags; a tie kee
   assert.equal(tie.keep.id, "r");
   assert.match(tie.why, /already there stays/);
   assert.match(betterCopy(there, track("n", "n.flac", { quality: flac })).why, /FLAC, 16-bit 44\.1 kHz, lossless beats MP3, 320 kbps, lossy/);
+  const twin = track("n", "Song (2).mp3", { quality: mp3(320) });
+  const clean = betterCopy(twin, track("c", "Song.mp3", { quality: mp3(320) }));
+  assert.equal(clean.keep.id, "c", "a true tie keeps the cleaner name, even arriving");
+  assert.match(clean.why, /without “\(2\)” in its name/);
+  assert.equal(betterCopy(track("c", "Song.mp3", { quality: mp3(320) }), twin).keep.id, "c");
+  assert.equal(betterCopy(track("q", "Song (2).flac", { quality: flac }), track("c", "Song.mp3", { quality: mp3(320) })).keep.id, "q", "quality still comes first");
+  assert.deepEqual(copyNumber("A/Song copy 3.mp3"), { base: "A/Song.mp3", copy: 3 });
+  assert.deepEqual(copyNumber("A/Live (1979).mp3"), { base: "A/Live (1979).mp3", copy: 1 }, "a year isn't a copy number");
   assert.equal(describeQuality(undefined), "unknown format");
   assert.equal(pairKey(there, tie.aside), pairKey(tie.aside, there), "either way round");
 });

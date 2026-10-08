@@ -81,7 +81,7 @@
 .organise__pause p { margin: 0; font-size: 13px; }
 
 /* Duplicate-blocked merges: which copy stays, which is set aside. */
-.organise__dupes { margin: 10px 0; padding: 10px 12px; border-left: 3px solid var(--muted); background: var(--hair); font-size: 13px; }
+.organise__dupes { margin: 10px 0; padding: 10px 12px; border-left: 3px solid var(--muted); background: rgba(0, 0, 0, 0.2); /* a well, so the muted text stays at AA on any card */ font-size: 13px; }
 .organise__dupes h5 { margin: 0 0 4px; font: 600 13px var(--font-sans); }
 .organise__dupes > p { margin: 0 0 8px; }
 .organise__dupes > ul { list-style: none; margin: 0; padding: 0; }
@@ -123,3 +123,13 @@
 .organise__problems-list > li { border-bottom: 1px solid var(--hair); padding: 6px 0; }
 .organise__problems-list summary { cursor: pointer; overflow-wrap: anywhere; }
 .organise__problems-list ul { margin: 6px 0 2px; padding-left: 22px; color: var(--muted); overflow-wrap: anywhere; }
+
+/* "Show N file moves" and "Open in Finder" side by side. */
+.organise__moves-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.organise__moves-actions .btn svg, .organise__set-aside .btn svg { flex: none; }
+.organise__set-aside { margin: 18px 0 0; padding: 12px 14px; border: 1px solid var(--hair); border-radius: 10px; display: grid; gap: 8px; justify-items: start; }
+.organise__set-aside p { margin: 0; }
+.organise__set-aside code { font: 12px var(--font-mono); color: var(--accent); }
+.organise__save-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.organise__dupes .save-note { margin-top: 8px; }
+.organise__pause .save-note { justify-self: start; }

@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import "./styles/discography.css";
+import SaveNote, { useSaveNote } from "./ui/SaveNote";
 
 /* Discography gaps: albums by artists you love that you don't have yet, and what's new. */
 
@@ -130,9 +131,16 @@ export default function DiscographyGaps({ request, startOpen = false }: { reques
     return () => clearInterval(timer);
   }, [open, checking]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const saved = useSaveNote();
   const act = async (path: string, body: unknown, done?: string) => {
     try { setReport(await request<Report>(path, post(body))); if (done) setMessage(done); }
     catch (cause) { setMessage((cause as Error).message); }
+  };
+  /** "What counts" saves by itself: say so right there. */
+  const saveSetting = async (body: Record<string, unknown>, what: string) => {
+    saved.mark("counts", "saving");
+    try { setReport(await request<Report>("/discography/settings", post(body))); saved.mark("counts", "saved", what); }
+    catch (cause) { saved.mark("counts", "failed", (cause as Error).message); }
   };
   const note = (id: string, status: Note | "none") => act("/discography/note", { id, status });
 
@@ -182,12 +190,13 @@ export default function DiscographyGaps({ request, startOpen = false }: { reques
                 <fieldset className="gaps__settings">
                   <legend className="visually-hidden">Release types to list</legend>
                   {([["albums", "Albums"], ["eps", "EPs"], ["singles", "Singles"], ["include_other", "Live albums, compilations, soundtracks, remixes"]] as const).map(([key, label]) => (
-                    <label key={key} className="organise__check"><input type="checkbox" checked={report.settings[key]} onChange={(e) => act("/discography/settings", { [key]: e.target.checked })} /><span>{label}</span></label>
+                    <label key={key} className="organise__check"><input type="checkbox" checked={report.settings[key]} onChange={(e) => saveSetting({ [key]: e.target.checked }, `${label} ${e.target.checked ? "listed" : "not listed"}.`)} /><span>{label}</span></label>
                   ))}
                   <label>Follow my top
                     <input type="number" min={0} max={1000} defaultValue={report.settings.auto_follow}
-                      onBlur={(e) => { if (Number(e.target.value) !== report.settings.auto_follow) act("/discography/settings", { auto_follow: Number(e.target.value) }, "Saved."); }} />
+                      onBlur={(e) => { if (Number(e.target.value) !== report.settings.auto_follow) saveSetting({ auto_follow: Number(e.target.value) }, `Following your top ${Number(e.target.value)} artists.`); }} />
                     artists automatically</label>
+                  <SaveNote note={saved.note} at="counts" />
                 </fieldset>
               </details>
             </div>

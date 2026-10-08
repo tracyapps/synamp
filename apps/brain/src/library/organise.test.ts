@@ -307,3 +307,43 @@ test("live progress from the librarian: shown while running, keeps a slow big ba
     assert.equal(store.progressView(), null);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+test("plan: a single CD matched to a deluxe or CD+DVD edition keeps “01 - …”; two CDs in one folder get 1-01 and 2-01", () => {
+  // Files numbered 1–3, no disc tags. MusicBrainz's edition has a second disc that repeats a title (a live bonus).
+  const single = lib([
+    track("s1", "Amy Winehouse/Frank/01 - Stronger Than Me.mp3", "Stronger Than Me", { track_no: 1, year: 2003 }),
+    track("s2", "Amy Winehouse/Frank/02 - You Sent Me Flying.mp3", "You Sent Me Flying", { track_no: 2, year: 2003 }),
+    track("s3", "Amy Winehouse/Frank/03 - Fuck Me Pumps.mp3", "Fuck Me Pumps", { track_no: 3, year: 2003 }),
+  ]);
+  const deluxe = release("44444444-4444-4444-4444-444444444444", "Amy Winehouse", "Frank",
+    [["Intro / Stronger Than Me", "You Sent Me Flying / Cherry", "Know You Now"], ["Fuck Me Pumps", "Stronger Than Me (live)", "Take the Box"]]);
+  const frank = buildPlan(single, { "Amy Winehouse/Frank": matched("Amy Winehouse/Frank", deluxe) }, DEFAULT_SETTINGS)[0]!;
+  assert.ok(frank.moves.every((m) => /\/0\d - /.test(m.to)), frank.moves.map((m) => m.to).join(", "));
+  assert.ok(!frank.changes.some((c) => c.includes("1-01")));
+
+  // Two CDs flattened into one folder: both start at "01". The release tells them apart.
+  const two = lib([
+    track("t1", "Dave Matthews Band/The Central Park Concert/01 - Pantala Naga Pampa.mp3", "Pantala Naga Pampa", { track_no: 1, year: 2003 }),
+    track("t2", "Dave Matthews Band/The Central Park Concert/01 - Cortez, the Killer.mp3", "Cortez, the Killer", { track_no: 1, year: 2003 }),
+  ]);
+  const concert = release("55555555-5555-5555-5555-555555555555", "Dave Matthews Band", "The Central Park Concert", [["Pantala Naga Pampa"], ["Cortez, the Killer"]]);
+  const park = buildPlan(two, { "Dave Matthews Band/The Central Park Concert": matched("Dave Matthews Band/The Central Park Concert", concert) }, DEFAULT_SETTINGS)[0]!;
+  assert.deepEqual(park.moves.map((m) => m.to).sort(), [
+    "Dave Matthews Band/The Central Park Concert (2003)/1-01 - Pantala Naga Pampa.mp3",
+    "Dave Matthews Band/The Central Park Concert (2003)/2-01 - Cortez, the Killer.mp3",
+  ]);
+});
+
+test("plan: identical twins keep the plain name; two different songs already named “Song” and “Song (2)” aren't swapped", () => {
+  const library = lib([
+    track("h1", "Eric Clapton/Conception (2003)/01 - Higher Ground (2).mp3", "Higher Ground", { track_no: 1, year: 2003, audio_hash: "same", quality: { format: "mp3", lossless: false, bitrate_kbps: 226 } }),
+    track("h2", "Eric Clapton/Conception (2003)/01 - Higher Ground.mp3", "Higher Ground", { track_no: 1, year: 2003, audio_hash: "same", quality: { format: "mp3", lossless: false, bitrate_kbps: 226 } }),
+    track("g1", "Muse/Hullabaloo (2002)/01 - Forced In (2).mp3", "Forced In", { track_no: 1, year: 2002 }),
+    track("g2", "Muse/Hullabaloo (2002)/01 - Forced In.mp3", "Forced In", { track_no: 1, year: 2002 }),
+  ]);
+  const plan = buildPlan(library, {}, DEFAULT_SETTINGS);
+  const clapton = plan.find((d) => d.title.includes("Conception"))!;
+  assert.deepEqual(clapton.duplicates!.map((d) => [d.keep.id, d.aside.id]), [["h2", "h1"]]);
+  assert.deepEqual(clapton.moves.map((m) => m.from), ["Eric Clapton/Conception (2003)/01 - Higher Ground (2).mp3"], "only the “(2)” copy moves (aside)");
+  assert.equal(plan.find((d) => d.title.includes("Hullabaloo")), undefined, "nothing to change: no name swap");
+});

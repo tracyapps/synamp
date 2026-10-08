@@ -3,6 +3,9 @@ import "./styles/organise.css";
 import { describe, keepVisible, NOTHING_PICKED, pick, pickAll, type Picked, summarise } from "./organise-select";
 import AddMusic from "./AddMusic";
 import type { IncomingStatus, Upload } from "./AddMusic";
+import Icon from "./ui/Icon";
+import SaveNote, { type SaveState, useSaveNote } from "./ui/SaveNote";
+import { DUPLICATES_FOLDER, type Finder, folderOf, type Folder, macName } from "./finder";
 
 /*
  * Organise the library: SynAmp proposes, you review, the librarian applies.
@@ -38,6 +41,8 @@ type View = {
   upload_max_mb: number;
   /** "Pause file changes" is on: the librarian takes no new batches. */
   paused: { at: number } | null;
+  /** "Open in Finder" works while the Mac that analyses the music is connected. */
+  finder?: Finder | null;
   progress: { job: string; batch: string; kind: "apply" | "undo"; done: number; total: number; current?: string; updated_at: number; claimed_at?: number } | null;
 };
 
@@ -72,14 +77,32 @@ const n = (value: number) => value.toLocaleString();
 const when = (ms: number) => new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 const BATCH_TEXT: Record<Batch["status"], string> = { queued: "Waiting for the librarian", running: "Applying…", done: "Applied", partial: "Partly applied", failed: "Not applied" };
 
-function Moves({ decision }: { decision: Decision }) {
+/** Opens a folder in Finder on the Mac that analyses the music, and says so beside the button. */
+function FinderButton({ finder, folder, at, saved, reveal, label = "Open in Finder" }: {
+  finder?: Finder | null; folder: Folder | null; at: string; saved: SaveState; reveal: Reveal; label?: string;
+}) {
+  if (!finder || !folder) return null;
+  const where = folder.path ? `${folder.area === "incoming" ? "incoming/" : ""}${folder.path}` : folder.area;
+  return <>
+    <button type="button" className="btn btn--ghost btn--sm" onClick={() => reveal(folder, at)}>
+      <Icon name="folder" size={16} /> {label}<span className="visually-hidden">: {where}, on {macName(finder)}</span>
+    </button>
+    <SaveNote note={saved} at={at} />
+  </>;
+}
+type Reveal = (folder: Folder, at: string) => void;
+
+function Moves({ decision, finder, saved, reveal }: { decision: Decision; finder?: Finder | null; saved: SaveState; reveal: Reveal }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   return (
     <div className="organise__moves">
-      <button type="button" className="btn btn--ghost btn--sm" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
-        {open ? "Hide" : "Show"} {n(decision.move_count)} file {decision.move_count === 1 ? "move" : "moves"}
-      </button>
+      <div className="organise__moves-actions">
+        <button type="button" className="btn btn--ghost btn--sm" aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
+          {open ? "Hide" : "Show"} {n(decision.move_count)} file {decision.move_count === 1 ? "move" : "moves"}
+        </button>
+        <FinderButton finder={finder} folder={folderOf(decision)} at={`finder-${decision.id}`} saved={saved} reveal={reveal} />
+      </div>
       {open && <div id={id}>
         <table>
           <caption className="visually-hidden">Files moved by: {decision.title}</caption>
@@ -94,7 +117,7 @@ function Moves({ decision }: { decision: Decision }) {
 }
 
 /** Two copies of one recording: which stays, which is set aside, and a way to pick the other. */
-function Duplicates({ decision, keep }: { decision: Decision; keep: (pair: string, track: string | null) => void }) {
+function Duplicates({ decision, keep, saved }: { decision: Decision; keep: (decision: string, pair: string, track: string | null) => void; saved: SaveState }) {
   const id = useId();
   const pairs = decision.duplicates ?? [];
   if (!pairs.length) return null;
@@ -112,21 +135,35 @@ function Duplicates({ decision, keep }: { decision: Decision; keep: (pair: strin
                 {pair.how === "recording" && pair.chosen_by !== "you" && <> Same recording by its fingerprint, but not identical audio — if one is a remaster or another edition, pick the one you want.</>}</dd>
             </dl>
             <div className="organise__dupe-actions">
-              <button type="button" className="btn btn--ghost btn--sm" aria-describedby={`why-${pair.pair}`} onClick={() => keep(pair.pair, pair.aside.id)}>
+              <button type="button" className="btn btn--ghost btn--sm" aria-describedby={`why-${pair.pair}`} onClick={() => keep(decision.id, pair.pair, pair.aside.id)}>
                 Keep the other copy instead<span className="visually-hidden">: {pair.aside.path}</span>
               </button>
-              {pair.chosen_by === "you" && <button type="button" className="btn btn--ghost btn--sm" onClick={() => keep(pair.pair, null)}>Go back to SynAmp’s pick</button>}
+              {pair.chosen_by === "you" && <button type="button" className="btn btn--ghost btn--sm" onClick={() => keep(decision.id, pair.pair, null)}>Go back to SynAmp’s pick</button>}
             </div>
           </li>
         ))}
       </ul>
+      <SaveNote note={saved} at={`dupes-${decision.id}`} />
     </div>
   );
 }
 
-function DecisionCard({ decision, review, keep, selected, onSelect }: {
-  decision: Decision; review: (ids: string[], status: Status) => void; keep: (pair: string, track: string | null) => void;
-  selected: boolean; onSelect: (id: string, shift: boolean) => void;
+/** Copies set aside as duplicates: where they are, and a way to look. */
+function SetAside({ finder, count, saved, reveal }: { finder?: Finder | null; count?: number; saved: SaveState; reveal: Reveal }) {
+  if (!count) return null; // nothing set aside yet
+  return (
+    <div className="organise__set-aside">
+      <p><strong>{n(count)} {count === 1 ? "copy" : "copies"}</strong> set aside in <code>incoming/_duplicates/</code>. Nothing there is deleted; have a look whenever you like.</p>
+      {finder ? <div className="organise__moves-actions">
+        <FinderButton finder={finder} folder={DUPLICATES_FOLDER} at="finder-duplicates" saved={saved} reveal={reveal} label="Open the duplicates folder in Finder" />
+      </div> : <p className="muted">“Open in Finder” works while the Mac that analyses your music is connected.</p>}
+    </div>
+  );
+}
+
+function DecisionCard({ decision, review, keep, selected, onSelect, saved, finder, reveal }: {
+  decision: Decision; review: (ids: string[], status: Status) => void; keep: (decision: string, pair: string, track: string | null) => void;
+  selected: boolean; onSelect: (id: string, shift: boolean) => void; saved: SaveState; finder?: Finder | null; reveal: Reveal;
 }) {
   const choice = (status: Status, label: string, disabled = false) => (
     <button type="button" className={`chip ${decision.status === status ? "is-on" : ""}`} aria-pressed={decision.status === status} disabled={disabled}
@@ -155,8 +192,8 @@ function DecisionCard({ decision, review, keep, selected, onSelect }: {
         <strong>Can’t apply as it stands:</strong>
         <ul>{decision.conflicts.map((c) => <li key={c}>{c}</li>)}</ul>
       </div>}
-      <Duplicates decision={decision} keep={keep} />
-      <Moves decision={decision} />
+      <Duplicates decision={decision} keep={keep} saved={saved} />
+      <Moves decision={decision} finder={finder} saved={saved} reveal={reveal} />
     </article>
   );
 }
@@ -203,7 +240,7 @@ function BatchProblems({ batch }: { batch: Batch }) {
   );
 }
 
-function SettingsForm({ settings, save }: { settings: Settings; save: (next: Settings) => void }) {
+function SettingsForm({ settings, save, saved }: { settings: Settings; save: (next: Settings) => void; saved: SaveState }) {
   const [draft, setDraft] = useState(settings);
   useEffect(() => setDraft(settings), [settings]);
   const box = (key: Exclude<keyof Settings, "compilations_folder">, label: string, hint: string) => (
@@ -225,7 +262,10 @@ function SettingsForm({ settings, save }: { settings: Settings; save: (next: Set
         <label>Compilations folder
           <input value={draft.compilations_folder} onChange={(e) => setDraft({ ...draft, compilations_folder: e.target.value })} placeholder="leave empty to keep compilations where they are" />
         </label>
-        <button className="btn btn--ghost btn--sm">Save settings</button>
+        <div className="organise__save-row">
+          <button className="btn btn--ghost btn--sm">Save settings</button>
+          <SaveNote note={saved} at="settings" />
+        </div>
       </form>
     </details>
   );
@@ -244,15 +284,22 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
   const allBox = useRef<HTMLInputElement>(null);
   const [confirming, setConfirming] = useState<"apply" | string | null>(null);
   const [message, setMessage] = useState("");
+  const saved = useSaveNote();
   const ids = useId();
 
   const query = () => new URLSearchParams({ kind, status, q, offset: String(offset), limit: String(pageSize) }).toString();
   const load = () => request<View>(`/organise?${query()}`).then(setView).catch((cause) => setMessage((cause as Error).message));
-  const send = async (path: string, body: unknown, done?: string) => {
+  /** `at`: say "Saved" (or what went wrong) right there, instead of at the bottom of the panel. */
+  const send = async (path: string, body: unknown, done?: string, at?: string) => {
+    if (at) saved.mark(at, "saving");
     try {
       setView(await request<View>(`${path}?${query()}`, { method: "POST", body: JSON.stringify(body) }));
-      if (done) setMessage(done);
-    } catch (cause) { setMessage((cause as Error).message); }
+      if (at) saved.mark(at, "saved", done);
+      else if (done) setMessage(done);
+    } catch (cause) {
+      if (at) saved.mark(at, "failed", (cause as Error).message);
+      else setMessage((cause as Error).message);
+    }
   };
   useEffect(() => {
     if (!open) return;
@@ -280,8 +327,17 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
     } catch (cause) { setMessage((cause as Error).message); }
   };
 
-  const keep = (pair: string, track: string | null) => send("/organise/keep", { pair, keep: track },
-    track ? "Switched which copy stays. The proposal changed, so approve it again when it looks right." : "Back to SynAmp’s pick. Approve the proposal again when it looks right.");
+  const keep = (decision: string, pair: string, track: string | null) => send("/organise/keep", { pair, keep: track },
+    track ? "Switched which copy stays. The proposal changed, so approve it again when it looks right." : "Back to SynAmp’s pick. Approve the proposal again when it looks right.",
+    `dupes-${decision}`);
+  const reveal: Reveal = async (folder, at) => {
+    const on = view?.finder ? macName(view.finder) : "your Mac";
+    saved.mark(at, "saving", undefined, `Asking ${on} to open it…`);
+    try {
+      await request("/analyzer/reveal", { method: "POST", body: JSON.stringify(folder) });
+      saved.mark(at, "saved", `a Finder window opens on ${on} in a few seconds.`, "Asked");
+    } catch (cause) { saved.mark(at, "failed", (cause as Error).message, "Couldn’t open it"); }
+  };
   const review = (decisionIds: string[], next: Status) => send("/organise/review", { ids: decisionIds, status: next });
   const reviewShown = (next: Status) => send("/organise/review", { filter: { kind, status, q }, status: next },
     next === "approved" ? "Approved everything shown that can be applied." : next === "skipped" ? "Skipped everything shown." : "Cleared.");
@@ -309,10 +365,11 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
             <div className="organise__pause">
               <button type="button" role="switch" aria-checked={!!view.paused} className={`switch ${view.paused ? "is-on" : ""}`}
                 aria-describedby={`${ids}-pause-hint`}
-                onClick={() => send("/organise/pause", { paused: !view.paused }, view.paused ? "File changes are back on." : "File changes paused.")}>
+                onClick={() => send("/organise/pause", { paused: !view.paused }, view.paused ? "File changes are back on." : "File changes paused.", "pause")}>
                 <span className="switch__track" aria-hidden="true"><span className="switch__thumb" /></span>
                 <span>Pause file changes</span>
               </button>
+              <SaveNote note={saved.note} at="pause" />
               <p className="muted" id={`${ids}-pause-hint`}>
                 {view.paused ? <>Paused since {when(view.paused.at)}. You can keep reviewing and applying; batches wait until you switch this off.</>
                   : <>Holds the librarian: nothing in your music folders changes while this is on. A batch already under way finishes first.</>}
@@ -326,7 +383,7 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
             onUploaded={() => { setKind("import"); setStatus("proposed"); setOffset(0); request("/import/rescan", { method: "POST", body: "{}" }).then(() => load()).catch(() => load()); }}
             onRescan={() => send("/import/rescan", {}, "Checked incoming/.")} />
 
-          <SettingsForm settings={view.settings} save={(next) => send("/organise/settings", next, "Settings saved — proposals updated.")} />
+          <SettingsForm settings={view.settings} saved={saved.note} save={(next) => send("/organise/settings", next, "Proposals updated.", "settings")} />
 
           <div className="organise__filters">
             <div className="organise__kinds" role="group" aria-label="Show">
@@ -371,7 +428,7 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
 
           {view.decisions.length === 0
             ? <p className="muted">{s!.total ? "Nothing matches these filters." : "Nothing to propose — the library already follows the naming settings (or hasn’t been exported yet)."}</p>
-            : view.decisions.map((decision) => <DecisionCard key={decision.id} decision={decision} review={review} keep={keep}
+            : view.decisions.map((decision) => <DecisionCard key={decision.id} decision={decision} review={review} keep={keep} saved={saved.note} finder={view.finder} reveal={reveal}
               selected={picked.selected.has(decision.id)} onSelect={(id, shift) => setPicked((current) => pick(current, order, id, shift))} />)}
           {view.matching > pageSize && <nav className="missing__pages" aria-label="Pages">
             <button type="button" className="btn btn--ghost btn--sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - pageSize))}>Previous</button>
@@ -389,6 +446,8 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
               Apply {n(s!.approved)} approved {s!.approved === 1 ? "change" : "changes"}…
             </button>}
           </div>
+
+          <SetAside finder={view.finder} count={view.incoming.enabled ? view.incoming.set_aside ?? 0 : undefined} saved={saved.note} reveal={reveal} />
 
           {view.batches.length > 0 && <div className="organise__batches">
             <h3>Recent batches</h3>

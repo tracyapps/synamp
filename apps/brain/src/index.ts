@@ -598,6 +598,8 @@ function organiseView(query: URLSearchParams) {
       : { enabled: false },
     upload_max_mb: runtime.uploadMaxMb,
     paused: organise.state.paused ?? null,
+    /** "Open in Finder" works while the Mac that analyses the music is connected: it opens the folder there. */
+    finder: (({ worker }) => (worker?.online && worker.library_path ? { host: worker.host ?? "your Mac" } : null))(analyzerControl.view()),
   };
 }
 
@@ -869,6 +871,11 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     analyzerControl.setSettings(await body(req));
     return send(res, 200, analyzerControl.view());
   }
+  if (path === "/api/v1/analyzer/reveal" && req.method === "POST") {
+    const input = await body(req);
+    return send(res, 202, analyzerControl.reveal(input.area, input.path));
+  }
+  if (path === "/api/v1/analyzer/reveals" && req.method === "POST") return send(res, 200, { paths: analyzerControl.takeReveals() });
   if (path === "/api/v1/analyzer/claim" && req.method === "POST") {
     const input = await body(req);
     return send(res, 200, { command: analyzerControl.claim(input.worker), memory: analyzerControl.memory() });

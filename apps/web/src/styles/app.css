@@ -195,3 +195,13 @@ label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) { letter-s
 .btn { text-decoration: none; }
 .brand { display: inline-flex; align-items: center; gap: 6px; }
 .brand img { display: block; width: auto; }
+
+/* "Saved" beside the thing you just changed (ui/SaveNote.tsx). */
+.save-note { display: inline-flex; align-items: center; min-height: 1.4em; font-size: 0.875rem; }
+.save-note__text { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; }
+.save-note__text.is-saving { color: var(--muted); }
+.save-note__text.is-saved { color: var(--success-ink); background: rgba(0, 230, 118, 0.1); border: 1px solid rgba(0, 230, 118, 0.35); animation: save-note-in 1.6s ease-out; }
+.save-note__text.is-failed { color: var(--danger-ink); background: rgba(255, 92, 87, 0.12); border: 1px solid rgba(255, 92, 87, 0.45); }
+.save-note__what { color: var(--fg); }
+@keyframes save-note-in { 0% { background: rgba(0, 230, 118, 0.32); } 100% { background: rgba(0, 230, 118, 0.1); } }
+@media (prefers-reduced-motion: reduce) { .save-note__text.is-saved { animation: none; } }

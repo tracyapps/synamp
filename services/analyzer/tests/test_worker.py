@@ -235,3 +235,28 @@ def test_the_worker_says_what_this_mac_has_and_follows_the_memory_setting(tmp_pa
     worker.once()
     assert brain.check_bodies and "memory_now" in brain.check_bodies[0], "it reports what it's using while it works"
     assert worker.allowance.settings["normal_gb"] == 6, "a change arrives during analysis"
+
+
+def test_open_in_finder_only_inside_the_music_folders(tmp_path: Path) -> None:
+    from synamp_analyzer.worker import reveal_target
+    cfg, music = library(tmp_path)
+    (music.parent / "incoming" / "_duplicates").mkdir(parents=True)
+    assert reveal_target(str(music / "Artist" / "Album"), music) == music / "Artist" / "Album"
+    assert reveal_target(str(music / "Artist" / "Album (2003)"), music) == music / "Artist", "not there yet: the folder above"
+    assert reveal_target(str(music.parent / "incoming" / "_duplicates"), music) == music.parent / "incoming" / "_duplicates"
+    assert reveal_target(str(music / ".." / ".." / "secrets"), music) is None
+    assert reveal_target("/Users/me/Documents", music) is None
+    assert reveal_target("relative/path", music) is None
+
+    opened: list[Path] = []
+
+    class Brain(FakeBrain):
+        def post(self, path: str, body: dict) -> dict:
+            if path == "/api/v1/analyzer/reveals":
+                return {"paths": [str(music / "Artist" / "Album"), "/etc"]}
+            return super().post(path, body)
+
+    worker, lines = make(cfg, Brain([]), reveal=lambda folder: opened.append(folder) or True)
+    assert worker.reveal_once() == 1
+    assert opened == [music / "Artist" / "Album"]
+    assert any("not opening '/etc'" in line for line in lines)

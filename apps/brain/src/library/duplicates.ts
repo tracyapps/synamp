@@ -19,6 +19,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { basename, dirname } from "node:path";
 import type { LibraryTrack } from "../query/evaluate.ts";
 
 export type Quality = {
@@ -125,6 +126,23 @@ function compare(a: number[], b: number[]): number {
   return 0;
 }
 
+/** "Song (2).mp3" / "Song copy.mp3" → the copy number (1 for the plain name). */
+const COPY_SUFFIX = /(?: \((\d{1,3})\)| copy(?: (\d{1,3}))?)$/i;
+export function copyNumber(path: string): { base: string; copy: number } {
+  const file = basename(path);
+  const dot = file.lastIndexOf(".");
+  const stemPart = dot > 0 ? file.slice(0, dot) : file;
+  const match = stemPart.match(COPY_SUFFIX);
+  if (!match) return { base: path, copy: 1 };
+  const base = `${dirname(path)}/${stemPart.slice(0, match.index)}${dot > 0 ? file.slice(dot) : ""}`;
+  return { base, copy: Number(match[1] ?? match[2] ?? 2) || 2 };
+}
+const copySuffix = (path: string) => {
+  const file = basename(path);
+  const stemPart = file.includes(".") ? file.slice(0, file.lastIndexOf(".")) : file;
+  return stemPart.match(COPY_SUFFIX)?.[0].trim() ?? "";
+};
+
 export type Choice = { keep: LibraryTrack; aside: LibraryTrack; why: string };
 
 /**
@@ -142,7 +160,12 @@ export function betterCopy(resident: LibraryTrack, arriving: LibraryTrack): Choi
     const [keep, aside] = byTags > 0 ? [resident, arriving] : [arriving, resident];
     return { keep, aside, why: `same quality; this copy has fuller tags` };
   }
-  return { keep: resident, aside: arriving, why: "same quality and tags; the copy already there stays" };
+  // A true tie: keep the copy with the cleaner name ("Song.mp3" over "Song (2).mp3").
+  const byName = (arriving.path ? copyNumber(arriving.path).copy : 1) - (resident.path ? copyNumber(resident.path).copy : 1);
+  if (byName < 0) return { keep: arriving, aside: resident, why: `same quality and tags; keeps the copy without “${copySuffix(resident.path!)}” in its name` };
+  return { keep: resident, aside: arriving, why: byName > 0
+    ? `same quality and tags; keeps the copy without “${copySuffix(arriving.path!)}” in its name`
+    : "same quality and tags; the copy already there stays" };
 }
 
 /** Stable key for a pair, whichever way round it comes. */

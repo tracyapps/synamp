@@ -24,7 +24,7 @@ import type { Library, LibraryTrack } from "../query/evaluate.ts";
 import { discFromFolder, groupAlbums, matchRelease } from "./albums.ts";
 import type { AlbumUnit } from "./albums.ts";
 import type { AlbumMatches, AlbumRecord } from "./missing.ts";
-import { betterCopy, describeQuality, pairKey, sameRecording, SET_ASIDE_FOLDER } from "./duplicates.ts";
+import { betterCopy, copyNumber, describeQuality, pairKey, sameRecording, SET_ASIDE_FOLDER } from "./duplicates.ts";
 import { albumFolderName, artistKey, isSafeRelative, pathKey, safeName, trackFileName, unswapName } from "./naming.ts";
 
 export class OrganiseError extends Error {
@@ -147,6 +147,25 @@ const asideMove = (track: LibraryTrack): Move => ({
 const asideNote = (n: number) => `${plural(n, "duplicate copy", "duplicate copies")} of the same recording: the better copy stays, the other goes to incoming/${SET_ASIDE_FOLDER} (not deleted)`;
 
 const VARIOUS = /^(?:various(?: artists)?|va)$/i;
+
+/** Same order as by path, except a plain name comes before its "(2)" copy. */
+export function byCleanNameFirst(a: LibraryTrack, b: LibraryTrack): number {
+  const x = copyNumber(a.path!), y = copyNumber(b.path!);
+  return x.base.localeCompare(y.base) || x.copy - y.copy || a.path!.localeCompare(b.path!);
+}
+/** Do two different songs in this folder share a track number (on the same known disc)? */
+function clashingNumbers(tracks: LibraryTrack[]): boolean {
+  const titles = new Map<string, string>();
+  for (const track of tracks) {
+    if (track.track_no === undefined) continue;
+    const key = `${discOf(track) ?? "?"}-${track.track_no}`;
+    const title = (track.title ?? posix.basename(copyNumber(track.path!).base)).toLowerCase().replace(/\s*\(\d+\)$/, "").trim();
+    const seen = titles.get(key);
+    if (seen !== undefined && seen !== title) return true;
+    titles.set(key, title);
+  }
+  return false;
+}
 const discOf = (track: LibraryTrack) => track.disc_no ?? (track.path ? discFromFolder(track.path) : undefined);
 const topFolder = (path: string) => (path.includes("/") ? path.slice(0, path.indexOf("/")) : undefined);
 
@@ -321,7 +340,19 @@ function albumDecision(unit: AlbumUnit, ctx: PlanContext, settings: OrganiseSett
       fromRelease.set(id, { disc: disc!, position: position! });
     }
   }
-  const discs = new Set(unit.tracks.map((t) => discOf(t) ?? fromRelease.get(t.id)?.disc ?? 1));
+  // Which disc each file is on. Tags and disc folders say so directly. The matched
+  // release is only asked when the files can't tell the discs apart themselves:
+  // files with no number, or two different songs sharing one number (a two-CD set
+  // in one folder, "01 - …" twice). Otherwise a single CD that MusicBrainz matched
+  // to a deluxe or CD+DVD edition would be renamed "1-01 - …" for nothing.
+  const numberClash = clashingNumbers(unit.tracks);
+  const askRelease = (t: LibraryTrack) => discOf(t) === undefined && (t.track_no === undefined || numberClash);
+  const releaseDiscs = new Set(unit.tracks.filter(askRelease).map((t) => fromRelease.get(t.id)?.disc).filter((d) => d !== undefined));
+  const ownDiscs = unit.tracks.some((t) => discOf(t) !== undefined);
+  // Every file the release placed is on one disc, and none say otherwise: that's one disc.
+  const releaseDisc = (t: LibraryTrack) => (askRelease(t) && (releaseDiscs.size > 1 || ownDiscs) ? fromRelease.get(t.id)?.disc : undefined);
+  const discOfFile = (t: LibraryTrack) => discOf(t) ?? releaseDisc(t);
+  const discs = new Set(unit.tracks.map((t) => discOfFile(t) ?? 1));
   const multiDisc = discs.size > 1 || [...discs].some((d) => d > 1) || unit.tracks.some((t) => (t.disc_total ?? 1) > 1);
   const highest = Math.max(0, ...unit.tracks.map((t) => Math.max(t.track_total ?? 0, t.track_no ?? 0)));
   const width = Math.max(2, String(highest).length);
@@ -334,16 +365,16 @@ function albumDecision(unit: AlbumUnit, ctx: PlanContext, settings: OrganiseSett
   const owners = new Map<string, LibraryTrack>();
   const sourceFolders = new Map<string, string>();
   let numbered = 0, numberedFromMb = 0, duplicates = 0, folded = 0;
-  for (const track of [...unit.tracks].sort((a, b) => a.path!.localeCompare(b.path!))) {
+  // Files without a copy number go first, so "Song.mp3" keeps its name and "Song (2).mp3" is the one that moves aside or stays "(2)".
+  for (const track of [...unit.tracks].sort(byCleanNameFirst)) {
     const from = track.path!;
     const inDiscFolder = posix.dirname(from) !== unit.key;
     const dir = inDiscFolder && !settings.fold_disc_folders ? `${newKey}/${posix.basename(posix.dirname(from))}` : newKey;
     if (inDiscFolder && settings.fold_disc_folders) folded++;
     let number = settings.number_tracks ? track.track_no : undefined;
-    let disc = discOf(track);
+    const disc = discOfFile(track);
     if (settings.number_tracks && number === undefined && fromRelease.has(track.id)) {
       number = fromRelease.get(track.id)!.position;
-      disc ??= fromRelease.get(track.id)!.disc;
       numberedFromMb++;
     }
     let name = settings.number_tracks

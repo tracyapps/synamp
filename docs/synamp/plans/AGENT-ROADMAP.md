@@ -684,3 +684,20 @@ Check on the owner's library (9 artist/style groups × 12 songs, top-5 cosine
 neighbours): same group 2.6–4.8 of 5 (mean 3.3) against 0.5 by chance;
 Berlioz 4.8, Budd 3.6, Eno ambient 2.7, Bon Jovi 2.6 (mixes with Beastie Boys
 and Cher — plausibly alike in sound).
+
+### 2026-10-08 — care polish: "Saved" beside the change, cleaner duplicate names, disc numbering, Open in Finder
+
+- `apps/web/src/ui/SaveNote.tsx` + `useSaveNote()`: one live-region note per section, shown beside the control
+  last changed (Saving… → ✓ Saved — what; failures as role=alert). Used in Analysis on your Mac, Playback
+  (localStorage; `writePrefs` now returns false when the browser won't keep it), Discography "What counts",
+  Missing tracks rows, Organise pause / naming settings / "Keep the other copy". Prefer it for any autosave.
+- Duplicates: `betterCopy` true tie keeps the copy without " (2)" / " copy"; album plans sort plain names
+  before their "(2)" copies (`byCleanNameFirst`), which also stops two different songs swapping names.
+- Disc numbers (owner saw single CDs proposed as "1-01"): on his library 22 albums, mostly single CDs
+  matched to a deluxe/CD+DVD MusicBrainz edition. Now the release's disc is used only when the files can't
+  tell discs apart (no number, or two different songs sharing one number); a lone release disc is ignored.
+  Flattened 2-CD folders now get 1-01 and 2-01 (before: both 1-01, then "(2)").
+- Open in Finder: POST /api/v1/analyzer/reveal {area: library|incoming, path} → the Mac worker's
+  reveal thread (POST /api/v1/analyzer/reveals every 3 s, also during analysis) runs `open` on the folder
+  inside the already-mounted share (smb:// links were tried: Finder mounts each subfolder as its own volume).
+  Only paths inside the library or incoming/; nearest existing parent if the folder isn't there.
