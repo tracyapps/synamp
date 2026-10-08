@@ -136,6 +136,11 @@ export default function ListenAnywhere({ request, startOpen = false }: { request
               {away ? <Address label="Anywhere (Tailscale)" value={away} onCopied={setMessage} />
                 : <p className="muted">Save the NAS’s Tailscale name above to see the address for when you’re away.</p>}
               <p>Sign in with your Navidrome user name and password. Use these addresses — not Navidrome’s own <code>:4533</code> — or your plays won’t reach SynAmp.</p>
+              <div className="anywhere__tip">
+                <h4>Save mobile data</h4>
+                <p>Most apps let you pick a smaller stream for mobile data and keep full quality on Wi-Fi. Look in the app’s settings for <strong>Streaming</strong>, <strong>Transcoding</strong> or <strong>Max bitrate</strong>, and choose <strong>128</strong> or <strong>160 kbps</strong> for mobile data and <strong>Original</strong> (or “Unlimited”) for Wi-Fi. Your NAS makes the smaller copy as you listen.</p>
+                <p className="muted">If an app has no such setting, Navidrome can cap it instead: in <NewTab href={`${window.location.protocol}//${host}:4533/app/#/player`}>Navidrome → Players</NewTab>, open the app and set <strong>Max bit rate</strong>. That cap applies on Wi-Fi too.</p>
+              </div>
               {tick("app_installed")}
             </li>
             <li>

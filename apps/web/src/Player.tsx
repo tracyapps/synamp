@@ -3,7 +3,7 @@ import "./styles/player.css";
 import { newId } from "./ids";
 import Icon from "./ui/Icon";
 import { setActiveAudio } from "./visuals/audio-graph";
-import { usePrefs, writePrefs } from "./playback-prefs";
+import { streamUrl, usePrefs, writePrefs } from "./playback-prefs";
 
 /*
  * The player is a thin client. It reports what physically happened — started,
@@ -128,7 +128,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
     if (!deck) return;
     setDuration(0);
     if (!current?.playable || !current.stream_url) { clear(deck, live.current); return; }
-    deck.src = current.stream_url;
+    deck.src = current.live ? current.stream_url : streamUrl(current.stream_url, prefs);
     deck.volume = prefs.volume;
     deckEntry.current[live.current] = current.entry_id;
     if (wantPlay.current) deck.play().catch(() => setStatus("Press play to start — the browser blocked autoplay."));
@@ -205,7 +205,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
     // Line up the next song 20 seconds early so it can start at once.
     if (upNext?.playable && upNext.stream_url && !upNext.live && other && left < Math.max(20, fadeSeconds() + 8) && deckEntry.current[spareIndex] !== upNext.entry_id) {
       other.preload = "auto";
-      other.src = upNext.stream_url;
+      other.src = streamUrl(upNext.stream_url, prefs);
       other.volume = prefs.volume;
       deckEntry.current[spareIndex] = upNext.entry_id;
       other.load();

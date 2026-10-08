@@ -176,7 +176,7 @@ export default function App() {
     case "settings":
       body = <div className="screen">
         <ScreenHead id={headingId} eyebrow="System" title="Settings"><p>Everything you can change without touching a config file.</p></ScreenHead>
-        <PlaybackSettings />
+        <PlaybackSettings request={call} />
         <Settings request={call} startOpen />
       </div>;
       break;

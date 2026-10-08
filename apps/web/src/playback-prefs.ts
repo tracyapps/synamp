@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 /*
  * How this device plays: crossfade length, whether albums play straight
- * through, and the volume. Kept in this browser (each device sounds different),
+ * through, the volume, and how big the streams are. Kept in this browser (each device sounds different),
  * shared live between the player and the Settings screen.
  */
 
@@ -13,11 +13,16 @@ export type PlaybackPrefs = {
   albumsStraight: boolean;
   /** 0–1. */
   volume: number;
+  /** Stream size: the original file, a lighter copy, or decide by connection ("auto"). */
+  quality: Quality;
 };
+
+export type Quality = "auto" | "full" | "lighter";
+const QUALITIES: Quality[] = ["auto", "full", "lighter"];
 
 const KEY = "synamp-playback";
 const EVENT = "synamp:playback";
-const DEFAULTS: PlaybackPrefs = { crossfade: 0, albumsStraight: true, volume: 1 };
+const DEFAULTS: PlaybackPrefs = { crossfade: 0, albumsStraight: true, volume: 1, quality: "auto" };
 
 export function readPrefs(): PlaybackPrefs {
   try {
@@ -26,6 +31,7 @@ export function readPrefs(): PlaybackPrefs {
       crossfade: Number.isFinite(saved.crossfade) ? Math.min(12, Math.max(0, saved.crossfade!)) : DEFAULTS.crossfade,
       albumsStraight: typeof saved.albumsStraight === "boolean" ? saved.albumsStraight : DEFAULTS.albumsStraight,
       volume: Number.isFinite(saved.volume) ? Math.min(1, Math.max(0, saved.volume!)) : DEFAULTS.volume,
+      quality: QUALITIES.includes(saved.quality as Quality) ? saved.quality! : DEFAULTS.quality,
     };
   } catch { return DEFAULTS; }
 }
@@ -44,4 +50,52 @@ export function usePrefs(): PlaybackPrefs {
     return () => window.removeEventListener(EVENT, on);
   }, []);
   return prefs;
+}
+
+/* --- Lighter streams on mobile data ------------------------------------------ */
+
+type Connection = { type?: string; saveData?: boolean; addEventListener?: (type: "change", on: () => void) => void; removeEventListener?: (type: "change", on: () => void) => void };
+const connection = (): Connection | undefined => (navigator as Navigator & { connection?: Connection }).connection;
+
+/** Why "Automatic" picks a lighter stream right now — or null when it picks full quality. */
+export type AwayReason = "mobile-data" | "data-saver" | "tailscale";
+
+/**
+ * Automatic's reasoning, from what this browser can tell:
+ *  - Android Chrome says when it's on mobile data, and when Data Saver is on.
+ *  - iPhones don't say, so the address is the clue: SynAmp opened through
+ *    Tailscale (a *.ts.net name or a 100.64–100.127 address) means away from home.
+ */
+export function awayReason(hostname = window.location.hostname, conn = connection()): AwayReason | null {
+  if (conn?.type === "cellular") return "mobile-data";
+  if (conn?.saveData) return "data-saver";
+  const host = hostname.toLowerCase();
+  if (host.endsWith(".ts.net")) return "tailscale";
+  const ip = host.match(/^100\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/);
+  if (ip && Number(ip[1]) >= 64 && Number(ip[1]) <= 127) return "tailscale";
+  return null;
+}
+
+/** Should the next song come as a lighter stream? */
+export function wantsLighter(prefs: PlaybackPrefs, reason: AwayReason | null = awayReason()): boolean {
+  return prefs.quality === "lighter" || (prefs.quality === "auto" && reason !== null);
+}
+
+/** The stream link with the size this device wants (the brain sends the original if it can't make a lighter one). */
+export function streamUrl(url: string, prefs: PlaybackPrefs): string {
+  if (!wantsLighter(prefs)) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}quality=lighter`;
+}
+
+/** Automatic's current reason, kept up to date when the connection changes (Wi-Fi → mobile data). */
+export function useAwayReason(): AwayReason | null {
+  const [reason, setReason] = useState(() => awayReason());
+  useEffect(() => {
+    const conn = connection();
+    const on = () => setReason(awayReason());
+    conn?.addEventListener?.("change", on);
+    window.addEventListener("online", on);
+    return () => { conn?.removeEventListener?.("change", on); window.removeEventListener("online", on); };
+  }, []);
+  return reason;
 }
