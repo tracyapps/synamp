@@ -171,3 +171,50 @@ def dense_pulse(path: Path, seed: int = 7, bpm: float = 120.0) -> np.ndarray:
         audio[start:start + len(note)] += note
     sf.write(path, audio, sr)
     return audio
+
+
+def ambient_pad(path: Path, seconds: float = 40.0, sample_rate: int = 44100, seed: int = 3) -> np.ndarray:
+    """Beatless: a slowly swelling wash (filtered noise) with soft chords that drift in pitch.
+
+    The shape of an Eno ambient piece — the case dsp_core revision 1 called
+    "121 BPM, fully confident". The chords wander slightly in pitch, as real
+    instruments and tape do; perfectly steady sine partials beat against each
+    other like a metronome, which no real recording does.
+    """
+    rng = np.random.default_rng(seed)
+    total = int(sample_rate * seconds)
+    t = np.arange(total) / sample_rate
+    wash = np.cumsum(rng.standard_normal(total))
+    wash -= np.convolve(wash, np.ones(2048) / 2048, mode="same")
+    swell = 0.5 + 0.5 * np.sin(2 * np.pi * t / rng.uniform(9, 15) + rng.uniform(0, 6.28))
+    out = 0.002 * wash * swell
+    start = 0.0
+    while start < seconds:
+        length = rng.uniform(5.0, 10.0)
+        envelope = np.clip((t - start) / 3.0, 0, 1) * np.clip((start + length - t) / 3.0, 0, 1)
+        for f in rng.choice([110, 138.6, 164.8, 220, 277.2, 329.6, 392], size=3, replace=False):
+            drift = np.cumsum(rng.standard_normal(total)) / sample_rate * 0.8  # slow random pitch wander
+            out += 0.05 * envelope * np.sin(2 * np.pi * f * (t + drift) + rng.uniform(0, 6.28))
+        start += rng.uniform(3.0, 7.0)
+    signal = (out / max(1e-9, np.max(np.abs(out))) * 0.5).astype(np.float32)
+    sf.write(str(path), signal, sample_rate)
+    return signal
+
+
+def free_time_notes(path: Path, seconds: float = 40.0, sample_rate: int = 44100, seed: int = 5) -> np.ndarray:
+    """Rubato piano-ish notes at random moments (about 1.5 a second): onsets, but no beat."""
+    rng = np.random.default_rng(seed)
+    total = int(sample_rate * seconds)
+    out = np.zeros(total, dtype=np.float64)
+    when = 0.0
+    while when < seconds - 1.0:
+        when += rng.exponential(1 / 1.5)
+        start = int(when * sample_rate)
+        n = min(total - start, int(1.2 * sample_rate))
+        if n <= 0:
+            break
+        tt = np.arange(n) / sample_rate
+        out[start:start + n] += 0.3 * np.exp(-tt * 4) * np.sin(2 * np.pi * rng.uniform(200, 800) * tt)
+    signal = out.astype(np.float32)
+    sf.write(str(path), signal, sample_rate)
+    return signal

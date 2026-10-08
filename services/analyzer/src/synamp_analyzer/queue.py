@@ -233,6 +233,19 @@ class JobQueue:
         self.db.conn.commit()
         return cleared
 
+    def reset_stages(self, track_path: Path, stages: list[str]) -> int:
+        """Mark some stages not-done for one track and put it back in the queue."""
+        row = self.db.conn.execute("SELECT stages_done FROM jobs WHERE track_path = ?", (str(track_path),)).fetchone()
+        if row is None:
+            return 0
+        done = set(json.loads(row["stages_done"] or "[]")) - set(stages)
+        self.db.conn.execute(
+            "UPDATE jobs SET stages_done = ?, state = ?, updated_at = ? WHERE track_path = ?",
+            (json.dumps(sorted(done)), JobState.PENDING.value, time.time(), str(track_path)),
+        )
+        self.db.conn.commit()
+        return 1
+
     def requeue_failed(self, max_attempts: int | None = None) -> int:
         """Put failed jobs with attempts left back in the queue. Returns count."""
         limit = self.max_attempts if max_attempts is None else max_attempts

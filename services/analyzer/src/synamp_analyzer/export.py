@@ -63,7 +63,7 @@ EXPORTED_SIGNALS: dict[str, tuple[str, ...]] = {
     # stage -> fields it owns. Keep in step with apps/brain/src/query/signals.ts;
     # a brain test reads this mapping and fails if a name is not registered there.
     "dsp_core": (
-        "bpm", "tempo_confidence", "pulse_clarity", "onset_rate", "percussiveness",
+        "bpm", "tempo_confidence", "pulse_clarity", "pulse_steadiness", "onset_rate", "percussiveness",
         "lufs_integrated", "loudness_range", "crest_factor", "dynamic_complexity",
         "clipping_density", "spectral_centroid", "spectral_flatness", "spectral_tilt",
     ),
@@ -75,6 +75,7 @@ EXPORTED_SIGNALS: dict[str, tuple[str, ...]] = {
 
 STATUS_FIELDS: dict[str, tuple[str, ...]] = {
     # Status strings the brain uses to gate eligibility (not signals themselves).
+    "dsp_core": ("tempo_status",),
     "beat": ("beat_status", "timing_status", "beat_method"),
 }
 

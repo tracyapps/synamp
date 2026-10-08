@@ -308,7 +308,13 @@ def caffeinate():
 
 
 def agent_plist(analyzer_dir: Path, env_file: Path, uv: str, log_file: Path) -> str:
-    """A launchd agent: runs the worker at login and restarts it if it stops."""
+    """A launchd agent: runs the worker at login and restarts it if it stops.
+
+    ProcessType Standard with Nice 10: "Background" kept the worker on the
+    efficiency cores with throttled CPU — about five times slower (dsp_core
+    18.6 s a track instead of ~3.5 s). A high nice value still lets everything
+    you're doing on the Mac go first.
+    """
     command = f"source '{env_file}' && cd '{analyzer_dir}' && exec '{uv}' run synamp-analyze worker"
     esc = lambda text: text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")  # noqa: E731
     return f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -321,7 +327,8 @@ def agent_plist(analyzer_dir: Path, env_file: Path, uv: str, log_file: Path) -> 
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>ThrottleInterval</key><integer>30</integer>
-  <key>ProcessType</key><string>Background</string>
+  <key>ProcessType</key><string>Standard</string>
+  <key>Nice</key><integer>10</integer>
   <key>StandardOutPath</key><string>{esc(str(log_file))}</string>
   <key>StandardErrorPath</key><string>{esc(str(log_file))}</string>
 </dict>

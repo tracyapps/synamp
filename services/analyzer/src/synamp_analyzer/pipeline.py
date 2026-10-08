@@ -20,7 +20,7 @@ from pathlib import Path
 from . import __version__
 from .config import AnalyzerConfig
 from .metrics import extract_dsp_core
-from .models import STAGES, AnalysisResult, Track
+from .models import STAGE_REVISIONS, STAGES, AnalysisResult, Track
 from .queue import Job, JobQueue
 import json
 from dataclasses import fields as dataclass_fields
@@ -210,6 +210,7 @@ def run_stages(
         else:  # pragma: no cover - guards against a stage being added without a runner
             raise NotImplementedError(f"no runner for stage {stage!r}")
         result.stages_done.add(stage)
+        result.stage_revisions[stage] = STAGE_REVISIONS.get(stage, 1)
         persist(stage)
         if after_stage is not None:
             after_stage(stage)
@@ -256,6 +257,95 @@ def backfill_fingerprints(db: Database, should_stop=None, progress=print, on_tra
     return filled
 
 
+def analysis_processes(configured: int) -> int:
+    """How many tracks to analyse at once: what's configured, within what the machine can take.
+
+    Each process holds one decoded track and its spectrogram (up to ~2.5 GB for a
+    long recording), so memory sets the ceiling as much as cores do. Two cores
+    stay free for the rest of the Mac.
+    """
+    cores = os.cpu_count() or 1
+    try:
+        memory_gb = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES") / 1024**3
+    except (ValueError, OSError, AttributeError):
+        memory_gb = 8.0
+    return max(1, min(configured, cores - 2, int(memory_gb // 12) or 1))
+
+
+LONG_RECORDING_SECONDS = 15 * 60
+
+
+def is_long_recording(path: Path) -> bool:
+    """Long enough that analysing it beside others could run the Mac out of memory."""
+    try:
+        from tinytag import TinyTag
+        duration = TinyTag.get(str(path)).duration
+        if duration:
+            return duration > LONG_RECORDING_SECONDS
+    except Exception:
+        pass
+    try:
+        return path.stat().st_size > 150 * 1024 * 1024
+    except OSError:
+        return False
+
+
+def analyze_job(db: Database, queue: JobQueue, job: Job, progress=print) -> str | None:
+    """Run one claimed job's outstanding stages and mark it done.
+
+    Returns which kind of reuse happened ("kept_after_retag", "moved",
+    "duplicate_reused") or None. Raises on failure; the caller records it.
+    """
+    existing = load_result(db, job.track_path)
+    previous_hash = existing.audio_hash if existing else None
+    previous_stages = set(existing.stages_done) if existing else set()
+    result = existing or AnalysisResult(track_path=job.track_path)
+    # The queue is authoritative about which stages are finished, and it is
+    # *replaced* rather than merged: a job that was reset for re-analysis reports
+    # no stages, and that has to invalidate the stored result's stage record too.
+    # Merging here is how a re-analysed file keeps serving its previous measurements.
+    result.stages_done = set(job.stages_done)
+    reused_kind: list[str] = []
+
+    def persist(stage: str, result=result) -> None:
+        save_result(db, result, __version__)
+        queue.record_stage(job, stage)
+
+    def after_stage(stage: str, result=result, persist=persist) -> None:
+        if stage != "identity" or not result.audio_hash:
+            return
+        record_audio(db, result.track_path, result.audio_hash)
+        reused = reuse_analysis(db, result, previous_hash, previous_stages)
+        if reused:
+            reused_kind.append(reused)
+            for done in sorted(result.stages_done - {"identity"}):
+                persist(done)
+            progress(f"    same audio as before ({reused.replace('_', ' ')}): kept existing analysis")
+
+    run_stages(result, persist, progress=progress, after_stage=after_stage)
+    save_result(db, result, __version__)
+    queue.complete(job)
+    return reused_kind[0] if reused_kind else None
+
+
+def _analyze_in_process(db_path: str, max_attempts: int, track_path: str, stages_done: list[str]) -> dict:
+    """One job in a separate process (parallel analysis). Opens its own database connection."""
+    lines: list[str] = []
+    db = Database(Path(db_path))
+    try:
+        queue = JobQueue(db, max_attempts)
+        job = Job(track_path=Path(track_path), stages_done=set(stages_done))
+        try:
+            reused = analyze_job(db, queue, job, progress=lines.append)
+            return {"ok": True, "reused": reused, "lines": lines}
+        except Exception as exc:  # one bad file must not stop the run
+            error = f"{type(exc).__name__}: {exc}"
+            queue.fail(job, error)
+            return {"ok": False, "error": error, "lines": lines}
+    finally:
+        db.close()
+
+
 def run_analyze(
     cfg: AnalyzerConfig,
     limit: int | None = None,
@@ -268,7 +358,8 @@ def run_analyze(
     """Drain the queue. Returns a summary of what happened.
 
     `should_stop` (optional) is asked before each track; returning True ends the
-    run cleanly, as if the queue were empty (the worker's Pause button).
+    run cleanly, as if the queue were empty (the worker's Pause button). With
+    more than one process (cfg.workers), tracks already started finish first.
     """
     db = Database(cfg.db_path)
     queue = JobQueue(db, cfg.max_attempts)
@@ -287,10 +378,15 @@ def run_analyze(
         summary["stage_cleared"] = queue.clear_stage(redo_stage)
     if requeue_failed:
         summary["requeued_failed"] = queue.requeue_failed()
+    summary["outdated"] = requeue_outdated(db, queue)
 
     reporter = reporter or ProgressReporter(cfg.brain_url, cfg.brain_token, cfg.library_path)
     clock = RunClock()
+    in_flight: dict[object, tuple[Job, bool]] = {}
+    held: Job | None = None
     current = {"name": ""}
+    processes = analysis_processes(cfg.workers)
+    summary["processes"] = processes
 
     def run_state() -> dict:
         remaining = db.conn.execute("SELECT COUNT(*) FROM jobs WHERE state IN ('pending', 'running')").fetchone()[0]
@@ -302,70 +398,149 @@ def run_analyze(
             "rate_per_minute": clock.rate_per_minute(), "eta_seconds": clock.eta_seconds(remaining),
         }
 
+    def finished(job: Job, outcome: dict) -> None:
+        for line in outcome.get("lines", []):
+            progress(line)
+        if outcome["ok"]:
+            summary["completed"] += 1
+            if outcome.get("reused"):
+                summary[outcome["reused"]] += 1
+        else:
+            summary["failed"] += 1
+            progress(f"    ! failed ({job.track_path.name}): {outcome['error']}")
+        clock.tick()
+
     reporter.report(db, "analyzing", run_state(), force=True)
     fingerprints_filled = False
+    pool = None
+
+    def new_pool():
+        import multiprocessing
+        from concurrent.futures import ProcessPoolExecutor
+        return ProcessPoolExecutor(max_workers=processes, mp_context=multiprocessing.get_context("spawn"))
+
+    if processes > 1:
+        pool = new_pool()
+        progress(f"  analysing {processes} tracks at a time")
 
     try:
-        while limit is None or summary["claimed"] < limit:
-            if should_stop is not None and should_stop():
+        while True:
+            stopping = should_stop is not None and should_stop()
+            if stopping:
                 summary["stopped"] = 1
-                break
             # Chromaprint installed (now or mid-run): catch up the tracks done without it.
-            if not fingerprints_filled and summary["claimed"] % 50 == 0 and find_fpcalc():
+            if not stopping and not in_flight and not fingerprints_filled and summary["claimed"] % 50 == 0 and find_fpcalc():
                 fingerprints_filled = True
                 def on_track(done: int, total: int) -> None:
                     current["name"] = f"filling in fingerprints for earlier tracks ({done:,} of {total:,})"
                     reporter.report(db, "analyzing", run_state())
                 summary["fingerprints_filled"] = backfill_fingerprints(db, should_stop, progress, on_track)
                 current["name"] = ""
-            job = queue.claim()
-            if job is None:
+            # Start tracks until every process is busy (one at a time without a pool).
+            # A very long recording (a 60-minute ambient piece) can need ~10 GB on
+            # its own, so it runs alone: nothing else starts while it's going.
+            room = processes if pool else 1
+            while not stopping and (limit is None or summary["claimed"] < limit or held is not None):
+                if any(long for _job, long in in_flight.values()):
+                    break
+                if held is None:
+                    if len(in_flight) >= room:
+                        break
+                    job = queue.claim()
+                    if job is None:
+                        break
+                    summary["claimed"] += 1
+                    progress(f"  {job.track_path.name}")
+                    if pool is not None and in_flight and is_long_recording(job.track_path):
+                        held = job
+                        progress(f"    long recording: waiting to analyse it on its own")
+                        break
+                else:
+                    if in_flight:
+                        break
+                    job, held = held, None
+                if pool is None:
+                    current["name"] = job.track_path.name
+                    try:
+                        reused = analyze_job(db, queue, job, progress)
+                        finished(job, {"ok": True, "reused": reused})
+                    except Exception as exc:  # one bad file must not stop the run
+                        queue.fail(job, f"{type(exc).__name__}: {exc}")
+                        finished(job, {"ok": False, "error": f"{type(exc).__name__}: {exc}"})
+                    reporter.report(db, "analyzing", run_state())
+                    break
+                args = (_analyze_in_process, str(cfg.db_path), cfg.max_attempts, str(job.track_path), sorted(job.stages_done))
+                try:
+                    future = pool.submit(*args)
+                except Exception:  # the pool broke (a process was killed): start a fresh one
+                    pool.shutdown(wait=False, cancel_futures=True)
+                    pool = new_pool()
+                    future = pool.submit(*args)
+                in_flight[future] = (job, is_long_recording(job.track_path))
+                current["name"] = ", ".join(item.track_path.name for item, _long in in_flight.values())
+                reporter.report(db, "analyzing", run_state())
+            if stopping and held is not None:
+                queue.reset_stages(held.track_path, [])  # back in the queue, untouched
+                held = None
+            if pool is None:
+                if stopping or queue_empty(db) or (limit is not None and summary["claimed"] >= limit):
+                    break
+                continue
+            if not in_flight and held is None:
                 break
-            summary["claimed"] += 1
-            current["name"] = job.track_path.name
-            progress(f"  {job.track_path.name}")
-            try:
-                existing = load_result(db, job.track_path)
-                previous_hash = existing.audio_hash if existing else None
-                previous_stages = set(existing.stages_done) if existing else set()
-                result = existing or AnalysisResult(track_path=job.track_path)
-                # The queue is authoritative about which stages are finished,
-                # and it is *replaced* rather than merged: a job that was reset
-                # for re-analysis reports no stages, and that has to invalidate
-                # the stored result's stage record too. Merging here is how a
-                # re-analysed file keeps serving its previous measurements.
-                result.stages_done = set(job.stages_done)
-
-                def persist(stage: str, result=result) -> None:
-                    save_result(db, result, __version__)
-                    queue.record_stage(job, stage)
-
-                def after_stage(stage: str, result=result, persist=persist) -> None:
-                    if stage != "identity" or not result.audio_hash:
-                        return
-                    record_audio(db, result.track_path, result.audio_hash)
-                    reused = reuse_analysis(db, result, previous_hash, previous_stages)
-                    if reused:
-                        summary[reused] += 1
-                        for done in sorted(result.stages_done - {"identity"}):
-                            persist(done)
-                        progress(f"    same audio as before ({reused.replace('_', ' ')}): kept existing analysis")
-
-                run_stages(result, persist, progress=progress, after_stage=after_stage)
-                save_result(db, result, __version__)
-                queue.complete(job)
-                summary["completed"] += 1
-            except Exception as exc:  # one bad file must not stop the run
-                queue.fail(job, f"{type(exc).__name__}: {exc}")
-                summary["failed"] += 1
-                progress(f"    ! failed: {type(exc).__name__}: {exc}")
-            clock.tick()
+            if not in_flight:
+                continue
+            from concurrent.futures import FIRST_COMPLETED, wait
+            done, _ = wait(list(in_flight), timeout=5.0, return_when=FIRST_COMPLETED)
+            for future in done:
+                job, _long = in_flight.pop(future)
+                try:
+                    finished(job, future.result())
+                except Exception as exc:  # the process itself died (out of memory?)
+                    queue.fail(job, f"analysis process stopped: {type(exc).__name__}")
+                    finished(job, {"ok": False, "error": f"analysis process stopped: {type(exc).__name__}"})
+            current["name"] = ", ".join(item.track_path.name for item, _long in in_flight.values())
             reporter.report(db, "analyzing", run_state())
         current["name"] = ""
         reporter.report(db, "idle", run_state(), force=True)
     finally:
+        if pool is not None:
+            pool.shutdown(wait=True, cancel_futures=True)
         db.close()
     return summary
+
+
+def queue_empty(db: Database) -> bool:
+    return db.conn.execute("SELECT 1 FROM jobs WHERE state = 'pending' LIMIT 1").fetchone() is None
+
+
+def requeue_outdated(db: Database, queue: JobQueue) -> int:
+    """Send tracks back for any stage whose method changed since they were analysed.
+
+    Each stage has a revision (models.STAGE_REVISIONS). A stored result records
+    the revision each stage ran at (missing = 1). When the code moves a stage
+    on, only that stage is redone; the others keep their values.
+    """
+    newer = {stage: rev for stage, rev in STAGE_REVISIONS.items() if rev > 1}
+    if not newer:
+        return 0
+    reopened = 0
+    rows = db.conn.execute(
+        "SELECT j.track_path, j.stages_done, r.payload FROM jobs j LEFT JOIN results r ON r.track_path = j.track_path"
+    ).fetchall()
+    for row in rows:
+        done = set(json.loads(row["stages_done"] or "[]"))
+        stale = [stage for stage in newer if stage in done]
+        if not stale:
+            continue
+        try:
+            revisions = json.loads(row["payload"] or "{}").get("stage_revisions") or {}
+        except ValueError:
+            revisions = {}
+        outdated = [stage for stage in stale if int(revisions.get(stage, 1)) < newer[stage]]
+        if outdated:
+            reopened += queue.reset_stages(Path(row["track_path"]), outdated)
+    return reopened
 
 
 def reuse_analysis(db: Database, result: AnalysisResult, previous_hash: str | None, previous_stages: set[str]) -> str | None:
