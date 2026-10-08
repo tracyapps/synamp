@@ -127,3 +127,10 @@
 .library-view-link { margin: 16px 0 8px; }
 .library-selection-sample { padding-left: 24px; font-size: .875rem; }
 .library-selection-sample li { padding: 4px 0; overflow-wrap: anywhere; }
+
+/* Long lists: only rows near the screen are drawn; spacers stand in for the rest (useLibraryWindow). */
+.browse__spacer, .browse__spacer td { padding: 0 !important; border: 0 !important; margin: 0; list-style: none; }
+.browse__grid > .browse__spacer { grid-column: 1 / -1; }
+.browse__waiting .album__meta, .browse__waiting th { opacity: .7; }
+/* Keep the reading position steady while rows above are measured. */
+.browse__results, .browse__table tbody { overflow-anchor: none; } /* useLibraryWindow keeps the place itself (Safari has no scroll anchoring) */

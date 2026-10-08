@@ -49,7 +49,9 @@ export function AddToPlaylist({ request, track, playlists, onAdded, disabled = f
   );
 }
 
-export function AlbumRow({ album, request, play, playlists, say, disabled = false }: { album: AlbumSummary; request: Request; play: Play; playlists: PlaylistNode[]; say: (text: string) => void; disabled?: boolean }) {
+export function AlbumRow({ album, request, play, playlists, say, disabled = false, itemProps }: { album: AlbumSummary; request: Request; play: Play; playlists: PlaylistNode[]; say: (text: string) => void; disabled?: boolean;
+  /** Extra attributes for the list item (its place in a long list). */
+  itemProps?: Record<string, string | number> }) {
   const [open, setOpen] = useState(false);
   const [tracks, setTracks] = useState<TrackSummary[] | null>(null);
   const listId = useId();
@@ -61,7 +63,7 @@ export function AlbumRow({ album, request, play, playlists, say, disabled = fals
       .then((result) => setTracks(result.tracks)).catch((cause) => say((cause as Error).message));
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <li className="album">
+    <li className="album" {...itemProps}>
       <div className="album__row">
         <span className="album__art" aria-hidden="true" />
         <div className="album__text">
