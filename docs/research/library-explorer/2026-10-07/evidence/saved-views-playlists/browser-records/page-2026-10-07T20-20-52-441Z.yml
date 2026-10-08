@@ -1,0 +1,92 @@
+- generic [ref=e3]:
+  - link "Skip to content" [ref=e4] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e5]:
+    - link "SynAmp, go to Library" [ref=e6] [cursor=pointer]:
+      - /url: "#/library"
+  - generic [ref=e7]:
+    - navigation "SynAmp" [ref=e8]:
+      - group [ref=e9]:
+        - paragraph [ref=e10]: Listen
+        - link "Library" [ref=e11] [cursor=pointer]:
+          - /url: "#/library"
+        - link "Galaxy" [ref=e14] [cursor=pointer]:
+          - /url: "#/galaxy"
+        - link "Playlists" [ref=e21] [cursor=pointer]:
+          - /url: "#/playlists"
+        - link "Radio" [ref=e26] [cursor=pointer]:
+          - /url: "#/radio"
+        - link "Party" [ref=e29] [cursor=pointer]:
+          - /url: "#/party"
+      - group [ref=e32]:
+        - paragraph [ref=e33]: Understand
+        - link "The Brain" [ref=e34] [cursor=pointer]:
+          - /url: "#/brain"
+        - link "Library care" [ref=e37] [cursor=pointer]:
+          - /url: "#/care"
+      - group [ref=e40]:
+        - paragraph [ref=e41]: System
+        - link "Listen anywhere" [ref=e42] [cursor=pointer]:
+          - /url: "#/anywhere"
+        - link "Settings" [ref=e48] [cursor=pointer]:
+          - /url: "#/settings"
+    - main [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - paragraph [ref=e55]: Listen
+          - heading "Library" [level=1] [ref=e57]
+          - paragraph [ref=e59]: Search, group, and explore the music you own.
+        - region [ref=e60]:
+          - generic [ref=e61]:
+            - generic [ref=e62]:
+              - heading "Library" [level=2] [ref=e63]
+              - status [ref=e64]: Updating…
+            - group "Library view" [ref=e65]:
+              - button "List" [pressed] [ref=e66] [cursor=pointer]
+              - button "Grid" [ref=e67] [cursor=pointer]
+              - button "Table" [ref=e68] [cursor=pointer]
+              - button "Views" [ref=e69] [cursor=pointer]
+          - generic [ref=e70]:
+            - search [ref=e71]:
+              - generic [ref=e72]:
+                - generic [ref=e73]: Search albums, artists and songs
+                - searchbox "Search albums, artists and songs" [ref=e74]
+              - generic [ref=e75]:
+                - text: Sort
+                - combobox "Sort" [ref=e76]:
+                  - option "Title"
+                  - option "Type"
+                  - option "Artist / credit" [selected]
+                  - option "Album artist"
+                  - option "Album"
+                  - option "Year"
+                  - option "Songs"
+                  - option "Duration"
+                  - option "Genre"
+              - button "Sort descending" [ref=e77] [cursor=pointer]: ↑ Ascending
+            - group [ref=e79]:
+              - generic "Advanced filters" [ref=e80] [cursor=pointer]
+              - option "Contains words" [selected]
+              - option "Exact field"
+              - option "Wildcard (* / ?)"
+              - option "Similar spelling"
+              - option "AND · match all" [selected]
+              - option "OR · match any"
+            - generic [ref=e81]:
+              - generic [ref=e82]:
+                - text: Group by
+                - combobox "Group by" [ref=e83]:
+                  - option "None" [selected]
+                  - option "Album artist"
+                  - option "Artist / credit"
+                  - option "Album title"
+                  - option "Decade"
+                  - option "Genre"
+              - button "Create playlist" [disabled]
+            - status [ref=e84]
+            - generic:
+              - list "Library results"
+  - region "Player" [ref=e86]:
+    - generic [ref=e89]:
+      - paragraph [ref=e90]: Nothing playing
+      - paragraph [ref=e91]: Press Play on an album or a playlist.

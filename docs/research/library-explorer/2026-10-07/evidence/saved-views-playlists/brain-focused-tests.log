@@ -1,0 +1,34 @@
+✔ explorer selection routes authorize, snapshot every match, persist once and retry without duplicates (208.9045ms)
+✔ album identity keeps folders separate but searches every track credit (7.243459ms)
+✔ all entity types include loose songs and artist summaries keep full credits separate (0.179042ms)
+✔ exact matching is normalized whole field, glob is anchored with literal punctuation (0.205542ms)
+✔ fuzzy matching catches bounded misspellings without broad short-token guesses (0.19825ms)
+✔ AND/OR rule logic and exclusions have explicit semantics (0.1685ms)
+✔ year range always intersects text logic, excludes missing dates, validates bounds (0.293542ms)
+✔ group totals cover all matches before paging; multi-genre memberships are explicit (0.153292ms)
+✔ sort and pagination are deterministic and bounded (0.102333ms)
+✔ every table field sorts globally in both directions before pagination (1.814292ms)
+✔ missing dates and durations sort last in either direction (0.192167ms)
+✔ invalid rules fail plainly and never become an unrestricted search (0.117625ms)
+✔ year text stays searchable and non-Latin queries never collapse to empty (0.431166ms)
+✔ wildcards cannot create regex backtracking and ? matches one Unicode character (0.245084ms)
+✔ full selection overrides displayed album/artist types, ignores paging, sorts globally, and deduplicates IDs (14.976917ms)
+✔ selection applies year AND/OR/not rules and active pivot key at song level, without expanding matching albums (0.738041ms)
+✔ preview TTL, bounded receipts, empty results, invalid names, and idempotent retries (1.191875ms)
+✔ signal-only library changes are allowed, but replaced or missing IDs reject the complete save (0.719333ms)
+✔ snapshot creation uses one save, preserves preview state on real storage failure, and permits retry (1.882708ms)
+✔ a selection above the track ceiling is rejected explicitly rather than truncated (262.915375ms)
+✔ nested folders and roll-ups stay live as tracks are added (6.45775ms)
+✔ interleave alternates children of the source folder (1.738542ms)
+✔ shuffle retains every entry, including duplicates (1.527542ms)
+✔ rejects recursive roll-ups and preserves the prior state (0.806833ms)
+✔ persists edits and protects referenced nodes from deletion (1.426625ms)
+✔ smart playlists store the plan, resolve live, and reject invalid plans (2.501333ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 391.111583

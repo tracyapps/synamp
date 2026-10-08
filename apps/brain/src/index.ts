@@ -57,6 +57,7 @@ import { ImportError, matchPlaylists, parsePlaylistFile } from "./library/playli
 import type { MatchedPlaylist } from "./library/playlist-import.ts";
 import { albumTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
 import { explore } from "./library/explore.ts";
+import { ExplorerSelections } from "./library/explorer-selection.ts";
 import { galaxy, galaxyArtist, galaxyRandom } from "./library/galaxy.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
 import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
@@ -389,6 +390,7 @@ const playlists = new PlaylistStore(config.playlistDataPath, {
   resolveSmart: (plan, _hash, playlistId) => evaluateSaved(plan, playlistId).strict
     .map((track) => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) })),
 });
+const explorerSelections = new ExplorerSelections();
 
 // --- the session brain: epoch readout, forget, cross-epoch proposals ---------
 
@@ -754,6 +756,15 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // --- browsing the library ----------------------------------------------------
   if (path === "/api/v1/library/explore" && req.method === "GET") {
     return send(res, 200, explore(currentLibrary(), Object.fromEntries(url.searchParams)));
+  }
+  if (path === "/api/v1/library/explore/selection" && req.method === "GET") {
+    return send(res, 200, explorerSelections.preview(currentLibrary(), Object.fromEntries(url.searchParams)));
+  }
+  if (path === "/api/v1/library/explore/playlist" && req.method === "POST") {
+    const input = await body(req);
+    const result = explorerSelections.create(currentLibrary(), playlists, input.selection_id, input.name);
+    if (!result.duplicate) playlistsChanged();
+    return send(res, result.duplicate ? 200 : 201, result);
   }
   if (path === "/api/v1/library/galaxy" && req.method === "GET") {
     const q = url.searchParams;

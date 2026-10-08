@@ -160,6 +160,10 @@
         {
           "label": "Approved concept and design contract",
           "path": "library-explorer/2026-10-07/concept-provenance.json"
+        },
+        {
+          "label": "Saved views and full-filter playlist verification",
+          "path": "library-explorer/2026-10-07/saved-views-playlists-verification.md"
         }
       ]
     }
@@ -296,10 +300,10 @@
     {
       "id": "LE04-10",
       "title": "Reviewed release identity and richer Galaxy actions",
-      "state": "Planned; dependencies in Library Explorer handoff",
+      "state": "Remaining work planned; LE08a completed separately",
       "depends": "LE02, LE06; reviewed identity schema",
       "sources": "Owner brainstorm; census and primary tagging docs",
-      "acceptance": "Virtual release review, explicit artist identities, paths, nested pivots, notes/tags and saved views, verified listening metrics, tree/flower/radial layout and reduced motion."
+      "acceptance": "Virtual release review, explicit artist identities, paths, nested pivots, notes/tags, verified listening metrics, tree/flower/radial layout and reduced motion."
     },
     {
       "id": "VB01",
@@ -308,6 +312,22 @@
       "depends": "none",
       "sources": "Owner visualizer bug; installed Butterchurn viewport reproduction",
       "acceptance": "Physical renderer/canvas pixels agree after startup/resize/DPR change, fullscreen dialog contains scroll and restores it on Close/Escape."
+    },
+    {
+      "id": "LE03a",
+      "title": "Saved Library views and shared filter state",
+      "state": "Implemented; isolated browser checks verified",
+      "depends": "LE02",
+      "sources": "Owner tester priority; Library Explorer handoff",
+      "acceptance": "Named browser-local views, strict versioned links and refresh/Back/Forward restoration; malformed data preserved until explicit reset."
+    },
+    {
+      "id": "LE08a",
+      "title": "Manual playlist from all filtered songs",
+      "state": "Implemented; API/browser checks verified",
+      "depends": "LE02, LE03a",
+      "sources": "Owner brainstorm; Library Explorer handoff",
+      "acceptance": "Count/sample preview across whole song result, fixed server snapshot, atomic storage and idempotent retry; no truncation or changed-ID dropping."
     }
   ],
   "errata": [

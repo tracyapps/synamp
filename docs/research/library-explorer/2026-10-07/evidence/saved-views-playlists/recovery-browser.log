@@ -1,0 +1,68 @@
+### Result
+{"checks":["Empty-route state survives refresh","Open Views link follows Back","Back invalidates preview before confirmation","Lost acknowledgement retries same playlist without duplicate","Corrupt saved views preserved until explicit reset","390px dialog contained","Malformed last view preserved and reset recovers","Unsupported shared view preserved with clear error"]}
+### Ran Playwright code
+```js
+await (async page => {
+ const assert=(value,label)=>{if(!value)throw new Error(label)};
+ const checks=[];
+ await page.goto('http://127.0.0.1:39822/');
+ await page.evaluate(()=>localStorage.clear()); await page.reload();
+ await page.getByRole('searchbox').fill('Bulk');
+ await page.waitForFunction(()=>location.hash.includes('library_view=') && JSON.parse(localStorage.getItem('synamp-library-state-v1')).q==='Bulk');
+ await page.reload(); assert(await page.getByRole('searchbox').inputValue()==='Bulk','emptyroute refresh'); checks.push('Empty-route state survives refresh');
+ await page.getByRole('button',{name:'Views',exact:true}).click();
+ const views=page.getByRole('dialog',{name:'Saved Library views'});
+ await views.getByRole('textbox',{name:'View name'}).fill('Recovery bulk');
+ await views.getByRole('button',{name:'Save current view'}).click();
+ await views.getByRole('button',{name:'Close saved views'}).click();
+ await page.getByRole('searchbox').fill('Björk'); await page.locator('.album__title').filter({hasText:/^Debut$/}).waitFor();
+ await page.getByRole('button',{name:'Views',exact:true}).click(); await views.getByRole('button',{name:'Open',exact:true}).click();
+ await page.locator('.album__title').filter({hasText:/^Bulk album$/}).waitFor();
+ await page.getByRole('button',{name:'Views',exact:true}).click(); await page.goBack();
+ await page.waitForFunction(()=>document.querySelector('input[type=search]').value==='Björk');
+ const link=await views.getByRole('textbox',{name:'Link to current view'}).inputValue();
+ assert(JSON.parse(new URLSearchParams(new URL(link).hash.split('?')[1]).get('library_view')).q==='Björk','dialog link follows Back'); checks.push('Open Views link follows Back');
+ await views.getByRole('button',{name:'Close saved views'}).click(); await page.goForward();
+ await page.locator('.album__title').filter({hasText:/^Bulk album$/}).waitFor();
+ await page.locator('.browse__pivot').getByRole('button',{name:'Create playlist',exact:true}).click();
+ const playlist=page.getByRole('dialog',{name:'Playlist from these filters'});
+ await playlist.getByText('205 matching songs',{exact:true}).waitFor();
+ await page.goBack(); await playlist.getByText('Filters changed. Preview them again before creating a playlist.',{exact:true}).waitFor();
+ assert(await playlist.getByRole('button',{name:'Create playlist',exact:true}).isDisabled(),'stale disabled'); checks.push('Back invalidates preview before confirmation');
+ await playlist.getByRole('button',{name:'Preview again'}).click(); await playlist.getByText('1 matching songs',{exact:true}).waitFor();
+ await playlist.getByRole('textbox',{name:'Playlist name'}).fill('Lost ack '+Date.now());
+ const seen=[]; let first=true;
+ await page.route('**/api/v1/library/explore/playlist',async route=>{const response=await route.fetch();seen.push({status:response.status(),body:await response.json()}); if(first){first=false;await route.abort('failed')}else await route.fulfill({response});});
+ await playlist.getByRole('button',{name:'Create playlist',exact:true}).click();
+ await playlist.getByRole('alert').waitFor();
+ await playlist.getByRole('button',{name:'Create playlist',exact:true}).click();
+ await page.waitForFunction(()=>!document.querySelector('dialog[aria-labelledby="filter-playlist-title"]').open);
+ assert(seen.length===2&&seen[0].status===201&&seen[1].status===200&&seen[0].body.playlist.id===seen[1].body.playlist.id,'lost ack retry');checks.push('Lost acknowledgement retries same playlist without duplicate');
+ await page.unroute('**/api/v1/library/explore/playlist');
+ await page.evaluate(()=>localStorage.setItem('synamp-library-saved-views-v1','broken saved data'));
+ await page.getByRole('button',{name:'Views',exact:true}).click();
+ await views.getByRole('alert').waitFor(); assert(await page.evaluate(()=>localStorage.getItem('synamp-library-saved-views-v1'))==='broken saved data','preserved saved');
+ await views.getByRole('button',{name:'Reset saved views'}).click(); await views.getByText('No saved views yet.',{exact:true}).waitFor(); checks.push('Corrupt saved views preserved until explicit reset');
+ await page.setViewportSize({width:390,height:844});
+ await page.screenshot({path:'output/playwright/saved-views-mobile.png',fullPage:true});
+ const box=await views.boundingBox();assert(box.x>=0&&box.x+box.width<=390&&box.y>=0&&box.y+box.height<=844,'mobile dialog fits');
+ assert(await views.evaluate(node=>node.scrollWidth<=node.clientWidth),'no dialog horizontal overflow');checks.push('390px dialog contained');
+ await views.getByRole('button',{name:'Close saved views'}).click();
+ await page.goto('http://127.0.0.1:39822/');
+ await page.evaluate(()=>localStorage.setItem('synamp-library-state-v1',''));await page.reload();
+ await page.getByRole('alert').filter({hasText:'could not be restored'}).waitFor();
+ assert(await page.evaluate(()=>localStorage.getItem('synamp-library-state-v1'))==='', 'empty malformed laststate preserved');
+ assert(await page.locator('.browse__pivot').getByRole('button',{name:'Create playlist',exact:true}).isDisabled(),'invalid view actions blocked');
+ await page.getByRole('alert').getByRole('button',{name:'Reset filters'}).click();
+ await page.waitForFunction(()=>{try{return JSON.parse(localStorage.getItem('synamp-library-state-v1')).version===1}catch{return false}});checks.push('Malformed last view preserved and reset recovers');
+ await page.goto('http://127.0.0.1:39822/#/library?library_view=%7B%22version%22%3A99%7D');await page.reload();
+ await page.getByRole('alert').filter({hasText:'Unsupported library view version'}).waitFor();
+ assert((await page.url()).endsWith('library_view=%7B%22version%22%3A99%7D'),'invalid link preserved');checks.push('Unsupported shared view preserved with clear error');
+ return {checks};
+})(page);
+```
+### Page
+- Page URL: http://127.0.0.1:39822/#/library?library_view=%7B%22version%22%3A99%7D
+- Page Title: Library — SynAmp
+### Events
+- New console entries: .playwright-cli/console-2026-10-07T20-20-52-196Z.log#L1-L2

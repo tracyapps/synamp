@@ -1,0 +1,23 @@
+✔ legacy column visibility survives, required columns remain, and stored order round-trips (0.773625ms)
+✔ malformed preferences cannot duplicate/drop columns, choose invalid sorts or unbounded widths (0.088833ms)
+✔ move to a neighbor works in both directions and preserves every column exactly once (0.056417ms)
+✔ defaults use valid presentation preferences and return independent mutable lists (0.727333ms)
+✔ strict state preserves Unicode, exact rule text, exclusions, leading-zero dates and empty types (0.288042ms)
+✔ every version-1 field is required and unknown fields or versions never broaden filters (0.351041ms)
+✔ malformed enum fields, type selections, rule exclusions and text fail explicitly (0.759708ms)
+✔ text and rule boundaries accept their limit and reject the next character or rule (0.146625ms)
+✔ dates are optional bounded integer text and must form an ordered range (0.109208ms)
+✔ library links round-trip Unicode and punctuation without changing group selection (0.253625ms)
+✔ duplicate, oversized and malformed shared-view parameters fail rather than reset (0.523ms)
+✔ explore parameters preserve all filters and contain only the backend query contract (0.197541ms)
+✔ saved views use a versioned lossless envelope and trim their display names (0.256417ms)
+✔ bad saved storage rejects the whole import, including later entries and unsupported versions (0.123417ms)
+✔ saved-view names, IDs, timestamps and collection bounds are validated on parse and serialize (0.595542ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 80.454125
