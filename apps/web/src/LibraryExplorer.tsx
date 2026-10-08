@@ -6,11 +6,16 @@ import Icon from "./ui/Icon";
 import LibraryTable from "./LibraryTable";
 import { columnNames, readPresentation, TABLE_KEY } from "./library-table";
 import type { Column } from "./library-table";
+import useLibraryView from "./useLibraryView";
+import SavedLibraryViews from "./SavedLibraryViews";
+import FilterPlaylistDialog from "./FilterPlaylistDialog";
+import { defaultLibraryView } from "./library-view-state";
+import type { LibraryViewState } from "./library-view-state";
 
 type Kind = "song" | "album" | "artist";
 type Row = { key: string; type: Kind; title: string; artist?: string; album_artist?: string; album?: string; year?: number; count: number; duration_s?: number; genres: string[] };
 type Page = { total: number; matched_total: number; rows: Row[]; groups: { label: string; count: number }[]; group_memberships_overlap: boolean };
-type Rule = { field: string; mode: string; value: string; not: boolean };
+type Rule = LibraryViewState["rules"][number];
 const modes = { contains: "Contains words", exact: "Exact field", glob: "Wildcard (* / ?)", fuzzy: "Similar spelling" };
 function preferences() {
   try { return readPresentation(JSON.parse(localStorage.getItem(TABLE_KEY) ?? localStorage.getItem("synamp-library-view-v1") ?? "null")); }
@@ -18,23 +23,25 @@ function preferences() {
 }
 const freshRule = (): Rule => ({ field: "artist", mode: "contains", value: "", not: false });
 
-export default function LibraryExplorer({ request, play, playlists }: { request: Request; play: (body: Record<string, unknown>) => Promise<void>; playlists: PlaylistNode[] }) {
+export default function LibraryExplorer({ request, play, playlists, onPlaylistsChanged }: { request: Request; play: (body: Record<string, unknown>) => Promise<void>; playlists: PlaylistNode[]; onPlaylistsChanged?: () => Promise<unknown> }) {
   const [initial] = useState(preferences);
-  const [view, setView] = useState(initial.view);
+  const { state, update, apply, restoreError, validationError } = useLibraryView(initial);
+  const { view, q: query, mode, types, rules, logic, from, to, sort, direction, group, group_key: groupKey } = state;
+  const setView = (value: LibraryViewState["view"]) => update("view", value);
+  const setQuery = (value: string) => update("q", value);
+  const setMode = (value: LibraryViewState["mode"]) => update("mode", value);
+  const setTypes = (value: Kind[] | ((old: Kind[]) => Kind[])) => update("types", value);
+  const setRules = (value: Rule[] | ((old: Rule[]) => Rule[])) => update("rules", value);
+  const setLogic = (value: LibraryViewState["logic"]) => update("logic", value);
+  const setFrom = (value: string) => update("from", value);
+  const setTo = (value: string) => update("to", value);
+  const setSort = (value: LibraryViewState["sort"]) => update("sort", value);
+  const setDirection = (value: LibraryViewState["direction"]) => update("direction", value);
+  const setGroup = (value: LibraryViewState["group"]) => update("group", value);
+  const setGroupKey = (value: string) => update("group_key", value);
   const [columns, setColumns] = useState(initial.columns);
   const [order, setOrder] = useState(initial.order);
   const [widths, setWidths] = useState(initial.widths);
-  const [query, setQuery] = useState("");
-  const [mode, setMode] = useState("contains");
-  const [types, setTypes] = useState<Kind[]>(["album"]);
-  const [rules, setRules] = useState<Rule[]>([]);
-  const [logic, setLogic] = useState("and");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [sort, setSort] = useState<string>(initial.sort);
-  const [direction, setDirection] = useState<string>(initial.direction);
-  const [group, setGroup] = useState("none");
-  const [groupKey, setGroupKey] = useState("");
   const [page, setPage] = useState<Page | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -66,38 +73,39 @@ export default function LibraryExplorer({ request, play, playlists }: { request:
     void load();
     return () => { ticket.current++; };
   }, [settled, params, request]); // eslint-disable-line react-hooks/exhaustive-deps
-  const actionable = !busy && !stale && !error;
+  const actionable = !busy && !stale && !error && !restoreError && !validationError;
   const say = (text: string) => setMessage(text);
   const changeRule = (index: number, change: Partial<Rule>) => { setRules(current => current.map((rule, i) => i === index ? { ...rule, ...change } : rule)); setGroupKey(""); };
   const inspectArtist = (row: Row) => {
-    setQuery(""); setRules([{ field: "artist", mode: "exact", value: row.title, not: false }]);
-    setTypes(["song", "album"]); setLogic("and"); setGroup("album"); setGroupKey("");
+    apply({ ...state, q: "", rules: [{ field: "artist", mode: "exact", value: row.title, not: false }], types: ["song", "album"], logic: "and", group: "album", group_key: "" });
   };
   const actions = (row: Row) => row.type === "artist" ? <button className="btn btn--ghost btn--sm" disabled={!actionable} onClick={() => inspectArtist(row)}>Explore songs</button>
     : <div className="album__actions"><button className="btn btn--ghost btn--sm" disabled={!actionable} onClick={() => play(row.type === "album" ? { album_key: row.key } : { track_ids: [row.key] }).then(() => say(`Playing ${row.title}.`)).catch(cause => say(cause.message))}><Icon name="play" size={14} />Play</button>
       {row.type === "song" && actionable && <AddToPlaylist request={request} track={{ id: row.key, title: row.title, artist: row.artist }} playlists={playlists} onAdded={say} />}</div>;
   const cell = (row: Row, column: Exclude<Column, "actions">) => column === "duration" ? row.duration_s === 0 ? "0:00" : clock(row.duration_s) || "—" : column === "genre" ? row.genres.join(", ") || "—" : row[column] ?? "—";
-  function reset() { setQuery(""); setMode("contains"); setTypes(["album"]); setRules([]); setLogic("and"); setFrom(""); setTo(""); setGroup("none"); setGroupKey(""); }
+  function reset() { apply(defaultLibraryView({ view, sort, direction })); }
 
   return <section className="section-card browse" aria-labelledby="browse-title">
     <div className="section-card__head"><div><h2 id="browse-title" className="section-card__title">Library</h2>
       <p className="section-card__meta" role="status">{busy ? "Updating…" : page ? `${page.total.toLocaleString()} results${groupKey ? ` in ${groupKey}` : ""}` : "Loading…"}</p></div>
-      <div className="browse__views" role="group" aria-label="Library view">{["list", "grid", "table"].map(value => <button key={value} className={`btn btn--sm ${view === value ? "btn--primary" : "btn--ghost"}`} aria-pressed={view === value} onClick={() => setView(value)}>{value[0]!.toUpperCase() + value.slice(1)}</button>)}</div>
+      <div className="browse__views" role="group" aria-label="Library view">{(["list", "grid", "table"] as const).map(value => <button key={value} className={`btn btn--sm ${view === value ? "btn--primary" : "btn--ghost"}`} aria-pressed={view === value} onClick={() => setView(value)}>{value[0]!.toUpperCase() + value.slice(1)}</button>)}<SavedLibraryViews state={state} disabled={!!restoreError || !!validationError} apply={apply} /></div>
     </div>
     <div className="section-card__body">
+      {restoreError && <p className="alert" role="alert">{restoreError} Saved data and the link have been preserved. <button className="btn btn--quiet btn--sm" onClick={reset}>Reset filters</button></p>}
+      {validationError && <p className="alert" role="alert">{validationError}</p>}
       <div className="toolbar" role="search"><label className="search" htmlFor={searchId}><span className="visually-hidden">Search albums, artists and songs</span><Icon name="search" /><input id={searchId} className="input" type="search" maxLength={160} value={query} onChange={event => { setQuery(event.target.value); setGroupKey(""); }} placeholder="Search your library…" autoComplete="off" /></label>
-        <label className="browse__sort">Sort <select className="select select--sm" value={sort} onChange={event => setSort(event.target.value)}>{Object.entries(columnNames).filter(([column]) => column !== "actions").map(([column, label]) => <option key={column} value={column}>{label}</option>)}</select></label>
+        <label className="browse__sort">Sort <select className="select select--sm" value={sort} onChange={event => setSort(event.target.value as LibraryViewState["sort"])}>{Object.entries(columnNames).filter(([column]) => column !== "actions").map(([column, label]) => <option key={column} value={column}>{label}</option>)}</select></label>
         <button className="btn btn--ghost btn--sm" aria-label={`Sort ${direction === "asc" ? "descending" : "ascending"}`} onClick={() => setDirection(direction === "asc" ? "desc" : "asc")}>{direction === "asc" ? "↑ Ascending" : "↓ Descending"}</button>
       </div>
       <div className="browse__controls">
         <details className="browse__advanced"><summary>Advanced filters{rules.length || from || to || mode !== "contains" || types.join() !== "album" ? " · active" : ""}</summary>
           <div className="browse__filter-body">
             <fieldset className="browse__types"><legend>Show</legend>{(["album", "song", "artist"] as Kind[]).map(type => <label key={type}><input type="checkbox" checked={types.includes(type)} onChange={event => { setTypes(current => event.target.checked ? [...current, type] : current.filter(v => v !== type)); setGroupKey(""); }} />{type === "artist" ? "Artist credits" : `${type[0]!.toUpperCase()}${type.slice(1)}s`}</label>)}</fieldset>
-            <div className="browse__filter-line"><label>Search matching <select className="select select--sm" value={mode} onChange={event => setMode(event.target.value)}>{Object.entries(modes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-              <label>Combine search and rules <select className="select select--sm" value={logic} onChange={event => { setLogic(event.target.value); setGroupKey(""); }}><option value="and">AND · match all</option><option value="or">OR · match any</option></select></label></div>
+            <div className="browse__filter-line"><label>Search matching <select className="select select--sm" value={mode} onChange={event => setMode(event.target.value as LibraryViewState["mode"])}>{Object.entries(modes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label>Combine search and rules <select className="select select--sm" value={logic} onChange={event => { setLogic(event.target.value as LibraryViewState["logic"]); setGroupKey(""); }}><option value="and">AND · match all</option><option value="or">OR · match any</option></select></label></div>
             <div className="browse__filter-line"><label>Year from <input className="input" type="number" min="1" max="9999" value={from} onChange={event => { setFrom(event.target.value); setGroupKey(""); }} placeholder="Any" /></label><label>Year to <input className="input" type="number" min="1" max="9999" value={to} onChange={event => { setTo(event.target.value); setGroupKey(""); }} placeholder="Any" /></label></div>
-            {rules.map((rule, index) => <div className="browse__rule" key={`${ruleId}-${index}`}><select className="select select--sm" aria-label={`Rule ${index + 1} field`} value={rule.field} onChange={event => changeRule(index, { field: event.target.value })}>{Object.entries({ any: "Any field", title: "Title", artist: "Artist / credit", album_artist: "Album artist", album: "Album", genre: "Genre" }).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-              <select className="select select--sm" aria-label={`Rule ${index + 1} matching`} value={rule.mode} onChange={event => changeRule(index, { mode: event.target.value })}>{Object.entries(modes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+            {rules.map((rule, index) => <div className="browse__rule" key={`${ruleId}-${index}`}><select className="select select--sm" aria-label={`Rule ${index + 1} field`} value={rule.field} onChange={event => changeRule(index, { field: event.target.value as Rule["field"] })}>{Object.entries({ any: "Any field", title: "Title", artist: "Artist / credit", album_artist: "Album artist", album: "Album", genre: "Genre" }).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+              <select className="select select--sm" aria-label={`Rule ${index + 1} matching`} value={rule.mode} onChange={event => changeRule(index, { mode: event.target.value as Rule["mode"] })}>{Object.entries(modes).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
               <input className="input" aria-label={`Rule ${index + 1} text`} maxLength={160} value={rule.value} onChange={event => changeRule(index, { value: event.target.value })} placeholder="Match text…" />
               <label><input type="checkbox" checked={rule.not} onChange={event => changeRule(index, { not: event.target.checked })} />NOT</label><button className="btn btn--quiet btn--sm" aria-label={`Remove rule ${index + 1}`} onClick={() => { setRules(current => current.filter((_, i) => i !== index)); setGroupKey(""); }}>Remove</button></div>)}
             <div className="cluster"><button className="btn btn--ghost btn--sm" disabled={rules.length >= 12} onClick={() => setRules(current => [...current, freshRule()])}>Add rule</button><button className="btn btn--quiet btn--sm" onClick={reset}>Reset filters</button></div>
@@ -106,8 +114,12 @@ export default function LibraryExplorer({ request, play, playlists }: { request:
         </details>
 
       </div>
-      <div className="browse__pivot"><label>Group by <select className="select select--sm" value={group} onChange={event => { setGroup(event.target.value); setGroupKey(""); }}>{Object.entries({ none: "None", album_artist: "Album artist", artist: "Artist / credit", album: "Album title", decade: "Decade", genre: "Genre" }).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+      <div className="browse__pivot"><label>Group by <select className="select select--sm" value={group} onChange={event => { setGroup(event.target.value as LibraryViewState["group"]); setGroupKey(""); }}>{Object.entries({ none: "None", album_artist: "Album artist", artist: "Artist / credit", album: "Album title", decade: "Decade", genre: "Genre" }).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         {group !== "none" && <label>Explore group <select className="select select--sm" value={groupKey} onChange={event => setGroupKey(event.target.value)}><option value="">All groups ({page?.matched_total ?? "…"} results)</option>{page?.groups.map(g => <option key={g.label} value={g.label}>{g.label} · {g.count.toLocaleString()}</option>)}</select></label>}
+        <FilterPlaylistDialog request={request} params={params} disabled={!actionable || !types.length} onCreated={(playlist, count) => {
+          say(`Created ${playlist.name} with ${count.toLocaleString()} songs.`);
+          onPlaylistsChanged?.().catch(() => say(`Created ${playlist.name}; reopen Playlists to refresh the list.`));
+        }} />
       </div>
       {group !== "none" && <p className="muted browse__hint">Group counts cover every matching result{page?.group_memberships_overlap ? "; an item can belong to more than one group" : ""}. Album titles are browsing groups; separate folder releases keep their identity.</p>}
       <p className="browse__status" role="status">{message}</p>

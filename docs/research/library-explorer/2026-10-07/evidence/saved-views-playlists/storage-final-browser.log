@@ -1,0 +1,21 @@
+### Result
+{"checks":["Quota failure clears prior success status and reports failure"]}
+### Ran Playwright code
+```js
+await (async page => {
+ await page.reload();
+ await page.getByRole('button',{name:'Views',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'Saved Library views'});
+ await dialog.getByRole('textbox',{name:'View name'}).fill('Successful first save');
+ await dialog.getByRole('button',{name:'Save current view'}).click();
+ await dialog.getByText('View saved.',{exact:true}).waitFor();
+ await page.evaluate(()=>{window.originalSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(){throw new Error('Simulated storage quota')};});
+ await dialog.getByRole('textbox',{name:'View name'}).fill('Failed second save');
+ await dialog.getByRole('button',{name:'Save current view'}).click();
+ await dialog.getByRole('alert').filter({hasText:'Simulated storage quota'}).waitFor();
+ if(await dialog.getByText('View saved.',{exact:true}).count())throw new Error('stale success status');
+ await page.evaluate(()=>{Storage.prototype.setItem=window.originalSetItem;delete window.originalSetItem;});
+ await page.keyboard.press('Escape');
+ return {checks:['Quota failure clears prior success status and reports failure']};
+})(page);
+```

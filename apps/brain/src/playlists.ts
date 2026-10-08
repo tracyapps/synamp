@@ -94,6 +94,27 @@ export class PlaylistStore {
     return structuredClone(node);
   }
 
+  /** An approved complete selection becomes one root manual playlist in one
+   * atomic save. Reject bad records rather than silently dropping any IDs. */
+  createSnapshot(nameInput: unknown, input: TrackRef[]): PlaylistNode {
+    const name = typeof nameInput === "string" ? nameInput.trim() : "";
+    if (!name || name.length > 120) throw new PlaylistError("Name must be 1–120 characters");
+    if (!Array.isArray(input) || !input.length || input.length > 100_000) throw new PlaylistError("Snapshot must contain 1–100,000 songs");
+    const seen = new Set<string>();
+    const tracks: TrackRef[] = input.map(track => {
+      if (!track || typeof track.id !== "string" || !track.id.trim() || track.id.length > 256 || seen.has(track.id)
+        || typeof track.title !== "string" || !track.title.trim() || track.title.length > 256
+        || (track.artist !== undefined && typeof track.artist !== "string")) throw new PlaylistError("Invalid snapshot song; no playlist was saved");
+      seen.add(track.id);
+      return { id: track.id, title: track.title, ...(track.artist !== undefined ? { artist: track.artist } : {}) };
+    });
+    const node: PlaylistNode = { id: randomUUID(), name, parentId: null, type: "playlist", tracks };
+    const previous = this.nodes;
+    this.nodes = [...previous, node];
+    try { this.save(); } catch (error) { this.nodes = previous; throw error; }
+    return structuredClone(node);
+  }
+
   addTrack(id: string, input: TrackRef): PlaylistNode {
     const node = this.get(id);
     if (node.type !== "playlist") throw new PlaylistError("Tracks can only be added to playlists");

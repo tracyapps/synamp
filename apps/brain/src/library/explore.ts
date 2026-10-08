@@ -119,9 +119,12 @@ function number(value: string | undefined, name: string, fallback: number, min: 
   return Number(value);
 }
 
-export function explore(library: Library, options: ExploreOptions = {}) {
+/** Shared filter/group/sort pipeline; playlist selection projects it onto songs. */
+function selection(library: Library, options: ExploreOptions, songsOnly = false) {
   const kinds = options.types === undefined ? ["album"] : options.types.split(",").filter(Boolean);
   if (kinds.some(kind => !["song", "album", "artist"].includes(kind))) throw new BrowseError("Invalid entity type");
+  if (songsOnly && !kinds.length) throw new BrowseError("Choose at least one entity type");
+  const searchedKinds = songsOnly ? ["song"] : kinds;
   const mode = options.mode ?? "contains";
   if (!modes.includes(mode as Mode)) throw new BrowseError("Invalid match mode");
   const logic = options.logic ?? "and";
@@ -146,7 +149,7 @@ export function explore(library: Library, options: ExploreOptions = {}) {
   if (from > to) throw new BrowseError("Year range must run from earlier to later");
   const dated = !!options.from || !!options.to;
   const tests = rules.map(matcher);
-  const matched = entities(library).filter(entity => kinds.includes(entity.row.type)
+  const matched = entities(library).filter(entity => searchedKinds.includes(entity.row.type)
     && (!dated || entity.years.some(year => year >= from && year <= to))
     && (!tests.length || (logic === "or" ? tests.some(test => test(entity)) : tests.every(test => test(entity)))));
   const group = options.group ?? "none";
@@ -177,6 +180,16 @@ export function explore(library: Library, options: ExploreOptions = {}) {
     const cmp = typeof xv === "number" && typeof yv === "number" ? xv - yv : text(String(xv ?? "")).localeCompare(text(String(yv ?? "")));
     return sign * cmp || text(x.title).localeCompare(text(y.title)) || x.type.localeCompare(y.type) || x.key.localeCompare(y.key);
   });
+  return { selected, matched, groups, group };
+}
+
+/** Every matching song in globally sorted order, independent of display paging. */
+export function selectExplorerSongs(library: Library, options: ExploreOptions = {}): ExplorerRow[] {
+  return selection(library, options, true).selected.map(entity => entity.row);
+}
+
+export function explore(library: Library, options: ExploreOptions = {}) {
+  const { selected, matched, groups, group } = selection(library, options);
   const offset = number(options.offset, "offset", 0, 0, Number.MAX_SAFE_INTEGER);
   const limit = number(options.limit, "limit", 60, 1, 200);
   return { library_version: library.version, total: selected.length, matched_total: matched.length, offset,

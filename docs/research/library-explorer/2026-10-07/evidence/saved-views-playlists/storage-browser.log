@@ -1,0 +1,27 @@
+### Result
+{"checks":["Delete persists immediately","Storage failure preserves existing views and displays error","Escape closes native Views dialog"]}
+### Ran Playwright code
+```js
+await (async page => {
+ await page.goto('http://127.0.0.1:39822/#/library'); await page.reload();
+ await page.getByRole('button',{name:'Views',exact:true}).click();
+ const dialog=page.getByRole('dialog',{name:'Saved Library views'});
+ await dialog.getByRole('textbox',{name:'View name'}).fill('Delete check');
+ await dialog.getByRole('button',{name:'Save current view'}).click();
+ await dialog.getByRole('button',{name:'Delete view Delete check'}).click();
+ const after=await page.evaluate(()=>JSON.parse(localStorage.getItem('synamp-library-saved-views-v1')).views.length);
+ if(after!==0) throw new Error('delete not persisted');
+ await page.evaluate(()=>{window.originalSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(){throw new Error('Simulated storage quota')};});
+ await dialog.getByRole('textbox',{name:'View name'}).fill('Quota view');
+ await dialog.getByRole('button',{name:'Save current view'}).click();
+ await dialog.getByRole('alert').filter({hasText:'Simulated storage quota'}).waitFor();
+ const failedCount=await page.evaluate(()=>JSON.parse(localStorage.getItem('synamp-library-saved-views-v1')).views.length);
+ await page.evaluate(()=>{Storage.prototype.setItem=window.originalSetItem;delete window.originalSetItem;});
+ if(failedCount!==0)throw new Error('failed save mutated storage');
+ await page.keyboard.press('Escape');
+ return {checks:['Delete persists immediately','Storage failure preserves existing views and displays error','Escape closes native Views dialog']};
+})(page);
+```
+### Page
+- Page URL: http://127.0.0.1:39822/#/library?library_view=%7B%22version%22%3A1%2C%22view%22%3A%22list%22%2C%22q%22%3A%22%22%2C%22mode%22%3A%22contains%22%2C%22types%22%3A%5B%22album%22%5D%2C%22rules%22%3A%5B%5D%2C%22logic%22%3A%22and%22%2C%22from%22%3A%22%22%2C%22to%22%3A%22%22%2C%22sort%22%3A%22artist%22%2C%22direction%22%3A%22asc%22%2C%22group%22%3A%22none%22%2C%22group_key%22%3A%22%22%7D
+- Page Title: Library — SynAmp

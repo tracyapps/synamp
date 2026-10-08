@@ -59,7 +59,7 @@ const SCREENS = NAV.flatMap((group) => group.items);
 const TITLES = Object.fromEntries(SCREENS.map((item) => [item.id, item.label])) as Record<ScreenId, string>;
 
 function screenFromHash(): ScreenId {
-  const id = window.location.hash.replace(/^#\/?/, "").split("/")[0];
+  const id = window.location.hash.replace(/^#\/?/, "").split(/[/?]/)[0];
   return SCREENS.some((item) => item.id === id) ? (id as ScreenId) : "library";
 }
 
@@ -136,7 +136,7 @@ export default function App() {
         <ScreenHead id={headingId} eyebrow="Listen" title="Library"><p>Search, group, and explore the music you own.</p></ScreenHead>
         <UpdateNotice request={call} />
         <LibraryHealth request={call} />
-        <Library request={call} play={play} playlists={nodes} />
+        <Library request={call} play={play} playlists={nodes} onPlaylistsChanged={refreshNodes} />
       </div>;
       break;
     case "galaxy":

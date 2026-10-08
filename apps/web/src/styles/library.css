@@ -118,3 +118,12 @@
 .browse__column-order { display: flex; }
 .browse__column-width input { width: 76px; min-width: 0; padding: 6px; }
 @media (max-width: 420px) { .browse__column-dialog { padding: 12px; } .browse__column-options li { gap: 4px; grid-template-columns: minmax(0, 1fr) auto 88px; } .browse__column-order .btn { padding-inline: 7px; } }
+.library-view-dialog label { display: grid; gap: 6px; font-size: .875rem; }
+.library-view-dialog .cluster { align-items: end; flex-wrap: wrap; }
+.library-view-dialog form > label { flex: 1; min-width: 180px; }
+.library-saved-views { list-style: none; padding: 0; margin: 16px 0; }
+.library-saved-views li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.library-saved-views li > span { flex: 1; overflow-wrap: anywhere; }
+.library-view-link { margin: 16px 0 8px; }
+.library-selection-sample { padding-left: 24px; font-size: .875rem; }
+.library-selection-sample li { padding: 4px 0; overflow-wrap: anywhere; }

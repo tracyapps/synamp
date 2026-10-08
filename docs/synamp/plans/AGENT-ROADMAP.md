@@ -596,3 +596,10 @@ The initial explorer and Galaxy hierarchy are local implementations;
 collaboration paths depend on reviewed multi-artist identity. Preserve physical
 folder keys and do not interrupt the running Brave/NAS analyzer to replay scratch
 checks. Public exports must exclude private catalog samples and operational logs.
+
+
+### October 7 tester workflow: saved views and filter playlists
+
+LE03a/LE08a source slice: `apps/web/src/library-view-state.ts`, `useLibraryView.ts`, `SavedLibraryViews.tsx`, `FilterPlaylistDialog.tsx`, `LibraryExplorer.tsx`, query-aware `App.tsx`; backend `library/explorer-selection.ts`, shared explorer selection, `PlaylistStore.createSnapshot`, and authenticated routes in `index.ts`. Integrator owns UI/state/schema; one backend owner owns persistence. No active analyzer or NAS state changes.
+
+[Canonical acceptance and remaining dependencies](LIBRARY-EXPLORER.md#october-7-tester-workflow-follow-up) and [fresh receipt](../../research/library-explorer/2026-10-07/saved-views-playlists-verification.md): named local views and version-1 links restore refresh/Back/Forward; full-filter song preview precedes atomic manual playlist creation; retries are idempotent within the 10-minute server receipt. Corrupt state remains intact until reset. Large selections reject explicitly above 100k; never truncate. IDs must still exist; ongoing analysis signal changes are allowed. Nested pivots, annotations, reviewed release identity, graph paths and richer Galaxy layouts remain separately planned. Deployment and tester onboarding on the live build remain unverified and require their own bounded rollout.
