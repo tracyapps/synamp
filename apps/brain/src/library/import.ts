@@ -23,6 +23,7 @@ import { join, posix } from "node:path";
 import type { Library, LibraryTrack } from "../query/evaluate.ts";
 import { discFromFolder, normalTitle } from "./albums.ts";
 import { albumFolderName, artistKey, isSafeRelative, LEADING_NUMBER, pathKey, safeName, trackFileName } from "./naming.ts";
+import { copyNumber } from "./duplicates.ts";
 import type { Decision, FolderMove, Move, OrganiseSettings } from "./organise.ts";
 import { readTags } from "./tags.ts";
 import type { FileTags } from "./tags.ts";
@@ -294,7 +295,7 @@ export function buildImport(scan: IncomingScan, library: Library, settings: Orga
     const width = Math.max(2, String(Math.max(0, ...items.map((i) => i.file.tags.track_total ?? i.track ?? 0))).length);
     const moves: Move[] = [];
     let duplicates = 0, versions = 0, numbered = 0;
-    for (const item of [...items].sort((a, b) => (a.disc ?? 1) - (b.disc ?? 1) || (a.track ?? 999) - (b.track ?? 999) || a.file.path.localeCompare(b.file.path))) {
+    for (const item of [...items].sort((a, b) => (a.disc ?? 1) - (b.disc ?? 1) || (a.track ?? 999) - (b.track ?? 999) || copyNumber(a.file.path).copy - copyNumber(b.file.path).copy || a.file.path.localeCompare(b.file.path))) {
       const original = posix.basename(item.file.path);
       let name = settings.number_tracks
         ? trackFileName({ title: item.title, ext: posix.extname(original), ...(item.track !== undefined ? { track: item.track } : {}), ...(item.disc !== undefined ? { disc: item.disc } : {}), multiDisc, width, stem: posix.basename(original, posix.extname(original)) })

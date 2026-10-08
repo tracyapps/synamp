@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import "./styles/missing.css";
+import SaveNote, { type SaveState, useSaveNote } from "./ui/SaveNote";
 
 /* The missing-tracks list: every hole in every album, with your own status, tags and notes. */
 
@@ -75,7 +76,7 @@ function ChooseEdition({ request, albumKey, title, artist, initial, onDone }: {
   );
 }
 
-function TrackRow({ row, save }: { row: Row; save: (id: string, change: Partial<Pick<Row, "status" | "tags" | "note">>) => void }) {
+function TrackRow({ row, save, saved }: { row: Row; save: (id: string, change: Partial<Pick<Row, "status" | "tags" | "note">>) => void; saved: SaveState }) {
   const [tags, setTags] = useState(row.tags.join(", "));
   const [note, setNote] = useState(row.note);
   const label = `${row.title} (${row.album})`;
@@ -93,7 +94,8 @@ function TrackRow({ row, save }: { row: Row; save: (id: string, change: Partial<
       <td><input aria-label={`Tags for ${label}, comma separated`} value={tags} placeholder="tags" onChange={(e) => setTags(e.target.value)}
         onBlur={commitTags} onKeyDown={(e) => { if (e.key === "Enter") commitTags(); }} /></td>
       <td><input aria-label={`Note for ${label}`} value={note} placeholder="note" onChange={(e) => setNote(e.target.value)}
-        onBlur={() => { if (note !== row.note) save(row.id, { note }); }} onKeyDown={(e) => { if (e.key === "Enter" && note !== row.note) save(row.id, { note }); }} /></td>
+        onBlur={() => { if (note !== row.note) save(row.id, { note }); }} onKeyDown={(e) => { if (e.key === "Enter" && note !== row.note) save(row.id, { note }); }} />
+        <SaveNote note={saved} at={row.id} /></td>
     </tr>
   );
 }
@@ -120,12 +122,13 @@ export default function MissingTracks({ request, download, startOpen = false }: 
     return () => clearInterval(timer);
   }, [open, matching]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const saved = useSaveNote();
   async function save(id: string, change: Partial<Pick<Row, "status" | "tags" | "note">>) {
     try {
       await request(`/missing/${id}`, { method: "POST", body: JSON.stringify(change) });
       setReport((current) => current && { ...current, rows: current.rows.map((row) => (row.id === id ? { ...row, ...change } : row)) });
-      setMessage("Saved.");
-    } catch (cause) { setMessage((cause as Error).message); }
+      saved.mark(id, "saved", change.status ? STATUS_LABELS[change.status] + "." : change.tags ? "Tags." : "Note.");
+    } catch (cause) { saved.mark(id, "failed", (cause as Error).message); }
   }
   async function matcherAction(action: "start" | "pause") {
     try { await request("/missing/match", { method: "POST", body: JSON.stringify({ action }) }); await load(); }
@@ -215,7 +218,7 @@ export default function MissingTracks({ request, download, startOpen = false }: 
                   <table className="missing__table">
                     <caption className="visually-hidden">Missing from {first.album}</caption>
                     <thead><tr><th scope="col">#</th><th scope="col">Title</th><th scope="col">Length</th><th scope="col">Status</th><th scope="col">Tags</th><th scope="col">Note</th></tr></thead>
-                    <tbody>{group.map((row) => <TrackRow key={row.id} row={row} save={save} />)}</tbody>
+                    <tbody>{group.map((row) => <TrackRow key={row.id} row={row} save={save} saved={saved.note} />)}</tbody>
                   </table>
                 </div>
               );

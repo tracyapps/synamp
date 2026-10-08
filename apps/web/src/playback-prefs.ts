@@ -36,10 +36,13 @@ export function readPrefs(): PlaybackPrefs {
   } catch { return DEFAULTS; }
 }
 
-export function writePrefs(change: Partial<PlaybackPrefs>): void {
+/** True when it's kept for next time; false when the browser won't store it (private mode: this visit only). */
+export function writePrefs(change: Partial<PlaybackPrefs>): boolean {
   const next = { ...readPrefs(), ...change };
-  try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { /* private mode: this session only */ }
+  let kept = true;
+  try { localStorage.setItem(KEY, JSON.stringify(next)); } catch { kept = false; }
   window.dispatchEvent(new CustomEvent(EVENT, { detail: next }));
+  return kept;
 }
 
 export function usePrefs(): PlaybackPrefs {

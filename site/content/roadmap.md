@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-08 — Library care: settings show “Saved” right where you changed them, duplicate copies keep the cleaner file name, single CDs no longer get “1-01” names, and “Open in Finder” for albums and the duplicates folder
 - 2026-10-08 — “Sounds like these songs”: pick up to five songs and get a playlist that sounds like them, as your library gets listened to
 - 2026-10-08 — Choose how much of your Mac the analysis may use, with more at night or while you’re away from the Mac, and plain advice on when to change it
 - 2026-10-08 — SynAmp now listens for singing and instruments, so “no words” and “no piano” work as your library gets listened to

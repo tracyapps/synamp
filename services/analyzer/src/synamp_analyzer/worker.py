@@ -28,6 +28,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -44,6 +45,7 @@ ACTIONS = ("update", "scan", "export", "analyze")
 CHECK_EVERY_S = 10.0
 EXPORT_EVERY_S = 60 * 60.0
 MOUNT_RETRY_S = 5 * 60.0
+REVEAL_EVERY_S = 3.0
 AGENT_LABEL = "org.synamp.analyzer"
 
 
@@ -98,7 +100,7 @@ def default_export_path(cfg: AnalyzerConfig) -> Path:
 class Worker:
     def __init__(self, cfg: AnalyzerConfig, brain: Brain, export_path: Path | None = None,
                  log=print, sleep=time.sleep, now=time.time, mount=None, keep_awake=None, stamp=code_stamp,
-                 allowance: Allowance | None = None):
+                 allowance: Allowance | None = None, reveal=None):
         self.cfg = cfg
         # How much memory analysis may use now (Settings in the web app); decides songs at once.
         self.allowance = allowance or Allowance(cap=cfg.workers)
@@ -109,6 +111,7 @@ class Worker:
         self.now = now
         self.mount = mount if mount is not None else try_mount
         self.keep_awake = keep_awake if keep_awake is not None else caffeinate
+        self.reveal = reveal if reveal is not None else open_in_finder
         self.last_mount_try = -MOUNT_RETRY_S
         self.stamp = stamp
         self.started_with = stamp()
@@ -275,9 +278,37 @@ class Worker:
             return "restart"
         return result["status"]
 
+    # --- "Open in Finder" from the web app ------------------------------------------------
+    def reveal_once(self) -> int:
+        """Open the folders the web app asked to see, in Finder on this Mac. Returns how many were opened."""
+        opened = 0
+        for raw in self.brain.post("/api/v1/analyzer/reveals", {}).get("paths") or []:
+            target = reveal_target(str(raw), self.cfg.library_path)
+            if target is None:
+                self.log(f"worker: not opening {raw!r} in Finder (outside the music folders)")
+            elif self.reveal(target):
+                opened += 1
+        return opened
+
+    def start_reveals(self) -> None:
+        """Asks every few seconds, beside whatever the worker is doing (analysis can run for days)."""
+        def loop() -> None:
+            quiet = False
+            while True:
+                try:
+                    self.reveal_once()
+                    quiet = False
+                except Exception as error:  # the brain restarting, a network blip: try again shortly
+                    if not quiet:
+                        self.log(f"worker: couldn't check for Finder requests ({error})")
+                    quiet = True
+                time.sleep(REVEAL_EVERY_S)
+        threading.Thread(target=loop, name="synamp-reveals", daemon=True).start()
+
     def run_forever(self, poll: float = 5.0) -> None:
         self.log(f"worker: SynAmp analyzer {__version__} on {socket.gethostname()}; library {self.cfg.library_path}; "
                  f"asking {self.brain.base} every {poll:.0f}s")
+        self.start_reveals()
         while True:
             try:
                 outcome = self.once()
@@ -292,6 +323,35 @@ class Worker:
 
 
 # --- macOS helpers ------------------------------------------------------------------------
+
+def reveal_target(path: str, library: Path) -> Path | None:
+    """
+    The folder to open for a path the brain sent: only inside the library or the
+    incoming folder beside it (never anywhere else on the Mac). If it isn't
+    there (yet, or any more), the nearest folder above it that is.
+    """
+    if not path.startswith("/") or "\x00" in path:
+        return None
+    wanted = Path(os.path.normpath(path))
+    roots = [Path(os.path.normpath(library)), Path(os.path.normpath(library.parent / "incoming"))]
+    root = next((r for r in roots if wanted == r or r in wanted.parents), None)
+    if root is None:
+        return None
+    target = wanted
+    while target != root and not target.is_dir():
+        target = target.parent
+    return target if target.is_dir() else None
+
+
+def open_in_finder(folder: Path) -> bool:
+    if sys.platform != "darwin":
+        return False
+    try:
+        subprocess.run(["open", str(folder)], check=True, timeout=20, capture_output=True)
+        return True
+    except (OSError, subprocess.SubprocessError):
+        return False
+
 
 def try_mount(share_url: str) -> bool:
     """Ask Finder to mount an SMB share (uses the password saved in the Keychain)."""

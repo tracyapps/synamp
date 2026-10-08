@@ -9,6 +9,7 @@
  * picked up without anyone opening a Terminal.
  */
 
+import { isSafeRelative } from "./naming.ts";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { randomBytes } from "node:crypto";
@@ -74,7 +75,33 @@ const KEEP = 30;
 
 const text = (value: unknown, max = 500) => (typeof value === "string" ? value.slice(0, max) : undefined);
 
+/** How long a "show it in Finder" request waits for the Mac to pick it up. */
+const REVEAL_WAIT_MS = 60_000;
+
 export class AnalyzerControl {
+  /** Folders to open in Finder on the Mac, waiting for it to ask (not saved). */
+  private reveals: Array<{ path: string; at: number }> = [];
+
+  /** Ask the Mac that analyses the music to open a folder in Finder (`area` library or incoming, `path` inside it). */
+  reveal(area: unknown, path: unknown, now = Date.now()): { host?: string; path: string } {
+    const worker = this.state.worker;
+    if (!worker || now - worker.last_seen >= WORKER_ONLINE_MS) {
+      throw new AnalyzerError("The Mac that analyses your music isn’t connected right now, so it can’t open Finder.", 409);
+    }
+    const target = macPath(worker, area, path);
+    if (!target) throw new AnalyzerError("That folder can’t be opened from here.", 400);
+    this.reveals = [...this.reveals.filter((r) => now - r.at < REVEAL_WAIT_MS && r.path !== target), { path: target, at: now }].slice(-10);
+    return { ...(worker.host ? { host: worker.host } : {}), path: target };
+  }
+
+  /** The Mac asks (every few seconds): which folders to open. Each is handed out once. */
+  takeReveals(now = Date.now()): string[] {
+    const due = this.reveals.filter((r) => now - r.at < REVEAL_WAIT_MS).map((r) => r.path);
+    this.reveals = [];
+    if (this.state.worker) this.state.worker.last_seen = now;
+    return due;
+  }
+
   private path: string;
   state: State;
   constructor(path: string) {
@@ -277,4 +304,19 @@ export function checkMemory(input: unknown, current: MemorySettings = DEFAULT_ME
   }
   if (next.mode === "hours" && next.from === next.to) throw new AnalyzerError("The start and end times are the same");
   return next;
+}
+
+
+/**
+ * Where a folder is on the Mac that analyses the music, from where the library
+ * sits there (/Volumes/music/library). New music is the "incoming" folder next
+ * to the library, as SynAmp sets the share up. Undefined for anything unsafe.
+ */
+export function macPath(worker: WorkerSeen | null | undefined, area: unknown, path: unknown): string | undefined {
+  const library = worker?.library_path?.replace(/\/+$/, "");
+  if (!library || !library.startsWith("/")) return undefined;
+  if (area !== "library" && area !== "incoming") return undefined;
+  if (path !== "" && !isSafeRelative(path)) return undefined;
+  const root = area === "library" ? library : `${library.slice(0, library.lastIndexOf("/")) || ""}/incoming`;
+  return path ? `${root}/${path}` : root;
 }

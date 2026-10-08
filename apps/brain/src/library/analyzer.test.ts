@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { ACTIVITY_STALE_MS, AnalyzerControl, WORKER_ONLINE_MS } from "./analyzer.ts";
+import { ACTIVITY_STALE_MS, AnalyzerControl, WORKER_ONLINE_MS, macPath } from "./analyzer.ts";
 
 const temp = () => mkdtempSync(join(tmpdir(), "synamp-analyzer-control-"));
 
@@ -111,4 +111,27 @@ test("memory for analysis: steady, more at set hours, or more while you're away"
     assert.equal(answer.memory.mode, "hours", "the worker hears the setting while it analyses");
     assert.equal(saved.view(3).worker!.memory_now!.why, "hours");
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("Open in Finder: the Mac that analyses the music opens the folder; each request is handed out once", () => {
+  const worker = { last_seen: 1, library_path: "/Volumes/music/library" };
+  assert.equal(macPath(worker, "library", "Eric Clapton/Conception (2003)"), "/Volumes/music/library/Eric Clapton/Conception (2003)");
+  assert.equal(macPath(worker, "incoming", "_duplicates"), "/Volumes/music/incoming/_duplicates");
+  assert.equal(macPath(worker, "library", ""), "/Volumes/music/library");
+  for (const bad of ["../x", "/etc", "a/../../b"]) assert.equal(macPath(worker, "library", bad), undefined, bad);
+  assert.equal(macPath(worker, "home", "x"), undefined);
+  assert.equal(macPath({ last_seen: 1 }, "library", "x"), undefined, "the Mac hasn't said where the music is");
+
+  const control = new AnalyzerControl(join(mkdtempSync(join(tmpdir(), "synamp-reveal-")), "c.json"));
+  assert.throws(() => control.reveal("library", "A", 1000), /isn’t connected/);
+  control.claim({ host: "Mac.local", library_path: "/Volumes/music/library" }, 1000);
+  assert.deepEqual(control.reveal("library", "A/B", 2000), { host: "Mac.local", path: "/Volumes/music/library/A/B" });
+  control.reveal("library", "A/B", 2100);
+  control.reveal("incoming", "_duplicates", 2200);
+  assert.throws(() => control.reveal("library", "../../Users", 2300), /can’t be opened/);
+  assert.deepEqual(control.takeReveals(3000), ["/Volumes/music/library/A/B", "/Volumes/music/incoming/_duplicates"], "the same folder once");
+  assert.deepEqual(control.takeReveals(3500), []);
+  control.reveal("library", "C", 4000);
+  assert.deepEqual(control.takeReveals(4000 + 61_000), [], "nobody asked in time: dropped, not opened later by surprise");
+  assert.throws(() => control.reveal("library", "C", 4000 + 61_000 + 60_000), /isn’t connected/);
 });
