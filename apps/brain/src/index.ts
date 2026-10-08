@@ -57,6 +57,8 @@ import { ImportError, matchPlaylists, parsePlaylistFile } from "./library/playli
 import type { MatchedPlaylist } from "./library/playlist-import.ts";
 import { albumTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
 import { explore } from "./library/explore.ts";
+import { djOrder } from "./session/dj.ts";
+import { gaplessInfo } from "./session/gapless.ts";
 import { ExplorerSelections } from "./library/explorer-selection.ts";
 import { galaxy, galaxyArtist, galaxyRandom } from "./library/galaxy.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
@@ -498,13 +500,24 @@ function sessionView(session: Session) {
   const byId = new Map(lib.tracks.map((track) => [track.id, track]));
   return {
     ...session,
-    queue: session.queue.map((entry) => {
+    queue: session.queue.map((entry, index) => {
       // A radio station saved in a playlist: always "playable", never ends by itself.
       if (entry.track_id.startsWith("radio:")) return { ...entry, playable: true, live: true, stream_url: radioListenUrl(entry.track_id.slice(6)) };
       const track = byId.get(entry.track_id);
-      const playable = !!(track?.path && resolveInside(config.libraryPath, track.path));
+      const file = track?.path ? resolveInside(config.libraryPath, track.path) : undefined;
+      const playable = !!file;
       // The album folder lets the player play an album straight through instead of crossfading inside it.
-      return { ...entry, playable, ...(playable ? { stream_url: signer.url(entry.track_id), album_key: albumFolder(track!.path!) } : {}) };
+      // Near the playhead: the encoder's silence to trim (gapless), and tempo/key (DJ blends).
+      const near = index >= session.index - 1 && index <= session.index + 3;
+      const extra = track as (typeof track & { camelot?: string; key?: string; tempo_status?: string }) | undefined;
+      const bpm = extra?.signals?.bpm;
+      return {
+        ...entry, playable,
+        ...(playable ? { stream_url: signer.url(entry.track_id), album_key: albumFolder(track!.path!) } : {}),
+        ...(near && file ? (() => { const g = gaplessInfo(file, track?.quality?.sample_rate); return g ? { gapless: g } : {}; })() : {}),
+        ...(near && typeof bpm === "number" && extra?.tempo_status !== "no_steady_beat" ? { bpm } : {}),
+        ...(near && extra?.camelot ? { camelot: extra.camelot, key: extra.key } : {}),
+      };
     }),
   };
 }
@@ -747,19 +760,39 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/session/queue" && req.method === "POST") {
     const input = await body(req);
     const shuffle = input.shuffle === true;
-    const order = <T,>(tracks: T[]) => (shuffle ? shuffled(tracks) : tracks);
-    const ref = (track: { id: string; title: string; artist?: string }): TrackRef => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) });
+    // DJ mode: ordered so each song flows into the next (tempo and key), then played with longer blends.
+    const dj = input.order === "dj";
+    const lib = currentLibrary();
+    const byId = new Map(lib.tracks.map((track) => [track.id, track]));
+    type Ref = TrackRef & { dj_note?: string };
+    const order = (tracks: Ref[], start = 0): Ref[] => {
+      if (!dj) return shuffle ? shuffled(tracks) : tracks;
+      const facts = tracks.map((track) => {
+        const known = byId.get(track.id) as (typeof lib.tracks)[number] & { camelot?: string; tempo_status?: string; key_strength?: number } | undefined;
+        const bpm = known?.signals?.bpm, lufs = known?.signals?.lufs_integrated;
+        return {
+          id: track.id, ...(typeof bpm === "number" && known?.tempo_status !== "no_steady_beat" ? { bpm } : {}),
+          ...(known?.camelot ? { camelot: known.camelot, ...(typeof known.key_strength === "number" ? { keyStrength: known.key_strength } : {}) } : {}),
+          ...(typeof lufs === "number" ? { lufs } : {}),
+        };
+      });
+      const byRef = new Map(tracks.map((track) => [track.id, track]));
+      return djOrder(facts, { start: shuffle ? Math.floor(Math.random() * tracks.length) : start }).map((step) => ({ ...byRef.get(step.id)!, ...(step.note ? { dj_note: step.note } : {}) }));
+    };
+    const startAt = (requested: number) => (dj || shuffle ? 0 : requested);
+    const ref = (track: { id: string; title: string; artist?: string }): Ref => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) });
+    const mix = dj ? "dj" as const : undefined;
     // An album, or some songs picked from the library: no playlist behind them.
     if (typeof input.album_key === "string") {
-      const { tracks } = albumTracks(currentLibrary(), input.album_key);
-      const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks.map(ref)), undefined, Number(input.start_index ?? 0));
+      const { tracks } = albumTracks(lib, input.album_key);
+      const start = Number(input.start_index ?? 0);
+      const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks.map(ref), start), undefined, startAt(start), mix);
       return send(res, 200, { session: sessionView(session) });
     }
     if (Array.isArray(input.track_ids)) {
-      const lib = currentLibrary();
-      const byId = new Map(lib.tracks.map((track) => [track.id, track]));
       const tracks = input.track_ids.slice(0, 2000).map((id) => byId.get(library.canonicalId(String(id)))).filter((track) => track !== undefined).map(ref);
-      const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks), undefined, Number(input.start_index ?? 0));
+      const start = Number(input.start_index ?? 0);
+      const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks, start), undefined, startAt(start), mix);
       return send(res, 200, { session: sessionView(session) });
     }
     if (typeof input.playlist_id !== "string") throw new SessionError("playlist_id, album_key or track_ids is required");
@@ -767,9 +800,10 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (!node) throw new PlaylistError("Playlist node not found", 404);
     // A snapshot: later membership changes do not touch what is queued.
     // Shuffle works on anything, folders included: every playlist inside, mixed together.
-    const tracks = order(playlists.resolve(node.id));
+    const start = Number(input.start_index ?? 0);
+    const tracks = order(playlists.resolve(node.id), start);
     const session = sessions.replaceQueue(String(input.event_id ?? ""), tracks,
-      { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, shuffle ? 0 : Number(input.start_index ?? 0));
+      { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, startAt(start), mix);
     return send(res, 200, { session: sessionView(session) });
   }
   if (path === "/api/v1/session/report" && req.method === "POST") {

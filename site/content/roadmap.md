@@ -90,10 +90,10 @@ id: dj
 number: 5
 short: DJ mode
 goal: Seamless listening, with party-grade transitions.
-- [~] Gapless albums: no silence between tracks
+- [x] Gapless albums: no silence between tracks
 - [x] Crossfade, set to your taste
-- [ ] DJ mode: songs matched by tempo and key so mixes flow
-- [~] Skip mid-song and it blends instead of cutting
+- [~] DJ mode: songs matched by tempo and key so mixes flow
+- [x] Skip mid-song and it blends instead of cutting
 
 ## Party tools
 id: party
@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-08 — Albums play with no gap at all (joined to the exact sample), skipping mid-song blends into the next song, and “Play as a DJ set” orders a playlist by tempo and key with longer blends; SynAmp now learns each song’s key as your library is listened to
 - 2026-10-08 — SynAmp can fix song details inside your MP3 and FLAC files (album, year, track numbers…) from MusicBrainz: you review every change, and Undo puts the old details back exactly
 - 2026-10-08 — The Library scrolls smoothly through your whole collection: no more “Show more”, and dragging the scrollbar to the middle of 100,000 songs shows them straight away
 - 2026-10-08 — Library care: settings show “Saved” right where you changed them, duplicate copies keep the cleaner file name, single CDs no longer get “1-01” names, and “Open in Finder” for albums and the duplicates folder

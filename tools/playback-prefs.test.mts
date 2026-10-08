@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { awayReason, streamUrl, wantsLighter, type PlaybackPrefs } from '../apps/web/src/playback-prefs.ts';
 
-const prefs = (quality: PlaybackPrefs['quality']): PlaybackPrefs => ({ crossfade: 0, albumsStraight: true, volume: 1, quality });
+const prefs = (quality: PlaybackPrefs['quality']): PlaybackPrefs => ({ crossfade: 0, albumsStraight: true, volume: 1, quality, skipBlend: true });
 
 test('Automatic: lighter on mobile data, with Data Saver, or through Tailscale; full at home', () => {
   assert.equal(awayReason('syd.local', { type: 'wifi' }), null);

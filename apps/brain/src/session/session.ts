@@ -27,6 +27,8 @@ export type QueueEntry = {
   source?: { playlist_id: string; plan_hash?: string; rank: number };
   /** A party guest asked for it (their name, if they gave one). */
   requested_by?: string;
+  /** DJ mode: why this song follows the one before ("same key · +2 BPM"). */
+  dj_note?: string;
 };
 
 export type Session = {
@@ -40,6 +42,8 @@ export type Session = {
   completed: string[];
   updated_at: number;
   policy_version: string;
+  /** "dj": played as a DJ set (ordered by tempo and key, longer blends). */
+  mix?: "dj";
 };
 
 export type Report =
@@ -131,7 +135,7 @@ export class SessionStore {
   }
 
   /** Replace the queue with a snapshot of `tracks`. Exposure is logged; nothing is inferred from it. */
-  replaceQueue(reportId: string, tracks: Array<{ id: string; title: string; artist?: string }>, source?: { playlist_id: string; plan_hash?: string }, startIndex = 0): Session {
+  replaceQueue(reportId: string, tracks: Array<{ id: string; title: string; artist?: string; dj_note?: string }>, source?: { playlist_id: string; plan_hash?: string }, startIndex = 0, mix?: "dj"): Session {
     if (typeof reportId !== "string" || !/^[A-Za-z0-9_-]{8,80}$/.test(reportId)) throw new SessionError("event_id must be 8–80 URL-safe characters");
     if (this.log.has(`${reportId}:queued`)) return this.get();
     if (!tracks.length) throw new SessionError("Nothing to play in that playlist");
@@ -140,7 +144,9 @@ export class SessionStore {
       entry_id: randomUUID(), track_id: track.id, title: track.title,
       ...(track.artist ? { artist: track.artist } : {}),
       ...(source ? { source: { ...source, rank } } : {}),
+      ...(track.dj_note ? { dj_note: track.dj_note } : {}),
     }));
+    if (mix) this.session.mix = mix; else delete this.session.mix;
     this.session.index = Math.min(Math.max(0, Math.trunc(startIndex)), this.session.queue.length - 1);
     this.session.state = "paused";
     this.session.completed = [];

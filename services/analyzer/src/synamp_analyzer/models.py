@@ -22,12 +22,12 @@ from pathlib import Path
 # Stages run in this order. A track resumes at the first stage missing from
 # `stages_done`, so adding a stage is the only change needed to back-fill it.
 # `identity` runs first so a retagged or moved file can reuse earlier analysis.
-STAGES: tuple[str, ...] = ("identity", "dsp_core", "beat", "voice")
+STAGES: tuple[str, ...] = ("identity", "dsp_core", "beat", "tonal", "voice")
 
 # The method each stage runs at. Raise a stage's number when its measurements
 # change meaning (a better algorithm, a fixed bug): tracks done at an older
 # revision get just that stage redone (pipeline.requeue_outdated). Missing = 1.
-STAGE_REVISIONS: dict[str, int] = {"identity": 1, "dsp_core": 2, "beat": 1, "voice": 2}
+STAGE_REVISIONS: dict[str, int] = {"identity": 1, "dsp_core": 2, "beat": 1, "tonal": 1, "voice": 2}
 
 
 @dataclass(frozen=True)
@@ -127,9 +127,18 @@ class AnalysisResult:
     measure — an absent value, not a straight feel."""
 
     # --- tonality / harmony ----------------------------------------------
-    # Filled by: a future `tonal` stage.
+    # Filled by: tonal (key and mode, see tonal.py); chords and harmony later.
     mode: str | None = None
     """'major' | 'minor' — a more reliable affect cue than the absolute key."""
+    camelot: str | None = None
+    """The key on the DJ (Camelot) wheel, e.g. '8A' for A minor."""
+    key_strength: float | None = None
+    """How well the best key fits (correlation, −1…1)."""
+    key_margin: float | None = None
+    """How far the best key is ahead of the next one that isn't its relative major/minor."""
+    key_status: str | None = None
+    """measured | unclear | too_short."""
+    key_method: str | None = None
     chord_change_rate: float | None = None
     """Chords per second — harmonic rhythm, a strong mood carrier."""
     harmonic_complexity: float | None = None

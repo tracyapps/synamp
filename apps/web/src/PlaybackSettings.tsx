@@ -55,7 +55,14 @@ export default function PlaybackSettings({ request }: { request?: Request }) {
           Play albums straight through
         </button>
         <SaveNote note={note} at="album" />
-        <p id={`${ids}-album`} className="muted playback__hint">No crossfade between two songs from the same album, so live albums and DJ mixes flow the way they were made.</p>
+        <p id={`${ids}-album`} className="muted playback__hint">Songs from the same album join with no gap at all, to the exact sample, so live albums and DJ mixes flow the way they were made. (With crossfade off, albums always play this way.)</p>
+        <button type="button" role="switch" aria-checked={prefs.skipBlend} className={`switch ${prefs.skipBlend ? "is-on" : ""}`}
+          onClick={() => save({ skipBlend: !prefs.skipBlend }, "skip", prefs.skipBlend ? "Skipping cuts to the next song." : "Skipping blends into the next song.")} aria-describedby={`${ids}-skip`}>
+          <span className="switch__track" aria-hidden="true"><span className="switch__thumb" /></span>
+          Blend when I skip
+        </button>
+        <SaveNote note={note} at="skip" />
+        <p id={`${ids}-skip`} className="muted playback__hint">Pressing Next mid-song fades this song out as the next one fades in (a couple of seconds; longer in a DJ set), instead of a hard cut.</p>
         <fieldset className="playback__quality" aria-describedby={`${ids}-now`}>
           <legend>Stream quality</legend>
           {CHOICES.map((choice) => (
