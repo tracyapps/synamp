@@ -1,5 +1,6 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import "./styles/organise.css";
+import { describe, keepVisible, NOTHING_PICKED, pick, pickAll, type Picked, summarise } from "./organise-select";
 import AddMusic from "./AddMusic";
 import type { IncomingStatus, Upload } from "./AddMusic";
 
@@ -66,7 +67,7 @@ function BatchProgress({ progress, online, paused }: { progress: NonNullable<Vie
 }
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
 
-const PAGE = 20;
+const PAGE_SIZES = [20, 50, 100] as const;
 const n = (value: number) => value.toLocaleString();
 const when = (ms: number) => new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 const BATCH_TEXT: Record<Batch["status"], string> = { queued: "Waiting for the librarian", running: "Applying…", done: "Applied", partial: "Partly applied", failed: "Not applied" };
@@ -123,16 +124,24 @@ function Duplicates({ decision, keep }: { decision: Decision; keep: (pair: strin
   );
 }
 
-function DecisionCard({ decision, review, keep }: { decision: Decision; review: (ids: string[], status: Status) => void; keep: (pair: string, track: string | null) => void }) {
+function DecisionCard({ decision, review, keep, selected, onSelect }: {
+  decision: Decision; review: (ids: string[], status: Status) => void; keep: (pair: string, track: string | null) => void;
+  selected: boolean; onSelect: (id: string, shift: boolean) => void;
+}) {
   const choice = (status: Status, label: string, disabled = false) => (
     <button type="button" className={`chip ${decision.status === status ? "is-on" : ""}`} aria-pressed={decision.status === status} disabled={disabled}
       onClick={() => review([decision.id], status)}>{label}</button>
   );
   const blocked = decision.conflicts.length > 0;
   return (
-    <article className={`organise__decision is-${decision.status}`} aria-labelledby={`d-${decision.id}`}>
+    <article className={`organise__decision is-${decision.status} ${selected ? "is-selected" : ""}`} aria-labelledby={`d-${decision.id}`}>
       <div className="organise__decision-head">
-        <h4 id={`d-${decision.id}`}><span className="organise__kind">{decision.kind === "artist" ? "Merge" : decision.kind === "import" ? "New" : "Album"}</span> {decision.title}</h4>
+        <div className="organise__decision-title">
+          {/* Shift-click selects everything between this and the last one you clicked. */}
+          <input type="checkbox" className="organise__select" checked={selected} aria-labelledby={`d-${decision.id}`}
+            onChange={() => undefined} onClick={(event) => onSelect(decision.id, event.shiftKey)} />
+          <h4 id={`d-${decision.id}`}><span className="organise__kind">{decision.kind === "artist" ? "Merge" : decision.kind === "import" ? "New" : "Album"}</span> {decision.title}</h4>
+        </div>
         <div className="organise__choice" role="group" aria-label={`Decision for ${decision.title}`}>
           {choice("approved", "Approve", blocked)}{choice("skipped", "Skip")}{choice("proposed", "Decide later")}
         </div>
@@ -149,6 +158,48 @@ function DecisionCard({ decision, review, keep }: { decision: Decision; review: 
       <Duplicates decision={decision} keep={keep} />
       <Moves decision={decision} />
     </article>
+  );
+}
+
+/**
+ * What went wrong in a batch, as one line ("312 files were no longer there, 4 files were already there")
+ * that opens into a scrolling list, one album per row, each opening to its files.
+ */
+function BatchProblems({ batch }: { batch: Batch }) {
+  const rows = batch.decisions
+    .map((d) => ({ id: d.id, title: d.title, problems: [...(d.errors ?? []), ...(d.notes ?? []), ...(d.undo?.errors ?? [])] }))
+    .filter((row) => row.problems.length);
+  if (!rows.length) return null;
+  const all = rows.flatMap((row) => row.problems);
+  const summary = summarise(all);
+  const download = () => {
+    const text = rows.map((row) => `${row.title}\n${row.problems.map((p) => `  - ${p}`).join("\n")}`).join("\n\n") + "\n";
+    const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    const link = Object.assign(document.createElement("a"), { href: url, download: `synamp-batch-${new Date(batch.created_at).toISOString().slice(0, 16).replace(/[:T]/g, "-")}-problems.txt` });
+    document.body.append(link); link.click(); link.remove();
+    URL.revokeObjectURL(url);
+  };
+  return (
+    <details className="organise__problems">
+      <summary>
+        <span className="organise__problems-count">{rows.length.toLocaleString()} {rows.length === 1 ? "decision" : "decisions"} ran into problems</span>
+        <span className="organise__problems-kinds"> — {describe(summary)}</span>
+      </summary>
+      <div className="organise__problems-body">
+        {summary.some((item) => item.kind === "gone") && <p className="muted">“No longer there” means the file had already moved or gone before the librarian got to it (often by an earlier batch, or another app). SynAmp leaves those alone; a fresh look at the proposals picks up where things are now.</p>}
+        <button type="button" className="btn btn--ghost btn--sm" onClick={download}>Download the full list</button>
+        <ul className="organise__problems-list">
+          {rows.map((row) => (
+            <li key={row.id}>
+              <details>
+                <summary>{row.title} <span className="muted">· {describe(summarise(row.problems))}</span></summary>
+                <ul>{row.problems.map((problem, index) => <li key={index}>{problem}</li>)}</ul>
+              </details>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </details>
   );
 }
 
@@ -187,11 +238,15 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
   const [status, setStatus] = useState<"all" | Status | "conflict" | "duplicates">("proposed");
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
+  const [pageSize, setPageSize] = useState<number>(20);
+  const [picked, setPicked] = useState<Picked>(NOTHING_PICKED);
+  const [olderBatches, setOlderBatches] = useState(false);
+  const allBox = useRef<HTMLInputElement>(null);
   const [confirming, setConfirming] = useState<"apply" | string | null>(null);
   const [message, setMessage] = useState("");
   const ids = useId();
 
-  const query = () => new URLSearchParams({ kind, status, q, offset: String(offset), limit: String(PAGE) }).toString();
+  const query = () => new URLSearchParams({ kind, status, q, offset: String(offset), limit: String(pageSize) }).toString();
   const load = () => request<View>(`/organise?${query()}`).then(setView).catch((cause) => setMessage((cause as Error).message));
   const send = async (path: string, body: unknown, done?: string) => {
     try {
@@ -204,7 +259,26 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
     load();
     const timer = setInterval(load, view?.busy ? 3_000 : 60_000);
     return () => clearInterval(timer);
-  }, [open, kind, status, q, offset, view?.busy]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, kind, status, q, offset, pageSize, view?.busy]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Ticks only make sense for what's on screen: drop the rest when the page changes.
+  const order = view?.decisions.map((decision) => decision.id) ?? [];
+  const orderKey = order.join("\n");
+  useEffect(() => setPicked((current) => keepVisible(current, order)), [orderKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pickedCount = picked.selected.size;
+  const allPicked = order.length > 0 && order.every((id) => picked.selected.has(id));
+  useEffect(() => { if (allBox.current) allBox.current.indeterminate = pickedCount > 0 && !allPicked; }, [pickedCount, allPicked]);
+  const reviewPicked = async (next: Status) => {
+    const chosen = [...picked.selected];
+    try {
+      const answer = await request<View & { reviewed: number }>(`/organise/review?${query()}`, { method: "POST", body: JSON.stringify({ ids: chosen, status: next }) });
+      setView(answer);
+      setPicked(NOTHING_PICKED);
+      const left = chosen.length - answer.reviewed;
+      setMessage(next === "approved" ? `Approved ${n(answer.reviewed)}.${left > 0 ? ` ${n(left)} can’t be approved as ${left === 1 ? "it stands" : "they stand"} (see “Can’t apply as it stands”).` : ""}`
+        : next === "skipped" ? `Skipped ${n(answer.reviewed)}.` : `Moved ${n(answer.reviewed)} back to “to review”.`);
+    } catch (cause) { setMessage((cause as Error).message); }
+  };
 
   const keep = (pair: string, track: string | null) => send("/organise/keep", { pair, keep: track },
     track ? "Switched which copy stays. The proposal changed, so approve it again when it looks right." : "Back to SynAmp’s pick. Approve the proposal again when it looks right.");
@@ -269,10 +343,27 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
               <option value="all">All</option>
             </select></label>
             <label>Search<input type="search" value={q} onChange={(e) => { setQ(e.target.value); setOffset(0); }} placeholder="artist, album or folder" /></label>
+            <label className="organise__per-page">Per page<select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setOffset(0); }}>
+              {PAGE_SIZES.map((size) => <option key={size} value={size}>{size}</option>)}
+            </select></label>
           </div>
 
+          {/* The selection bar sticks to the top while you scroll the proposals, and stops where they end. */}
+          <div className="organise__list">
+          {view.decisions.length > 0 && <div className="organise__selectbar" role="group" aria-label="Selected proposals">
+            <label className="organise__check organise__select-all"><input ref={allBox} type="checkbox" checked={allPicked} onChange={() => setPicked((current) => pickAll(current, order))} />
+              <span>Select all on this page</span></label>
+            <span className="organise__picked" role="status">{pickedCount ? `${n(pickedCount)} selected` : <span className="muted">Tick proposals to decide on them together. Shift-click selects a run.</span>}</span>
+            {pickedCount > 0 && <span className="organise__picked-actions">
+              <button type="button" className="btn btn--primary btn--sm" onClick={() => reviewPicked("approved")}>Approve selected</button>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => reviewPicked("skipped")}>Skip selected</button>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => reviewPicked("proposed")}>Decide later</button>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setPicked(NOTHING_PICKED)}>Clear</button>
+            </span>}
+          </div>}
+
           {view.matching > 0 && <div className="organise__bulk" role="group" aria-label={`All ${view.matching} shown`}>
-            <span className="muted">{n(view.matching)} shown:</span>
+            <span className="muted">Every one of the {n(view.matching)} shown, on all pages:</span>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => reviewShown("approved")}>Approve all</button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => reviewShown("skipped")}>Skip all</button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => reviewShown("proposed")}>Decide later</button>
@@ -280,12 +371,14 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
 
           {view.decisions.length === 0
             ? <p className="muted">{s!.total ? "Nothing matches these filters." : "Nothing to propose — the library already follows the naming settings (or hasn’t been exported yet)."}</p>
-            : view.decisions.map((decision) => <DecisionCard key={decision.id} decision={decision} review={review} keep={keep} />)}
-          {view.matching > PAGE && <nav className="missing__pages" aria-label="Pages">
-            <button type="button" className="btn btn--ghost btn--sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE))}>Previous</button>
-            <span>{n(offset + 1)}–{n(Math.min(offset + PAGE, view.matching))} of {n(view.matching)}</span>
-            <button type="button" className="btn btn--ghost btn--sm" disabled={offset + PAGE >= view.matching} onClick={() => setOffset(offset + PAGE)}>Next</button>
+            : view.decisions.map((decision) => <DecisionCard key={decision.id} decision={decision} review={review} keep={keep}
+              selected={picked.selected.has(decision.id)} onSelect={(id, shift) => setPicked((current) => pick(current, order, id, shift))} />)}
+          {view.matching > pageSize && <nav className="missing__pages" aria-label="Pages">
+            <button type="button" className="btn btn--ghost btn--sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - pageSize))}>Previous</button>
+            <span>{n(offset + 1)}–{n(Math.min(offset + pageSize, view.matching))} of {n(view.matching)}</span>
+            <button type="button" className="btn btn--ghost btn--sm" disabled={offset + pageSize >= view.matching} onClick={() => setOffset(offset + pageSize)}>Next</button>
           </nav>}
+          </div>
 
           <div className="organise__apply">
             {view.busy ? <p>The librarian is working on a batch — progress is shown at the top of this panel.</p> : confirming === "apply" ? <>
@@ -299,14 +392,13 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
 
           {view.batches.length > 0 && <div className="organise__batches">
             <h3>Recent batches</h3>
-            {view.batches.map((batch) => {
+            {view.batches.filter((batch, index) => olderBatches || index < 3 || batch.id === latestUndoable?.id).map((batch) => {
               const applied = batch.decisions.filter((d) => d.status === "applied").length;
-              const problems = batch.decisions.filter((d) => d.errors?.length || d.notes?.length || d.undo?.errors?.length);
               return (
                 <div key={batch.id} className="organise__batch">
                   <p><strong>{when(batch.created_at)}</strong> · {BATCH_TEXT[batch.status]} · {applied} of {batch.decisions.length} {batch.decisions.length === 1 ? "decision" : "decisions"}
                     {batch.undo && <> · undo: {batch.undo.status === "done" ? "done" : batch.undo.status === "partial" ? "partly done" : "waiting"}</>}</p>
-                  {problems.length > 0 && <ul>{problems.map((d) => <li key={d.id}>{d.title}: {[...(d.errors ?? []), ...(d.notes ?? []), ...(d.undo?.errors ?? [])].join("; ")}</li>)}</ul>}
+                  <BatchProblems batch={batch} />
                   {batch.id === latestUndoable?.id && !view.busy && (confirming === batch.id ? <>
                     <span>Put these files back where they were?</span>
                     <button type="button" className="btn btn--primary" onClick={() => { setConfirming(null); send("/organise/undo", { batch: batch.id }, "Undo sent to the librarian."); }}>Yes, undo</button>
@@ -315,6 +407,8 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
                 </div>
               );
             })}
+            {view.batches.length > 3 && <button type="button" className="btn btn--ghost btn--sm" aria-expanded={olderBatches} onClick={() => setOlderBatches(!olderBatches)}>
+              {olderBatches ? "Show only the latest 3" : `Show ${n(view.batches.length - 3)} older ${view.batches.length - 3 === 1 ? "batch" : "batches"}`}</button>}
           </div>}
           <p className="listening__message" role="status">{message}</p>
         </>}

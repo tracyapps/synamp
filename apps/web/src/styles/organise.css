@@ -97,3 +97,29 @@
   .organise__dupe dl { grid-template-columns: 1fr; }
   .organise__dupe dt { padding-top: 6px; }
 }
+
+/* Ticking proposals to decide on them together. */
+.organise__decision-title { display: flex; gap: 10px; align-items: baseline; min-width: 0; }
+.organise__select { width: 18px; height: 18px; flex: none; margin: 0; accent-color: var(--accent); align-self: center; cursor: pointer; }
+.organise__decision.is-selected { background: rgba(255, 205, 0, .05); box-shadow: inset 3px 0 0 var(--accent); padding-left: 10px; }
+.organise__selectbar {
+  position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 6px 0; padding: 10px 12px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; font-size: 14px;
+}
+.organise__select-all { align-items: center; }
+.organise__select-all input { margin-top: 0; width: 18px; height: 18px; }
+.organise__picked-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.organise__per-page { min-width: 0 !important; }
+
+/* A batch's problems: one line, opening into a scrolling list. */
+.organise__problems { flex-basis: 100%; font-size: 13px; }
+.organise__problems > summary { cursor: pointer; padding: 4px 0; }
+.organise__problems > summary:focus-visible, .organise__problems-list summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.organise__problems-count { color: var(--text); }
+.organise__problems-kinds { color: var(--muted); }
+.organise__problems-body { display: grid; gap: 8px; justify-items: start; padding: 6px 0 0 18px; }
+.organise__problems-body p { margin: 0; max-width: 80ch; }
+.organise__problems-list { list-style: none; margin: 0; padding: 0 8px 0 0; width: 100%; max-height: min(50vh, 480px); overflow-y: auto; border-top: 1px solid var(--hair); }
+.organise__problems-list > li { border-bottom: 1px solid var(--hair); padding: 6px 0; }
+.organise__problems-list summary { cursor: pointer; overflow-wrap: anywhere; }
+.organise__problems-list ul { margin: 6px 0 2px; padding-left: 22px; color: var(--muted); overflow-wrap: anywhere; }
