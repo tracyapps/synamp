@@ -61,7 +61,8 @@ import { ExplorerSelections } from "./library/explorer-selection.ts";
 import { galaxy, galaxyArtist, galaxyRandom } from "./library/galaxy.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
 import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
-import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay } from "./library/organise.ts";
+import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay, tagDecisions } from "./library/organise.ts";
+import { filesToRead, TagCache } from "./library/song-details.ts";
 import { AUDIO_EXTENSIONS, buildImport, COMPANION_EXTENSIONS, IncomingScanner, PART_SUFFIX, WEB_FOLDER } from "./library/import.ts";
 import { isSafeRelative } from "./library/naming.ts";
 import { AnalyzerControl, AnalyzerError } from "./library/analyzer.ts";
@@ -95,6 +96,23 @@ const mbClient = () => (musicbrainz ??= new MusicBrainz({ contact: runtime.music
 const organise = new OrganiseStore(join(dataDir, "organise.json"));
 /** Moved files keep working before the analyzer re-exports (see PathOverlay). */
 const overlay = new PathOverlay(join(dataDir, "organise-moves.jsonl"), config.libraryPath);
+/** What the music files say now (read-only), for "Fix song details": read a little at a time in the background. */
+const tagCache = new TagCache(config.libraryPath, join(dataDir, "tag-cache.json"));
+let detailsLeft = 0;
+let detailFiles: { key: string; paths: string[] } | undefined;
+function readDetails(): void {
+  try {
+    const lib = currentLibrary();
+    const key = `${lib.version}|${albumMatches.revision}`;
+    if (detailFiles?.key !== key) {
+      detailFiles = { key, paths: filesToRead(lib, albumMatches.records) };
+      tagCache.prune(new Set(lib.tracks.flatMap((t) => (t.path ? [t.path] : []))));
+    }
+    detailsLeft = tagCache.fill(detailFiles.paths, 150);
+  } catch { /* the library isn't readable yet */ }
+}
+setInterval(readDetails, 2_000).unref();
+setInterval(() => { try { tagCache.save(); } catch { /* try again later */ } }, 60_000).unref();
 /** "Listen anywhere": the Phase 1 checklist (Navidrome, Tailscale, apps). */
 const setup = new SetupStore(join(dataDir, "setup.json"));
 /** MilkDrop looks you love or hide, the same on every screen. */
@@ -542,10 +560,10 @@ let planCache: { key: string; plan: Decision[] } | undefined;
 function organisePlan(): Decision[] {
   const lib = currentLibrary();
   const scan = incoming?.scan();
-  const key = `${lib.version}|${albumMatches.revision}|${JSON.stringify(organise.state.settings)}|${scan?.scanned_at ?? 0}|${JSON.stringify(organise.choices)}`;
+  const key = `${lib.version}|${albumMatches.revision}|${JSON.stringify(organise.state.settings)}|${scan?.scanned_at ?? 0}|${JSON.stringify(organise.choices)}|${tagCache.revision}`;
   if (planCache?.key !== key) {
     const imports = scan ? buildImport(scan, lib, organise.state.settings, { incomingRoot: incoming!.root, libraryRoot: config.libraryPath }) : [];
-    planCache = { key, plan: [...imports, ...buildPlan(lib, albumMatches.records, organise.state.settings, organise.choices)] };
+    planCache = { key, plan: [...imports, ...buildPlan(lib, albumMatches.records, organise.state.settings, organise.choices), ...tagDecisions(lib, albumMatches.records, organise.state.settings, tagCache)] };
   }
   return planCache.plan;
 }
@@ -563,7 +581,7 @@ function filterPlan(plan: Decision[], query: URLSearchParams): Decision[] {
 const LIBRARIAN_ONLINE_MS = 90_000;
 function organiseView(query: URLSearchParams) {
   const plan = organisePlan();
-  const summary = { total: plan.length, proposed: 0, approved: 0, skipped: 0, conflicts: 0, changed: 0, artist: 0, album: 0, import: 0, approved_moves: 0, set_aside: 0 };
+  const summary = { total: plan.length, proposed: 0, approved: 0, skipped: 0, conflicts: 0, changed: 0, artist: 0, album: 0, import: 0, tags: 0, approved_moves: 0, approved_edits: 0, set_aside: 0 };
   for (const decision of plan) {
     const { status, changed } = organise.statusOf(decision);
     summary[status]++;
@@ -571,7 +589,7 @@ function organiseView(query: URLSearchParams) {
     if (changed) summary.changed++;
     if (decision.conflicts.length) summary.conflicts++;
     summary.set_aside += decision.duplicates?.length ?? 0;
-    if (status === "approved" && !decision.conflicts.length) summary.approved_moves += decision.moves.length;
+    if (status === "approved" && !decision.conflicts.length) { summary.approved_moves += decision.moves.length; summary.approved_edits += decision.edits?.length ?? 0; }
   }
   const matching = filterPlan(plan, query);
   const offset = Math.max(0, Number(query.get("offset")) || 0);
@@ -582,10 +600,13 @@ function organiseView(query: URLSearchParams) {
     settings: organise.state.settings,
     matching: matching.length,
     offset,
-    decisions: matching.slice(offset, offset + limit).map(({ moves, folders: _folders, ...decision }) => ({
+    decisions: matching.slice(offset, offset + limit).map(({ moves, folders: _folders, edits, ...decision }) => ({
       ...decision, ...organise.statusOf(decision as Decision), move_count: moves.length,
       moves: moves.slice(0, 40).map(({ from, to, to_area }) => ({ from, to, ...(to_area ? { to_area } : {}) })),
+      ...(edits ? { edit_count: edits.length, edits: edits.slice(0, 60).map(({ path, now, set }) => ({ path, now, set })) } : {}),
     })),
+    /** Song details still being read from the files (the proposals fill in as they are). */
+    details_reading: detailsLeft,
     batches: organise.state.batches.slice(0, 10).map((batch) => ({
       ...batch,
       decisions: batch.decisions.map(({ moved, ...decision }) => ({ ...decision, moved_count: moved?.length ?? 0 })),
@@ -1055,12 +1076,13 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const librarianJob = path.match(/^\/api\/v1\/librarian\/jobs\/(j_[0-9a-f]{12})$/);
   if (librarianJob && req.method === "POST") {
     // A big batch's report lists every file moved: thousands of decisions are megabytes.
-    const { job, moved, folders } = organise.complete(librarianJob[1]!, await body(req, 128_000_000));
+    const { job, moved, folders, written } = organise.complete(librarianJob[1]!, await body(req, 128_000_000));
     overlay.record(moved);
     carryMatches(albumMatches, folders);
     incoming?.invalidate();
     // Files moved: have the analyzer scan and export, so analysis and the library list follow them.
-    if (moved.length) analyzerControl.afterLibrarian();
+    if (moved.length || written.length) analyzerControl.afterLibrarian();
+    if (written.length) { tagCache.forget(written.map((w) => w.path)); setTimeout(readDetails, 1_000); }
     planCache = undefined;
     return send(res, 200, { job: { id: job.id, status: job.status } });
   }

@@ -111,7 +111,8 @@ function readId3v2(fd: number, out: FileTags): void {
     if (!/^[A-Z0-9]+$/.test(id)) break; // padding
     const frameSize = major === 2 ? tag.readUIntBE(at + 3, 3) : major === 4 ? syncsafe(tag, at + 4) : tag.readUInt32BE(at + 4);
     const start = at + headerLength;
-    if (frameSize <= 0 || start + frameSize > tag.length) break;
+    if (frameSize < 0 || start + frameSize > tag.length) break;
+    if (frameSize === 0) { at = start; continue; } // an empty frame (some taggers write them): skip it, read on
     if (id === "TXXX") {
       const text = decodeText(tag.subarray(start, start + frameSize)).split("\0");
       if (/^musicbrainz album id$/i.test(text[0] ?? "")) assign(out, "mb_albumid", text[1]);

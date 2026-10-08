@@ -718,3 +718,31 @@ and Cher — plausibly alike in sound).
   100k songs: first build ~2.7 s (warmed in the background), later pages ~1 ms, a new sort ~75 ms, a search ~0.3 s.
 - Known limits: a screen reader's browse mode reads only the drawn rows (row numbers say "of 100,000");
   the table header doesn't stick (the table's horizontal scroller prevents it).
+
+### 2026-10-08 — LIBRARY-CARE 4b: song details written into files (Organise kind "tags")
+
+- `apps/brain/src/library/tag-writer.ts` (pure, no deps): MP3 (ID3v2.3/2.4; ID3v2.2 carried over to
+  2.3 frame for frame, PIC→APIC; ID3v1 kept in step) and FLAC (Vorbis comments; padding absorbs size
+  changes). Only the changed frames/comments are replaced, new ones first; every other frame kept byte for
+  byte. Refused with a plain reason: unsynchronised/extended/footer ID3 headers, damaged frames, v2.2
+  frames with no v2.3 name (e.g. iTunes CM1), FLAC with ID3 in front, ".mp3" files that aren't MPEG
+  inside. M4A not written yet. Owner's library: 90% MP3, 10% M4A, no FLAC.
+- Checked on 400 of the owner's real MP3s (copies; library read-only): 387 written and verified (audio
+  SHA-256 identical, tags read back, decodes as before, cover art kept), 11 refused (5 damaged frames,
+  3 v2.2 RVA → since mapped to RVAD, 2 unsynchronised, 1 CM1), 2 originals that already fail to decode
+  (same error before and after). Found and fixed a reader bug: an empty ID3 frame stopped tags.ts reading
+  the rest of the tag.
+- Brain: `song-details.ts` TagCache reads tags from the files (read-only /music, background, 150 ms per
+  2 s, persisted to data/tag-cache.json); `detailDecisions` proposes per trusted match (confident, chosen
+  by you, or MB ID in the files): fill missing (default on), fix track/disc numbers (on), MusicBrainz
+  spelling (off). Organise settings carry the three switches. Album renames now use the trusted
+  release's track numbers when the file's differ (fix_track_numbers), so a batch with both doesn't name
+  "07 - Fuel" while writing track 2.
+- Librarian: `tags-apply.ts` checks every file still says what was reviewed, keeps the old tag parts in
+  `.synamp/tag-backups/<batch>/` (LIBRARIAN_TAG_BACKUPS), writes beside + fsync + read back + rename,
+  all-or-nothing per album, journals `{retag: path}` (the analyzer's rename replay ignores it; the scan
+  re-identifies the file and keeps its analysis because the audio hash is unchanged). Undo restores only
+  files still exactly as SynAmp left them. E2E in the cloud (brain + librarian + web): apply → tags
+  correct, decodes; undo → all three files byte-identical to the originals.
+- Open: M4A writing; per-track artist credits (MbTrack has none yet, so only missing artists are filled
+  from the album artist, never on Various Artists); tag-backups clean-up (they're small: tag parts only).

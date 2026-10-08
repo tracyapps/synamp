@@ -347,3 +347,59 @@ test("plan: identical twins keep the plain name; two different songs already nam
   assert.deepEqual(clapton.moves.map((m) => m.from), ["Eric Clapton/Conception (2003)/01 - Higher Ground (2).mp3"], "only the “(2)” copy moves (aside)");
   assert.equal(plan.find((d) => d.title.includes("Hullabaloo")), undefined, "nothing to change: no name swap");
 });
+
+test("song details: proposed from a trusted MusicBrainz match, only what the settings allow; applied after renames, undone from what was written", async () => {
+  const { tagDecisions } = await import("./organise.ts");
+  const library = lib([
+    track("s1", "Ani Difranco/Little Plastic Castle/01 - Little Plastic Castle.mp3", "Little Plastic Castle", { track_no: 1, year: 1998 }),
+    track("s2", "Ani Difranco/Little Plastic Castle/02 - Fuel.mp3", "Fuel", { track_no: 2, year: 1998 }),
+    track("s3", "Ani Difranco/Little Plastic Castle/03 - Gravel.m4a", "Gravel", { track_no: 3, year: 1998 }),
+  ]);
+  const rel = release("11111111-1111-1111-1111-111111111111", "Ani DiFranco", "Little Plastic Castle", [["Little Plastic Castle", "Fuel", "Gravel"]]);
+  const records = { "Ani Difranco/Little Plastic Castle": matched("Ani Difranco/Little Plastic Castle", rel) };
+  // What the files say (read from the files themselves, not the export).
+  const files: Record<string, import("./tags.ts").FileTags> = {
+    "Ani Difranco/Little Plastic Castle/01 - Little Plastic Castle.mp3": { title: "Little Plastic Castle", artist: "Ani DiFranco", track_no: 1 },
+    "Ani Difranco/Little Plastic Castle/02 - Fuel.mp3": { title: "Fuel", artist: "Ani DiFranco", album: "LPC", track_no: 7, track_total: 3, year: 1998, album_artist: "Ani DiFranco" },
+  };
+  const cache = { get: (path: string) => files[path] };
+  const [details] = tagDecisions(library, records, DEFAULT_SETTINGS, cache);
+  assert.ok(details, "one album of details");
+  assert.equal(details!.kind, "tags");
+  assert.deepEqual(details!.edits!.map((e) => [e.path.split("/").pop(), e.set, e.now]), [
+    ["01 - Little Plastic Castle.mp3", { album_artist: "Ani DiFranco", album: "Little Plastic Castle", year: 1998, track_total: 3 }, {}],
+    ["02 - Fuel.mp3", { track_no: 2 }, { track_no: 7 }],
+  ]);
+  assert.ok(details!.changes.some((c) => /Fills in 4 missing details/.test(c)));
+  assert.ok(details!.changes.some((c) => /Corrects 1 track or disc number/.test(c)));
+  assert.ok(details!.notes!.some((n) => /1 file in a format SynAmp can’t write yet/.test(n)));
+  // Spelling only when asked.
+  const spelled = tagDecisions(library, records, { ...DEFAULT_SETTINGS, match_mb_spelling: true }, cache)[0]!;
+  assert.equal(spelled.edits![1]!.set.album, "Little Plastic Castle");
+  assert.equal(tagDecisions(library, records, { ...DEFAULT_SETTINGS, fill_missing_details: false, fix_track_numbers: false }, cache).length, 0);
+  // Not a trusted match: nothing proposed.
+  assert.equal(tagDecisions(library, { "Ani Difranco/Little Plastic Castle": { ...matched("Ani Difranco/Little Plastic Castle", release("2", "Someone Else", "Other Album", [["x"]])) } }, DEFAULT_SETTINGS, cache).length, 0);
+
+  // Applied in the same batch as the album's renames: details follow the files to their new names.
+  const dir = tempDir();
+  try {
+    const store = new OrganiseStore(join(dir, "organise.json"));
+    const plan = [...buildPlan(library, records, DEFAULT_SETTINGS), details!];
+    store.review(plan, "approved");
+    const batch = store.apply(plan);
+    const job = store.claim({})!;
+    const tagsJob = job.decisions.find((d) => d.kind === "tags")!;
+    assert.equal(job.decisions.at(-1)!.kind, "tags", "details last");
+    assert.deepEqual(tagsJob.edits!.map((e) => e.path), [
+      "Ani Difranco/Little Plastic Castle (1998)/01 - Little Plastic Castle.mp3",
+      "Ani Difranco/Little Plastic Castle (1998)/02 - Fuel.mp3",
+    ]);
+    const written = tagsJob.edits!.map((e) => ({ path: e.path, track_id: e.track_id, backup: `${batch.id}/${"a".repeat(24)}.tagbak`, audio_sha: "0".repeat(64), after_sha: "1".repeat(64) }));
+    const done = store.complete(job.id, { results: job.decisions.map((d) => ({ id: d.id, status: "applied", moved: d.moves, written: d.kind === "tags" ? written : [] })) });
+    assert.equal(done.written.length, 2);
+    store.undo(batch.id);
+    const undoJob = store.claim({})!;
+    assert.equal(undoJob.decisions[0]!.kind, "tags", "details are put back first, before the renames are undone");
+    assert.deepEqual(undoJob.decisions[0]!.restore!.map((w) => w.path), [...written].reverse().map((w) => w.path));
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

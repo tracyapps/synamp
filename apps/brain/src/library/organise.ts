@@ -25,6 +25,9 @@ import { discFromFolder, groupAlbums, matchRelease } from "./albums.ts";
 import type { AlbumUnit } from "./albums.ts";
 import type { AlbumMatches, AlbumRecord } from "./missing.ts";
 import { betterCopy, copyNumber, describeQuality, pairKey, sameRecording, SET_ASIDE_FOLDER } from "./duplicates.ts";
+import { detailDecisions } from "./song-details.ts";
+import type { TagEdit } from "./song-details.ts";
+import type { FileTags } from "./tags.ts";
 import { albumFolderName, artistKey, isSafeRelative, pathKey, safeName, trackFileName, unswapName } from "./naming.ts";
 
 export class OrganiseError extends Error {
@@ -53,16 +56,22 @@ export type OrganiseSettings = {
   compilations_folder: string;
   /** Two copies of the same recording in one place: keep the better, set the other aside (never deleted). */
   set_aside_duplicates: boolean;
+  /** Song details (tags) inside the files, from the album's MusicBrainz match: fill in what's missing… */
+  fill_missing_details: boolean;
+  /** …correct track and disc numbers… */
+  fix_track_numbers: boolean;
+  /** …and (off by default) use MusicBrainz's spelling for album, album artist and song titles. */
+  match_mb_spelling: boolean;
 };
 
 export const DEFAULT_SETTINGS: OrganiseSettings = {
   merge_artists: true, add_year: true, number_tracks: true, fold_disc_folders: true, compilations_folder: "Various Artists",
-  set_aside_duplicates: true,
+  set_aside_duplicates: true, fill_missing_details: true, fix_track_numbers: true, match_mb_spelling: false,
 };
 
 export function cleanSettings(input: Record<string, unknown>, current: OrganiseSettings): OrganiseSettings {
   const next = { ...current };
-  for (const key of ["merge_artists", "add_year", "number_tracks", "fold_disc_folders", "set_aside_duplicates"] as const) {
+  for (const key of ["merge_artists", "add_year", "number_tracks", "fold_disc_folders", "set_aside_duplicates", "fill_missing_details", "fix_track_numbers", "match_mb_spelling"] as const) {
     if (input[key] === undefined) continue;
     if (typeof input[key] !== "boolean") throw new OrganiseError(`${key} must be true or false`);
     next[key] = input[key];
@@ -93,7 +102,7 @@ export type Decision = {
   id: string;
   /** Changes whenever the proposed moves change; an approval is for one revision. */
   rev: string;
-  kind: "artist" | "album" | "import";
+  kind: "artist" | "album" | "import" | "tags";
   title: string;
   /** Plain-language list of what this does. */
   changes: string[];
@@ -106,6 +115,10 @@ export type Decision = {
   preview: Array<{ from: string; to: string }>;
   /** Copies of one recording that met here: which is kept, which is set aside, and why. */
   duplicates?: DuplicatePair[];
+  /** Song details written into files (kind "tags"): what each file says now, and what it will say. */
+  edits?: TagEdit[];
+  /** Worth knowing, but not blocking (files left out, and why). */
+  notes?: string[];
 };
 
 export type DuplicateCopy = { id: string; path: string; quality: string };
@@ -193,7 +206,16 @@ function context(library: Library): PlanContext {
 }
 
 function finish(decision: Omit<Decision, "rev">): Decision {
-  return { ...decision, rev: hash({ moves: decision.moves, folders: decision.folders, conflicts: decision.conflicts }) };
+  return { ...decision, rev: hash({ moves: decision.moves, folders: decision.folders, conflicts: decision.conflicts, ...(decision.edits ? { edits: decision.edits } : {}) }) };
+}
+
+/** Song details to write into the files (see song-details.ts), as Organise decisions. */
+export function tagDecisions(library: Library, records: Record<string, AlbumRecord>, settings: OrganiseSettings, cache: { get(path: string): FileTags | undefined }): Decision[] {
+  return detailDecisions(library, records, settings, cache).filter((d) => d.edits.length).map((d) => finish({
+    id: `tags:${hash({ tracks: d.edits.map((e) => e.track_id).sort() }).slice(0, 16)}`,
+    kind: "tags", title: d.title, changes: d.changes, moves: [], folders: [], conflicts: [], preview: [], edits: d.edits,
+    ...(d.notes.length || d.waiting ? { notes: [...d.notes, ...(d.waiting ? [`${d.waiting.toLocaleString()} more ${d.waiting === 1 ? "file is" : "files are"} still being read; ${d.waiting === 1 ? "it" : "they"}’ll be added`] : [])] } : {}),
+  }));
 }
 
 /** Artist folders that are spellings of one artist, merged into the best-supported spelling. */
@@ -334,8 +356,12 @@ function albumDecision(unit: AlbumUnit, ctx: PlanContext, settings: OrganiseSett
 
   // Track numbers: from the tags or filename, else from the matched MusicBrainz release.
   const fromRelease = new Map<string, { disc: number; position: number }>();
+  let trusted = false;
   if (record?.status === "matched" && record.release) {
-    for (const [id, slot] of matchRelease(unit, record.release).mapping) {
+    const match = matchRelease(unit, record.release);
+    // Sure it's this album: its track numbers win over numbers the files have wrong (as "Fix song details" corrects them).
+    trusted = settings.fix_track_numbers && (match.confident || record.source === "you" || record.source === "tag");
+    for (const [id, slot] of match.mapping) {
       const [disc, position] = slot.split("-").map(Number);
       fromRelease.set(id, { disc: disc!, position: position! });
     }
@@ -373,9 +399,9 @@ function albumDecision(unit: AlbumUnit, ctx: PlanContext, settings: OrganiseSett
     if (inDiscFolder && settings.fold_disc_folders) folded++;
     let number = settings.number_tracks ? track.track_no : undefined;
     const disc = discOfFile(track);
-    if (settings.number_tracks && number === undefined && fromRelease.has(track.id)) {
+    if (settings.number_tracks && fromRelease.has(track.id) && (number === undefined || trusted)) {
+      if (number === undefined) numberedFromMb++;
       number = fromRelease.get(track.id)!.position;
-      numberedFromMb++;
     }
     let name = settings.number_tracks
       ? trackFileName({ title: track.title, ext: ext(from), track: number, disc, multiDisc, width, stem: stem(from) })
@@ -464,7 +490,13 @@ export function rebase(path: string, moved: FolderMove[]): string {
 
 export type ReviewStatus = "approved" | "skipped";
 export type Review = { status: ReviewStatus; rev: string; at: number };
-export type JobDecision = { id: string; title: string; kind: Decision["kind"]; moves: Move[]; folders: FolderMove[] };
+export type JobDecision = { id: string; title: string; kind: Decision["kind"]; moves: Move[]; folders: FolderMove[];
+  /** kind "tags", applying: the details to write. */
+  edits?: TagEdit[];
+  /** kind "tags", undoing: the files to put back as they were. */
+  restore?: Written[] };
+/** A file whose details the librarian wrote: where its old tag is kept, and checksums to tell it hasn't changed since. */
+export type Written = { path: string; track_id?: string; backup: string; audio_sha: string; after_sha: string };
 export type DecisionOutcome = {
   id: string; title: string; kind: Decision["kind"];
   status: "queued" | "applied" | "failed";
@@ -472,6 +504,8 @@ export type DecisionOutcome = {
   notes?: string[];
   /** What was actually moved, in order, artwork and other files included. */
   moved?: Move[];
+  /** Files whose details were written (kind "tags"). */
+  written?: Written[];
   undo?: { status: "undone" | "failed"; errors?: string[] };
 };
 export type Batch = {
@@ -604,13 +638,25 @@ export class OrganiseStore {
     if (this.busy()) throw new OrganiseError("The librarian is still working on the last batch; wait for it to finish", 409);
     const chosen = plan.filter((decision) => this.statusOf(decision).status === "approved" && !decision.conflicts.length);
     if (!chosen.length) throw new OrganiseError("Nothing approved to apply");
+    // (A batch of only song details whose files all went aside would be empty; checked below.)
     const moved: FolderMove[] = [];
     const jobDecisions: JobDecision[] = [];
     // New music first (it may land in a folder that a merge or rename then moves, along with it);
     // then artist merges; album decisions then follow the files to their merged folder.
-    const order = { import: 0, artist: 1, album: 2 } as const;
+    const order = { import: 0, artist: 1, album: 2, tags: 3 } as const;
+    // Files renamed earlier in this batch: song details follow them to their new names.
+    const renamed = new Map<string, string | null>();
     for (const decision of [...chosen].sort((a, b) => order[a.kind] - order[b.kind])) {
       const inLibrary = (path: string, area?: Area) => (area ? path : rebase(path, moved));
+      if (decision.kind === "tags") {
+        const edits = (decision.edits ?? []).flatMap((edit) => {
+          const path = rebase(edit.path, moved);
+          const to = renamed.has(path) ? renamed.get(path) : path;
+          return to ? [{ ...edit, path: to }] : []; // set aside as a duplicate: nothing to write
+        });
+        if (edits.length) jobDecisions.push({ id: decision.id, title: decision.title, kind: "tags", moves: [], folders: [], edits });
+        continue;
+      }
       const moves = decision.moves.map((move) => ({ ...move, from: inLibrary(move.from, move.from_area), to: inLibrary(move.to, move.to_area) }));
       const folders = decision.folders.map((folder) => ({
         ...folder, from: inLibrary(folder.from, folder.from_area), to: rebase(folder.to, moved),
@@ -618,7 +664,9 @@ export class OrganiseStore {
       }));
       jobDecisions.push({ id: decision.id, title: decision.title, kind: decision.kind, moves, folders });
       if (decision.kind === "artist") moved.push(...decision.folders.map(({ from, to }) => ({ from, to })));
+      for (const move of moves) if (!move.from_area) renamed.set(move.from, move.to_area ? null : move.to);
     }
+    if (!jobDecisions.length) throw new OrganiseError("Nothing approved to apply");
     const batch: Batch = {
       id: `b_${now.toString(36)}${randomBytes(3).toString("hex")}`,
       created_at: now,
@@ -642,9 +690,11 @@ export class OrganiseStore {
     const newer = this.state.batches.filter((item) => item.created_at > batch.created_at && item.decisions.some((d) => d.status === "applied" && d.undo?.status !== "undone"));
     if (newer.length) throw new OrganiseError("Undo the newer batches first (most recent first)", 409);
     const decisions: JobDecision[] = batch.decisions
-      .filter((d) => d.status === "applied" && d.moved?.length && d.undo?.status !== "undone")
+      .filter((d) => d.status === "applied" && (d.moved?.length || d.written?.length) && d.undo?.status !== "undone")
       .reverse()
-      .map((d) => ({ id: d.id, title: d.title, kind: d.kind, folders: [], moves: [...d.moved!].reverse().map(reverseMove) }));
+      .map((d) => d.kind === "tags"
+        ? { id: d.id, title: d.title, kind: d.kind, folders: [], moves: [], restore: [...(d.written ?? [])].reverse() }
+        : { id: d.id, title: d.title, kind: d.kind, folders: [], moves: [...(d.moved ?? [])].reverse().map(reverseMove) });
     if (!decisions.length) throw new OrganiseError("Nothing in this batch to undo");
     batch.undo = { status: "queued", requested_at: now };
     this.state.jobs.push({ id: `j_${randomBytes(6).toString("hex")}`, batch: batch.id, kind: "undo", status: "queued", created_at: now, decisions });
@@ -697,24 +747,27 @@ export class OrganiseStore {
   }
 
   /** The librarian's report. Returns the moves that actually happened, in order. */
-  complete(jobId: string, input: unknown, now = Date.now()): { job: Job; moved: Move[]; folders: FolderMove[] } {
+  complete(jobId: string, input: unknown, now = Date.now()): { job: Job; moved: Move[]; folders: FolderMove[]; written: Written[] } {
     const job = this.state.jobs.find((item) => item.id === jobId);
     if (!job) throw new OrganiseError("No job with that id", 404);
-    if (job.status === "done") return { job, moved: [], folders: [] }; // a repeated report changes nothing
+    if (job.status === "done") return { job, moved: [], folders: [], written: [] }; // a repeated report changes nothing
     const results = cleanResults(input, job);
     const batch = this.state.batches.find((item) => item.id === job.batch);
     const moved: Move[] = [];
     const folders: FolderMove[] = [];
+    const written: Written[] = [];
     for (const result of results) {
       const outcome = batch?.decisions.find((d) => d.id === result.id);
       const planned = job.decisions.find((d) => d.id === result.id)!;
       moved.push(...result.moved);
+      written.push(...result.written);
       // Folder moves inside the library carry the MusicBrainz matches along; imports have none yet.
       if (result.status === "applied") folders.push(...planned.folders.filter((f) => !f.from_area).map(({ from, to }) => ({ from, to })));
       if (!outcome) continue;
       if (job.kind === "apply") {
         outcome.status = result.status;
         outcome.moved = result.moved;
+        if (result.written.length) outcome.written = result.written;
         if (result.errors.length) outcome.errors = result.errors;
         if (result.notes.length) outcome.notes = result.notes;
         if (result.status === "applied") delete this.state.reviews[result.id];
@@ -722,6 +775,8 @@ export class OrganiseStore {
         // An undo that only partly worked keeps what is left, so it can be tried again.
         const undone = new Set(result.moved.map((m) => `${m.to_area ?? ""}:${m.to}\n${m.from_area ?? ""}:${m.from}`));
         if (outcome.moved) outcome.moved = outcome.moved.filter((m) => !undone.has(`${m.from_area ?? ""}:${m.from}\n${m.to_area ?? ""}:${m.to}`));
+        // Song details put back: those files are done; any left can be tried again.
+        if (outcome.written) { const back = new Set(result.written.map((w) => w.path)); outcome.written = outcome.written.filter((w) => !back.has(w.path)); }
         outcome.undo = { status: result.status === "applied" ? "undone" : "failed", ...(result.errors.length ? { errors: result.errors } : {}) };
       }
     }
@@ -740,11 +795,12 @@ export class OrganiseStore {
     }
     this.state.jobs = [...this.state.jobs.filter((item) => item.status !== "done"), ...this.state.jobs.filter((item) => item.status === "done").slice(-20)];
     this.save();
-    return { job, moved, folders: job.kind === "undo" ? [] : folders };
+    return { job, moved, folders: job.kind === "undo" ? [] : folders, written };
   }
 }
 
-type CleanResult = { id: string; status: "applied" | "failed"; moved: Move[]; errors: string[]; notes: string[] };
+type CleanResult = { id: string; status: "applied" | "failed"; moved: Move[]; written: Written[]; errors: string[]; notes: string[] };
+const hex = (value: unknown, length: number) => typeof value === "string" && new RegExp(`^[0-9a-f]{${length}}$`).test(value);
 
 /** The report comes over the network: keep only well-formed, known, safe entries. */
 function cleanResults(input: unknown, job: Job): CleanResult[] {
@@ -763,11 +819,14 @@ function cleanResults(input: unknown, job: Job): CleanResult[] {
         from: m.from, to: m.to, ...(typeof m.track_id === "string" ? { track_id: m.track_id } : {}), ...(typeof m.audio_hash === "string" ? { audio_hash: m.audio_hash } : {}),
         ...(m.from_area === "incoming" ? { from_area: "incoming" as const } : {}), ...(m.to_area === "incoming" ? { to_area: "incoming" as const } : {}),
       }));
-    out.push({ id: entry.id, status: entry.status === "applied" ? "applied" : "failed", moved, errors: texts(entry.errors), notes: texts(entry.notes) });
+    const written = (Array.isArray(entry.written) ? entry.written : [])
+      .filter((w): w is Written => !!w && typeof w === "object" && isSafeRelative((w as Written).path) && /^[\w./-]{1,300}$/.test((w as Written).backup) && hex((w as Written).audio_sha, 64) && hex((w as Written).after_sha, 64))
+      .map((w) => ({ path: w.path, backup: w.backup, audio_sha: w.audio_sha, after_sha: w.after_sha, ...(typeof w.track_id === "string" ? { track_id: w.track_id } : {}) }));
+    out.push({ id: entry.id, status: entry.status === "applied" ? "applied" : "failed", moved, written, errors: texts(entry.errors), notes: texts(entry.notes) });
   }
   // Anything the librarian didn't mention did not happen.
   for (const decision of job.decisions) {
-    if (!out.some((r) => r.id === decision.id)) out.push({ id: decision.id, status: "failed", moved: [], errors: ["The librarian did not report on this"], notes: [] });
+    if (!out.some((r) => r.id === decision.id)) out.push({ id: decision.id, status: "failed", moved: [], written: [], errors: ["The librarian did not report on this"], notes: [] });
   }
   return out;
 }

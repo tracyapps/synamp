@@ -1,8 +1,9 @@
 /**
  * SynAmp librarian — the only SynAmp process allowed to change the music files.
  *
- * It asks the brain for approved work, carries it out (renames and moves only),
- * journals every move, and reports back. Run it where the music is writable,
+ * It asks the brain for approved work, carries it out (renames and moves, and
+ * song details written into files, with backups for Undo), journals every
+ * change, and reports back. Run it where the music is writable,
  * ideally on the NAS itself (fast, same-volume renames, correct ownership):
  *
  *   LIBRARIAN_MUSIC_PATH=/music            the library root (read-write)
@@ -14,6 +15,9 @@
  *                                          tracks keep their analysis
  *   LIBRARIAN_STATE_DIR=/data              unsent reports wait here
  *   LIBRARIAN_POLL_SECONDS=10
+ *   LIBRARIAN_TAG_BACKUPS=/share/.synamp/tag-backups
+ *                                          old song details, kept for Undo
+ *                                          (default: .synamp/tag-backups beside the library)
  *
  *   node --experimental-strip-types src/librarian/main.ts          # keep running
  *   node --experimental-strip-types src/librarian/main.ts --once   # one check, then exit
@@ -24,6 +28,7 @@ import { hostname } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import type { Job } from "../library/organise.ts";
 import { applyDecision, Journal, undoDecision } from "./apply.ts";
+import { applyTags, undoTags } from "./tags-apply.ts";
 import type { DecisionResult } from "./apply.ts";
 
 export const LIBRARIAN_VERSION = "0.1.0";
@@ -36,6 +41,8 @@ export type LibrarianConfig = {
   journal?: string;
   stateDir: string;
   pollSeconds: number;
+  /** Old song details (tag parts) kept for Undo. Default: `.synamp/tag-backups` beside the library folder. */
+  tagBackups?: string;
 };
 
 export function configFromEnv(env: NodeJS.ProcessEnv = process.env): LibrarianConfig {
@@ -48,6 +55,7 @@ export function configFromEnv(env: NodeJS.ProcessEnv = process.env): LibrarianCo
     token: env.SYNAMP_BRAIN_TOKEN ?? "",
     ...(env.RENAME_JOURNAL_PATH ? { journal: env.RENAME_JOURNAL_PATH } : {}),
     pollSeconds: Math.max(2, Number(env.LIBRARIAN_POLL_SECONDS) || 10),
+    tagBackups: env.LIBRARIAN_TAG_BACKUPS || join(dirname(resolve(root || ".")), ".synamp", "tag-backups"),
   };
 }
 
@@ -93,7 +101,7 @@ export async function runOnce(config: LibrarianConfig, fetchImpl: typeof fetch =
     const job = claimed.job as Job | null;
     if (!job) return "idle";
     log(`${job.kind === "apply" ? "Applying" : "Undoing"} batch ${job.batch}: ${job.decisions.length} decision(s)`);
-    const context = { root: config.root, ...(config.incoming ? { incoming: config.incoming } : {}), journal: new Journal(config.journal), batch: job.batch };
+    const context = { root: config.root, ...(config.incoming ? { incoming: config.incoming } : {}), journal: new Journal(config.journal), batch: job.batch, backups: config.tagBackups ?? join(dirname(resolve(config.root)), ".synamp", "tag-backups") };
     const results: DecisionResult[] = [];
     let lastProgress = 0;
     const tell = async (done: number, current?: string) => {
@@ -102,9 +110,11 @@ export async function runOnce(config: LibrarianConfig, fetchImpl: typeof fetch =
     };
     await tell(0, job.decisions[0]?.title);
     for (const decision of job.decisions) {
-      const result = job.kind === "apply" ? applyDecision(decision, context) : undoDecision(decision, context);
+      const result = decision.kind === "tags"
+        ? (job.kind === "apply" ? applyTags(decision, context) : undoTags(decision, context))
+        : job.kind === "apply" ? applyDecision(decision, context) : undoDecision(decision, context);
       results.push(result);
-      log(`  ${result.status === "applied" ? "✓" : "✗"} ${decision.title} — ${result.moved.length} moved${result.errors.length ? `; ${result.errors.join("; ")}` : ""}`);
+      log(`  ${result.status === "applied" ? "✓" : "✗"} ${decision.title} — ${decision.kind === "tags" ? `${result.written?.length ?? 0} files' details ${job.kind === "apply" ? "written" : "put back"}` : `${result.moved.length} moved`}${result.errors.length ? `; ${result.errors.join("; ")}` : ""}`);
       if (Date.now() - lastProgress > 2_000) {
         lastProgress = Date.now();
         const next = job.decisions[results.length];
