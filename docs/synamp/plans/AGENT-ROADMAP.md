@@ -667,3 +667,20 @@ idle). Songs at once = memory ÷ 3 GB, within cores − 2, memory − 4 GB and
 ANALYZER_WORKERS (default now 16). Recommended: a quarter of the Mac (3–12 GB);
 "more" recommended: half, keeping 8 GB. The web mirrors the arithmetic in
 `apps/web/src/analysis-memory.ts` (tests: tools/analysis-memory.test.mts).
+
+### 2026-10-08 — "Sounds like these songs" (sound vectors, voice stage revision 2)
+
+Analyzer: the voice stage (now revision 2, so songs already done are redone
+once) also keeps CNN14's 2048-number embedding per window, averages it, and
+projects it to 128 numbers with a fixed random projection (seed 20261008),
+stored as base64 int8 `sound_vector` (exported top level). METHOD gains
+`/vec128`. Brain: `library.attachSoundVectors` decodes them, centres on the
+library mean and normalises into `track.embedding`, so the existing exemplar
+ranking (`exemplar_pos`, channel "similar") works. `/plans/draft` takes
+`like: [id…]` (≤5; prompt may be empty). Web: Describe → "Sounds like these
+songs" picker (search, add up to 5, remove; focus kept).
+
+Check on the owner's library (9 artist/style groups × 12 songs, top-5 cosine
+neighbours): same group 2.6–4.8 of 5 (mean 3.3) against 0.5 by chance;
+Berlioz 4.8, Budd 3.6, Eno ambient 2.7, Bon Jovi 2.6 (mixes with Beastie Boys
+and Cher — plausibly alike in sound).

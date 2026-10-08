@@ -19,6 +19,12 @@ How the numbers are made (chosen on ~40 songs from the owner's library,
 
 Known limits: a voice buried deep in the mix (Eno's own early songs) can be
 missed; wordless choirs count as voice (they are singing, though not words).
+
+The same pass also keeps a "sound vector" for "sounds like these songs": the
+network's 2048-number summary of each window (the layer before it names
+sounds), averaged over the song, projected to 128 numbers with a fixed random
+matrix (distances survive that projection), and stored as 128 signed bytes in
+base64. The brain centres them on the library's average before comparing.
 """
 
 from __future__ import annotations
@@ -40,7 +46,9 @@ MODEL_SAMPLE_RATE = 32000
 WINDOW_S = 10.0
 MAX_WINDOWS = 30
 PRESENT = 0.10
-METHOD = "panns-cnn14-0.431/windows10s/present0.10"
+METHOD = "panns-cnn14-0.431/windows10s/present0.10/vec128"
+VECTOR_SIZE = 128
+_PROJECTION: np.ndarray | None = None
 
 # AudioSet class indices (class_labels_indices.csv, AudioSet ontology, CC BY 4.0).
 SINGING = (27, 28, 29, 30, 32, 33, 34, 35, 36, 37, 254, 255)  # Singing, Choir, Yodeling, Chant, Male/Female/Child/Synthetic singing, Rapping, Humming, Vocal music, A capella
@@ -179,8 +187,8 @@ def _cnn14():
             x = self.conv_block6(x, pool_size=(1, 1))
             x = torch.mean(x, dim=3)
             x = torch.max(x, dim=2)[0] + torch.mean(x, dim=2)
-            x = F.relu_(self.fc1(x))
-            return torch.sigmoid(self.fc_audioset(x))
+            embedding = F.relu_(self.fc1(x))
+            return torch.sigmoid(self.fc_audioset(embedding)), embedding
 
     return Cnn14()
 
@@ -212,11 +220,34 @@ def summarise(clipwise: np.ndarray) -> dict[str, object]:
             "instruments": instruments, "voice_peak": float(voice.max())}
 
 
-def _infer(batch: np.ndarray) -> np.ndarray:
-    """CNN14 on a batch of windows → (windows × 527) probabilities."""
+def _infer(batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """CNN14 on a batch of windows → (windows × 527) probabilities and (windows × 2048) embeddings."""
     import torch
     with torch.no_grad():
-        return _model()(torch.from_numpy(batch)).numpy()
+        clipwise, embedding = _model()(torch.from_numpy(batch))
+        return clipwise.numpy(), embedding.numpy()
+
+
+def _projection() -> np.ndarray:
+    """A fixed 2048 → 128 random projection. Never change the seed: stored vectors depend on it."""
+    global _PROJECTION
+    if _PROJECTION is None:
+        rng = np.random.default_rng(20261008)
+        _PROJECTION = (rng.standard_normal((2048, VECTOR_SIZE)) / np.sqrt(VECTOR_SIZE)).astype(np.float32)
+    return _PROJECTION
+
+
+def sound_vector(embeddings: np.ndarray) -> str | None:
+    """Windows × 2048 → the song's 128-byte sound vector (base64 of signed bytes), or None."""
+    import base64
+    if embeddings.size == 0:
+        return None
+    vector = embeddings.mean(axis=0) @ _projection()
+    norm = float(np.linalg.norm(vector))
+    if not norm:
+        return None
+    quantised = np.clip(np.round(vector / norm * 127 * 4), -127, 127).astype(np.int8)  # ×4: unit vectors' parts are small
+    return base64.b64encode(quantised.tobytes()).decode("ascii")
 
 
 def extract_voice(path: Path) -> dict[str, object]:
@@ -226,5 +257,7 @@ def extract_voice(path: Path) -> dict[str, object]:
     audio = signal.resample_poly(mono, MODEL_SAMPLE_RATE // divisor, sample_rate // divisor).astype(np.float32)
     batch = windows(audio)
     if not len(batch):
-        return {**summarise(np.zeros((0, 527))), "voice_method": METHOD, "voice_windows": 0}
-    return {**summarise(_infer(batch)), "voice_method": METHOD, "voice_windows": int(len(batch))}
+        return {**summarise(np.zeros((0, 527))), "voice_method": METHOD, "voice_windows": 0, "sound_vector": None}
+    clipwise, embeddings = _infer(batch)
+    return {**summarise(clipwise), "voice_method": METHOD, "voice_windows": int(len(batch)),
+            "sound_vector": sound_vector(embeddings)}

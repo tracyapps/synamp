@@ -78,7 +78,7 @@ STATUS_FIELDS: dict[str, tuple[str, ...]] = {
     # Status strings the brain uses to gate eligibility (not signals themselves).
     "dsp_core": ("tempo_status",),
     "beat": ("beat_status", "timing_status", "beat_method"),
-    "voice": ("voice_method",),
+    "voice": ("voice_method", "sound_vector"),
 }
 
 # Stage outputs that are a mapping of name -> number, exported flat as "<group>.<name>"

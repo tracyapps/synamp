@@ -18,7 +18,7 @@ import { PlaylistError, PlaylistStore } from "./playlists.ts";
 import type { CreateNode, TrackRef } from "./playlists.ts";
 import { draftPlan } from "./query/draft.ts";
 import { evaluatePlan } from "./query/evaluate.ts";
-import type { Evaluation, EvaluateOptions } from "./query/evaluate.ts";
+import type { Evaluation, EvaluateOptions, Library, LibraryTrack } from "./query/evaluate.ts";
 import { LibrarySource } from "./query/library.ts";
 import { validatePlan } from "./query/plan.ts";
 import type { QueryPlan } from "./query/plan.ts";
@@ -642,6 +642,26 @@ async function body(req: IncomingMessage, limit = 256_000): Promise<Record<strin
   } catch { throw new PlaylistError("Invalid JSON object"); }
 }
 
+/** Up to 5 library tracks named by ID for "sounds like these" (unknown IDs are ignored). */
+function likeTracks(value: unknown, lib: Library): LibraryTrack[] {
+  if (!Array.isArray(value)) return [];
+  const byId = new Map(lib.tracks.map((track) => [track.id, track]));
+  return [...new Set(value.filter((id): id is string => typeof id === "string").map((id) => library.canonicalId(id)))]
+    .map((id) => byId.get(id)).filter((track): track is LibraryTrack => !!track).slice(0, 5);
+}
+
+/** Add picked songs to a plan as positive exemplars, with the similarity signal switched on. */
+function withExemplars(raw: unknown, like: LibraryTrack[]): unknown {
+  if (!like.length || !raw || typeof raw !== "object") return raw;
+  const plan = structuredClone(raw) as { intent?: { query_type?: string }; ranking?: { signals?: Array<{ name: string; weight: number }>; exemplars?: { positive?: string[] } } };
+  plan.ranking ??= { signals: [] };
+  plan.ranking.signals ??= [];
+  plan.ranking.exemplars = { ...(plan.ranking.exemplars ?? {}), positive: [...new Set([...(plan.ranking.exemplars?.positive ?? []), ...like.map((track) => track.id)])] };
+  if (!plan.ranking.signals.some((signal) => signal.name === "exemplar_pos")) plan.ranking.signals.push({ name: "exemplar_pos", weight: 0.7 });
+  if (plan.intent && (!plan.intent.query_type || plan.intent.query_type === "catalog")) plan.intent.query_type = "exemplar";
+  return plan;
+}
+
 async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const path = url.pathname.replace(/\/+$/, "") || "/";
@@ -1114,20 +1134,23 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // --- natural-language plans ---------------------------------------------
   if (path === "/api/v1/plans/draft" && req.method === "POST") {
     const input = await body(req);
-    if (typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.length > 500) {
+    const lib = currentLibrary();
+    // "Sounds like these songs": picked in the app by search, so they arrive as track IDs.
+    const like = likeTracks(input.like, lib);
+    const promptText = typeof input.prompt === "string" && input.prompt.trim() ? input.prompt : like.length ? "songs like these" : "";
+    if (!promptText.trim() || promptText.length > 500) {
       throw new PlaylistError("prompt must be 1–500 characters");
     }
-    const lib = currentLibrary();
-    const draft = draftPlan(input.prompt, lib);
+    const draft = draftPlan(promptText, lib);
     // B1: translate the goal language. The chosen reading supersedes the raw draft when the
     // interpreter found one; reading plans stay server-side (only summaries leave).
-    const interpretation = interpretGoal(input.prompt, { library: lib, now: Date.now() });
+    const interpretation = interpretGoal(promptText, { library: lib, now: Date.now() });
     const chosen = interpretation.chosen_index >= 0 && interpretation.chosen_index < interpretation.readings.length
       ? interpretation.readings[interpretation.chosen_index] : undefined;
-    const checked = chosen ? validatePlan(chosen.plan) : validatePlan(draft.plan);
+    const checked = validatePlan(withExemplars(chosen ? chosen.plan : draft.plan, like));
     return send(res, 200, {
       parser: "rule-based draft (no LLM yet)",
-      recognized: draft.recognized,
+      recognized: [...like.map((track) => ({ phrase: `sounds like ${track.title}`, becomes: `exemplar ${track.title} — ${track.artist ?? "unknown artist"}` })), ...draft.recognized],
       unparsed: draft.unparsed,
       encoder_text: draft.encoder_text,
       validation: checked,

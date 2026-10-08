@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import "./styles/describe.css";
 import { Callout } from "./ui/kit";
 
@@ -227,8 +227,64 @@ export function ResultView({ result, labels, onRestore }: { result: Evaluation; 
   );
 }
 
+type Pick = { id: string; title: string; artist?: string };
+
+/**
+ * "Sounds like these songs": search the library and pick up to five. They go to
+ * the brain as track IDs, so a title with "and" in it, or two songs with the
+ * same name, can't be misread.
+ */
+function SoundsLike({ request, picked, onChange }: { request: Request; picked: Pick[]; onChange: (next: Pick[]) => void }) {
+  const ids = useId();
+  const [q, setQ] = useState("");
+  const [found, setFound] = useState<Pick[]>([]);
+  const [said, setSaid] = useState("");
+  const box = useRef<HTMLInputElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  /** After adding or removing, keep keyboard focus somewhere sensible (the clicked button is gone). */
+  const refocus = () => requestAnimationFrame(() => (box.current ?? list.current?.querySelector("button"))?.focus());
+  useEffect(() => {
+    if (q.trim().length < 2) { setFound([]); return; }
+    let live = true;
+    const timer = window.setTimeout(() => {
+      request<{ tracks: Pick[] }>(`/library/search?limit=8&q=${encodeURIComponent(q.trim())}`)
+        .then((answer) => { if (live) { setFound(answer.tracks); setSaid(`${answer.tracks.length} ${answer.tracks.length === 1 ? "song" : "songs"} found`); } }, () => undefined);
+    }, 250);
+    return () => { live = false; window.clearTimeout(timer); };
+  }, [q, request]);
+  const label = (track: Pick) => `${track.title}${track.artist ? ` — ${track.artist}` : ""}`;
+  return (
+    <div className="describe__like">
+      <label htmlFor={`${ids}-q`}>Sounds like these songs <span className="muted">(optional, up to 5)</span></label>
+      {picked.length > 0 && (
+        <ul ref={list} className="describe__picked" aria-label="Songs it should sound like">
+          {picked.map((track) => (
+            <li key={track.id}><span>{label(track)}</span>
+              <button type="button" className="btn btn--ghost btn--sm" aria-label={`Remove ${label(track)}`}
+                onClick={() => { onChange(picked.filter((item) => item.id !== track.id)); setSaid(`Removed ${track.title}.`); refocus(); }}>Remove</button></li>
+          ))}
+        </ul>
+      )}
+      {picked.length < 5 && <input ref={box} id={`${ids}-q`} type="search" value={q} placeholder="Find a song by title or artist" autoComplete="off"
+        aria-describedby={`${ids}-hint`} onChange={(event) => setQ(event.target.value)} />}
+      <p id={`${ids}-hint`} className="muted describe__like-hint">SynAmp compares how songs sound, once the analysis has listened to them.</p>
+      {found.length > 0 && picked.length < 5 && (
+        <ul className="describe__found" aria-label="Matching songs">
+          {found.filter((track) => !picked.some((item) => item.id === track.id)).map((track) => (
+            <li key={track.id}><button type="button" className="btn btn--ghost btn--sm"
+              onClick={() => { onChange([...picked, { id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) }]); setQ(""); setFound([]); setSaid(`Added ${track.title}.`); refocus(); }}>
+              Add <span className="describe__found-name">{label(track)}</span></button></li>
+          ))}
+        </ul>
+      )}
+      <p className="visually-hidden" role="status">{said}</p>
+    </div>
+  );
+}
+
 export default function Describe({ request, onSaved }: { request: Request; onSaved: (id: string) => void }) {
   const [prompt, setPrompt] = useState("");
+  const [like, setLike] = useState<Pick[]>([]);
   const [name, setName] = useState("");
   const [draft, setDraft] = useState<DraftResponse | null>(null);
   const [busy, setBusy] = useState(false);
@@ -237,11 +293,11 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
 
   async function preview(event?: React.FormEvent, text = prompt) {
     event?.preventDefault();
-    if (!text.trim()) return;
+    if (!text.trim() && !like.length) return;
     setBusy(true); setError("");
     try {
-      setDraft(await request<DraftResponse>("/plans/draft", { method: "POST", body: JSON.stringify({ prompt: text }) }));
-      if (!name) setName(text.replace(/[.!?].*$/, "").slice(0, 60));
+      setDraft(await request<DraftResponse>("/plans/draft", { method: "POST", body: JSON.stringify({ prompt: text, like: like.map((track) => track.id) }) }));
+      if (!name) setName((text.trim() ? text.replace(/[.!?].*$/, "") : `Like ${like.map((track) => track.title).join(" and ")}`).slice(0, 60));
     } catch (cause) { setError((cause as Error).message); } finally { setBusy(false); }
   }
 
@@ -266,8 +322,9 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
         <textarea id={promptId} value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={2} maxLength={500}
           placeholder="e.g. I need to focus. no words, no piano, nothing too slow" aria-describedby={`${promptId}-hint`} />
         <p id={`${promptId}-hint`} className="muted">“No …” rules are strict: a track is only included when it has been measured and passes.</p>
+        <SoundsLike request={request} picked={like} onChange={setLike} />
         <div className="describe__actions">
-          <button className="btn btn--primary" disabled={busy || !prompt.trim()}>{busy ? "Working…" : "Preview"}</button>
+          <button className="btn btn--primary" disabled={busy || (!prompt.trim() && !like.length)}>{busy ? "Working…" : "Preview"}</button>
           <span className="muted">Try:</span>
           {EXAMPLES.map((example) => (
             <button type="button" key={example} className="chip" onClick={() => { setPrompt(example); setName(""); preview(undefined, example); }}>{example}</button>

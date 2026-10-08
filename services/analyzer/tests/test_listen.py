@@ -62,17 +62,36 @@ def test_the_stage_runs_and_exports_flat_instruments(tmp_path: Path, monkeypatch
 
     # The model arrives: the next run listens to the song that was already done, and only that stage runs.
     monkeypatch.setattr(listen, "available", lambda: True)
-    monkeypatch.setattr(listen, "_infer", lambda batch: probs(len(batch), c33=[0.4] + [0.0] * (len(batch) - 1), c141=[0.3] * len(batch)))
+    monkeypatch.setattr(listen, "_infer", lambda batch: (probs(len(batch), c33=[0.4] + [0.0] * (len(batch) - 1), c141=[0.3] * len(batch)),
+                                                         np.ones((len(batch), 2048), dtype=np.float32)))
     monkeypatch.setattr(pipeline, "extract_dsp_core", lambda *_: (_ for _ in ()).throw(AssertionError("dsp_core re-ran")))
     second = run_analyze(config, progress=lambda *_: None)
     assert second["backfilled"] == 1 and second["completed"] == 1
     db = Database(config.db_path)
     result = load_result(db, library / "song.flac")
     assert result.vocal_fraction == 1 / 3 and result.instruments["electric_guitar"] == 1.0
-    assert result.stage_revisions["voice"] == 1 and result.voice_method == listen.METHOD
+    assert result.stage_revisions["voice"] == 2 and result.voice_method == listen.METHOD
+    assert result.sound_vector and len(__import__("base64").b64decode(result.sound_vector)) == 128
     document = build_export(db, config.library_path, progress=lambda *_: None, workers=1)
     db.close()
     signals = document["tracks"][0]["signals"]
     assert signals["vocal_fraction"] == 1 / 3 and signals["instruments.electric_guitar"] == 1.0
     assert document["tracks"][0]["voice_method"] == listen.METHOD
+    assert document["tracks"][0]["sound_vector"] == result.sound_vector
     json.dumps(document)
+
+
+def test_sound_vectors_keep_alike_songs_close() -> None:
+    import base64
+    rng = np.random.default_rng(1)
+    calm = rng.random(2048).astype(np.float32)
+    loud = rng.random(2048).astype(np.float32)
+    def vec(base, noise):
+        windows = np.stack([base + noise * rng.random(2048).astype(np.float32) for _ in range(6)])
+        return np.frombuffer(base64.b64decode(listen.sound_vector(windows)), dtype=np.int8).astype(float)
+    a, b, c = vec(calm, 0.05), vec(calm, 0.05), vec(loud, 0.05)
+    cos = lambda x, y: float(x @ y / np.linalg.norm(x) / np.linalg.norm(y))
+    assert cos(a, b) > cos(a, c), "two takes of the same sound are closer than a different sound"
+    assert listen.sound_vector(np.zeros((0, 2048), dtype=np.float32)) is None
+    assert listen.sound_vector(np.zeros((3, 2048), dtype=np.float32)) is None, "silence has no direction"
+    assert listen.sound_vector(np.ones((2, 2048), dtype=np.float32)) == listen.sound_vector(np.ones((5, 2048), dtype=np.float32)), "the same every time"

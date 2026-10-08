@@ -56,6 +56,7 @@ export class LibrarySource {
       seen.add(track.id);
       tracks.push(track);
     }
+    attachSoundVectors(tracks);
     this.cached = { version: createHash("sha256").update(raw).digest("hex").slice(0, 12), tracks };
     this.byPath = new Map(tracks.filter((track) => track.path).map((track) => [track.path!, track.id]));
     this.canonical = new Map(tracks.flatMap((track) => (track.aliases ?? []).map((alias): [string, string] => [alias, track.id])));
@@ -68,4 +69,41 @@ export class LibrarySource {
 
   /** Maps an old ID (from before a move) to the track's current one. */
   canonicalId(id: string): string { this.get(); return this.canonical.get(id) ?? id; }
+}
+
+/**
+ * "Sounds like": the analyzer's voice stage stores each song's sound as 128
+ * signed bytes (base64, `sound_vector`). Decode them into `embedding`, centred
+ * on this library's average sound and scaled to length 1, so cosine similarity
+ * compares how songs differ from the library rather than what they all share.
+ */
+export function attachSoundVectors(tracks: LibraryTrack[]): number {
+  const decoded: Array<[LibraryTrack, Float64Array]> = [];
+  for (const track of tracks) {
+    const text = (track as { sound_vector?: unknown }).sound_vector;
+    if (typeof text !== "string") continue;
+    const bytes = Buffer.from(text, "base64");
+    if (bytes.length !== 128) continue;
+    const vector = new Float64Array(128);
+    for (let i = 0; i < 128; i++) vector[i] = bytes.readInt8(i);
+    decoded.push([track, vector]);
+  }
+  if (decoded.length < 2) {
+    for (const [track, vector] of decoded) track.embedding = unit(vector);
+    return decoded.length;
+  }
+  const mean = new Float64Array(128);
+  for (const [, vector] of decoded) for (let i = 0; i < 128; i++) mean[i]! += vector[i]! / decoded.length;
+  for (const [track, vector] of decoded) {
+    for (let i = 0; i < 128; i++) vector[i]! -= mean[i]!;
+    track.embedding = unit(vector);
+  }
+  return decoded.length;
+}
+
+function unit(vector: Float64Array): number[] {
+  let norm = 0;
+  for (const value of vector) norm += value * value;
+  norm = Math.sqrt(norm) || 1;
+  return Array.from(vector, (value) => Math.round((value / norm) * 1e4) / 1e4);
 }
