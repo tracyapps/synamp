@@ -101,7 +101,7 @@ def test_a_retag_keeps_the_analysis(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     assert summary["kept_after_retag"] == 1 and summary["failed"] == 0
     with Database(config.db_path) as db:
         after = load_result(db, song)
-    assert after.stages_done == {"identity", "dsp_core", "beat"}
+    assert after.stages_done == {"identity", "dsp_core", "beat", "tonal"}
     assert after.lufs_integrated == before.lufs_integrated
 
 
@@ -172,7 +172,7 @@ def test_journaled_renames_carry_identity_without_decoding(tmp_path: Path, monke
     with Database(config.db_path) as db:
         moved = by_path(build_export(db, library, read_file_tags=False))["Someone/Album (2001)/03 - Track.flac"]
     assert moved["id"] == original_id
-    assert moved["stages_done"] == ["beat", "dsp_core", "identity"]
+    assert moved["stages_done"] == ["beat", "dsp_core", "identity", "tonal"]
 
 
 def test_tracks_finished_before_identity_existed_get_only_that_stage(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

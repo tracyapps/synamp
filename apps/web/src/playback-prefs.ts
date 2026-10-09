@@ -15,6 +15,8 @@ export type PlaybackPrefs = {
   volume: number;
   /** Stream size: the original file, a lighter copy, or decide by connection ("auto"). */
   quality: Quality;
+  /** Skipping mid-song blends into the next song instead of cutting. */
+  skipBlend: boolean;
 };
 
 export type Quality = "auto" | "full" | "lighter";
@@ -22,7 +24,7 @@ const QUALITIES: Quality[] = ["auto", "full", "lighter"];
 
 const KEY = "synamp-playback";
 const EVENT = "synamp:playback";
-const DEFAULTS: PlaybackPrefs = { crossfade: 0, albumsStraight: true, volume: 1, quality: "auto" };
+const DEFAULTS: PlaybackPrefs = { crossfade: 0, albumsStraight: true, volume: 1, quality: "auto", skipBlend: true };
 
 export function readPrefs(): PlaybackPrefs {
   try {
@@ -32,6 +34,7 @@ export function readPrefs(): PlaybackPrefs {
       albumsStraight: typeof saved.albumsStraight === "boolean" ? saved.albumsStraight : DEFAULTS.albumsStraight,
       volume: Number.isFinite(saved.volume) ? Math.min(1, Math.max(0, saved.volume!)) : DEFAULTS.volume,
       quality: QUALITIES.includes(saved.quality as Quality) ? saved.quality! : DEFAULTS.quality,
+      skipBlend: typeof saved.skipBlend === "boolean" ? saved.skipBlend : DEFAULTS.skipBlend,
     };
   } catch { return DEFAULTS; }
 }

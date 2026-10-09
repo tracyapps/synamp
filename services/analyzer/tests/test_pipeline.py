@@ -66,7 +66,7 @@ def test_scan_then_analyze_produces_measured_values(tmp_path: Path) -> None:
 
     assert first is not None and second is not None
     assert first.lufs_integrated is not None
-    assert first.stages_done == {"identity", "dsp_core", "beat"}
+    assert first.stages_done == {"identity", "dsp_core", "beat", "tonal"}
     # The louder file must measure louder — the whole point of the stage.
     assert first.lufs_integrated > second.lufs_integrated
 
@@ -300,3 +300,29 @@ def test_a_change_of_memory_setting_applies_during_a_run(tmp_path: Path, monkeyp
     summary = run_analyze(config, progress=lines.append, memory_gb=setting)
     assert summary["completed"] == 8 and summary["processes"] == 3
     assert any("3 tracks at a time from now on" in line for line in lines)
+
+
+def test_tonal_stage_names_the_key_of_a_chord_progression(tmp_path) -> None:
+    import numpy as np
+    import soundfile as sf
+    from synamp_analyzer.tonal import extract_tonal
+    sr = 22050
+
+    def chord(notes, seconds=1.0):
+        t = np.arange(int(sr * seconds)) / sr
+        return sum(0.15 / h * np.sin(2 * np.pi * 440 * 2 ** ((n - 69) / 12) * h * t) for n in notes for h in range(1, 5)) * np.exp(-t)
+
+    # i–iv–V–i in A minor, then in Eb major; and noise, which has no key.
+    a_minor = np.concatenate([chord(c) for _ in range(6) for c in ([57, 60, 64], [50, 53, 57], [52, 56, 59], [57, 60, 64])])
+    sf.write(tmp_path / "am.wav", a_minor.astype(np.float32), sr)
+    e_flat = np.concatenate([chord(c) for _ in range(6) for c in ([51, 55, 58], [56, 60, 63], [58, 62, 65], [51, 55, 58])])
+    sf.write(tmp_path / "eb.wav", e_flat.astype(np.float32), sr)
+    sf.write(tmp_path / "noise.wav", np.random.default_rng(0).normal(0, 0.1, sr * 20).astype(np.float32), sr)
+    sf.write(tmp_path / "short.wav", a_minor[: sr * 5].astype(np.float32), sr)
+    am = extract_tonal(tmp_path / "am.wav")
+    assert (am["key"], am["mode"], am["camelot"], am["key_status"]) == ("A minor", "minor", "8A", "measured")
+    eb = extract_tonal(tmp_path / "eb.wav")
+    assert (eb["key"], eb["camelot"]) == ("Eb major", "5B")
+    noise = extract_tonal(tmp_path / "noise.wav")
+    assert noise["key_status"] == "unclear" and noise["key"] is None, "no key rather than a guess"
+    assert extract_tonal(tmp_path / "short.wav")["key_status"] == "too_short"

@@ -215,6 +215,11 @@ def run_stages(
             fields = extract_beat(result.track_path)
             for key, value in fields.items():
                 setattr(result, key, value)
+        elif stage == "tonal":
+            from .tonal import extract_tonal
+
+            for key, value in extract_tonal(result.track_path).items():
+                setattr(result, key, value)
         elif stage == "voice":
             from .listen import extract_voice
 

@@ -746,3 +746,32 @@ and Cher — plausibly alike in sound).
   correct, decodes; undo → all three files byte-identical to the originals.
 - Open: M4A writing; per-track artist credits (MbTrack has none yet, so only missing artists are filled
   from the album artist, never on Various Artists); tag-backups clean-up (they're small: tag parts only).
+
+### 2026-10-08 — Gapless albums, skip blends, DJ mode, song keys (tonal stage)
+
+- Analyzer `tonal.py` (stage `tonal`, revision 1, before voice): 11 kHz chroma from a spectrum whitened
+  by a 31-bin median (drums and hiss drop out), Krumhansl–Kessler profiles, `key` ("A minor"), `mode`
+  (signal, now produced), `camelot` ("8A"), `key_strength`, `key_margin` (vs the best key a DJ couldn't
+  mix with), `key_status` measured|unclear|too_short (strength < 0.72 or margin < 0.03 → no key).
+  Checked on 150 of the owner's songs vs Essentia KeyExtractor (bgate): 122 keyed, 80 % exact,
+  +11 % DJ-compatible, 9 % disagree. Log-compressed chroma and Temperley profiles were far worse.
+  ~1 s a song (plus a decode). Reference venv on the Mac: ~/SynAmp-data/keyref (validation only).
+- Brain: `session/gapless.ts` reads encoder delay/padding (MP3 LAME/Lavc tag in the Xing/Info frame;
+  M4A iTunSMPB) for entries near the playhead (`gapless` on the session entry, plus `bpm`, `camelot`).
+  `session/dj.ts`: `djOrder` (greedy from the first song + 2-opt ≤ 400 songs; cost = tempo gap with
+  half/double time, Camelot distance, small loudness term; keys with strength < 0.8 trusted less;
+  unmeasured songs kept). `/session/queue` takes `order: "dj"`; the session carries `mix: "dj"` and
+  entries a `dj_note`.
+- Web: `audio/engine.ts` — every song through Web Audio (one shared AudioContext with the visuals):
+  ElementVoice (streamed <audio>, 3 pooled, tapped once) and BufferVoice (decoded; used for album runs
+  at full quality ≤ 20 min, deviceMemory ≥ 4). Gapless = next buffer `start(endsAt)`; encoder silence
+  trimmed only when the browser left it (`trimFor`). Crossfades/skip blends are AudioParam curves
+  (equal power), so background tabs don't stall them; crossfades never exceed a third of the song.
+  `audio/transition.ts` decides gapless / crossfade / cut and DJ blend length (16 beats, 6–12 s).
+  Settings: "Blend when I skip" (on). Safari: navigator.audioSession.type = "playback".
+- Checked in Chromium with a recorder on the engine output: a continuous tone split into three MP3s
+  plays back with no gap and no discontinuity (max sample step 0.0045, the tone's own); crossfade and
+  skip blend leave no silence. (Occasional single-sample steps at render-quantum boundaries appeared in
+  headless runs mid-song too: headless audio underruns, not transitions.)
+- Next: beat-locked DJ mixes (needs beat grids for most songs and a time-stretcher, e.g. SoundTouch).
+  To check by ear: the web player on the owner's iPhone with the screen locked.

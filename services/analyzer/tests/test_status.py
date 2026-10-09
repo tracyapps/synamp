@@ -64,7 +64,7 @@ def test_snapshot_counts_stage_coverage_and_failures(tmp_path: Path) -> None:
     assert snap["catalog"] == {"tracks": 3, "present": 3, "missing": 0}
     assert snap["queue"]["done"] == 2
     assert snap["queue"]["pending"] + snap["queue"]["failed"] == 1
-    assert snap["stages"] == {"identity": 2, "dsp_core": 2, "beat": 2, "voice": 0}, "voice waits for its model"
+    assert snap["stages"] == {"identity": 2, "dsp_core": 2, "beat": 2, "tonal": 2, "voice": 0}, "voice waits for its model"
     assert snap["fully_analysed"] == 0, "fully analysed means every stage, voice included"
     # tool_missing without fpcalc; measured or failed (very short synthetic audio) with it.
     assert sum(snap["fingerprints"].values()) == 2

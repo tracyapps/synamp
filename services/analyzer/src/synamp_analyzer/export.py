@@ -71,6 +71,7 @@ EXPORTED_SIGNALS: dict[str, tuple[str, ...]] = {
         "beat_grid_strength", "beat_interval_cv", "tempo_drift",
         "microtiming_tightness", "microtiming_signed", "swing_ratio",
     ),
+    "tonal": ("mode",),
     "voice": ("vocal_fraction", "instrumental"),
 }
 
@@ -78,6 +79,7 @@ STATUS_FIELDS: dict[str, tuple[str, ...]] = {
     # Status strings the brain uses to gate eligibility (not signals themselves).
     "dsp_core": ("tempo_status",),
     "beat": ("beat_status", "timing_status", "beat_method"),
+    "tonal": ("key", "camelot", "key_strength", "key_status", "key_method"),
     "voice": ("voice_method", "sound_vector"),
 }
 

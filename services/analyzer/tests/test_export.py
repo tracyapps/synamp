@@ -78,7 +78,7 @@ def test_export_writes_current_measured_values(tmp_path: Path) -> None:
     assert track["title"] == "Click Track"
     assert track["artist"] == "Some Artist" and track["album"] == "First Album"
     assert track["metadata_source"] == "path"
-    assert track["stages_done"] == ["beat", "dsp_core", "identity"]
+    assert track["stages_done"] == ["beat", "dsp_core", "identity", "tonal"]
     assert track["signals"]["lufs_integrated"] < 0
     assert 0 <= track["signals"]["pulse_clarity"] <= 1
     assert track["beat_status"]
@@ -106,7 +106,7 @@ def test_redo_stage_withholds_only_that_stage(tmp_path: Path) -> None:
     with Database(config.db_path) as db:
         JobQueue(db).clear_stage("beat")
         track = by_path(build_export(db, config.library_path))["Some Artist/First Album/01 - Click Track.flac"]
-    assert track["stages_done"] == ["dsp_core", "identity"]
+    assert track["stages_done"] == ["dsp_core", "identity", "tonal"]
     assert "bpm" in track["signals"]
     assert not set(EXPORTED_SIGNALS["beat"]) & set(track["signals"])
     assert "beat_status" not in track

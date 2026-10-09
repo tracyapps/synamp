@@ -124,7 +124,7 @@ export default function Playlists({ request, upload, nodes, loading, refreshNode
     } catch (cause) { setError((cause as Error).message); }
   }
 
-  const playSelected = (shuffle = false) => selected && play({ playlist_id: selected.id, ...(shuffle ? { shuffle: true } : {}) })
+  const playSelected = (how: "order" | "shuffle" | "dj" = "order") => selected && play({ playlist_id: selected.id, ...(how === "shuffle" ? { shuffle: true } : how === "dj" ? { order: "dj" } : {}) })
     .catch((cause) => setError((cause as Error).message));
 
   return (
@@ -162,7 +162,9 @@ export default function Playlists({ request, upload, nodes, loading, refreshNode
               <div><p className="eyebrow">{TYPE_NAME[selected.type]}</p><h2 className="section-card__title workshop__name">{selected.name}</h2></div>
               <div className="cluster">
                 <button type="button" className="btn btn--primary" onClick={() => playSelected()}><Icon name="play" />Play</button>
-                <button type="button" className="btn btn--ghost" onClick={() => playSelected(true)}><Icon name="shuffle" />{selected.type === "folder" ? "Shuffle everything inside" : "Shuffle"}</button>
+                <button type="button" className="btn btn--ghost" onClick={() => playSelected("shuffle")}><Icon name="shuffle" />{selected.type === "folder" ? "Shuffle everything inside" : "Shuffle"}</button>
+                <button type="button" className="btn btn--ghost" onClick={() => playSelected("dj")} aria-describedby="dj-set-hint"><Icon name="rollup" />Play as a DJ set</button>
+                <span id="dj-set-hint" className="visually-hidden">Orders the songs so each flows into the next, by tempo and key, with longer blends between them.</span>
                 <button type="button" className="btn btn--ghost btn--sm" onClick={removeNode}>Delete</button>
               </div>
             </div>
