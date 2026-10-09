@@ -326,3 +326,41 @@ def test_tonal_stage_names_the_key_of_a_chord_progression(tmp_path) -> None:
     noise = extract_tonal(tmp_path / "noise.wav")
     assert noise["key_status"] == "unclear" and noise["key"] is None, "no key rather than a guess"
     assert extract_tonal(tmp_path / "short.wav")["key_status"] == "too_short"
+
+
+def test_more_memory_during_a_busy_run_starts_more_songs_at_once(tmp_path: Path, monkeypatch) -> None:
+    """Raising the setting while songs are going must grow the pool straight away,
+    not wait for a moment when nothing is in flight (on a big library that never comes)."""
+    import concurrent.futures
+    import dataclasses
+    from synamp_analyzer import pipeline
+
+    library = tmp_path / "music"
+    library.mkdir()
+    for n in range(12):  # different lengths, like real songs: they rarely all finish at once
+        sine(library / f"{n}.flac", seconds=2.0 + 1.5 * (n % 3), frequency=200.0 + 37 * n)
+    config = dataclasses.replace(config_for(library, tmp_path), workers=16)
+    run_scan(config, progress=quiet)
+    monkeypatch.setattr(pipeline, "machine", lambda: {"memory_gb": 64.0, "cores": 16})
+    lines: list[str] = []
+    started_when_made: dict[int, int] = {}
+    real = concurrent.futures.ProcessPoolExecutor
+
+    class Recording(real):  # type: ignore[misc, valid-type]
+        def __init__(self, max_workers=None, **kwargs):
+            started = sum(1 for line in lines if line.strip().endswith(".flac") and line.startswith("  ") and not line.startswith("    "))
+            started_when_made.setdefault(max_workers, started)
+            super().__init__(max_workers=max_workers, **kwargs)
+
+    monkeypatch.setattr(concurrent.futures, "ProcessPoolExecutor", Recording)
+    asked = {"n": 0}
+
+    def setting() -> float:
+        asked["n"] += 1
+        return 6.0 if asked["n"] < 3 else 12.0  # two songs at first, then four
+
+    summary = run_analyze(config, progress=lines.append, memory_gb=setting)
+    assert summary["completed"] == 12 and summary["processes"] == 4
+    assert started_when_made.get(2) == 0, "starts with two at a time"
+    assert 4 in started_when_made and started_when_made[4] <= 4, (
+        f"four at a time should start within the first few songs, not at the end (pools made after: {started_when_made})")

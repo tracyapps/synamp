@@ -488,16 +488,24 @@ def run_analyze(
                     reporter.report(db, "analyzing", run_state())
                 summary["fingerprints_filled"] = backfill_fingerprints(db, should_stop, progress, on_track)
                 current["name"] = ""
-            # The memory setting may have changed: follow it. Fewer songs at once
-            # takes effect as started songs finish; a new pool releases the memory
-            # of processes no longer needed.
+            # The memory setting may have changed: follow it straight away. Songs
+            # already going finish in the pool they started in (shutdown(wait=False)
+            # lets them run, then lets that pool's processes go, releasing their
+            # memory); new songs start in a pool of the new size. Waiting for a
+            # moment with nothing in flight instead meant a bigger setting never
+            # took effect on a busy run: on a big library that moment never comes.
+            # Going down to one at a time still waits for started songs to finish,
+            # because that runs here, outside any pool.
             if not stopping:
                 wanted = capacity()
                 if wanted != processes:
                     progress(f"  memory setting changed: {wanted} {'track' if wanted == 1 else 'tracks'} at a time from now on")
                     processes = wanted
                     summary["processes"] = wanted
-                if pool is not None and not in_flight and processes != pool_size:
+                if pool is not None and processes > 1 and processes != pool_size:
+                    pool.shutdown(wait=False)
+                    pool, pool_size = new_pool(processes), processes
+                elif pool is not None and not in_flight and processes != pool_size:
                     pool.shutdown(wait=True)
                     pool, pool_size = (new_pool(processes), processes) if processes > 1 else (None, 0)
                 elif pool is None and processes > 1 and not in_flight:
