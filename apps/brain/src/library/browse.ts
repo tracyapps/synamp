@@ -131,7 +131,7 @@ export type ArtistPage = {
 };
 
 /** Same artist when the names match ignoring case and accents ("Björk" = "bjork"); punctuation still counts (AC/DC). */
-const artistKey = (name: string) => name.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+export const artistKey = (name: string) => name.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
 /** The tracks of an artist, as on their page: their albums, then the albums they appear on. */
 export function artistTracks(library: Library, name: string): LibraryTrack[] {

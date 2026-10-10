@@ -215,3 +215,18 @@
 .library-list[hidden] { display: none; }
 /* Screen-reader-only text in the table's buttons is absolutely placed: keep it inside the scrolling box. */
 .browse__table-wrap { position: relative; }
+
+/* Hearts (favourites). Pressed = filled; the label and aria-pressed say it too, so colour isn't the only sign. */
+.heart {
+  flex: none; display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0;
+  background: none; border: 0; border-radius: 50%; color: var(--muted); cursor: pointer;
+}
+.heart--md { width: 40px; height: 40px; }
+.heart:hover { background: var(--ghost); color: var(--fg); }
+.heart:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.heart.is-on { color: var(--gold); }
+.heart.is-on svg { fill: currentColor; }
+.heart:disabled { opacity: .6; }
+@media (forced-colors: active) { .heart.is-on svg { fill: Highlight; color: Highlight; } }
+.browse__favourites { display: inline-flex; gap: 6px; align-items: center; }
+.browse__favourites[aria-pressed="true"] svg { fill: currentColor; }

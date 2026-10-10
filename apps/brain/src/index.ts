@@ -50,6 +50,8 @@ import { VersionCheck } from "./version.ts";
 import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
 import { MoodCheckError, MoodChecks } from "./library/moodcheck.ts";
 import { LyricsError, LyricsStore, LyricsWorker, lrclib } from "./library/lyrics.ts";
+import { FavouriteError, Favourites, syncStars } from "./library/favourites.ts";
+import { favouriteWeight, withFavourites } from "./learning/favourite-prior.ts";
 import { otherAppPlays, pingCore, SetupError, SetupStore } from "./setup.ts";
 import { LooksError, LooksStore } from "./visuals/looks.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
@@ -137,6 +139,26 @@ function sendPhonePlaylists() {
   return phonePlaylists.sync(phoneSources(), currentLibrary().version, (relative) => library.idForPath(relative) ?? trackIdForPath(relative));
 }
 let phoneTimer: NodeJS.Timeout | undefined;
+
+// --- favourites (hearts), shared with the phone apps as Navidrome stars ---------------
+const favourites = new Favourites(join(dataDir, "favourites.json"));
+let starsRunning: Promise<unknown> | null = null;
+/** Two-way: hearts here become stars there and back. Only with a Navidrome account signed in. */
+function syncFavourites() {
+  if (!phonePlaylists.signedIn) return Promise.resolve(null);
+  if (starsRunning) return starsRunning;
+  const server = phonePlaylists.stars(currentLibrary().version, (relative) => library.idForPath(relative) ?? trackIdForPath(relative));
+  starsRunning = syncStars(favourites, server)
+    .catch((error: Error) => {
+      favourites.state.last_sync = { ...(favourites.state.last_sync ?? { added_here: 0, removed_here: 0, starred: 0, unstarred: 0 }), at: Date.now(), error: error.message };
+      favourites.save();
+    })
+    .finally(() => { starsRunning = null; });
+  return starsRunning;
+}
+let starsTimer: NodeJS.Timeout | undefined;
+const syncFavouritesSoon = () => { clearTimeout(starsTimer); starsTimer = setTimeout(() => void syncFavourites(), 3_000); starsTimer.unref?.(); };
+setInterval(() => void syncFavourites(), 10 * 60_000).unref();
 
 // --- party mode ---------------------------------------------------------------------
 const party = new PartyStore(join(dataDir, "party.json"));
@@ -385,8 +407,11 @@ function activePolicyView(): ActivePolicyView {
   });
 }
 /** EvaluateOptions for the active policy: epoch mode passes the one combined view in both slots. */
-function policyOptions(playlistId?: string): EvaluateOptions {
-  const view = activePolicyView();
+function policyOptions(playlistId?: string, plan?: QueryPlan): EvaluateOptions {
+  const base = activePolicyView();
+  // Favourites: a head start that fades as the request gets specific and the session teaches the Brain more.
+  const sessionEvents = "epoch" in base ? base.epoch?.event_count ?? 0 : 0;
+  const view = withFavourites(base, favourites.kindFor(currentLibrary()), favouriteWeight(plan, sessionEvents));
   return {
     feedback: view,
     ...(playlistId !== undefined ? { playlistId } : {}),
@@ -410,7 +435,7 @@ function applySequencing(evaluation: Evaluation, plan: QueryPlan): SequencedEval
 function evaluateSaved(plan: unknown, playlistId: string) {
   const checked = validatePlan(plan);
   if (!checked.ok) throw new PlaylistError("This smart playlist's saved plan is no longer valid; re-create it", 409);
-  const evaluation = evaluatePlan(checked, currentLibrary(), policyOptions(playlistId));
+  const evaluation = evaluatePlan(checked, currentLibrary(), policyOptions(playlistId, checked.plan));
   return applySequencing(evaluation, checked.plan);
 }
 const playlists = new PlaylistStore(config.playlistDataPath, {
@@ -740,7 +765,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/moodcheck", "/api/v1/lyrics", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain", "/api/v1/visuals"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/moodcheck", "/api/v1/lyrics", "/api/v1/favourites", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain", "/api/v1/visuals"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -859,10 +884,15 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   }
   // --- browsing the library ----------------------------------------------------
   if (path === "/api/v1/library/explore" && req.method === "GET") {
-    return send(res, 200, explore(currentLibrary(), Object.fromEntries(url.searchParams)));
+    const options = Object.fromEntries(url.searchParams);
+    // "Favourites only": the hearted keys, with their revision so remembered results refresh after a change.
+    if (options.favourites === "1") options.favourites = `rev${favourites.rev}`;
+    return send(res, 200, explore(currentLibrary(), options, favourites.keys()));
   }
   if (path === "/api/v1/library/explore/selection" && req.method === "GET") {
-    return send(res, 200, explorerSelections.preview(currentLibrary(), Object.fromEntries(url.searchParams)));
+    const options = Object.fromEntries(url.searchParams);
+    if (options.favourites === "1") options.favourites = `rev${favourites.rev}`;
+    return send(res, 200, explorerSelections.preview(currentLibrary(), options, favourites.keys()));
   }
   if (path === "/api/v1/library/explore/playlist" && req.method === "POST") {
     const input = await body(req);
@@ -1067,6 +1097,16 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/moodcheck/forget" && req.method === "POST") {
     moodChecks.forget(String((await body(req)).track_id ?? ""));
     return send(res, 200, moodCheckView());
+  }
+
+  // --- favourites -------------------------------------------------------------------------
+  if (path === "/api/v1/favourites" && (req.method === "GET" || req.method === "POST")) {
+    if (req.method === "POST") { favourites.set(await body(req)); syncFavouritesSoon(); }
+    return send(res, 200, { ...favourites.view(), phone: phonePlaylists.signedIn });
+  }
+  if (path === "/api/v1/favourites/sync" && req.method === "POST") {
+    await syncFavourites();
+    return send(res, 200, { ...favourites.view(), phone: phonePlaylists.signedIn });
   }
 
   // --- lyrics -------------------------------------------------------------------------
@@ -1289,13 +1329,13 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
         asks: interpretation.asks,
         audit: interpretation.audit,
       },
-      preview: checked.ok ? applySequencing(evaluatePlan(checked, lib, policyOptions()), checked.plan) : null,
+      preview: checked.ok ? applySequencing(evaluatePlan(checked, lib, policyOptions(undefined, checked.plan)), checked.plan) : null,
     });
   }
   if (path === "/api/v1/plans/evaluate" && req.method === "POST") {
     const checked = validatePlan((await body(req)).plan);
     if (!checked.ok) return send(res, 422, { validation: checked });
-    const evaluation = applySequencing(evaluatePlan(checked, currentLibrary(), policyOptions()), checked.plan);
+    const evaluation = applySequencing(evaluatePlan(checked, currentLibrary(), policyOptions(undefined, checked.plan)), checked.plan);
     return send(res, 200, { validation: checked, result: evaluation });
   }
   if (path === "/api/v1/library" && req.method === "GET") {
@@ -1448,7 +1488,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof MoodCheckError || error instanceof LyricsError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof MoodCheckError || error instanceof LyricsError || error instanceof FavouriteError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);

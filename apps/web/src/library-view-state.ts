@@ -23,6 +23,8 @@ export type LibraryViewState = {
   direction: "asc" | "desc";
   group: typeof groups[number];
   group_key: string;
+  /** Only things you've hearted. Optional, so views saved before favourites still open. */
+  favourites?: boolean;
 };
 export type SavedLibraryView = { id: string; name: string; created_at: number; state: LibraryViewState };
 
@@ -30,9 +32,9 @@ function object(value: unknown, label: string): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(`${label} must be an object.`);
   return value as Record<string, unknown>;
 }
-function keys(data: Record<string, unknown>, expected: readonly string[], label: string) {
+function keys(data: Record<string, unknown>, expected: readonly string[], label: string, optional: readonly string[] = []) {
   for (const key of expected) if (!Object.hasOwn(data, key)) throw new Error(`${label} is missing "${key}".`);
-  for (const key of Object.keys(data)) if (!expected.includes(key)) throw new Error(`${label} has an unsupported field "${key}".`);
+  for (const key of Object.keys(data)) if (!expected.includes(key) && !optional.includes(key)) throw new Error(`${label} has an unsupported field "${key}".`);
 }
 function oneOf<T extends string>(value: unknown, allowed: readonly T[], label: string): T {
   if (typeof value !== "string" || !allowed.includes(value as T)) throw new Error(`${label} must be one of: ${allowed.join(", ")}.`);
@@ -59,7 +61,8 @@ export function defaultLibraryView(presentation: { view?: string; sort?: string;
 export function parseLibraryView(value: unknown): LibraryViewState {
   const data = object(value, "Library view");
   if (data.version !== 1) throw new Error("Unsupported library view version; expected version 1.");
-  keys(data, ["version", "view", "q", "mode", "types", "rules", "logic", "from", "to", "sort", "direction", "group", "group_key"], "Library view");
+  keys(data, ["version", "view", "q", "mode", "types", "rules", "logic", "from", "to", "sort", "direction", "group", "group_key"], "Library view", ["favourites"]);
+  if (data.favourites !== undefined && typeof data.favourites !== "boolean") throw new Error("Library view favourites must be true or false.");
   if (!Array.isArray(data.types)) throw new Error("Library view types must be an array.");
   const types = data.types.map(value => oneOf(value, kinds, "Library view type"));
   if (new Set(types).size !== types.length) throw new Error("Library view types must not contain duplicates.");
@@ -73,7 +76,8 @@ export function parseLibraryView(value: unknown): LibraryViewState {
   const from = year(data.from, "Library view start year"), to = year(data.to, "Library view end year");
   if (from && to && Number(from) > Number(to)) throw new Error("Library view year range must run from earlier to later.");
   return { version: 1, view: oneOf(data.view, views, "Library view layout"), q: text(data.q, 160, "Library view search"), mode: oneOf(data.mode, modes, "Library view matching"), types, rules,
-    logic: oneOf(data.logic, ["and", "or"], "Library view rule logic"), from, to, sort: oneOf(data.sort, sortNames, "Library view sort"), direction: oneOf(data.direction, ["asc", "desc"], "Library view sort direction"), group: oneOf(data.group, groups, "Library view grouping"), group_key: text(data.group_key, 1000, "Library view group") };
+    logic: oneOf(data.logic, ["and", "or"], "Library view rule logic"), from, to, sort: oneOf(data.sort, sortNames, "Library view sort"), direction: oneOf(data.direction, ["asc", "desc"], "Library view sort direction"), group: oneOf(data.group, groups, "Library view grouping"), group_key: text(data.group_key, 1000, "Library view group"),
+    ...(data.favourites ? { favourites: true } : {}) };
 }
 
 export function libraryHash(state: LibraryViewState): string {

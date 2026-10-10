@@ -21,6 +21,9 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { relativeFromReported } from "./identity.ts";
+import { albumFolder } from "../library/albums.ts";
+import { artistKey } from "../library/browse.ts";
+import type { StarServer } from "../library/favourites.ts";
 
 export class SyncError extends Error {
   status: number;
@@ -43,6 +46,13 @@ type State = {
 
 
 const CLIENT = "SynAmp";
+
+/** What Navidrome calls each song, album and artist SynAmp knows, both ways round. */
+export type SongIndex = {
+  song: Map<string, string>; trackOf: Map<string, string>;
+  album: Map<string, string>; folderOf: Map<string, string>;
+  artist: Map<string, string>; artistOf: Map<string, { key: string; name: string }>;
+};
 const md5 = (text: string) => createHash("md5").update(text, "utf8").digest("hex");
 
 export class PlaylistSync {
@@ -52,7 +62,7 @@ export class PlaylistSync {
   private coreMusicPath: string;
   private fetchImpl: typeof fetch;
   /** Navidrome song ID for each SynAmp track ID, rebuilt when the library changes. */
-  private songMap: { key: string; map: Map<string, string> } | null = null;
+  private songMap: { key: string; map: SongIndex } | null = null;
   running: Promise<State["last"]> | null = null;
 
   constructor(path: string, options: { coreUrl: string; coreMusicPath: string; fetchImpl?: typeof fetch }) {
@@ -136,26 +146,88 @@ export class PlaylistSync {
     };
   }
 
-  /** Every song Navidrome knows, as SynAmp track ID → Navidrome song ID. */
-  private async buildSongMap(idForPath: (relative: string) => string | undefined): Promise<Map<string, string>> {
-    const map = new Map<string, string>();
+  /** Every song Navidrome knows, as SynAmp track ID → Navidrome song ID (and its album and artist IDs). */
+  private async buildSongMap(idForPath: (relative: string) => string | undefined): Promise<SongIndex> {
+    const index: SongIndex = { song: new Map(), trackOf: new Map(), album: new Map(), folderOf: new Map(), artist: new Map(), artistOf: new Map() };
     for (const query of ["", '""']) {
       let offset = 0;
       for (;;) {
         const body = await this.call("search3", [["query", query], ["songCount", "500"], ["songOffset", String(offset)], ["artistCount", "0"], ["albumCount", "0"]]);
-        const songs = ((body.searchResult3 as { song?: Array<{ id: string; path?: string }> } | undefined)?.song) ?? [];
+        const songs = ((body.searchResult3 as { song?: Array<{ id: string; path?: string; albumId?: string; artistId?: string; artist?: string }> } | undefined)?.song) ?? [];
         for (const song of songs) {
           const relative = relativeFromReported(song.path, this.coreMusicPath);
           const id = relative ? idForPath(relative) : undefined;
-          if (id) map.set(id, song.id);
+          if (!id || !relative) continue;
+          index.song.set(id, song.id); index.trackOf.set(song.id, id);
+          if (song.albumId) { const folder = albumFolder(relative); if (!index.album.has(folder)) index.album.set(folder, song.albumId); index.folderOf.set(song.albumId, folder); }
+          if (song.artistId && song.artist) {
+            const key = artistKey(song.artist);
+            if (!index.artist.has(key)) index.artist.set(key, song.artistId);
+            index.artistOf.set(song.artistId, { key, name: song.artist });
+          }
         }
         if (songs.length < 500) break;
         offset += songs.length;
       }
       // Navidrome lists everything for an empty query; some versions want two quote marks instead.
-      if (map.size) break;
+      if (index.song.size) break;
     }
-    return map;
+    return index;
+  }
+
+  private async index(libraryKey: string, idForPath: (relative: string) => string | undefined): Promise<SongIndex> {
+    if (this.songMap?.key !== libraryKey) this.songMap = { key: libraryKey, map: await this.buildSongMap(idForPath) };
+    return this.songMap.map;
+  }
+
+  /** Favourites as Navidrome stars, for syncStars (library/favourites.ts). */
+  stars(libraryKey: string, idForPath: (relative: string) => string | undefined): StarServer {
+    if (!this.signedIn) throw new SyncError("Sign in with your Navidrome account first");
+    const ids = async (keys: string[]) => {
+      const index = await this.index(libraryKey, idForPath);
+      const params: Array<[string, string]> = [];
+      const matched: string[] = [];
+      for (const key of keys) {
+        const at = key.indexOf(":");
+        const kind = key.slice(0, at), ref = key.slice(at + 1);
+        const id = kind === "song" ? index.song.get(ref) : kind === "album" ? index.album.get(ref) : index.artist.get(ref);
+        if (!id) continue;
+        params.push([kind === "song" ? "id" : kind === "album" ? "albumId" : "artistId", id]);
+        matched.push(key);
+      }
+      return { params, matched };
+    };
+    const change = (method: "star" | "unstar") => async (keys: string[]) => {
+      const { params, matched } = await ids(keys);
+      // A few at a time keeps each request small.
+      for (let i = 0; i < params.length; i += 50) await this.call(method, params.slice(i, i + 50), true);
+      return matched;
+    };
+    return {
+      starred: async () => {
+        const index = await this.index(libraryKey, idForPath);
+        const body = await this.call("getStarred2", []);
+        const starred = (body.starred2 ?? {}) as { song?: Array<{ id: string; title?: string; path?: string }>; album?: Array<{ id: string; name?: string }>; artist?: Array<{ id: string; name?: string }> };
+        const out = new Map<string, string>();
+        for (const song of starred.song ?? []) {
+          const relative = relativeFromReported(song.path, this.coreMusicPath);
+          const track = index.trackOf.get(song.id) ?? (relative ? idForPath(relative) : undefined);
+          if (track) out.set(`song:${track}`, song.title ?? "");
+        }
+        for (const album of starred.album ?? []) {
+          const folder = index.folderOf.get(album.id);
+          if (folder) out.set(`album:${folder}`, album.name ?? "");
+        }
+        for (const artist of starred.artist ?? []) {
+          const known = index.artistOf.get(artist.id);
+          const key = known?.key ?? (artist.name ? artistKey(artist.name) : "");
+          if (key) out.set(`artist:${key}`, known?.name ?? artist.name ?? "");
+        }
+        return out;
+      },
+      star: change("star"),
+      unstar: change("unstar"),
+    };
   }
 
   /**
@@ -168,8 +240,7 @@ export class PlaylistSync {
     const job = (async () => {
       let sent = 0, removed = 0, missingTotal = 0;
       try {
-        if (this.songMap?.key !== libraryKey) this.songMap = { key: libraryKey, map: await this.buildSongMap(idForPath) };
-        const map = this.songMap.map;
+        const map = (await this.index(libraryKey, idForPath)).song;
         // Playlists that are already there under this account (one may have been deleted by hand).
         const existing = await this.call("getPlaylists", []);
         const there = new Set((((existing.playlists as { playlist?: Array<{ id: string }> } | undefined)?.playlist) ?? []).map((item) => item.id));

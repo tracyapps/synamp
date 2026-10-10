@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import type { Request } from "./api";
 import Icon from "./ui/Icon";
+import { useFavourites } from "./favourites";
 
 /*
  * "On your phone": SynAmp's playlists, sent to Navidrome so Symfonium, play:Sub,
@@ -74,6 +75,7 @@ export default function PhonePlaylists({ request }: { request: Request }) {
             {view.last && view.last.missing > 0 && <> {view.last.missing} {view.last.missing === 1 ? "song isn’t" : "songs aren’t"} in Navidrome yet, so {view.last.missing === 1 ? "it’s" : "they’re"} left out until Navidrome’s next scan.</>}
           </p>
           {view.last?.error && <p className="alert" role="alert">The last send didn’t finish: {view.last.error}</p>}
+          <FavouritesLine />
           <p className="muted phone__note">SynAmp’s copy wins: change these playlists here, not in the phone app — edits there are replaced on the next send. Playlists you made in the phone app are left alone.</p>
           <button type="button" role="switch" aria-checked={view.auto} className={`switch ${view.auto ? "is-on" : ""}`} disabled={busy}
             onClick={() => act("/phone-playlists/settings", { auto: !view.auto }, (next) => next.auto ? "Will keep them up to date." : "Will only send when you press Send now.")}>
@@ -94,5 +96,20 @@ export default function PhonePlaylists({ request }: { request: Request }) {
         <p className="phone__message" role="status">{message}</p>
       </div>
     </section>
+  );
+}
+
+/** Favourites travel as Navidrome stars, both ways, while you're signed in. */
+function FavouritesLine() {
+  const { view } = useFavourites();
+  if (!view) return null;
+  const total = view.counts.songs + view.counts.albums + view.counts.artists;
+  const sync = view.last_sync;
+  return (
+    <p className="phone__status">
+      <strong>Favourites</strong> are stars in your phone apps too, both ways: a heart here stars it there, and a star there hearts it here.
+      {" "}{total ? `${total} ${total === 1 ? "favourite" : "favourites"}` : "No favourites yet"}{sync && !sync.error ? `, last matched ${ago(sync.at)}.` : "."}
+      {sync?.error && <span role="alert"> The last match didn’t finish: {sync.error}</span>}
+    </p>
   );
 }
