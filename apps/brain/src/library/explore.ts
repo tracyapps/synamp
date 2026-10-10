@@ -17,7 +17,7 @@ export type ExplorerRow = {
 type Entity = { row: ExplorerRow; values: Record<Field, string[]>; years: number[]; albums: string[]; albumArtists: string[];
   /** Sort text per column, worked out once (folding text is the slow part of sorting 100k rows). */
   keys?: Partial<Record<string, string>> };
-export type ExploreOptions = Partial<Record<"q" | "types" | "mode" | "logic" | "rules" | "from" | "to" | "sort" | "direction" | "group" | "group_key" | "offset" | "limit", string>>;
+export type ExploreOptions = Partial<Record<"q" | "types" | "mode" | "logic" | "rules" | "from" | "to" | "sort" | "direction" | "group" | "group_key" | "offset" | "limit" | "favourites", string>>;
 const fields: Field[] = ["any", "title", "artist", "album_artist", "album", "genre"];
 const modes: Mode[] = ["contains", "exact", "glob", "fuzzy"];
 const unique = (values: Array<string | undefined>) => [...new Set(values.filter((v): v is string => !!v))];
@@ -137,19 +137,19 @@ function number(value: string | undefined, name: string, fallback: number, min: 
 }
 
 /** Shared filter/group/sort pipeline; playlist selection projects it onto songs. Remembered per library and filter. */
-function selection(library: Library, options: ExploreOptions, songsOnly = false) {
+function selection(library: Library, options: ExploreOptions, songsOnly = false, favourites?: ReadonlySet<string>) {
   if (selectionsFor !== library) { selections.clear(); selectionsFor = library; }
   const { offset: _offset, limit: _limit, ...rest } = options;
   const key = JSON.stringify([songsOnly, Object.entries(rest).filter(([, v]) => v !== undefined).sort(([a], [b]) => a.localeCompare(b))]);
   const known = selections.get(key);
   if (known) { selections.delete(key); selections.set(key, known); return known; }
-  const result = select(library, options, songsOnly);
+  const result = select(library, options, songsOnly, favourites);
   selections.set(key, result);
   for (const old of selections.keys()) { if (selections.size <= SELECTIONS_KEPT) break; selections.delete(old); }
   return result;
 }
 
-function select(library: Library, options: ExploreOptions, songsOnly: boolean) {
+function select(library: Library, options: ExploreOptions, songsOnly: boolean, favourites?: ReadonlySet<string>) {
   const kinds = options.types === undefined ? ["album"] : options.types.split(",").filter(Boolean);
   if (kinds.some(kind => !["song", "album", "artist"].includes(kind))) throw new BrowseError("Invalid entity type");
   if (songsOnly && !kinds.length) throw new BrowseError("Choose at least one entity type");
@@ -178,7 +178,11 @@ function select(library: Library, options: ExploreOptions, songsOnly: boolean) {
   if (from > to) throw new BrowseError("Year range must run from earlier to later");
   const dated = !!options.from || !!options.to;
   const tests = rules.map(matcher);
+  // "Favourites only" (the brain passes the hearted keys, and a revision in options.favourites so remembered results refresh).
+  const onlyFavourites = !!options.favourites && options.favourites !== "0";
+  const hearted = (entity: Entity) => !!favourites?.has(`${entity.row.type}:${entity.row.key}`);
   const matched = entities(library).filter(entity => searchedKinds.includes(entity.row.type)
+    && (!onlyFavourites || hearted(entity))
     && (!dated || entity.years.some(year => year >= from && year <= to))
     && (!tests.length || (logic === "or" ? tests.some(test => test(entity)) : tests.every(test => test(entity)))));
   const group = options.group ?? "none";
@@ -218,12 +222,12 @@ function select(library: Library, options: ExploreOptions, songsOnly: boolean) {
 }
 
 /** Every matching song in globally sorted order, independent of display paging. */
-export function selectExplorerSongs(library: Library, options: ExploreOptions = {}): ExplorerRow[] {
-  return selection(library, options, true).selected.map(entity => entity.row);
+export function selectExplorerSongs(library: Library, options: ExploreOptions = {}, favourites?: ReadonlySet<string>): ExplorerRow[] {
+  return selection(library, options, true, favourites).selected.map(entity => entity.row);
 }
 
-export function explore(library: Library, options: ExploreOptions = {}) {
-  const { selected, matched, groups, group } = selection(library, options);
+export function explore(library: Library, options: ExploreOptions = {}, favourites?: ReadonlySet<string>) {
+  const { selected, matched, groups, group } = selection(library, options, false, favourites);
   const offset = number(options.offset, "offset", 0, 0, Number.MAX_SAFE_INTEGER);
   const limit = number(options.limit, "limit", 60, 1, 200);
   return { library_version: library.version, total: selected.length, matched_total: matched.length, offset,

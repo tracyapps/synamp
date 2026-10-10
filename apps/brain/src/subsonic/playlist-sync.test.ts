@@ -7,10 +7,11 @@ import { join } from "node:path";
 import { PlaylistSync, syncName } from "./playlist-sync.ts";
 
 /** A pretend Navidrome: one user, some songs, and the playlist calls. */
-function fakeNavidrome(options: { password?: string; songs?: Array<{ id: string; path: string }>; emptyQueryWorks?: boolean; returnsCreated?: boolean } = {}) {
+function fakeNavidrome(options: { password?: string; songs?: Array<{ id: string; path: string; albumId?: string; artistId?: string; artist?: string }>; emptyQueryWorks?: boolean; returnsCreated?: boolean } = {}) {
   const password = options.password ?? "secret";
   const songs = options.songs ?? [];
   const playlists = new Map<string, { id: string; name: string; songs: string[]; comment?: string; owner: string }>();
+  const stars = { id: new Set<string>(), albumId: new Set<string>(), artistId: new Set<string>() };
   let next = 1;
   const calls: string[] = [];
   const ok = (extra: Record<string, unknown> = {}) => new Response(JSON.stringify({ "subsonic-response": { status: "ok", version: "1.16.1", ...extra } }));
@@ -47,10 +48,18 @@ function fakeNavidrome(options: { password?: string; songs?: Array<{ id: string;
         return ok();
       }
       case "deletePlaylist": playlists.delete(params.get("id")!); return ok();
+      case "star": case "unstar":
+        for (const kind of ["id", "albumId", "artistId"] as const) for (const id of params.getAll(kind)) method === "star" ? stars[kind].add(id) : stars[kind].delete(id);
+        return ok();
+      case "getStarred2": return ok({ starred2: {
+        song: songs.filter((song) => stars.id.has(song.id)).map((song) => ({ id: song.id, path: song.path, title: song.path })),
+        album: [...stars.albumId].map((id) => ({ id, name: `Album ${id}` })),
+        artist: [...stars.artistId].map((id) => ({ id, name: songs.find((song) => song.artistId === id)?.artist ?? id })),
+      } });
       default: return fail(0, `unknown ${method}`);
     }
   }) as typeof fetch;
-  return { fetchImpl, playlists, calls };
+  return { fetchImpl, playlists, calls, stars };
 }
 
 const tempFile = () => join(mkdtempSync(join(tmpdir(), "synamp-phone-")), "phone-playlists.json");
@@ -138,4 +147,27 @@ test("folder names become part of the playlist name", () => {
   ];
   assert.equal(syncName(nodes, "p"), "Evenings › Weekend › Slow burn");
   assert.equal(syncName(nodes, "f"), "Evenings");
+});
+
+test("favourites as Navidrome stars: songs, albums (by folder) and artists (by name) map both ways", async () => {
+  const nd = fakeNavidrome({ songs: [
+    { id: "nd-1", path: "/music/Björk/Post (1995)/01 - Army of Me.mp3", albumId: "al-post", artistId: "ar-bjork", artist: "Björk" },
+    { id: "nd-2", path: "/music/Björk/Post (1995)/02 - Hyperballad.mp3", albumId: "al-post", artistId: "ar-bjork", artist: "Björk" },
+    { id: "nd-3", path: "/music/Eno/Airports (1978)/CD1/01 - 1-1.mp3", albumId: "al-air", artistId: "ar-eno", artist: "Brian Eno" },
+  ] });
+  const sync = new PlaylistSync(tempFile(), { coreUrl: "http://core:4533", coreMusicPath: "/music", fetchImpl: nd.fetchImpl });
+  await sync.signIn("tapps", "secret");
+  const ids: Record<string, string> = { "Björk/Post (1995)/01 - Army of Me.mp3": "t1", "Björk/Post (1995)/02 - Hyperballad.mp3": "t2", "Eno/Airports (1978)/CD1/01 - 1-1.mp3": "t3" };
+  const server = sync.stars("v1", (relative) => ids[relative]);
+  const matched = await server.star(["song:t1", "album:Eno/Airports (1978)", "artist:bjork", "song:not-there"]);
+  assert.deepEqual(matched, ["song:t1", "album:Eno/Airports (1978)", "artist:bjork"]);
+  assert.deepEqual([...nd.stars.id], ["nd-1"]);
+  assert.deepEqual([...nd.stars.albumId], ["al-air"], "the album folder, with its CD1 folder folded in");
+  assert.deepEqual([...nd.stars.artistId], ["ar-bjork"]);
+  nd.stars.id.add("nd-2"); // starred in a phone app
+  const back = await server.starred();
+  assert.deepEqual([...back.keys()].sort(), ["album:Eno/Airports (1978)", "artist:bjork", "song:t1", "song:t2"]);
+  assert.equal(back.get("artist:bjork"), "Björk");
+  await server.unstar(["song:t1"]);
+  assert.deepEqual([...nd.stars.id], ["nd-2"]);
 });

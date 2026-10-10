@@ -4,6 +4,7 @@ import type { PlaylistNode } from "./Playlists";
 import Icon from "./ui/Icon";
 import { albumHref, artistHref, openFromList } from "./library-route";
 import type { MenuItem } from "./ui/ContextMenu";
+import { Heart } from "./favourites";
 import "./styles/library.css";
 
 /*
@@ -104,6 +105,7 @@ export function AlbumSongs({ album, request, play, playlists, say, disabled = fa
           </button>
           {track.artist && track.artist !== album.artist && <ArtistLink name={track.artist} className="tracklist__artist" />}
           <span className="tracklist__time mono">{clock(track.duration_s)}</span>
+          <Heart kind="song" refId={track.id} name={track.title} say={say} />
           <AddToPlaylist request={request} track={track} playlists={playlists} onAdded={say} disabled={disabled} />
         </li>
       ))}
@@ -137,6 +139,7 @@ export function AlbumRow({ album, request, play, playlists, say, disabled = fals
         <div className="album__actions">
           <button type="button" className="btn btn--ghost btn--sm" disabled={disabled} onClick={() => start({}, album.title)}><Icon name="play" size={16} />Play<span className="visually-hidden"> {album.title}</span></button>
           <button type="button" className="btn btn--quiet btn--sm btn--icon" disabled={disabled} onClick={() => start({ shuffle: true }, `${album.title}, shuffled`)} aria-label={`Shuffle ${album.title}`}><Icon name="shuffle" /></button>
+          <Heart kind="album" refId={album.key} name={album.title} say={say} />
           <PageLink href={href} label={`Open the album page for ${album.title}`}><Icon name="open" /></PageLink>
         </div>
       </div>

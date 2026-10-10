@@ -7,6 +7,7 @@ import type { Request } from "./api";
 import type { PlaylistNode } from "./Playlists";
 import { AddToPlaylist, AlbumRow, AlbumSongs, albumMenu, ArtistLink, clock, openKey, PageLink, useDebounced } from "./LibraryParts";
 import { useContextMenu } from "./ui/ContextMenu";
+import { Heart, useFavourites } from "./favourites";
 import type { MenuItem } from "./ui/ContextMenu";
 import { albumHref, artistHref, openFromList } from "./library-route";
 import Icon from "./ui/Icon";
@@ -67,7 +68,11 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
   const pending = useRef(false);
   const searchId = useId();
   const ruleId = useId();
-  const params = new URLSearchParams({ q: query.trim(), mode, types: types.join(","), rules: JSON.stringify(rules), logic, from, to, sort, direction, group, group_key: groupKey }).toString();
+  const onlyFavourites = !!state.favourites;
+  const { view: favouriteView } = useFavourites();
+  // The favourites' count is in the query so the list refreshes when a heart changes while it's showing them.
+  const params = new URLSearchParams({ q: query.trim(), mode, types: types.join(","), rules: JSON.stringify(rules), logic, from, to, sort, direction, group, group_key: groupKey,
+    ...(onlyFavourites ? { favourites: "1", favourites_seen: String(favouriteView?.keys.length ?? 0) } : {}) }).toString();
   const settled = useDebounced(params);
   const stale = settled !== params;
   useEffect(() => { try { localStorage.setItem(TABLE_KEY, JSON.stringify({ view, columns, order, widths, sort, direction })); } catch { /* private mode */ } }, [view, columns, order, widths, sort, direction]);
@@ -147,6 +152,7 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
     {row.type !== "song" ? <><button className="btn btn--ghost btn--sm" disabled={!actionable} onClick={() => playRow(row)}><Icon name="play" size={14} />{row.type === "artist" ? "Play all" : "Play"}<span className="visually-hidden"> {row.title}</span></button>
       <button className="btn btn--quiet btn--sm btn--icon" disabled={!actionable} onClick={() => playRow(row, true)} aria-label={`Shuffle ${row.title}`}><Icon name="shuffle" /></button></>
       : <button className="btn btn--ghost btn--sm" disabled={!actionable} onClick={() => playRow(row)}><Icon name="play" size={14} />Play<span className="visually-hidden"> {row.title}</span></button>}
+    <Heart kind={row.type} refId={row.type === "artist" ? row.title : row.key} name={row.title} say={say} />
     {row.type === "song" && actionable && <AddToPlaylist request={request} track={{ id: row.key, title: row.title, artist: row.artist }} playlists={playlists} onAdded={say} />}
     {pageOf(row) && <PageLink href={pageOf(row)!} label={row.type === "artist" ? `Open the artist page for ${row.title}` : `Open the album page for ${row.type === "album" ? row.title : row.album ?? "this song’s album"}`}><Icon name="open" /></PageLink>}
   </div>;
@@ -191,7 +197,7 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
 
   return <section className="section-card browse" aria-labelledby="browse-title">
     <div className="section-card__head"><div><h2 id="browse-title" className="section-card__title">Library</h2>
-      <p className="section-card__meta" role="status">{busy ? "Updating…" : page ? `${page.total.toLocaleString()} results${groupKey ? ` in ${groupKey}` : ""}` : "Loading…"}</p></div>
+      <p className="section-card__meta" role="status">{busy ? "Updating…" : page ? `${page.total.toLocaleString()} ${page.total === 1 ? "result" : "results"}${groupKey ? ` in ${groupKey}` : ""}` : "Loading…"}</p></div>
       <div className="browse__views" role="group" aria-label="Library view">{(["list", "grid", "table"] as const).map(value => <button key={value} className={`btn btn--sm ${view === value ? "btn--primary" : "btn--ghost"}`} aria-pressed={view === value} onClick={() => setView(value)}>{value[0]!.toUpperCase() + value.slice(1)}</button>)}<SavedLibraryViews state={state} disabled={!!restoreError || !!validationError} apply={apply} /></div>
     </div>
     <div className="section-card__body">
@@ -200,7 +206,10 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
       <div className="browse__show" role="group" aria-label="Show">{SHOW.map(([label, kinds]) => {
         const on = kinds.length === types.length && kinds.every(kind => types.includes(kind));
         return <button key={label} type="button" className={`btn btn--sm ${on ? "btn--primary" : "btn--ghost"}`} aria-pressed={on} onClick={() => { setTypes(kinds); setGroupKey(""); }}>{label}</button>;
-      })}</div>
+      })}
+        <button type="button" className={`btn btn--sm browse__favourites ${onlyFavourites ? "btn--primary" : "btn--ghost"}`} aria-pressed={onlyFavourites}
+          onClick={() => { update("favourites", onlyFavourites ? undefined : true); setGroupKey(""); }}><Icon name="heart" size={16} />Favourites only</button>
+      </div>
       <div className="toolbar" role="search"><label className="search" htmlFor={searchId}><span className="visually-hidden">Search albums, artists and songs</span><Icon name="search" /><input id={searchId} className="input" type="search" maxLength={160} value={query} onChange={event => { setQuery(event.target.value); setGroupKey(""); }} placeholder="Search your library…" autoComplete="off" /></label>
         <label className="browse__sort">Sort <select className="select select--sm" value={sort} onChange={event => setSort(event.target.value as LibraryViewState["sort"])}>{Object.entries(columnNames).filter(([column]) => column !== "actions").map(([column, label]) => <option key={column} value={column}>{label}</option>)}</select></label>
         <button className="btn btn--ghost btn--sm" aria-label={`Sort ${direction === "asc" ? "descending" : "ascending"}`} onClick={() => setDirection(direction === "asc" ? "desc" : "asc")}>{direction === "asc" ? "↑ Ascending" : "↓ Descending"}</button>
@@ -232,7 +241,7 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
       <p className="browse__status" role="status">{message}</p>
       {error && <p className="alert" role="alert">{error} <button className="btn btn--quiet btn--sm" onClick={() => load()}>Retry</button></p>}
       <div aria-busy={busy} className={busy || error ? "browse__updating" : ""} ref={listBox}>
-        {page?.total === 0 && <p className="muted">{types.length ? "No results match these filters." : "Choose Artists, Albums, Songs or Everything above."}</p>}
+        {page?.total === 0 && <p className="muted">{!types.length ? "Choose Artists, Albums, Songs or Everything above." : onlyFavourites ? "Nothing here is a favourite yet. Press the heart on an artist, album or song to add it." : "No results match these filters."}</p>}
         {view === "table" ? <LibraryTable pieces={win.pieces} rowAt={rowAt} total={total} body={win} columns={columns} order={order} widths={widths} sort={sort} direction={direction} setColumns={setColumns} setOrder={setOrder} setWidths={setWidths} cell={cell} actions={actions} titleCell={titleCell} detail={detail} rowEvents={rowEvents} onSort={column => { setSort(column); setDirection(sort === column && direction === "asc" ? "desc" : "asc"); }} />
           : <ul ref={win.containerRef as Ref<HTMLUListElement>} onFocus={win.onFocus} onBlur={win.onBlur} className={`albums browse__results ${view === "grid" ? "browse__grid" : ""}`} aria-label={`Library results, ${total.toLocaleString()}`}>{win.pieces.map(listItem)}</ul>}
       </div>

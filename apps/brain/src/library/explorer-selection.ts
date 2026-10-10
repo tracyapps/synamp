@@ -24,9 +24,9 @@ export class ExplorerSelections {
     for (const [id, preview] of this.previews) if (now >= preview.expires_at) this.previews.delete(id);
   }
 
-  preview(library: Library, options: ExploreOptions = {}) {
+  preview(library: Library, options: ExploreOptions = {}, favourites?: ReadonlySet<string>) {
     const seen = new Set<string>();
-    const rows = selectExplorerSongs(library, options).filter(row => {
+    const rows = selectExplorerSongs(library, options, favourites).filter(row => {
       if (seen.has(row.key)) return false;
       seen.add(row.key); return true;
     });

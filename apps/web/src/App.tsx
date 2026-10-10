@@ -18,6 +18,7 @@ import SpotCheck from "./SpotCheck";
 import MoodCheck from "./MoodCheck";
 import { AlbumPage, ArtistPage } from "./LibraryPages";
 import { useLibraryRoute } from "./library-route";
+import { FavouritesProvider } from "./favourites";
 import Lyrics from "./Lyrics";
 import BrainSession from "./BrainSession";
 import ListenAnywhere from "./ListenAnywhere";
@@ -197,6 +198,7 @@ export default function App() {
   }
 
   return (
+    <FavouritesProvider request={call}>
     <div className={`app${screen === "galaxy" ? " app--galaxy" : ""}`}>
       <a className="skip-link" href="#main" onClick={(event) => { event.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to content</a>
       <header className="app__bar">
@@ -234,5 +236,6 @@ export default function App() {
       </div>
       {visuals && <Suspense fallback={null}><Visuals open={visuals} onClose={() => setVisuals(false)} request={call} /></Suspense>}
     </div>
+    </FavouritesProvider>
   );
 }

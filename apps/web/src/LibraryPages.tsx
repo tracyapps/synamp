@@ -6,6 +6,7 @@ import type { AlbumSummary, TrackSummary } from "./LibraryParts";
 import { albumHref, backToList } from "./library-route";
 import { useContextMenu } from "./ui/ContextMenu";
 import Icon from "./ui/Icon";
+import { Heart } from "./favourites";
 
 /*
  * The Library's own pages: an artist (their albums, the albums they appear on,
@@ -75,6 +76,7 @@ export function ArtistPage({ name, request, play, playlists }: Props & { name: s
           <div className="cluster">
             <button type="button" className="btn btn--primary btn--sm" onClick={() => start({}, `everything by ${data.artist.name}`)}><Icon name="play" size={16} />Play all</button>
             <button type="button" className="btn btn--ghost btn--sm" onClick={() => start({ shuffle: true }, `${data.artist.name}, shuffled`)}><Icon name="shuffle" size={16} />Shuffle</button>
+            <Heart kind="artist" refId={data.artist.name} name={data.artist.name} say={say} size="md" />
           </div>
         </PageHead>
         <p className="browse__status" role="status">{message}</p>
@@ -95,6 +97,7 @@ export function ArtistPage({ name, request, play, playlists }: Props & { name: s
                 </button>
                 <PageLink href={albumHref(track.album_key)} label={`Open the album page for ${track.album ?? "this album"}`} className="tracklist__album">{track.album ?? "Album"}</PageLink>
                 <span className="tracklist__time mono">{clock(track.duration_s)}</span>
+                <Heart kind="song" refId={track.id} name={track.title} say={say} />
                 <AddToPlaylist request={request} track={track} playlists={playlists} onAdded={say} />
               </li>
             ))}
@@ -121,6 +124,7 @@ export function AlbumPage({ albumKey, request, play, playlists }: Props & { albu
             <div className="cluster">
               <button type="button" className="btn btn--primary btn--sm" onClick={() => start({}, data.album.title)}><Icon name="play" size={16} />Play</button>
               <button type="button" className="btn btn--ghost btn--sm" onClick={() => start({ shuffle: true }, `${data.album.title}, shuffled`)}><Icon name="shuffle" size={16} />Shuffle</button>
+              <Heart kind="album" refId={albumKey} name={data.album.title} say={setMessage} size="md" />
             </div>
           </PageHead>
           <p className="browse__status" role="status">{message}</p>
