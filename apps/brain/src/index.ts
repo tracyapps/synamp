@@ -48,6 +48,7 @@ import { LastfmClient, LastfmError } from "./lastfm/client.ts";
 import { RuntimeSettings, SettingsError } from "./settings.ts";
 import { VersionCheck } from "./version.ts";
 import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
+import { MoodCheckError, MoodChecks } from "./library/moodcheck.ts";
 import { otherAppPlays, pingCore, SetupError, SetupStore } from "./setup.ts";
 import { LooksError, LooksStore } from "./visuals/looks.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
@@ -241,6 +242,8 @@ function playlistsChanged(delayMs = 15_000) {
 setInterval(() => playlistsChanged(0), 30 * 60_000).unref();
 /** Tempo checks you made in "Check the measurements": answers and corrections. */
 const spotChecks = new SpotChecks(join(dataDir, "spotchecks.json"));
+/** "How does this feel?": your answers, the yardstick for the mood readings. */
+const moodChecks = new MoodChecks(join(dataDir, "moodchecks.json"));
 /** As analysed (moved files followed), before your tempo corrections. */
 function measuredLibrary() { return overlay.apply(library.get()); }
 function currentLibrary() { return spotChecks.apply(measuredLibrary()); }
@@ -652,6 +655,19 @@ function spotCheckView() {
   };
 }
 
+function moodCheckView() {
+  const lib = currentLibrary();
+  const track = moodChecks.next(lib);
+  return {
+    track: track ? {
+      id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}), ...(track.album ? { album: track.album } : {}),
+      ...(track.year ? { year: track.year } : {}), ...(track.duration_s ? { duration_s: track.duration_s } : {}),
+      stream_url: signer.url(track.id),
+    } : null,
+    summary: moodChecks.summary(lib),
+  };
+}
+
 function settingsView() {
   return { settings: runtime.view(), lastfm_configured: scrobbler.configured };
 }
@@ -719,7 +735,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain", "/api/v1/visuals"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/moodcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain", "/api/v1/visuals"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -1023,6 +1039,20 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/spotcheck/forget" && req.method === "POST") {
     spotChecks.forget(String((await body(req)).track_id ?? ""));
     return send(res, 200, spotCheckView());
+  }
+
+  // --- how does this feel? (mood answers) --------------------------------------------
+  if (path === "/api/v1/moodcheck" && req.method === "GET") return send(res, 200, moodCheckView());
+  if (path === "/api/v1/moodcheck" && req.method === "POST") {
+    const input = await body(req);
+    const track = currentLibrary().tracks.find((item) => item.id === input.track_id);
+    if (!track) throw new MoodCheckError("No song with that id", 404);
+    const answer = moodChecks.record(track, input);
+    return send(res, 200, { answered: { id: track.id, lively: answer.lively, happy: answer.happy, skipped: !!answer.skipped }, ...moodCheckView() });
+  }
+  if (path === "/api/v1/moodcheck/forget" && req.method === "POST") {
+    moodChecks.forget(String((await body(req)).track_id ?? ""));
+    return send(res, 200, moodCheckView());
   }
 
   // --- settings changed in the web app ----------------------------------------
@@ -1388,7 +1418,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof MoodCheckError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
