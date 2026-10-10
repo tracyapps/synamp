@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { albumTracks, fold, listAlbums, searchTracks, shuffled } from "./browse.ts";
+import { albumTracks, artistPage, artistTracks, fold, listAlbums, searchTracks, shuffled } from "./browse.ts";
 import type { Library, LibraryTrack } from "../query/evaluate.ts";
 
 const t = (id: string, path: string, extra: Partial<LibraryTrack> = {}): LibraryTrack => ({ id, title: id, path, ...extra });
@@ -69,4 +69,24 @@ test("shuffled keeps every item and leaves the input alone", () => {
   assert.deepEqual([...out].sort(), input);
   assert.deepEqual(input, [1, 2, 3, 4, 5]);
   assert.notDeepEqual(out, input);
+});
+
+test("an artist's page: their albums oldest first, albums they appear on, and every song in order", () => {
+  const lib = library("v2", [
+    ...LIB.tracks,
+    t("Army of Me", "Björk/Post (1995)/01 - Army of Me.mp3", { artist: "Björk", album: "Post", year: 1995, track_no: 1 }),
+    t("Joga", "Various Artists/Lost in Iceland (2003)/03 - Joga.mp3", { artist: "Björk", album: "Lost in Iceland", album_artist: "Various Artists", year: 2003, track_no: 3 }),
+    t("Other", "Various Artists/Lost in Iceland (2003)/04 - Other.mp3", { artist: "Sigur Rós", album: "Lost in Iceland", album_artist: "Various Artists", year: 2003, track_no: 4 }),
+  ]);
+  const page = artistPage(lib, "bjork");
+  assert.equal(page.artist.name, "Björk", "found ignoring case and accents, shown as tagged");
+  assert.deepEqual(page.albums.map((a) => a.title), ["Post", "Vespertine"]);
+  assert.deepEqual(page.appears_on.map((a) => [a.title, a.songs_by_artist]), [["Lost in Iceland", 1]]);
+  assert.deepEqual(page.songs.map((s) => s.title), ["Army of Me", "Hidden Place", "Pagan Poetry", "Joga"]);
+  assert.equal(page.artist.songs, 4);
+  assert.equal(page.artist.albums, 2);
+  assert.ok(page.songs.every((s) => s.album_key));
+  assert.deepEqual(artistTracks(lib, "Björk").map((track) => track.title), ["Army of Me", "Hidden Place", "Pagan Poetry", "Joga"], "Play all plays the same order");
+  assert.throws(() => artistPage(lib, "Nobody"), /isn't in the library/);
+  assert.throws(() => artistPage(lib, " "), /Which artist/);
 });

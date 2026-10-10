@@ -16,6 +16,8 @@ import Settings from "./Settings";
 import { UpdateNotice, VersionBadge } from "./Updates";
 import SpotCheck from "./SpotCheck";
 import MoodCheck from "./MoodCheck";
+import { AlbumPage, ArtistPage } from "./LibraryPages";
+import { useLibraryRoute } from "./library-route";
 import Lyrics from "./Lyrics";
 import BrainSession from "./BrainSession";
 import ListenAnywhere from "./ListenAnywhere";
@@ -82,6 +84,7 @@ export default function App() {
   const headingId = "screen-title";
   const shownScreen = useRef<ScreenId>(screen);
   const { call, download, upload } = useMemo(() => makeApi(token), [token]);
+  const libraryRoute = useLibraryRoute();
 
   // Follow the hash; move focus to the new screen's heading so keyboard and
   // screen-reader users land at the top of what changed.
@@ -138,8 +141,13 @@ export default function App() {
       body = <div className="screen">
         <ScreenHead id={headingId} eyebrow="Listen" title="Library"><p>Search, group, and explore the music you own.</p></ScreenHead>
         <UpdateNotice request={call} />
-        <LibraryHealth request={call} />
-        <Library request={call} play={play} playlists={nodes} onPlaylistsChanged={refreshNodes} />
+        {libraryRoute.kind === "list" && <LibraryHealth request={call} />}
+        {libraryRoute.kind === "artist" && <ArtistPage name={libraryRoute.name} request={call} play={play} playlists={nodes} />}
+        {libraryRoute.kind === "album" && <AlbumPage albumKey={libraryRoute.key} request={call} play={play} playlists={nodes} />}
+        {/* The list stays put (hidden) while a page is open, so Back returns to the same place in it. */}
+        <div className="library-list" hidden={libraryRoute.kind !== "list"}>
+          <Library request={call} play={play} playlists={nodes} onPlaylistsChanged={refreshNodes} />
+        </div>
       </div>;
       break;
     case "galaxy":

@@ -134,3 +134,84 @@
 .browse__waiting .album__meta, .browse__waiting th { opacity: .7; }
 /* Keep the reading position steady while rows above are measured. */
 .browse__results, .browse__table tbody { overflow-anchor: none; } /* useLibraryWindow keeps the place itself (Safari has no scroll anchoring) */
+
+/* --- Artists · Albums · Songs, links, pages, the right-click menu --------------------- */
+
+.browse__show { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.browse__show .btn { min-height: 40px; }
+
+/* The album title opens its songs right there. */
+.album__toggle {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-height: 32px; padding: 2px 6px 2px 2px; margin-left: -2px;
+  background: none; border: 0; border-radius: var(--r-xs); color: var(--fg); font: inherit; font-weight: 500; text-align: left; cursor: pointer;
+}
+.album__toggle:hover { background: var(--ghost); }
+.album__toggle:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.album__toggle .album__title { min-width: 0; }
+.album__chevron { flex: none; color: var(--muted); transition: transform .15s ease; }
+.album__toggle[aria-expanded="true"] .album__chevron { transform: rotate(90deg); color: var(--gold); }
+@media (prefers-reduced-motion: reduce) { .album__chevron { transition: none; } }
+.album.is-open { background: color-mix(in srgb, var(--surface-2) 40%, transparent); }
+
+/* Names that go somewhere look like links: underlined, so colour isn't the only sign. */
+.artist-link { color: inherit; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 3px; }
+.artist-link:hover { color: var(--gold); text-decoration-color: currentColor; }
+.artist-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 2px; }
+.album__title .artist-link { color: var(--fg); }
+
+.album__art--artist, .album__art--song { display: grid; place-items: center; color: var(--muted); }
+.album__art--artist { border-radius: 50%; }
+
+.tracklist__artist, .tracklist__album { flex: none; max-width: 30%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8125rem; color: var(--muted); }
+.tracklist__album { color: var(--muted); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 3px; }
+.tracklist__album:hover { color: var(--gold); }
+.tracklist--wide .tracklist__play { padding-left: 4px; }
+
+/* Table: an open album's songs in a full-width row underneath. */
+.browse__table tbody.is-open > tr:first-child { background: color-mix(in srgb, var(--surface-2) 40%, transparent); }
+.browse__detail > td { padding: 0 8px 8px 36px; }
+.browse__detail .tracklist { margin: 0; }
+.browse__table th[data-column="title"] .album__toggle { font-weight: 500; }
+
+/* Artist and album pages */
+.library-page__head { display: grid; gap: 8px; justify-items: start; margin-bottom: 8px; }
+.library-page__back { margin-left: -8px; }
+.library-page__head .eyebrow { margin: 6px 0 0; }
+.library-page__title { margin: 0; font: 400 clamp(1.5rem, 3vw, 2rem)/1.15 var(--font-display); }
+.library-page__title:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: 4px; }
+.library-page__facts { margin: 0; font-size: 0.9375rem; }
+.library-page__section { margin: 22px 0 6px; font: 400 1.05rem var(--font-display); }
+.library-page__section .album__toggle { font: inherit; }
+.library-page__hint { margin: 0 0 8px; font-size: 0.8125rem; }
+
+/* The right-click menu */
+.context-menu {
+  position: fixed; inset: auto; margin: 0; min-width: 200px; max-width: min(320px, calc(100vw - 16px)); padding: 6px;
+  display: grid; gap: 2px; background: var(--surface-2); color: var(--fg);
+  border: 1px solid var(--border-strong); border-radius: var(--r-sm); box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
+}
+.context-menu__item {
+  min-height: 40px; padding: 8px 12px; text-align: left; font: inherit; font-size: 0.9375rem;
+  background: none; border: 0; border-radius: var(--r-xs); color: inherit; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.context-menu__item:hover, .context-menu__item:focus-visible { background: var(--ghost-hi); outline: none; }
+.context-menu__item:focus-visible { box-shadow: inset 0 0 0 2px var(--gold); }
+.context-menu__item:disabled { opacity: .5; cursor: default; }
+@media (forced-colors: active) {
+  .context-menu { border: 1px solid CanvasText; }
+  .context-menu__item:focus-visible { outline: 2px solid Highlight; }
+}
+
+@media (max-width: 640px) {
+  /* Nothing is hidden on a phone: the artist or album link drops under the title instead. */
+  .tracklist--wide li, .tracklist li:has(.tracklist__artist) { flex-wrap: wrap; }
+  .tracklist__artist, .tracklist__album { max-width: none; order: 5; flex-basis: 100%; padding: 0 0 8px 8px; }
+  .browse__detail > td { padding-left: 0; }
+}
+
+/* The list's wrapper (kept while a page is open): a grid item that may shrink, so wide tables scroll inside it. */
+.library-list { min-width: 0; display: grid; }
+.library-list[hidden] { display: none; }
+/* Screen-reader-only text in the table's buttons is absolutely placed: keep it inside the scrolling box. */
+.browse__table-wrap { position: relative; }

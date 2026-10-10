@@ -11,6 +11,8 @@ type Rule = { field: Field; value: string; mode: Mode; not?: boolean };
 export type ExplorerRow = {
   key: string; type: Kind; title: string; artist?: string; album_artist?: string;
   album?: string; year?: number; count: number; duration_s?: number; genres: string[];
+  /** Songs: the album folder they're in (for the album page). */
+  album_key?: string;
 };
 type Entity = { row: ExplorerRow; values: Record<Field, string[]>; years: number[]; albums: string[]; albumArtists: string[];
   /** Sort text per column, worked out once (folding text is the slow part of sorting 100k rows). */
@@ -54,7 +56,7 @@ function entities(library: Library): Entity[] {
     const albumArtist = track.album_artist || unit?.artist;
     const album = track.album || unit?.title;
     add({ key: track.id, type: "song", title: track.title, artist: track.artist, album_artist: albumArtist, album, year: track.year,
-      count: 1, duration_s: track.duration_s, genres: track.genre ?? [] },
+      count: 1, duration_s: track.duration_s, genres: track.genre ?? [], ...(unit ? { album_key: unit.key } : {}) },
       { title: [track.title], artist: unique([track.artist]), album_artist: unique([albumArtist]), album: unique([album]), genre: track.genre ?? [] },
       track.year ? [track.year] : [], unique([album]), unique([albumArtist]));
     // A display credit is not a resolved multi-artist identity. In particular,
