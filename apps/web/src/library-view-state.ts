@@ -25,6 +25,8 @@ export type LibraryViewState = {
   group_key: string;
   /** Only things you've hearted. Optional, so views saved before favourites still open. */
   favourites?: boolean;
+  /** A second level of grouping, inside the first ("then by"). Optional, for the same reason. */
+  group2?: typeof groups[number];
 };
 export type SavedLibraryView = { id: string; name: string; created_at: number; state: LibraryViewState };
 
@@ -61,7 +63,7 @@ export function defaultLibraryView(presentation: { view?: string; sort?: string;
 export function parseLibraryView(value: unknown): LibraryViewState {
   const data = object(value, "Library view");
   if (data.version !== 1) throw new Error("Unsupported library view version; expected version 1.");
-  keys(data, ["version", "view", "q", "mode", "types", "rules", "logic", "from", "to", "sort", "direction", "group", "group_key"], "Library view", ["favourites"]);
+  keys(data, ["version", "view", "q", "mode", "types", "rules", "logic", "from", "to", "sort", "direction", "group", "group_key"], "Library view", ["favourites", "group2"]);
   if (data.favourites !== undefined && typeof data.favourites !== "boolean") throw new Error("Library view favourites must be true or false.");
   if (!Array.isArray(data.types)) throw new Error("Library view types must be an array.");
   const types = data.types.map(value => oneOf(value, kinds, "Library view type"));
@@ -77,7 +79,8 @@ export function parseLibraryView(value: unknown): LibraryViewState {
   if (from && to && Number(from) > Number(to)) throw new Error("Library view year range must run from earlier to later.");
   return { version: 1, view: oneOf(data.view, views, "Library view layout"), q: text(data.q, 160, "Library view search"), mode: oneOf(data.mode, modes, "Library view matching"), types, rules,
     logic: oneOf(data.logic, ["and", "or"], "Library view rule logic"), from, to, sort: oneOf(data.sort, sortNames, "Library view sort"), direction: oneOf(data.direction, ["asc", "desc"], "Library view sort direction"), group: oneOf(data.group, groups, "Library view grouping"), group_key: text(data.group_key, 1000, "Library view group"),
-    ...(data.favourites ? { favourites: true } : {}) };
+    ...(data.favourites ? { favourites: true } : {}),
+    ...(data.group2 !== undefined && data.group2 !== "none" ? { group2: oneOf(data.group2, groups, "Library view second grouping") } : {}) };
 }
 
 export function libraryHash(state: LibraryViewState): string {

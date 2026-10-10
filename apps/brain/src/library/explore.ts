@@ -17,7 +17,10 @@ export type ExplorerRow = {
 type Entity = { row: ExplorerRow; values: Record<Field, string[]>; years: number[]; albums: string[]; albumArtists: string[];
   /** Sort text per column, worked out once (folding text is the slow part of sorting 100k rows). */
   keys?: Partial<Record<string, string>> };
-export type ExploreOptions = Partial<Record<"q" | "types" | "mode" | "logic" | "rules" | "from" | "to" | "sort" | "direction" | "group" | "group_key" | "offset" | "limit" | "favourites", string>>;
+export type ExploreOptions = Partial<Record<"q" | "types" | "mode" | "logic" | "rules" | "from" | "to" | "sort" | "direction" | "group" | "group_key" | "offset" | "limit" | "favourites"
+  | "group2" | "sections" | "open" | "expand" | "chunk", string>>;
+/** Options that only change how a result is laid out, not what's in it: they don't make a new remembered selection. */
+const LAYOUT_ONLY = new Set(["offset", "limit", "sections", "open", "expand", "chunk", "favourites_seen"]);
 const fields: Field[] = ["any", "title", "artist", "album_artist", "album", "genre"];
 const modes: Mode[] = ["contains", "exact", "glob", "fuzzy"];
 const unique = (values: Array<string | undefined>) => [...new Set(values.filter((v): v is string => !!v))];
@@ -139,8 +142,7 @@ function number(value: string | undefined, name: string, fallback: number, min: 
 /** Shared filter/group/sort pipeline; playlist selection projects it onto songs. Remembered per library and filter. */
 function selection(library: Library, options: ExploreOptions, songsOnly = false, favourites?: ReadonlySet<string>) {
   if (selectionsFor !== library) { selections.clear(); selectionsFor = library; }
-  const { offset: _offset, limit: _limit, ...rest } = options;
-  const key = JSON.stringify([songsOnly, Object.entries(rest).filter(([, v]) => v !== undefined).sort(([a], [b]) => a.localeCompare(b))]);
+  const key = JSON.stringify([songsOnly, Object.entries(options).filter(([name, v]) => v !== undefined && !LAYOUT_ONLY.has(name)).sort(([a], [b]) => a.localeCompare(b))]);
   const known = selections.get(key);
   if (known) { selections.delete(key); selections.set(key, known); return known; }
   const result = select(library, options, songsOnly, favourites);
@@ -186,13 +188,8 @@ function select(library: Library, options: ExploreOptions, songsOnly: boolean, f
     && (!dated || entity.years.some(year => year >= from && year <= to))
     && (!tests.length || (logic === "or" ? tests.some(test => test(entity)) : tests.every(test => test(entity)))));
   const group = options.group ?? "none";
-  if (!["none", "album_artist", "artist", "album", "decade", "genre"].includes(group)) throw new BrowseError("Invalid grouping");
-  const labels = (entity: Entity): string[] => {
-    if (group === "none") return [];
-    const values = group === "album_artist" ? entity.albumArtists : group === "artist" ? unique([entity.row.artist])
-      : group === "album" ? entity.albums : group === "genre" ? entity.row.genres : unique(entity.years.map(year => `${Math.floor(year / 10) * 10}s`));
-    return values.length ? values : ["Unknown"];
-  };
+  if (!GROUPS.includes(group)) throw new BrowseError("Invalid grouping");
+  const labels = labelsFor(group);
   const groups = new Map<string, number>();
   for (const entity of matched) for (const label of labels(entity)) groups.set(label, (groups.get(label) ?? 0) + 1);
   const selected = options.group_key && group !== "none" ? matched.filter(entity => labels(entity).includes(options.group_key!)) : matched;
@@ -221,6 +218,17 @@ function select(library: Library, options: ExploreOptions, songsOnly: boolean, f
   return { selected, matched, groups, group };
 }
 
+const GROUPS = ["none", "album_artist", "artist", "album", "decade", "genre"];
+/** The group labels an entity belongs to for one grouping ("Unknown" when it has none). */
+function labelsFor(group: string): (entity: Entity) => string[] {
+  return (entity: Entity) => {
+    if (group === "none") return [];
+    const values = group === "album_artist" ? entity.albumArtists : group === "artist" ? unique([entity.row.artist])
+      : group === "album" ? entity.albums : group === "genre" ? entity.row.genres : unique(entity.years.map(year => `${Math.floor(year / 10) * 10}s`));
+    return values.length ? values : ["Unknown"];
+  };
+}
+
 /** Every matching song in globally sorted order, independent of display paging. */
 export function selectExplorerSongs(library: Library, options: ExploreOptions = {}, favourites?: ReadonlySet<string>): ExplorerRow[] {
   return selection(library, options, true, favourites).selected.map(entity => entity.row);
@@ -234,4 +242,149 @@ export function explore(library: Library, options: ExploreOptions = {}, favourit
     rows: selected.slice(offset, offset + limit).map(entity => entity.row),
     groups: [...groups].sort(([a], [b]) => a.localeCompare(b)).map(([label, count]) => ({ label, count })),
     group_memberships_overlap: group === "genre" || group === "album" || group === "album_artist" || group === "decade" };
+}
+
+// --- Sections: the list grouped into collapsible groups (two levels at most) -------------------------
+
+/** A group's place: its label, or "label\u0000sub-label" for a group inside a group. */
+export const SEP = "\u0000";
+type Node = { label: string; entities: Entity[]; sub?: Map<string, Node> };
+export type SectionGroup = { type: "group"; key: string; level: 0 | 1; label: string; count: number; open: boolean };
+export type SectionItem = ExplorerRow & { path: string };
+export type SectionChunk = { type: "chunk"; key: string; path: string; items: ExplorerRow[] };
+export type SectionElement = SectionGroup | SectionItem | SectionChunk;
+
+const labelOrder = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+const byLabel = (a: string, b: string) => (a === "Unknown" ? 1 : 0) - (b === "Unknown" ? 1 : 0) || labelOrder.compare(a, b);
+const trees = new WeakMap<object, Map<string, Map<string, Node>>>();
+
+/** Groups (and sub-groups) of a selection, built once per selection and grouping. */
+function treeOf(result: ReturnType<typeof select>, group: string, group2: string): Map<string, Node> {
+  let byGrouping = trees.get(result);
+  if (!byGrouping) { byGrouping = new Map(); trees.set(result, byGrouping); }
+  const known = byGrouping.get(`${group}|${group2}`);
+  if (known) return known;
+  const first = labelsFor(group), second = labelsFor(group2);
+  const tree = new Map<string, Node>();
+  for (const entity of result.selected) { // already sorted, so every group keeps the list's order
+    for (const label of first(entity)) {
+      let node = tree.get(label);
+      if (!node) { node = { label, entities: [], ...(group2 !== "none" ? { sub: new Map() } : {}) }; tree.set(label, node); }
+      node.entities.push(entity);
+      if (node.sub) for (const label2 of second(entity)) {
+        let child = node.sub.get(label2);
+        if (!child) { child = { label: label2, entities: [] }; node.sub.set(label2, child); }
+        child.entities.push(entity);
+      }
+    }
+  }
+  const sorted = new Map([...tree.entries()].sort(([a], [b]) => byLabel(a, b)));
+  for (const node of sorted.values()) if (node.sub) node.sub = new Map([...node.sub.entries()].sort(([a], [b]) => byLabel(a, b)));
+  byGrouping.set(`${group}|${group2}`, sorted);
+  return sorted;
+}
+
+function groupingOf(options: ExploreOptions) {
+  const group = options.group ?? "none";
+  const group2 = group === "none" ? "none" : options.group2 ?? "none";
+  if (!GROUPS.includes(group2)) throw new BrowseError("Invalid second grouping");
+  if (group2 !== "none" && group2 === group) throw new BrowseError("Group by two different things");
+  return { group, group2 };
+}
+
+function openState(options: ExploreOptions) {
+  let toggled: string[] = [];
+  if (options.open) {
+    try { toggled = JSON.parse(options.open); } catch { throw new BrowseError("Invalid open groups"); }
+    if (!Array.isArray(toggled) || toggled.length > 5000 || toggled.some(path => typeof path !== "string" || path.length > 2000)) throw new BrowseError("Invalid open groups");
+  }
+  const set = new Set(toggled);
+  const base = options.expand === "all";
+  return (path: string) => base !== set.has(path); // "all": the list is the ones closed; otherwise it's the ones open
+}
+
+/**
+ * The list as collapsible sections: a header for each group (and sub-group),
+ * then the items of the open ones. Groups start closed; `open` lists the ones
+ * opened (or, with expand=all, the ones closed). With chunk=N, the items come
+ * N to an element: a row of cards in the grid view.
+ */
+export function exploreSections(library: Library, options: ExploreOptions = {}, favourites?: ReadonlySet<string>) {
+  const result = selection(library, options, false, favourites);
+  const { group, group2 } = groupingOf(options);
+  const isOpen = openState(options);
+  const chunk = number(options.chunk, "chunk", 1, 1, 12);
+  const elements: SectionElement[] = [];
+  const pushItems = (path: string, items: Entity[]) => {
+    if (chunk === 1) { for (const entity of items) elements.push({ ...entity.row, path }); return; }
+    for (let i = 0; i < items.length; i += chunk) elements.push({ type: "chunk", key: `${path}#${i}`, path, items: items.slice(i, i + chunk).map(entity => entity.row) });
+  };
+  if (group === "none") pushItems("", result.selected);
+  else for (const node of treeOf(result, group, group2).values()) {
+    const open = isOpen(node.label);
+    elements.push({ type: "group", key: node.label, level: 0, label: node.label, count: node.entities.length, open });
+    if (!open) continue;
+    if (!node.sub) { pushItems(node.label, node.entities); continue; }
+    for (const child of node.sub.values()) {
+      const path = `${node.label}${SEP}${child.label}`;
+      const childOpen = isOpen(path);
+      elements.push({ type: "group", key: path, level: 1, label: child.label, count: child.entities.length, open: childOpen });
+      if (childOpen) pushItems(path, child.entities);
+    }
+  }
+  const offset = number(options.offset, "offset", 0, 0, Number.MAX_SAFE_INTEGER);
+  const limit = number(options.limit, "limit", 60, 1, 200);
+  return { library_version: library.version, total: elements.length, items_total: result.selected.length, matched_total: result.matched.length, offset,
+    rows: elements.slice(offset, offset + limit),
+    groups: [...result.groups].sort(([a], [b]) => byLabel(a, b)).map(([label, count]) => ({ label, count })),
+    group_memberships_overlap: group === "genre" || group === "album" || group === "album_artist" || group === "decade" };
+}
+
+export type PickSpec = { all?: unknown; groups?: unknown; items?: unknown; excluded?: unknown };
+/**
+ * What a selection in the list means: whole groups (minus anything unticked
+ * inside them) plus single rows. Rows come back in the list's order, once each.
+ */
+export function pickRows(library: Library, options: ExploreOptions, spec: PickSpec, favourites?: ReadonlySet<string>): ExplorerRow[] {
+  const list = (value: unknown, label: string) => {
+    if (value === undefined) return [];
+    if (!Array.isArray(value) || value.length > 20_000) throw new BrowseError(`Invalid ${label}`);
+    return value;
+  };
+  const groups = list(spec.groups, "groups").map(String);
+  const items = new Set(list(spec.items, "items").map(String));
+  // "path\u0001type:key" for a row unticked inside a ticked group; "path\u0001*" for a whole sub-group unticked.
+  const excluded = new Set(list(spec.excluded, "excluded").map(String));
+  const result = selection(library, options, false, favourites);
+  const { group, group2 } = groupingOf(options);
+  const out = new Map<string, ExplorerRow>();
+  const id = (row: ExplorerRow) => `${row.type}:${row.key}`;
+  const left = (scope: string, key: string) => !excluded.has(`${scope}\u0001*`) && !excluded.has(`${scope}\u0001${key}`);
+  if (spec.all === true) {
+    // Everything in the list (minus what's unticked).
+    if (group === "none") { for (const entity of result.selected) if (left("", id(entity.row))) out.set(id(entity.row), entity.row); }
+    else for (const node of treeOf(result, group, group2).values()) {
+      if (excluded.has(`${node.label}\u0001*`)) continue;
+      const scopes = node.sub ? [...node.sub.values()].map(child => [`${node.label}${SEP}${child.label}`, child.entities] as const) : [[node.label, node.entities] as const];
+      for (const [scope, entities] of scopes) for (const entity of entities) if (left(scope, id(entity.row)) && left(node.label, id(entity.row))) out.set(id(entity.row), entity.row);
+    }
+  }
+  if (groups.length && group !== "none") {
+    const tree = treeOf(result, group, group2);
+    for (const path of groups) {
+      const [label, label2] = path.split(SEP);
+      const node = tree.get(label!);
+      if (!node) continue;
+      const scopes = label2 !== undefined ? [[path, node.sub?.get(label2)?.entities ?? []] as const]
+        : node.sub ? [...node.sub.values()].map(child => [`${label}${SEP}${child.label}`, child.entities] as const) : [[path, node.entities] as const];
+      for (const [scope, entities] of scopes) for (const entity of entities) {
+        const key = id(entity.row);
+        if (left(scope, key) && left(path, key)) out.set(key, entity.row);
+      }
+    }
+  }
+  if (items.size) for (const entity of result.selected) if (items.has(id(entity.row))) out.set(id(entity.row), entity.row);
+  // In the list's order.
+  const order = new Map(result.selected.map((entity, index) => [id(entity.row), index]));
+  return [...out.values()].sort((a, b) => (order.get(id(a)) ?? 0) - (order.get(id(b)) ?? 0));
 }

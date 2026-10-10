@@ -51,6 +51,8 @@ type View = {
   settings: Settings; matching: number; offset: number; decisions: Decision[]; batches: Batch[]; busy: boolean;
   librarian: { last_seen: number; online: boolean; root?: string; incoming?: string; journal?: string; version?: string } | null;
   pending_export: boolean;
+  /** Albums picked in the Library with "Tidy their details". */
+  focus?: { albums: number; songs: number; waiting: number; proposals: number } | null;
   incoming: IncomingStatus;
   upload_max_mb: number;
   /** "Pause file changes" is on: the librarian takes no new batches. */
@@ -338,8 +340,21 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
   const [message, setMessage] = useState("");
   const saved = useSaveNote();
   const ids = useId();
+  /** Came from the Library's "Tidy their details": show just those albums until "Show all". */
+  const [focused, setFocused] = useState(() => /[?&]focus=1\b/.test(window.location.hash));
+  useEffect(() => {
+    const follow = () => { if (/[?&]focus=1\b/.test(window.location.hash)) { setFocused(true); setOpen(true); setOffset(0); setStatus("all"); } };
+    follow();
+    window.addEventListener("hashchange", follow);
+    return () => window.removeEventListener("hashchange", follow);
+  }, []);
+  async function showAll() {
+    setFocused(false);
+    try { history.replaceState(null, "", "#/care"); } catch { /* fine */ }
+    await request("/organise/focus", { method: "POST", body: JSON.stringify({ clear: true }) }).catch(() => undefined);
+  }
 
-  const query = () => new URLSearchParams({ kind, status, q, offset: String(offset), limit: String(pageSize) }).toString();
+  const query = () => new URLSearchParams({ kind, status, q, offset: String(offset), limit: String(pageSize), ...(focused ? { focus: "1" } : {}) }).toString();
   const load = () => request<View>(`/organise?${query()}`).then(setView).catch((cause) => setMessage((cause as Error).message));
   /** `at`: say "Saved" (or what went wrong) right there, instead of at the bottom of the panel. */
   const send = async (path: string, body: unknown, done?: string, at?: string) => {
@@ -358,7 +373,7 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
     load();
     const timer = setInterval(load, view?.busy ? 3_000 : 60_000);
     return () => clearInterval(timer);
-  }, [open, kind, status, q, offset, pageSize, view?.busy]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, kind, status, q, offset, pageSize, view?.busy, focused]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ticks only make sense for what's on screen: drop the rest when the page changes.
   const order = view?.decisions.map((decision) => decision.id) ?? [];
@@ -405,6 +420,14 @@ export default function OrganiseLibrary({ request, upload, startOpen = false }: 
       </button></h2>
       {open && <div className="organise__body">
         {!view ? <p className="muted">Loading…</p> : <>
+          {focused && view.focus && <div className="callout callout--gold organise__focus" role="status">
+            <div>
+              <h3 className="callout__title">Just the {n(view.focus.albums)} {view.focus.albums === 1 ? "album" : "albums"} you picked in the Library</h3>
+              <p>{n(view.focus.proposals)} {view.focus.proposals === 1 ? "proposal" : "proposals"} for them so far.
+                {view.focus.waiting > 0 && <> {n(view.focus.waiting)} {view.focus.waiting === 1 ? "album is" : "albums are"} still being looked up on MusicBrainz first, and song-detail fixes appear here as each one is matched.</>}</p>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={showAll}>Show every proposal</button>
+            </div>
+          </div>}
           <div className="organise__intro">
             <p>SynAmp proposes tidier names and folders, and where new music should go; nothing changes until you approve and press Apply. Every move is written to a journal and can be undone, and your analysis and play history follow the files.</p>
             <p role="status" className={lib?.online ? "organise__ok" : "organise__warn"}>

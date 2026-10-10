@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
-import { BrowseError } from "./browse.ts";
-import { selectExplorerSongs } from "./explore.ts";
-import type { ExploreOptions } from "./explore.ts";
+import { albumTracks, artistTracks, BrowseError } from "./browse.ts";
+import { pickRows, selectExplorerSongs } from "./explore.ts";
+import type { ExploreOptions, ExplorerRow, PickSpec } from "./explore.ts";
+import { albumFolder } from "./albums.ts";
 import type { Library } from "../query/evaluate.ts";
 import type { PlaylistNode, PlaylistStore, TrackRef } from "../playlists.ts";
 
@@ -10,6 +11,8 @@ const TTL = 10 * 60_000;
 const MAX_PREVIEWS = 32;
 type Preview = {
   created_at: number; expires_at: number; library_version: string; tracks: TrackRef[];
+  /** For a selection picked in the list: the rows themselves (for hearts) and their album folders (for Library care). */
+  rows?: Array<Pick<ExplorerRow, "type" | "key" | "title">>; folders?: string[];
   result?: { name: string; playlist: PlaylistNode };
 };
 
@@ -31,14 +34,52 @@ export class ExplorerSelections {
       seen.add(row.key); return true;
     });
     if (rows.length > EXPLORER_SELECTION_MAX_TRACKS) throw new BrowseError("That’s more than 100,000 songs — too many for one playlist. Narrow the filters a little.", 413);
+    return this.store(library, rows.map(row => ({ id: row.key, title: row.title, ...(row.artist !== undefined ? { artist: row.artist } : {}), ...(row.album !== undefined ? { album: row.album } : {}) })));
+  }
+
+  /**
+   * Rows and groups ticked in the list, as songs: a song is itself, an album
+   * its songs in order, an artist everything on their page. Each song once.
+   */
+  pick(library: Library, options: ExploreOptions, spec: PickSpec, favourites?: ReadonlySet<string>) {
+    const rows = pickRows(library, options, spec, favourites);
+    const byId = new Map(library.tracks.map(track => [track.id, track]));
+    const seen = new Set<string>();
+    const songs: Array<TrackRef & { album?: string }> = [];
+    const folders = new Set<string>();
+    const add = (track: { id: string; title: string; artist?: string; album?: string; path?: string } | undefined) => {
+      if (!track || seen.has(track.id)) return;
+      seen.add(track.id);
+      if (track.path) folders.add(albumFolder(track.path));
+      songs.push({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}), ...(track.album ? { album: track.album } : {}) });
+    };
+    for (const row of rows) {
+      if (songs.length > EXPLORER_SELECTION_MAX_TRACKS) throw new BrowseError("That’s more than 100,000 songs. Pick a little less.", 413);
+      if (row.type === "song") add(byId.get(row.key));
+      else if (row.type === "album") { try { albumTracks(library, row.key).tracks.forEach(add); } catch { /* moved since */ } }
+      else { try { artistTracks(library, row.title).forEach(add); } catch { /* gone since */ } }
+    }
+    const receipt = this.store(library, songs, { rows: rows.map(({ type, key, title }) => ({ type, key, title })), folders: [...folders] });
+    return { ...receipt, row_count: rows.length, album_count: folders.size };
+  }
+
+  /** The songs (and, for a picked selection, rows and folders) behind a receipt. */
+  get(selectionId: unknown): Preview {
+    this.prune(this.now());
+    const preview = typeof selectionId === "string" ? this.previews.get(selectionId) : undefined;
+    if (!preview) throw new BrowseError("That selection is too old (over 10 minutes, or SynAmp restarted). Select again.", 410);
+    return preview;
+  }
+
+  private store(library: Library, tracks: Array<TrackRef & { album?: string }>, extra: Pick<Preview, "rows" | "folders"> = {}) {
     const now = this.now(); this.prune(now);
     while (this.previews.size >= MAX_PREVIEWS) this.previews.delete(this.previews.keys().next().value!);
     const selection_id = randomBytes(24).toString("base64url");
     const preview: Preview = { created_at: now, expires_at: now + TTL, library_version: library.version,
-      tracks: rows.map(row => ({ id: row.key, title: row.title, ...(row.artist !== undefined ? { artist: row.artist } : {}) })) };
+      tracks: tracks.map(({ id, title, artist }) => ({ id, title, ...(artist !== undefined ? { artist } : {}) })), ...extra };
     this.previews.set(selection_id, preview);
-    return { selection_id, track_count: rows.length, created_at: preview.created_at, expires_at: preview.expires_at, library_version: preview.library_version,
-      sample: rows.slice(0, 8).map(row => ({ id: row.key, title: row.title, ...(row.artist !== undefined ? { artist: row.artist } : {}), ...(row.album !== undefined ? { album: row.album } : {}) })),
+    return { selection_id, track_count: tracks.length, created_at: preview.created_at, expires_at: preview.expires_at, library_version: preview.library_version,
+      sample: tracks.slice(0, 8).map(({ id, title, artist, album }) => ({ id, title, ...(artist !== undefined ? { artist } : {}), ...(album !== undefined ? { album } : {}) })),
       max_tracks: EXPLORER_SELECTION_MAX_TRACKS };
   }
 

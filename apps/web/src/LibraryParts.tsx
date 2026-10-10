@@ -113,11 +113,13 @@ export function AlbumSongs({ album, request, play, playlists, say, disabled = fa
   );
 }
 
-export function AlbumRow({ album, request, play, playlists, say, disabled = false, itemProps, onMenu }: { album: AlbumSummary; request: Request; play: Play; playlists: PlaylistNode[]; say: (text: string) => void; disabled?: boolean;
+export function AlbumRow({ album, request, play, playlists, say, disabled = false, itemProps, onMenu, pick }: { album: AlbumSummary; request: Request; play: Play; playlists: PlaylistNode[]; say: (text: string) => void; disabled?: boolean;
   /** Extra attributes for the list item (its place in a long list). */
   itemProps?: Record<string, string | number>;
   /** Open the right-click menu for this album. */
-  onMenu?: (event: React.MouseEvent, label: string, items: MenuItem[]) => void }) {
+  onMenu?: (event: React.MouseEvent, label: string, items: MenuItem[]) => void;
+  /** A tick box to select it (the Library list). */
+  pick?: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const listId = useId();
   const start = (body: Record<string, unknown>, what: string) => play({ album_key: album.key, ...body })
@@ -128,6 +130,7 @@ export function AlbumRow({ album, request, play, playlists, say, disabled = fals
       onContextMenu={onMenu ? (event) => onMenu(event, album.title, albumMenu(album, play, say, () => setOpen(!open), open)) : undefined}
       onKeyDown={(event) => openKey(event, href)}>
       <div className="album__row">
+        {pick}
         <span className="album__art" aria-hidden="true" />
         <div className="album__text">
           <button type="button" className="album__toggle" aria-expanded={open} aria-controls={listId} onClick={() => setOpen(!open)}>

@@ -92,6 +92,19 @@ export class Favourites {
     return null;
   }
 
+  /** Heart or un-heart many at once (a selection in the Library), saved once. Returns how many changed. */
+  setMany(list: Array<{ kind: FavouriteKind; ref: string; name: string }>, on: boolean, now = Date.now()): number {
+    let changed = 0;
+    for (const { kind, ref, name } of list.slice(0, 20_000)) {
+      if (!KINDS.includes(kind) || !ref) continue;
+      const key = favouriteKey(kind, ref);
+      if (on && !this.state.items[key]) { this.state.items[key] = { kind, ref, name: name || ref, at: now }; delete this.state.removed[key]; changed++; }
+      if (!on && this.state.items[key]) { delete this.state.items[key]; this.state.removed[key] = now; changed++; }
+    }
+    if (changed) this.save();
+    return changed;
+  }
+
   /** For each track: the strongest way it's a favourite (the song itself, its album, or its artist). */
   kindFor(library: Library): (trackId: string) => FavouriteKind | null {
     const key = `${library.version}:${this.rev}`;

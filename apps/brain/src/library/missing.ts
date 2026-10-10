@@ -126,6 +126,8 @@ export class Matcher {
   lastError = "";
   done = 0;
   private stopRequested = false;
+  /** Album folders to look up first (picked in the Library for "Tidy their details"). */
+  prefer: ReadonlySet<string> = new Set();
   private matches: AlbumMatches;
   private mb: () => MusicBrainz;
   private library: () => Library;
@@ -152,7 +154,8 @@ export class Matcher {
     let backoff = 30_000;
     const attempted = new Set<string>(); // never loop on the same folder within one run
     while (!this.stopRequested) {
-      const next = this.matches.due(groupAlbums(this.library())).find((unit) => !attempted.has(unit.key));
+      const due = this.matches.due(groupAlbums(this.library())).filter((unit) => !attempted.has(unit.key));
+      const next = due.find((unit) => this.prefer.has(unit.key)) ?? due[0];
       if (!next) { this.state = "idle"; this.current = ""; return; }
       this.current = next.key;
       try {
