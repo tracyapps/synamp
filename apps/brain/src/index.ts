@@ -60,7 +60,7 @@ import { albumFolder, groupAlbums } from "./library/albums.ts";
 import { ImportError, matchPlaylists, parsePlaylistFile } from "./library/playlist-import.ts";
 import type { MatchedPlaylist } from "./library/playlist-import.ts";
 import { albumTracks, artistPage, artistTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
-import { explore } from "./library/explore.ts";
+import { explore, exploreSections } from "./library/explore.ts";
 import { djOrder } from "./session/dj.ts";
 import { gaplessInfo } from "./session/gapless.ts";
 import { ExplorerSelections } from "./library/explorer-selection.ts";
@@ -613,7 +613,18 @@ function organisePlan(): Decision[] {
   }
   return planCache.plan;
 }
+/** Albums picked in the Library with "Tidy their details": Library care can show just their proposals. */
+let careFocus: { folders: Set<string>; songs: number; at: number } | null = null;
+function touchesFocus(decision: Decision, folders: ReadonlySet<string>): boolean {
+  const inside = (path: string) => folders.has(albumFolder(path)) || folders.has(path);
+  return decision.moves.some((move) => inside(move.from)) || (decision.edits ?? []).some((edit) => inside(edit.path))
+    || decision.preview.some((line) => folders.has(line.from) || [...folders].some((folder) => line.from.startsWith(`${folder}/`)));
+}
 function filterPlan(plan: Decision[], query: URLSearchParams): Decision[] {
+  if (query.get("focus") === "1" && careFocus) {
+    const folders = careFocus.folders;
+    plan = plan.filter((decision) => touchesFocus(decision, folders));
+  }
   const kind = query.get("kind") ?? "all";
   const status = query.get("status") ?? "all";
   const q = (query.get("q") ?? "").trim().toLowerCase();
@@ -653,6 +664,12 @@ function organiseView(query: URLSearchParams) {
     })),
     /** Song details still being read from the files (the proposals fill in as they are). */
     details_reading: detailsLeft,
+    /** "Tidy their details" from the Library: the albums picked, and how many still wait for MusicBrainz. */
+    focus: careFocus ? {
+      albums: careFocus.folders.size, songs: careFocus.songs,
+      waiting: albumMatches.due(groupAlbums(currentLibrary()).filter((unit) => careFocus!.folders.has(unit.key))).length,
+      proposals: plan.filter((decision) => touchesFocus(decision, careFocus!.folders)).length,
+    } : null,
     batches: organise.state.batches.slice(0, 10).map((batch) => ({
       ...batch,
       decisions: batch.decisions.map(({ moved, ...decision }) => ({ ...decision, moved_count: moved?.length ?? 0 })),
@@ -835,6 +852,16 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks.map(ref), start), undefined, startAt(start), mix);
       return send(res, 200, { session: sessionView(session) });
     }
+    if (typeof input.selection_id === "string") {
+      const present = new Set(lib.tracks.map((track) => track.id));
+      const tracks = explorerSelections.get(input.selection_id).tracks.filter((track) => present.has(track.id)).map(ref);
+      if (input.next === true) {
+        // Play next: after the song that's playing (up to 200), the rest of the queue stays.
+        return send(res, 200, { session: sessionView(sessions.playNext(String(input.event_id ?? ""), tracks)) });
+      }
+      const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks, 0), undefined, 0, mix);
+      return send(res, 200, { session: sessionView(session) });
+    }
     if (typeof input.artist === "string") {
       const tracks = artistTracks(lib, input.artist).map(ref);
       const start = Number(input.start_index ?? 0);
@@ -887,7 +914,24 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const options = Object.fromEntries(url.searchParams);
     // "Favourites only": the hearted keys, with their revision so remembered results refresh after a change.
     if (options.favourites === "1") options.favourites = `rev${favourites.rev}`;
+    // sections=1: the grouped list, with collapsible group headers (see exploreSections).
+    if (options.sections === "1") return send(res, 200, exploreSections(currentLibrary(), options, favourites.keys()));
     return send(res, 200, explore(currentLibrary(), options, favourites.keys()));
+  }
+  // Rows and whole groups ticked in the list, turned into songs once (a receipt the actions below use).
+  if (path === "/api/v1/library/explore/pick" && req.method === "POST") {
+    const input = await body(req);
+    const options = Object.fromEntries(new URLSearchParams(typeof input.params === "string" ? input.params : ""));
+    if (options.favourites === "1") options.favourites = `rev${favourites.rev}`;
+    return send(res, 200, explorerSelections.pick(currentLibrary(), options, { groups: input.groups, items: input.items, excluded: input.excluded }, favourites.keys()));
+  }
+  if (path === "/api/v1/library/explore/add" && req.method === "POST") {
+    const input = await body(req);
+    const picked = explorerSelections.get(input.selection_id);
+    if (typeof input.playlist_id !== "string") throw new PlaylistError("Which playlist?");
+    const node = playlists.addTracks(input.playlist_id, picked.tracks);
+    playlistsChanged();
+    return send(res, 200, { node, added: picked.tracks.length });
   }
   if (path === "/api/v1/library/explore/selection" && req.method === "GET") {
     const options = Object.fromEntries(url.searchParams);
@@ -1104,6 +1148,15 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (req.method === "POST") { favourites.set(await body(req)); syncFavouritesSoon(); }
     return send(res, 200, { ...favourites.view(), phone: phonePlaylists.signedIn });
   }
+  if (path === "/api/v1/favourites/bulk" && req.method === "POST") {
+    // Heart (or un-heart) every row of a selection picked in the list.
+    const input = await body(req);
+    if (typeof input.on !== "boolean") throw new FavouriteError("on must be true or false");
+    const rows = explorerSelections.get(input.selection_id).rows ?? [];
+    const changed = favourites.setMany(rows.map((row) => ({ kind: row.type, ref: row.type === "artist" ? row.title : row.key, name: row.title })), input.on);
+    syncFavouritesSoon();
+    return send(res, 200, { ...favourites.view(), phone: phonePlaylists.signedIn, changed });
+  }
   if (path === "/api/v1/favourites/sync" && req.method === "POST") {
     await syncFavourites();
     return send(res, 200, { ...favourites.view(), phone: phonePlaylists.signedIn });
@@ -1155,6 +1208,19 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     // Decisions with conflicts can be skipped, but not approved.
     if (status === "approved") chosen = chosen.filter((decision) => !decision.conflicts.length);
     return send(res, 200, { reviewed: organise.review(chosen, status), ...organiseView(url.searchParams) });
+  }
+  if (path === "/api/v1/organise/focus" && req.method === "POST") {
+    // "Tidy their details" from the Library: show just these albums' proposals, and look them up first.
+    const input = await body(req);
+    if (input.clear === true) careFocus = null;
+    else {
+      const picked = explorerSelections.get(input.selection_id);
+      careFocus = { folders: new Set(picked.folders ?? []), songs: picked.tracks.length, at: Date.now() };
+      matcher.prefer = careFocus.folders;
+      try { matcher.start()?.catch((error) => console.error("Album matching stopped", error)); } catch { /* no MusicBrainz contact yet: proposals from what's known */ }
+    }
+    if (!careFocus) matcher.prefer = new Set();
+    return send(res, 200, organiseView(url.searchParams));
   }
   if (path === "/api/v1/organise/settings" && req.method === "POST") {
     organise.setSettings(await body(req));

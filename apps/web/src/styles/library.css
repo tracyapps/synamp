@@ -71,13 +71,16 @@
 .browse__table td { max-width: 260px; overflow-wrap: anywhere; }
 .browse__table td[data-column="artist"], .browse__table td[data-column="album_artist"], .browse__table td[data-column="album"] { min-width: 160px; }
 .browse__table td[data-column="type"], .browse__table td[data-column="year"], .browse__table td[data-column="count"], .browse__table td[data-column="duration"] { min-width: 75px; white-space: nowrap; }
-.browse__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
-.browse__grid > .album { border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px; }
-.browse__grid .album__row { grid-template-columns: 1fr; padding: 0; }
-.browse__grid .album__art { width: 64px; height: 64px; }
-.browse__grid .album__title, .browse__grid .album__meta { white-space: normal; }
-.browse__grid .album__actions { flex-wrap: wrap; }
-.browse__grid .tracklist { margin: 12px 0 0; }
+/* Grid: the list comes in rows of cards (one element per row), so groups can sit between them. */
+.browse__chunk { border-top: 0; padding-bottom: 14px; }
+.browse__cards { display: grid; gap: 14px; }
+.browse__cards > .album { border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px; min-width: 0; }
+.browse__cards .album__row { grid-template-columns: 1fr; padding: 0; position: relative; }
+.browse__cards .album__art { width: 64px; height: 64px; }
+.browse__cards .album__title, .browse__cards .album__meta { white-space: normal; }
+.browse__cards .album__actions { flex-wrap: wrap; }
+.browse__cards .tracklist { margin: 12px 0 0; }
+.browse__cards .pick { position: absolute; top: 0; right: 0; }
 @media (max-width: 640px) {
   .browse .section-card__head { flex-wrap: wrap; gap: 12px; }
   .browse__views { width: 100%; }
@@ -130,7 +133,6 @@
 
 /* Long lists: only rows near the screen are drawn; spacers stand in for the rest (useLibraryWindow). */
 .browse__spacer, .browse__spacer td { padding: 0 !important; border: 0 !important; margin: 0; list-style: none; }
-.browse__grid > .browse__spacer { grid-column: 1 / -1; }
 .browse__waiting .album__meta, .browse__waiting th { opacity: .7; }
 /* Keep the reading position steady while rows above are measured. */
 .browse__results, .browse__table tbody { overflow-anchor: none; } /* useLibraryWindow keeps the place itself (Safari has no scroll anchoring) */
@@ -230,3 +232,62 @@
 @media (forced-colors: active) { .heart.is-on svg { fill: Highlight; color: Highlight; } }
 .browse__favourites { display: inline-flex; gap: 6px; align-items: center; }
 .browse__favourites[aria-pressed="true"] svg { fill: currentColor; }
+
+/* --- Collapsible groups and selecting ---------------------------------------------------- */
+
+.pick { flex: none; width: 20px; height: 20px; margin: 0; accent-color: var(--gold); cursor: pointer; }
+.pick:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.album__row:has(> .pick) { grid-template-columns: 20px 44px minmax(0, 1fr) auto; }
+.browse__cards .album__row:has(> .pick) { grid-template-columns: 1fr; }
+
+.browse__group { border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-2) 70%, transparent); }
+.browse__group--1 { background: color-mix(in srgb, var(--surface-2) 35%, transparent); }
+.group-head { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 4px 10px; }
+.group-head--1 { padding-left: 38px; }
+.group-head__toggle {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 8px; margin-left: -4px;
+  background: none; border: 0; border-radius: var(--r-xs); color: var(--fg); font: inherit; text-align: left; cursor: pointer;
+}
+.group-head__toggle:hover { background: var(--ghost); }
+.group-head__toggle:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.group-head__toggle[aria-expanded="true"] .album__chevron { transform: rotate(90deg); color: var(--gold); }
+.group-head--0 .group-head__label { font-weight: 700; }
+.group-head__count { color: var(--muted); font-size: 0.875rem; }
+/* Rows inside an open group sit a step in from their header. */
+.browse__results > .album:not(.browse__group) { padding-left: 10px; }
+.browse__table tbody.browse__group > tr > td { padding: 0; }
+
+.browse__select-all { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; font-size: 0.875rem; color: var(--muted); cursor: pointer; }
+.browse__table .browse__pick-col { width: 44px; text-align: center; padding-left: 8px; padding-right: 8px; }
+.browse__open-tools { gap: 6px; }
+
+/* What's ticked, and what to do with it: stays in view at the bottom of the list while you scroll. */
+.selection-bar {
+  position: sticky; bottom: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  margin-top: 10px; padding: 10px 14px; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, .35);
+}
+.selection-bar__count { margin: 0; font-weight: 600; min-width: 12ch; }
+.selection-bar__actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.selection-bar__actions .btn { display: inline-flex; gap: 6px; align-items: center; min-height: 40px; }
+.selection-bar__actions .select, .selection-bar__more .select { width: auto; min-height: 40px; }
+.selection-bar__wide, .selection-bar__narrow { display: contents; }
+.selection-bar__narrow { display: none; }
+.selection-bar__more { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+.selection-bar__more[hidden] { display: none; }
+.selection-bar__more .btn { display: inline-flex; gap: 6px; align-items: center; min-height: 40px; }
+.selection-bar__more-icon { transform: rotate(90deg); }
+[aria-expanded="true"] > .selection-bar__more-icon { transform: rotate(-90deg); }
+@media (max-width: 760px) {
+  .selection-bar { padding: 8px 10px; gap: 6px 10px; }
+  .selection-bar__wide { display: none; }
+  .selection-bar__actions { flex-wrap: nowrap; }
+  .selection-bar__actions .btn { padding-inline: 10px; }
+  .selection-bar__actions .btn--icon { padding-inline: 6px; }
+  .selection-bar__narrow { display: contents; }
+}
+.selection-bar__dialog { border: 1px solid var(--border-strong); border-radius: var(--r-sm); background: var(--surface-2); color: var(--fg); padding: 18px; max-width: min(420px, calc(100vw - 32px)); }
+.selection-bar__dialog form { display: grid; gap: 10px; }
+.selection-bar__dialog h3 { margin: 0; font: 400 1.1rem var(--font-display); }
+.selection-bar__dialog::backdrop { background: rgba(0, 0, 0, .55); }
+@media (forced-colors: active) { .selection-bar { border: 2px solid CanvasText; } }

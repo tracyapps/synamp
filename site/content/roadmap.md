@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-09 — Library: group by two things at once (say, decade then artist) in folding sections, tick a whole group or single songs, then play, shuffle, play next, add to a playlist, favourite or tidy them in one go; in the table, artist and album names go to their pages
 - 2026-10-09 — Favourites: heart artists, albums and songs, show just your favourites in the Library, and see them as favourites in your phone apps too (stars there come back here). The Brain gives them a small head start that fades as it learns what you want right now
 - 2026-10-09 — Library: switch between Artists, Albums and Songs, open any artist’s page (their albums, the albums they appear on, every song), open an album’s songs right where it is or on its own page, and right-click anything for more
 - 2026-10-09 — Lyrics: SynAmp reads the words already inside your music files, and can look up missing ones on LRCLIB, a free community lyrics site, if you switch it on in Settings. The words stay private on your NAS

@@ -7,7 +7,7 @@ import type { Column, SortColumn } from "./library-table";
 export type LibraryRow = { key: string; type: "song" | "album" | "artist"; title: string; artist?: string; album_artist?: string; album?: string; year?: number; count: number; duration_s?: number; genres: string[]; album_key?: string };
 
 /** Only the rows near the screen are drawn (see useLibraryWindow); `pieces` says which, with gaps for the rest. */
-type Props = { pieces: Piece[]; rowAt: (index: number) => LibraryRow | undefined; total: number;
+type Props = { pieces: Piece[]; rowAt: (index: number) => (LibraryRow & { path?: string }) | TableGroup | { type: "chunk" } | undefined; total: number;
   body: { containerRef: Ref<HTMLElement | null>; onFocus: (event: FocusEvent) => void; onBlur: (event: FocusEvent) => void; expected: (index: number) => number };
   columns: Column[]; order: Column[]; widths: Record<Column, number>; sort: string; direction: string;
   setColumns: (columns: Column[]) => void; setOrder: (order: Column[]) => void; setWidths: (widths: Record<Column, number>) => void;
@@ -17,7 +17,16 @@ type Props = { pieces: Piece[]; rowAt: (index: number) => LibraryRow | undefined
   /** Shown in a full-width row underneath (an open album's songs), or null. */
   detail: (row: LibraryRow) => ReactNode;
   /** Right-click menu and keyboard shortcuts for a row. */
-  rowEvents: (row: LibraryRow) => Record<string, unknown> };
+  rowEvents: (row: LibraryRow) => Record<string, unknown>;
+  /** The tick box for a row (it knows which group the row is in). */
+  pick: (row: LibraryRow, path: string) => ReactNode;
+  /** A group's header (tick box, open/close). */
+  groupCell: (group: TableGroup) => ReactNode;
+  /** The header's "select everything" tick box. */
+  selectAll: ReactNode;
+  /** Expand all / Collapse all, when grouped. */
+  tools?: ReactNode };
+type TableGroup = { type: "group"; key: string; level: 0 | 1; label: string; count: number; open: boolean };
 
 function PixelWidth({ column, width, change }: { column: Column; width: number; change: (width: number) => void }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -26,7 +35,9 @@ function PixelWidth({ column, width, change }: { column: Column; width: number; 
     onBlur={() => { if (draft?.trim()) change(Number(draft)); setDraft(null); }} onKeyDown={event => { if (event.key === "Enter") event.currentTarget.blur(); }} /><span aria-hidden="true">px</span></label>;
 }
 
-export default function LibraryTable({ pieces, rowAt, total, body, columns, order, widths, sort, direction, setColumns, setOrder, setWidths, onSort, cell, actions, titleCell, detail, rowEvents }: Props) {
+const PICK_WIDTH = 44;
+
+export default function LibraryTable({ pieces, rowAt, total, body, columns, order, widths, sort, direction, setColumns, setOrder, setWidths, onSort, cell, actions, titleCell, detail, rowEvents, pick, groupCell, selectAll, tools }: Props) {
   const settings = useRef<HTMLDialogElement>(null);
   const settingsId = useId();
   const resize = useRef<{ pointer: number; column: Column; start: number; width: number } | null>(null);
@@ -55,6 +66,7 @@ export default function LibraryTable({ pieces, rowAt, total, body, columns, orde
   }
   return <>
     <div className="browse__table-tools"><span className="muted">Click a heading to sort. Drag ⋮⋮ to reorder; drag its right edge to resize.</span>
+      {tools}
       <button className="btn btn--ghost btn--sm" aria-haspopup="dialog" aria-controls={settingsId} onClick={() => settings.current?.showModal()}><Icon name="settings" size={16} />Columns</button>
     </div>
     <dialog ref={settings} id={settingsId} className="browse__column-dialog" aria-labelledby={`${settingsId}-title`} onClick={event => { if (event.target === event.currentTarget) settings.current?.close(); }}>
@@ -67,9 +79,9 @@ export default function LibraryTable({ pieces, rowAt, total, body, columns, orde
       </li>)}</ol>
       <div className="browse__column-footer"><button className="btn btn--quiet btn--sm" onClick={() => { setOrder(Object.keys(columnNames) as Column[]); setWidths({ ...defaultWidths }); }}>Reset order and widths</button><button className="btn btn--primary btn--sm" onClick={() => settings.current?.close()}>Done</button></div>
     </dialog>
-    <div className="browse__table-wrap" tabIndex={0} role="region" aria-label="Library table, scroll horizontally for more columns"><table ref={body.containerRef as Ref<HTMLTableElement>} onFocus={body.onFocus} onBlur={body.onBlur} className="table browse__table" aria-rowcount={total + 1} style={{ width: visible.reduce((sum, column) => sum + widths[column], 0) }}><caption className="visually-hidden">Library results. Sort headings with Enter. Column move handles support left and right arrow keys; resize handles also support arrow keys.</caption>
-      <colgroup>{visible.map(column => <col key={column} style={{ width: widths[column] }} />)}</colgroup>
-      <thead><tr aria-rowindex={1}>{visible.map(column => <th key={column} scope="col" data-column={column} className={dropTarget === column ? "is-drop-target" : ""} aria-sort={column === "actions" ? undefined : sort === column ? direction === "asc" ? "ascending" : "descending" : "none"}
+    <div className="browse__table-wrap" tabIndex={0} role="region" aria-label="Library table, scroll horizontally for more columns"><table ref={body.containerRef as Ref<HTMLTableElement>} onFocus={body.onFocus} onBlur={body.onBlur} className="table browse__table" aria-rowcount={total + 1} style={{ width: PICK_WIDTH + visible.reduce((sum, column) => sum + widths[column], 0) }}><caption className="visually-hidden">Library results. Sort headings with Enter. Column move handles support left and right arrow keys; resize handles also support arrow keys.</caption>
+      <colgroup><col style={{ width: PICK_WIDTH }} />{visible.map(column => <col key={column} style={{ width: widths[column] }} />)}</colgroup>
+      <thead><tr aria-rowindex={1}><th scope="col" className="browse__pick-col">{selectAll}</th>{visible.map(column => <th key={column} scope="col" data-column={column} className={dropTarget === column ? "is-drop-target" : ""} aria-sort={column === "actions" ? undefined : sort === column ? direction === "asc" ? "ascending" : "descending" : "none"}
         onDragOver={event => { if (dragged.current) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setDropTarget(column); } }}
         onDragLeave={() => setDropTarget(null)} onDrop={event => { event.preventDefault(); const source = dragged.current; if (source) setOrder(moveColumn(order, source, column)); dragged.current = null; setDropTarget(null); }}>
         <div className="browse__column-heading"><button className="browse__column-grip" draggable aria-label={`Move ${columnNames[column]} column`} title="Drag to reorder, or use left/right arrow keys"
@@ -83,13 +95,16 @@ export default function LibraryTable({ pieces, rowAt, total, body, columns, orde
       </th>)}</tr></thead>
       {/* One row group per result, so an open album's songs travel (and are measured) with it. */}
       {pieces.map(piece => {
-        if (piece.kind === "gap") return <tbody key={`gap-${piece.from}`} className="browse__spacer" aria-hidden="true"><tr><td colSpan={visible.length} style={{ height: piece.height }} /></tr></tbody>;
-        const row = rowAt(piece.index);
-        if (!row) return <tbody key={`wait-${piece.index}`} data-index={piece.index} data-waiting=""><tr aria-rowindex={piece.index + 2} className="browse__waiting" style={{ height: body.expected(piece.index) }}><th scope="row" colSpan={visible.length}><span className="muted">Loading…</span></th></tr></tbody>;
+        const span = visible.length + 1;
+        if (piece.kind === "gap") return <tbody key={`gap-${piece.from}`} className="browse__spacer" aria-hidden="true"><tr><td colSpan={span} style={{ height: piece.height }} /></tr></tbody>;
+        const element = rowAt(piece.index);
+        if (!element || element.type === "chunk") return <tbody key={`wait-${piece.index}`} data-index={piece.index} data-waiting=""><tr aria-rowindex={piece.index + 2} className="browse__waiting" style={{ height: body.expected(piece.index) }}><th scope="row" colSpan={span}><span className="muted">Loading…</span></th></tr></tbody>;
+        if (element.type === "group") return <tbody key={`group:${element.key}`} data-index={piece.index} className={`browse__group browse__group--${element.level}`}><tr aria-rowindex={piece.index + 2}><td colSpan={span}>{groupCell(element)}</td></tr></tbody>;
+        const row = element as LibraryRow & { path?: string };
         const more = detail(row);
         return <tbody key={`${row.type}:${row.key}`} data-index={piece.index} className={more ? "is-open" : undefined}>
-          <tr aria-rowindex={piece.index + 2} {...rowEvents(row)}>{visible.map(column => column === "title" ? <th key={column} scope="row" data-column={column}>{titleCell(row)}</th> : <td key={column} data-column={column}>{column === "actions" ? actions(row) : cell(row, column)}</td>)}</tr>
-          {more && <tr className="browse__detail"><td colSpan={visible.length}>{more}</td></tr>}
+          <tr aria-rowindex={piece.index + 2} {...rowEvents(row)}><td className="browse__pick-col">{pick(row, row.path ?? "")}</td>{visible.map(column => column === "title" ? <th key={column} scope="row" data-column={column}>{titleCell(row)}</th> : <td key={column} data-column={column}>{column === "actions" ? actions(row) : cell(row, column)}</td>)}</tr>
+          {more && <tr className="browse__detail"><td colSpan={span}>{more}</td></tr>}
         </tbody>;
       })}
     </table></div>
