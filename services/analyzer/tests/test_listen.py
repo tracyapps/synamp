@@ -33,6 +33,14 @@ def test_singing_in_a_third_of_the_windows() -> None:
     assert fields["voice_peak"] == np.float32(0.3)
 
 
+def test_moods_are_the_song_average_of_audiosets_mood_classes() -> None:
+    clip = probs(4, c278=[0.4, 0.2, 0.0, 0.2], c276=[0.01] * 4)  # Sad music; a trace of Happy music
+    moods = listen.summarise(clip)["moods"]
+    assert moods["sad"] == 0.2 and moods["happy"] == 0.01 and moods["angry"] == 0.0
+    assert set(moods) == {"happy", "funny", "sad", "tender", "exciting", "angry", "scary"}
+    assert listen.summarise(np.zeros((0, 527)))["moods"] == {}, "no windows: no reading"
+
+
 def test_speech_counts_as_words_and_quiet_traces_do_not() -> None:
     assert listen.summarise(probs(4, c0=[0.6, 0.0, 0.0, 0.0]))["vocal_fraction"] == 0.25, "spoken word is words"
     assert listen.summarise(probs(4, c27=[0.05] * 4))["vocal_fraction"] == 0.0, "instrumental Eno sat at or below 0.05"
@@ -70,12 +78,13 @@ def test_the_stage_runs_and_exports_flat_instruments(tmp_path: Path, monkeypatch
     db = Database(config.db_path)
     result = load_result(db, library / "song.flac")
     assert result.vocal_fraction == 1 / 3 and result.instruments["electric_guitar"] == 1.0
-    assert result.stage_revisions["voice"] == 2 and result.voice_method == listen.METHOD
+    assert result.stage_revisions["voice"] == 3 and result.voice_method == listen.METHOD
     assert result.sound_vector and len(__import__("base64").b64decode(result.sound_vector)) == 128
     document = build_export(db, config.library_path, progress=lambda *_: None, workers=1)
     db.close()
     signals = document["tracks"][0]["signals"]
     assert signals["vocal_fraction"] == 1 / 3 and signals["instruments.electric_guitar"] == 1.0
+    assert signals["moods.sad"] == 0.0 and set(listen.MOOD_CLASSES) == {key.split(".")[1] for key in signals if key.startswith("moods.")}
     assert document["tracks"][0]["voice_method"] == listen.METHOD
     assert document["tracks"][0]["sound_vector"] == result.sound_vector
     json.dumps(document)

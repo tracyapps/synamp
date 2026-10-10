@@ -84,9 +84,9 @@ STATUS_FIELDS: dict[str, tuple[str, ...]] = {
 }
 
 # Stage outputs that are a mapping of name -> number, exported flat as "<group>.<name>"
-# (instruments.piano …). Each name must be registered in the brain as well.
+# (instruments.piano, moods.sad …). Each name must be registered in the brain as well.
 EXPORTED_GROUPS: dict[str, tuple[str, ...]] = {
-    "voice": ("instruments",),
+    "voice": ("instruments", "moods"),
 }
 
 # Top-level folders whose children are not one artist.

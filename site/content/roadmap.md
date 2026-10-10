@@ -73,7 +73,7 @@ goal: The part nobody else has: "make me a playlist that sounds like this."
 - [x] Double-check the measurements yourself: tap along to the beat
 - [~] Knows which songs have words, and which have piano (or guitar, or horns)
 - [~] "Sounds like these two songs"
-- [ ] Understands moods and lyrics
+- [~] Understands moods and lyrics
 
 ## Radio and visualizers
 id: radio

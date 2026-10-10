@@ -27,7 +27,7 @@ STAGES: tuple[str, ...] = ("identity", "dsp_core", "beat", "tonal", "voice")
 # The method each stage runs at. Raise a stage's number when its measurements
 # change meaning (a better algorithm, a fixed bug): tracks done at an older
 # revision get just that stage redone (pipeline.requeue_outdated). Missing = 1.
-STAGE_REVISIONS: dict[str, int] = {"identity": 1, "dsp_core": 2, "beat": 1, "tonal": 1, "voice": 2}
+STAGE_REVISIONS: dict[str, int] = {"identity": 1, "dsp_core": 2, "beat": 1, "tonal": 1, "voice": 3}
 
 
 @dataclass(frozen=True)
@@ -187,6 +187,10 @@ class AnalysisResult:
 
     instruments: dict[str, float] = field(default_factory=dict)
     """Share of windows where each instrument is heard, e.g. {"piano": 0.82}. The 'no piano' filter."""
+
+    moods: dict[str, float] = field(default_factory=dict)
+    """AudioSet's seven music-mood classes, averaged over the song (voice stage rev 3), e.g.
+    {"sad": 0.12, "happy": 0.03, …}. Raw readings: the brain derives arousal/valence from them."""
 
     # --- high-level semantic ---------------------------------------------
     # Filled by: a future `semantic` stage (learned heads).

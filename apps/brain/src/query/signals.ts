@@ -58,6 +58,9 @@ export const INSTRUMENTS = [
   "organ", "flute", "harp", "choir",
 ] as const;
 
+/** AudioSet's music-mood classes, read by the voice stage (rev 3). Each becomes `moods.<name>`. */
+export const AUDIO_MOODS = ["happy", "funny", "sad", "tender", "exciting", "angry", "scary"] as const;
+
 export const MOODS = [
   "relaxing", "meditative", "sleepy", "happy", "sad", "dark", "epic",
   "party", "aggressive", "romantic", "uplifting", "melancholic",
@@ -106,6 +109,11 @@ const SPECS: SignalSpec[] = [
     field: `instruments.${name}`, kind: "number", status: "produced", stage: "voice", range: [0, 1], nearMiss: 0.2, audio: true,
     nullMeaning: "not listened to yet — absence is NOT evidence of no " + name.replace(/_/g, " "),
     note: "Share of 10-second windows where the tagger hears this instrument above 0.10.",
+  })),
+  ...AUDIO_MOODS.map((name): SignalSpec => ({
+    field: `moods.${name}`, kind: "number", status: "produced", stage: "voice", range: [0, 1], nearMiss: 0.02, audio: true, corroborating: true,
+    nullMeaning: "not listened to yet (or listened to before moods were kept)",
+    note: `Average strength of AudioSet's "${name[0]!.toUpperCase()}${name.slice(1)} music" class over the song. Small numbers (often under 0.2), weak alone and not yet checked against the owner's ears: a hint that corroborates, never one that leads.`,
   })),
   // --- declared, no producer yet -------------------------------------------
   { field: "arousal", kind: "number", status: "declared", stage: "semantic", range: [0, 1], nearMiss: 0.05, audio: true, nullMeaning: "semantic stage not run" },
