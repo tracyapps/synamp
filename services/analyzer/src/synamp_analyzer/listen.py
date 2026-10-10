@@ -2,10 +2,11 @@
 
 Model: PANNs CNN14 (Kong et al., 2020), an AudioSet sound-event tagger.
 Code: the network below follows qiuqiangkong/audioset_tagging_cnn (MIT licence).
-Weights: "Cnn14_mAP=0.431.pth" from Zenodo record 3987831, downloaded once to
-~/panns_data and checked against its SHA-256. The weights' own licence and the
-AudioSet terms must be confirmed before SynAmp is distributed to anyone else
-(roadmap P4); for one owner's own library this is analysis of their own files.
+Weights: "Cnn14_mAP=0.431.pth" from Zenodo record 3987831 (Creative Commons
+Attribution 4.0, checked 2026-10-09), downloaded once to ~/panns_data and
+checked against its SHA-256. CC BY 4.0 asks for credit: Kong et al., "PANNs:
+Large-Scale Pretrained Audio Neural Networks for Audio Pattern Recognition"
+(2020). The AudioSet ontology (class names) is CC BY 4.0 too.
 
 How the numbers are made (chosen on ~40 songs from the owner's library,
 2026-10-08 — see docs/synamp/plans/AGENT-ROADMAP.md):
@@ -16,6 +17,10 @@ How the numbers are made (chosen on ~40 songs from the owner's library,
   below 0.05; sung pop and rock reached 0.15–0.6 somewhere in the song.
 * vocal_fraction = share of windows with a voice. instrumental = 1 − that.
 * instruments.<name> = share of windows where that instrument is above 0.10.
+* moods.<name> = the average, over the windows, of AudioSet's seven music-mood
+  classes (Happy, Funny, Sad, Tender, Exciting, Angry, Scary music). Kept raw:
+  these classes are weak on their own, so the brain turns them into calm↔lively
+  and sad↔happy only after they are checked against the owner's own ears.
 
 Known limits: a voice buried deep in the mix (Eno's own early songs) can be
 missed; wordless choirs count as voice (they are singing, though not words).
@@ -46,13 +51,17 @@ MODEL_SAMPLE_RATE = 32000
 WINDOW_S = 10.0
 MAX_WINDOWS = 30
 PRESENT = 0.10
-METHOD = "panns-cnn14-0.431/windows10s/present0.10/vec128"
+METHOD = "panns-cnn14-0.431/windows10s/present0.10/vec128/moods7"
 VECTOR_SIZE = 128
 _PROJECTION: np.ndarray | None = None
 
 # AudioSet class indices (class_labels_indices.csv, AudioSet ontology, CC BY 4.0).
 SINGING = (27, 28, 29, 30, 32, 33, 34, 35, 36, 37, 254, 255)  # Singing, Choir, Yodeling, Chant, Male/Female/Child/Synthetic singing, Rapping, Humming, Vocal music, A capella
 SPEECH = (0, 1, 2, 3, 5)  # Speech, Male/Female/Child speech, Narration
+# AudioSet's "Music mood" classes (indices 276–282).
+MOOD_CLASSES: dict[str, int] = {
+    "happy": 276, "funny": 277, "sad": 278, "tender": 279, "exciting": 280, "angry": 281, "scary": 282,
+}
 INSTRUMENT_CLASSES: dict[str, tuple[int, ...]] = {
     "piano": (153, 154),            # Piano, Electric piano
     "guitar": (140, 141, 143, 144),  # Guitar, Electric, Acoustic, Steel/slide
@@ -211,13 +220,14 @@ def windows(audio: np.ndarray, sample_rate: int = MODEL_SAMPLE_RATE) -> np.ndarr
 def summarise(clipwise: np.ndarray) -> dict[str, object]:
     """Per-window class probabilities (windows × 527) → the stage's fields."""
     if clipwise.size == 0:
-        return {"vocal_fraction": None, "instrumental": None, "instruments": {}, "voice_peak": None}
+        return {"vocal_fraction": None, "instrumental": None, "instruments": {}, "moods": {}, "voice_peak": None}
     voice = np.maximum(clipwise[:, SINGING].max(axis=1), clipwise[:, SPEECH].max(axis=1))
     vocal_fraction = float(np.mean(voice > PRESENT))
     instruments = {name: float(np.mean(clipwise[:, list(indices)].max(axis=1) > PRESENT))
                    for name, indices in INSTRUMENT_CLASSES.items()}
+    moods = {name: round(float(np.mean(clipwise[:, index])), 4) for name, index in MOOD_CLASSES.items()}
     return {"vocal_fraction": vocal_fraction, "instrumental": 1.0 - vocal_fraction,
-            "instruments": instruments, "voice_peak": float(voice.max())}
+            "instruments": instruments, "moods": moods, "voice_peak": float(voice.max())}
 
 
 def _infer(batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

@@ -775,3 +775,16 @@ and Cher — plausibly alike in sound).
   headless runs mid-song too: headless audio underruns, not transitions.)
 - Next: beat-locked DJ mixes (needs beat grids for most songs and a time-stretcher, e.g. SoundTouch).
   To check by ear: the web player on the owner's iPhone with the screen locked.
+
+### 2026-10-09 — Moods, step 1: keep AudioSet's mood readings (voice stage rev 3)
+- Licences checked: CNN14 weights (Zenodo 3987831) are **CC BY 4.0** (credit Kong et al. 2020), so the
+  voice stage is no longer "owner-only". Ruled out: Music2Emo (needs MERT, CC BY-NC 4.0), Essentia mood
+  models (AGPL code, non-commercial models). Research: project doc `claude/synamp-moods-lyrics-research.md`.
+- `listen.summarise` now also keeps `moods.{happy,funny,sad,tender,exciting,angry,scary}`: the song
+  average of AudioSet classes 276–282, raw. Voice stage rev 2 → 3, so songs already listened to get the
+  voice stage again (~10 s a song); songs still waiting get it on their first pass.
+- Brain registers `moods.*` as produced but `corroborating` (weak; never leads). `arousal`/`valence`
+  stay declared/inert until the readings are checked against the owner's ears on ~40 songs.
+- Next: owner check → derive arousal (calm↔lively) and valence (sad↔happy) brain-side → lexicon goals
+  (focus, calm, sleep, sad, pump up) go live. Then lyrics: tags in files, LRCLIB behind a Settings switch
+  (off by default), local theme search.
