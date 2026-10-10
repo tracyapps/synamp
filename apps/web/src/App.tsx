@@ -15,6 +15,7 @@ import DiscographyGaps from "./DiscographyGaps";
 import Settings from "./Settings";
 import { UpdateNotice, VersionBadge } from "./Updates";
 import SpotCheck from "./SpotCheck";
+import MoodCheck from "./MoodCheck";
 import BrainSession from "./BrainSession";
 import ListenAnywhere from "./ListenAnywhere";
 import PlaybackSettings from "./PlaybackSettings";
@@ -165,6 +166,7 @@ export default function App() {
         <ScreenHead id={headingId} eyebrow="Understand" title="The Brain"><p>What SynAmp has learned from listening to your music and to you — and a way to double-check it.</p></ScreenHead>
         <BrainSession request={call} session={session} playlistName={(id) => nodes.find((node) => node.id === id)?.name} startOpen />
         <SpotCheck request={call} startOpen />
+        <MoodCheck request={call} startOpen />
         <Listening request={call} />
       </div>;
       break;

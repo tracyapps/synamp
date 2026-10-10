@@ -1,0 +1,36 @@
+/* "How does this feel?". The toggle reuses .listening__toggle; the card follows .spotcheck. */
+
+.moodcheck__body { padding: 4px 20px 20px; }
+.moodcheck__intro { margin: 14px 0; font-size: 14px; color: var(--muted); max-width: 720px; }
+.moodcheck__card { border: 1px solid var(--hair); border-radius: 8px; padding: 16px 18px; display: grid; gap: 12px; max-width: 720px; }
+.moodcheck__card h3 { margin: 0; font: 400 17px var(--font-display); }
+.moodcheck__card h3:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+.moodcheck__card p { margin: 0; font-size: 14px; }
+.moodcheck__audio { width: 100%; }
+
+.moodcheck__scale { border: 0; margin: 0; padding: 0; display: grid; gap: 6px; }
+.moodcheck__scale legend { font: 400 15px var(--font-display); color: var(--text); padding: 0; margin-bottom: 2px; }
+.moodcheck__hint { font-size: 13px; }
+.moodcheck__options { display: flex; flex-wrap: wrap; gap: 6px; }
+.moodcheck__option { position: relative; display: inline-flex; }
+/* The real radio stays in the page for keyboards and screen readers; the pill is its label. */
+.moodcheck__option input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.moodcheck__option span {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px;
+  border: 1px solid var(--hair); border-radius: 999px; font-size: 14px; color: var(--text);
+}
+.moodcheck__option:hover span { border-color: var(--muted); }
+.moodcheck__option input:checked + span { border-color: var(--accent); background: rgba(255, 205, 0, .14); color: var(--accent); font-weight: 600; }
+.moodcheck__option input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.moodcheck__option--quiet span { color: var(--muted); border-style: dashed; }
+@media (forced-colors: active) {
+  .moodcheck__option input:checked + span { border: 3px solid Highlight; }
+}
+
+.moodcheck__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.moodcheck__actions button { font-size: 14px; padding: 10px 14px; min-height: 44px; border-radius: 6px; }
+.moodcheck__actions button:focus-visible, .moodcheck__message button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.moodcheck__message { margin: 12px 0 0; min-height: 1.3em; font-size: 14px; color: var(--muted); }
+.moodcheck__results h3 { margin: 18px 0 8px; font: 400 15px var(--font-display); }
+.moodcheck__agreement { margin: 0 0 8px; padding-left: 18px; font-size: 14px; display: grid; gap: 4px; }
+.moodcheck__results .muted { font-size: 13px; margin: 0; }
