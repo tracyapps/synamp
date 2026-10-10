@@ -21,7 +21,33 @@ export type FileTags = {
   year?: number;
   compilation?: boolean;
   mb_albumid?: string;
+  /** Unsynced lyrics, only when asked for (readTags(path, { lyrics: true })): they can be long. */
+  lyrics?: string;
 };
+
+/** Lyrics as stored: line breaks normalised, LRC timestamps and blank runs removed. Capped at 20,000 characters. */
+export function cleanLyrics(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const text = raw.replace(/\0+/g, "\n").replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/^\s*(?:\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?\]\s*)+/, "").replace(/^\s*\[(?:ar|ti|al|by|offset|length|re|ve):[^\]]*\]\s*$/i, "").trimEnd())
+    .join("\n").replace(/\n{3,}/g, "\n\n").trim();
+  return text ? text.slice(0, 20_000) : undefined;
+}
+
+/** USLT / ULT: encoding, 3-letter language, a description ending in a terminator, then the words. */
+function decodeUslt(data: Buffer): string | undefined {
+  if (data.length < 5) return undefined;
+  const encoding = data[0]!;
+  const rest = data.subarray(4);
+  const wide = encoding === 1 || encoding === 2;
+  let end = -1;
+  for (let i = 0; i + (wide ? 1 : 0) < rest.length; i += wide ? 2 : 1) {
+    if (rest[i] === 0 && (!wide || rest[i + 1] === 0)) { end = i; break; }
+  }
+  if (end < 0) return undefined;
+  return cleanLyrics(decodeText(Buffer.concat([Buffer.from([encoding]), rest.subarray(end + (wide ? 2 : 1))])));
+}
 
 const MAX_TAG_BYTES = 16 * 1024 * 1024;
 
@@ -96,7 +122,7 @@ function id3Size(head: Buffer): number {
   return head.length >= 10 && head.toString("latin1", 0, 3) === "ID3" ? syncsafe(head, 6) + 10 + (head[5]! & 0x10 ? 10 : 0) : 0;
 }
 
-function readId3v2(fd: number, out: FileTags): void {
+function readId3v2(fd: number, out: FileTags, lyrics = false): void {
   const head = readAt(fd, 0, 10);
   const size = id3Size(head);
   if (!size) return;
@@ -113,7 +139,9 @@ function readId3v2(fd: number, out: FileTags): void {
     const start = at + headerLength;
     if (frameSize < 0 || start + frameSize > tag.length) break;
     if (frameSize === 0) { at = start; continue; } // an empty frame (some taggers write them): skip it, read on
-    if (id === "TXXX") {
+    if (lyrics && (id === "USLT" || id === "ULT")) {
+      out.lyrics ??= decodeUslt(tag.subarray(start, start + frameSize));
+    } else if (id === "TXXX") {
       const text = decodeText(tag.subarray(start, start + frameSize)).split("\0");
       if (/^musicbrainz album id$/i.test(text[0] ?? "")) assign(out, "mb_albumid", text[1]);
     } else if (ID3_FRAMES[id]) {
@@ -143,7 +171,9 @@ const VORBIS_KEYS: Record<string, string> = {
   TOTALDISCS: "disc_total", DATE: "year", ORIGINALDATE: "year", YEAR: "year", COMPILATION: "compilation", MUSICBRAINZ_ALBUMID: "mb_albumid",
 };
 
-export function parseVorbisComments(block: Buffer, out: FileTags): void {
+const VORBIS_LYRICS = new Set(["LYRICS", "UNSYNCEDLYRICS", "UNSYNCED LYRICS"]);
+
+export function parseVorbisComments(block: Buffer, out: FileTags, lyrics = false): void {
   let at = 0;
   const vendor = block.readUInt32LE(at);
   at += 4 + vendor;
@@ -156,13 +186,15 @@ export function parseVorbisComments(block: Buffer, out: FileTags): void {
     at += length;
     const eq = comment.indexOf("=");
     if (eq > 0) {
-      const key = VORBIS_KEYS[comment.slice(0, eq).toUpperCase()];
+      const name = comment.slice(0, eq).toUpperCase();
+      if (lyrics && VORBIS_LYRICS.has(name)) { out.lyrics ??= cleanLyrics(comment.slice(eq + 1)); continue; }
+      const key = VORBIS_KEYS[name];
       if (key) assign(out, key, comment.slice(eq + 1));
     }
   }
 }
 
-function readFlac(fd: number, out: FileTags): void {
+function readFlac(fd: number, out: FileTags, lyrics = false): void {
   let at = id3Size(readAt(fd, 0, 10));
   if (readAt(fd, at, 4).toString("latin1") !== "fLaC") return;
   at += 4;
@@ -170,7 +202,7 @@ function readFlac(fd: number, out: FileTags): void {
     const header = readAt(fd, at, 4);
     if (header.length < 4) return;
     const last = header[0]! & 0x80, type = header[0]! & 0x7f, length = header.readUIntBE(1, 3);
-    if (type === 4) { parseVorbisComments(readAt(fd, at + 4, Math.min(length, MAX_TAG_BYTES)), out); return; }
+    if (type === 4) { parseVorbisComments(readAt(fd, at + 4, Math.min(length, MAX_TAG_BYTES)), out, lyrics); return; }
     if (last) return;
     at += 4 + length;
   }
@@ -199,7 +231,7 @@ function atoms(buffer: Buffer, from: number, to: number): Atom[] {
   return out;
 }
 
-function readMp4(fd: number, fileSize: number, out: FileTags): void {
+function readMp4(fd: number, fileSize: number, out: FileTags, lyrics = false): void {
   // Walk the top-level atoms by their headers; only `moov` is read in full.
   let at = 0;
   let moov: Buffer | undefined;
@@ -232,6 +264,8 @@ function readMp4(fd: number, fileSize: number, out: FileTags): void {
         if (item.type === "trkn") { if (no) out.track_no ??= no; if (total) out.track_total ??= total; }
         else { if (no) out.disc_no ??= no; if (total) out.disc_total ??= total; }
       }
+    } else if (item.type === "©lyr") {
+      if (lyrics) out.lyrics ??= cleanLyrics(value.toString("utf8"));
     } else if (item.type === "cpil") {
       if (value.length) out.compilation ??= value[0] === 1;
     } else if (item.type === "----") {
@@ -244,17 +278,18 @@ function readMp4(fd: number, fileSize: number, out: FileTags): void {
 }
 
 /** Tags from one file; {} when the format isn't supported or the file can't be read. */
-export function readTags(path: string): FileTags {
+export function readTags(path: string, options: { lyrics?: boolean } = {}): FileTags {
+  const lyrics = !!options.lyrics;
   const out: FileTags = {};
   let fd: number | undefined;
   try {
     fd = openSync(path, "r");
     const size = fstatSync(fd).size;
     const lower = path.toLowerCase();
-    if (lower.endsWith(".flac")) readFlac(fd, out);
-    else if (/\.(m4a|m4b|mp4|aac|alac)$/.test(lower)) readMp4(fd, size, out);
-    else if (lower.endsWith(".mp3")) { readId3v2(fd, out); readId3v1(fd, size, out); }
-    else readId3v2(fd, out); // some WAV/AIFF/others carry ID3 at the start
+    if (lower.endsWith(".flac")) readFlac(fd, out, lyrics);
+    else if (/\.(m4a|m4b|mp4|aac|alac)$/.test(lower)) readMp4(fd, size, out, lyrics);
+    else if (lower.endsWith(".mp3")) { readId3v2(fd, out, lyrics); readId3v1(fd, size, out); }
+    else readId3v2(fd, out, lyrics); // some WAV/AIFF/others carry ID3 at the start
   } catch {
     // An odd file must not stop an import: no tags, fall back to folder names.
   } finally {
