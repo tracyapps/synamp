@@ -57,7 +57,7 @@ import { AnalysisStatus, HealthError, libraryStats } from "./library/health.ts";
 import { albumFolder, groupAlbums } from "./library/albums.ts";
 import { ImportError, matchPlaylists, parsePlaylistFile } from "./library/playlist-import.ts";
 import type { MatchedPlaylist } from "./library/playlist-import.ts";
-import { albumTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
+import { albumTracks, artistPage, artistTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
 import { explore } from "./library/explore.ts";
 import { djOrder } from "./session/dj.ts";
 import { gaplessInfo } from "./session/gapless.ts";
@@ -810,13 +810,19 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks.map(ref), start), undefined, startAt(start), mix);
       return send(res, 200, { session: sessionView(session) });
     }
+    if (typeof input.artist === "string") {
+      const tracks = artistTracks(lib, input.artist).map(ref);
+      const start = Number(input.start_index ?? 0);
+      const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks, start), undefined, startAt(start), mix);
+      return send(res, 200, { session: sessionView(session) });
+    }
     if (Array.isArray(input.track_ids)) {
       const tracks = input.track_ids.slice(0, 2000).map((id) => byId.get(library.canonicalId(String(id)))).filter((track) => track !== undefined).map(ref);
       const start = Number(input.start_index ?? 0);
       const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks, start), undefined, startAt(start), mix);
       return send(res, 200, { session: sessionView(session) });
     }
-    if (typeof input.playlist_id !== "string") throw new SessionError("playlist_id, album_key or track_ids is required");
+    if (typeof input.playlist_id !== "string") throw new SessionError("playlist_id, album_key, artist or track_ids is required");
     const node = playlists.list().find((item) => item.id === input.playlist_id);
     if (!node) throw new PlaylistError("Playlist node not found", 404);
     // A snapshot: later membership changes do not touch what is queued.
@@ -881,6 +887,9 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/library/album" && req.method === "GET") {
     const { album, tracks } = albumTracks(currentLibrary(), url.searchParams.get("key") ?? "");
     return send(res, 200, { album, tracks: tracks.map(trackSummary) });
+  }
+  if (path === "/api/v1/library/artist" && req.method === "GET") {
+    return send(res, 200, artistPage(currentLibrary(), url.searchParams.get("name") ?? ""));
   }
   if (path === "/api/v1/library/search" && req.method === "GET") {
     return send(res, 200, searchTracks(currentLibrary(), url.searchParams.get("q") ?? "", Number(url.searchParams.get("limit") ?? 50)));

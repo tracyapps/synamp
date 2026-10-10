@@ -117,3 +117,58 @@ export function shuffled<T>(items: T[], random: () => number = Math.random): T[]
   }
   return list;
 }
+
+export type ArtistAlbum = AlbumSummary & { songs_by_artist: number };
+export type ArtistPage = {
+  artist: { name: string; songs: number; albums: number; duration_s?: number };
+  /** Albums filed under this artist. */
+  albums: ArtistAlbum[];
+  /** Other artists' albums (compilations, guest spots) with songs credited to this artist. */
+  appears_on: ArtistAlbum[];
+  /** Every song by this artist, album by album (oldest first), at most 2,000. */
+  songs: Array<TrackSummary & { album_key: string }>;
+  truncated: boolean;
+};
+
+/** Same artist when the names match ignoring case and accents ("Björk" = "bjork"); punctuation still counts (AC/DC). */
+const artistKey = (name: string) => name.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+
+/** The tracks of an artist, as on their page: their albums, then the albums they appear on. */
+export function artistTracks(library: Library, name: string): LibraryTrack[] {
+  return artistPageOf(library, name).tracks;
+}
+
+function artistPageOf(library: Library, name: string) {
+  const key = artistKey(name);
+  if (!key) throw new BrowseError("Which artist?");
+  const own: Array<{ album: AlbumUnit; tracks: LibraryTrack[] }> = [];
+  const guest: Array<{ album: AlbumUnit; tracks: LibraryTrack[] }> = [];
+  let shownName: string | undefined;
+  for (const album of albumsOf(library)) {
+    const filedHere = artistKey(album.artist) === key;
+    const theirs = album.tracks.filter((track) => artistKey(track.artist ?? "") === key || (!track.artist && filedHere));
+    if (filedHere) { own.push({ album, tracks: [...album.tracks] }); shownName ??= album.artist; }
+    else if (theirs.length) { guest.push({ album, tracks: theirs }); shownName ??= theirs[0]!.artist; }
+  }
+  if (!own.length && !guest.length) throw new BrowseError("That artist isn't in the library list any more", 404);
+  const byYear = (a: { album: AlbumUnit }, b: { album: AlbumUnit }) =>
+    (a.album.year ?? 9999) - (b.album.year ?? 9999) || sortName(a.album.title).localeCompare(sortName(b.album.title));
+  own.sort(byYear); guest.sort(byYear);
+  const inOrder = (tracks: LibraryTrack[]) => [...tracks].sort((a, b) =>
+    (a.disc_no ?? 1) - (b.disc_no ?? 1) || (a.track_no ?? 9999) - (b.track_no ?? 9999) || (a.path ?? "").localeCompare(b.path ?? ""));
+  const entries = [...own, ...guest].map((entry) => ({ ...entry, tracks: inOrder(entry.tracks) }));
+  const tracks = entries.flatMap((entry) => entry.tracks);
+  return { name: shownName ?? name, own, guest, entries, tracks };
+}
+
+export function artistPage(library: Library, name: string): ArtistPage {
+  const page = artistPageOf(library, name);
+  const seconds = page.tracks.reduce((sum, track) => sum + (track.duration_s ?? 0), 0);
+  const songs = page.entries.flatMap((entry) => entry.tracks.map((track) => ({ ...trackSummary(track), album_key: entry.album.key }))).slice(0, 2000);
+  return {
+    artist: { name: page.name, songs: page.tracks.length, albums: page.own.length, ...(seconds ? { duration_s: Math.round(seconds) } : {}) },
+    albums: page.own.map((entry) => ({ ...albumSummary(entry.album), songs_by_artist: entry.tracks.length })),
+    appears_on: page.guest.map((entry) => ({ ...albumSummary(entry.album), songs_by_artist: entry.tracks.length })),
+    songs, truncated: page.tracks.length > songs.length,
+  };
+}
