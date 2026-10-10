@@ -788,3 +788,15 @@ and Cher — plausibly alike in sound).
 - Next: owner check → derive arousal (calm↔lively) and valence (sad↔happy) brain-side → lexicon goals
   (focus, calm, sleep, sad, pump up) go live. Then lyrics: tags in files, LRCLIB behind a Settings switch
   (off by default), local theme search.
+
+### 2026-10-09 — Moods step 2 (PR #21) and lyrics step 1
+- **Mood check (#21):** `library/moodcheck.ts` + `MoodCheck.tsx` on The Brain screen. Owner answers calm↔lively and
+  sad↔happy (1–5, "can't say", skip); each answer keeps the song's numeric signals for fitting later. Songs come
+  from the least-answered square of a 3×3 grid of the readings' first guess. Agreement = Spearman, shown from 8 answers.
+- **Lyrics step 1:** `tags.ts` reads USLT/ULT (MP3), LYRICS/UNSYNCEDLYRICS (FLAC), ©lyr (M4A) only with
+  `{ lyrics: true }`; `cleanLyrics` strips LRC timestamps/headers, caps 20k chars. `library/lyrics.ts`: store
+  (`data/lyrics/index.json` batched + `text/<sha256>.txt`), worker (files first, 25 per step; then LRCLIB
+  `/api/get` one per 1.5 s when `lookup` is on — off by default; songs with vocal_fraction < 0.05 skipped;
+  404 asked again after 60 days; 429/5xx back off 10 min). `GET/POST /api/v1/lyrics`, `GET /api/v1/lyrics/track?id=`.
+  Settings → Lyrics card (switch says exactly what is sent).
+- Next: theme search over the lyrics (local text embeddings), `has_lyrics` signal, lyrics in the player.

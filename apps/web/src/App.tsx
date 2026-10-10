@@ -16,6 +16,7 @@ import Settings from "./Settings";
 import { UpdateNotice, VersionBadge } from "./Updates";
 import SpotCheck from "./SpotCheck";
 import MoodCheck from "./MoodCheck";
+import Lyrics from "./Lyrics";
 import BrainSession from "./BrainSession";
 import ListenAnywhere from "./ListenAnywhere";
 import PlaybackSettings from "./PlaybackSettings";
@@ -181,6 +182,7 @@ export default function App() {
         <ScreenHead id={headingId} eyebrow="System" title="Settings"><p>Everything you can change without touching a config file.</p></ScreenHead>
         <PlaybackSettings request={call} />
         <AnalysisMemory request={call} />
+        <Lyrics request={call} />
         <Settings request={call} startOpen />
       </div>;
       break;

@@ -49,6 +49,7 @@ import { RuntimeSettings, SettingsError } from "./settings.ts";
 import { VersionCheck } from "./version.ts";
 import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
 import { MoodCheckError, MoodChecks } from "./library/moodcheck.ts";
+import { LyricsError, LyricsStore, LyricsWorker, lrclib } from "./library/lyrics.ts";
 import { otherAppPlays, pingCore, SetupError, SetupStore } from "./setup.ts";
 import { LooksError, LooksStore } from "./visuals/looks.ts";
 import { Scrobbler } from "./lastfm/scrobbler.ts";
@@ -247,6 +248,10 @@ const moodChecks = new MoodChecks(join(dataDir, "moodchecks.json"));
 /** As analysed (moved files followed), before your tempo corrections. */
 function measuredLibrary() { return overlay.apply(library.get()); }
 function currentLibrary() { return spotChecks.apply(measuredLibrary()); }
+/** Lyrics: from the song files, then (only when switched on) from LRCLIB. */
+const lyricsStore = new LyricsStore(join(dataDir, "lyrics"));
+const lyrics = new LyricsWorker({ store: lyricsStore, root: config.libraryPath, library: () => currentLibrary(), lookup: lrclib("SynAmp (https://synamp.app)") });
+lyrics.start();
 /** The analyzer on the Mac takes its orders from here (Library strip buttons). */
 const analyzerControl = new AnalyzerControl(join(dataDir, "analyzer-control.json"));
 /** Discography gaps: artists you love, what they released, what you don't have. */
@@ -735,7 +740,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/moodcheck", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain", "/api/v1/visuals"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/moodcheck", "/api/v1/lyrics", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain", "/api/v1/visuals"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -1053,6 +1058,22 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/moodcheck/forget" && req.method === "POST") {
     moodChecks.forget(String((await body(req)).track_id ?? ""));
     return send(res, 200, moodCheckView());
+  }
+
+  // --- lyrics -------------------------------------------------------------------------
+  if (path === "/api/v1/lyrics" && (req.method === "GET" || req.method === "POST")) {
+    if (req.method === "POST") {
+      const input = await body(req);
+      if (typeof input.lookup !== "boolean") throw new LyricsError("lookup must be true or false");
+      lyrics.setLookup(input.lookup);
+    }
+    return send(res, 200, lyrics.progress());
+  }
+  if (path === "/api/v1/lyrics/track" && req.method === "GET") {
+    const id = url.searchParams.get("id") ?? "";
+    const entry = lyricsStore.state.entries[id];
+    if (!entry) throw new LyricsError("No lyrics checked for that song yet", 404);
+    return send(res, 200, { id, status: entry.status, source: entry.source ?? null, text: lyricsStore.text(id) });
   }
 
   // --- settings changed in the web app ----------------------------------------
@@ -1418,7 +1439,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof MoodCheckError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof MoodCheckError || error instanceof LyricsError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
@@ -1445,11 +1466,12 @@ setTimeout(warmLibrary, 2_000).unref();
 setInterval(warmLibrary, 60_000).unref();
 
 // Stop (Container Manager, docker stop) means stop now. Every store is written
-// atomically as it changes, so there is nothing to flush. Without this, Node
+// atomically as it changes (the lyrics index in batches, flushed here). Without this, Node
 // as the container's first process ignores the request and Stop hangs.
 for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.on(signal, () => {
     console.log(`synamp-brain: ${signal}, stopping`);
+    lyrics.stop(); // the lyrics index is saved in batches
     server.close();
     setTimeout(() => process.exit(0), 1500).unref();
     server.closeAllConnections?.();

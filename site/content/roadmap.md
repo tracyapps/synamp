@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-09 — Lyrics: SynAmp reads the words already inside your music files, and can look up missing ones on LRCLIB, a free community lyrics site, if you switch it on in Settings. The words stay private on your NAS
 - 2026-10-09 — The Brain: “How does this feel?” plays a song and asks whether it feels calm or lively, sad or happy. Your answers are what SynAmp checks its new mood readings against before any playlist uses them
 - 2026-10-08 — Albums play with no gap at all (joined to the exact sample), skipping mid-song blends into the next song, and “Play as a DJ set” orders a playlist by tempo and key with longer blends; SynAmp now learns each song’s key as your library is listened to
 - 2026-10-08 — SynAmp can fix song details inside your MP3 and FLAC files (album, year, track numbers…) from MusicBrainz: you review every change, and Undo puts the old details back exactly

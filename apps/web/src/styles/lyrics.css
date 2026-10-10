@@ -1,0 +1,10 @@
+/* Settings → Lyrics. The switch is the shared .switch; notes are the shared .notice. */
+
+.lyrics { display: grid; gap: 12px; max-width: 720px; }
+.lyrics p { margin: 0; font-size: 14px; }
+.lyrics__facts { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0; font-size: 14px; }
+.lyrics__facts div { display: flex; gap: 6px; }
+.lyrics__facts dt { color: var(--muted); }
+.lyrics__facts dd { margin: 0; font-family: var(--font-mono); font-size: 13px; }
+.lyrics__switch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.lyrics__what { max-width: 640px; }
