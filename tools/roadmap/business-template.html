@@ -1,0 +1,155 @@
+<div id="synamp-business-roadmap">
+  <style>
+    #synamp-business-roadmap .plan-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:12px 24px; }
+    #synamp-business-roadmap .plan-heading h3 { flex:1; margin:0; }
+    #synamp-business-roadmap .plan-meta { margin:12px 0; }
+    #synamp-business-roadmap .lane { margin:12px 0; }
+    #synamp-business-roadmap .lane-label { display:flex; gap:8px; align-items:baseline; }
+    #synamp-business-roadmap .lane-label strong { font-weight:500; }
+    #synamp-business-roadmap .time-axis, #synamp-business-roadmap .lane-svg { display:block; width:100%; overflow:visible; }
+    #synamp-business-roadmap svg text { fill:var(--foreground); font-size:12px; font-weight:400; }
+    #synamp-business-roadmap .lane-svg .task { fill:var(--viz-series-1); opacity:.22; }
+    #synamp-business-roadmap .lane.business .task { fill:var(--viz-series-2); opacity:.22; }
+    #synamp-business-roadmap .guide { stroke:var(--border); stroke-width:1; }
+    #synamp-business-roadmap .release-line { stroke:var(--foreground); stroke-width:1; stroke-dasharray:3 3; }
+    #synamp-business-roadmap .gate-controls { display:flex; flex-wrap:wrap; gap:4px; margin-top:14px; }
+    #synamp-business-roadmap .detail { margin:12px 0 0; min-height:3em; }
+    #synamp-business-roadmap .legend { display:flex; flex-wrap:wrap; gap:16px; margin:10px 0; }
+    #synamp-business-roadmap .swatch { display:inline-block; width:12px; height:8px; margin-right:5px; background:var(--viz-series-1); }
+    #synamp-business-roadmap .swatch.business { background:var(--viz-series-2); }
+    @media print { #synamp-business-roadmap .gate-controls { display:none; } }
+  </style>
+  <div class="plan-heading">
+    <h3>SynAmp · business alongside development</h3>
+    <label class="form-label">Release target
+      <select class="form-select" data-scenario aria-label="Release target scenario">
+        <option value="working">Working plan · Dec 1</option>
+        <option value="stretch">Stretch · Nov 24</option>
+        <option value="fallback">Fallback · Dec 15</option>
+      </select>
+    </label>
+  </div>
+  <p class="text-small plan-meta">Oct 11, 2026–Jan 9, 2027 · 20–25 owner hours/week · proposed dates</p>
+  <div class="legend text-small"><span><i class="swatch" aria-hidden="true"></i>Development</span><span><i class="swatch business" aria-hidden="true"></i>Business and customers</span><span>Dashed line: paid early access</span></div>
+  <svg class="time-axis" role="img" aria-label="Shared time axis from October 11 to January 9"></svg>
+  <div data-lanes></div>
+  <p class="text-small" data-scenario-detail></p>
+  <div class="gate-controls" role="group" aria-label="Read release gates"></div>
+  <p class="detail text-small" aria-live="polite" data-detail></p>
+  <script type="application/json" data-roadmap>__ROADMAP_JSON__</script>
+  <script>
+  (() => {
+    const root = document.getElementById('synamp-business-roadmap');
+    const data = JSON.parse(root.querySelector('[data-roadmap]').textContent);
+    const select = root.querySelector('[data-scenario]');
+    const lanes = root.querySelector('[data-lanes]');
+    const axis = root.querySelector('.time-axis');
+    const detail = root.querySelector('[data-detail]');
+    const gateControls = root.querySelector('.gate-controls');
+    const ns = 'http://www.w3.org/2000/svg';
+    const day = 86400000;
+    const time = d => Date.parse(d + 'T00:00:00Z');
+    const start = time(data.start), end = time(data.end);
+    const shortDate = d => new Date(time(d)).toLocaleDateString('en-US', {month:'short',day:'numeric',timeZone:'UTC'});
+    const plusDays = (d,n) => new Date(time(d) + n*day).toISOString().slice(0,10);
+    const scenario = () => data.scenarios.find(s => s.id === select.value);
+    let selectedGate = 'G4';
+    const shortLabels = {
+      'Measure → repair → ten-library proof':'Measure + repair',
+      'Workday listening and variety':'Listen + return',
+      'Spike → guided first listen':'Setup',
+      'Cold installs · restore · updates':'Cold installs',
+      'Candidate and lifecycle support':'Updates + recovery',
+      'Fix known failure · required checks':'CI + safety',
+      'Freeze scope · close blockers':'Close blockers',
+      'Five → ten supported testers':'Wave 1',
+      'Five-person waves · mature W4':'Small waves + W4',
+      'Claims · consent · real-build clips':'Claims + proof',
+      'Two small channel batches':'Two channel batches',
+      'Name · licenses · external services':'Rights review',
+      'Offer test → sandbox checkout':'Offer + checkout',
+      'Paid cohort → January review':'Paid cohort + review'
+    };
+    function svgNode(name, attrs, content) {
+      const el = document.createElementNS(ns,name);
+      Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,String(v)));
+      if(content) el.textContent=content;
+      return el;
+    }
+    const views = data.lanes.map(lane => {
+      const row=document.createElement('div'); row.className='lane '+lane.kind;
+      const label=document.createElement('div'); label.className='lane-label';
+      const name=document.createElement('strong'); name.textContent=lane.name;
+      const ids=document.createElement('span'); ids.className='text-small text-muted';
+      ids.textContent=[...new Set(lane.tasks.map(t=>t.id))].join(' · ');
+      label.append(name,ids); row.append(label);
+      const svg=svgNode('svg',{class:'lane-svg',role:'img','aria-label':lane.name});
+      row.append(svg); lanes.append(row); return {lane,svg};
+    });
+    data.gates.forEach(gate => {
+      const btn=document.createElement('button'); btn.type='button';
+      btn.className='btn btn-ghost'; btn.dataset.gate=gate.id;
+      btn.addEventListener('click',()=>{selectedGate=gate.id;updateDetail();saveState();});
+      gateControls.append(btn);
+    });
+    function gateDate(g) {
+      if(g.id==='G4') return scenario().date;
+      if(g.id==='G5') return plusDays(scenario().date,7);
+      return g.date;
+    }
+    function updateDetail() {
+      const gate=data.gates.find(g=>g.id===selectedGate);
+      gateControls.querySelectorAll('button').forEach(btn=>{
+        const g=data.gates.find(g=>g.id===btn.dataset.gate);
+        btn.textContent=g.id+' · '+shortDate(gateDate(g));
+        btn.setAttribute('aria-pressed',String(g.id===selectedGate));
+        btn.setAttribute('aria-label',g.id+' '+g.label+', '+shortDate(gateDate(g)));
+      });
+      detail.textContent=gate.id+' · '+gate.label+' · '+shortDate(gateDate(gate))+': '+gate.detail;
+      root.querySelector('[data-scenario-detail]').textContent=scenario().detail;
+    }
+    function draw() {
+      const width=Math.max(280,axis.getBoundingClientRect().width);
+      const x = d => 6 + (time(d)-start)/(end-start)*(width-12);
+      const ticks=[data.start,'2026-11-10','2026-12-10',data.end];
+      axis.setAttribute('viewBox','0 0 '+width+' 27'); axis.replaceChildren();
+      ticks.forEach((d,i)=>axis.append(svgNode('text',{x:x(d),y:16,'text-anchor':i===0?'start':i===ticks.length-1?'end':'middle'},shortDate(d))));
+      const release=x(scenario().date);
+      views.forEach(({lane,svg})=>{
+        svg.replaceChildren();
+        const height=lane.tasks.length===3?72:48;
+        svg.setAttribute('viewBox','0 0 '+width+' '+height);
+        svg.append(svgNode('desc',{},lane.tasks.map(t=>t.id+' '+t.label+': '+t.detail).join(' ')));
+        ticks.forEach(d=>svg.append(svgNode('line',{class:'guide',x1:x(d),x2:x(d),y1:0,y2:height})));
+        lane.tasks.forEach((task,i)=>{
+          let s=task.start;
+          if(task.label==='Paid cohort → January review') s=scenario().date;
+          if(task.label==='Two small channel batches') s=plusDays(scenario().date,7);
+          const left=x(s), right=x(task.end), y=3+i*24;
+          svg.append(svgNode('rect',{class:'task',x:left,y,width:Math.max(1,right-left),height:20,'data-tooltip':task.id+' · '+task.label+' · '+shortDate(s)+'–'+shortDate(task.end)}));
+          const label=svgNode('text',{x:left+4,y:y+14},shortLabels[task.label]);
+          svg.append(label);
+          if(left+4+label.getComputedTextLength()>width-6) {
+            label.setAttribute('x',width-6);
+            label.setAttribute('text-anchor','end');
+          }
+        });
+        svg.append(svgNode('line',{class:'release-line',x1:release,x2:release,y1:0,y2:height}));
+      });
+      updateDetail();
+    }
+    function saveState() {
+      if(window.openai?.setWidgetState) window.openai.setWidgetState({modelContent:{scenario:select.value,gate:selectedGate},privateContent:null}).catch(()=>{});
+    }
+    function restore(state) {
+      if(data.scenarios.some(s=>s.id===state?.modelContent?.scenario)) select.value=state.modelContent.scenario;
+      if(data.gates.some(g=>g.id===state?.modelContent?.gate)) selectedGate=state.modelContent.gate;
+    }
+    restore(window.openai?.widgetState);
+    select.addEventListener('change',()=>{draw();saveState();});
+    window.addEventListener('openai:set_globals',e=>{restore(e.detail?.globals?.widgetState);draw();});
+    new ResizeObserver(draw).observe(root);
+    draw();
+  })();
+  </script>
+</div>

@@ -80,6 +80,10 @@ for what each of these implies for the design.
 
 ## Read next
 
+- [90-day business and development plan](../business/README.md) — customer,
+  revenue, messaging and release priorities, with dated gates and implementation
+  handoffs for October 11 through January 9
+
 - [Research library](../research/index.html) — original reports, source packs, evidence and corrections
 - [Fast-brain follow-up](plans/FAST-BRAIN-FOLLOW-UP.md) — current implementation and dependency-ordered experiments
 

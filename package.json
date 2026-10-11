@@ -12,6 +12,7 @@
     "lint": "npx turbo lint",
     "type-check": "pnpm --filter @synamp/brain type-check && pnpm --filter @synamp/web type-check && pnpm --filter webamp type-check && pnpm --filter ani-cursor type-check && pnpm --filter winamp-eqf type-check",
     "roadmap:build": "node tools/roadmap/build.mjs",
+    "roadmap:business": "node tools/roadmap/build-business.mjs",
     "format": "prettier --write '**/*.{js,ts,tsx}'",
     "brain:dev": "pnpm --filter @synamp/brain dev",
     "web:dev": "pnpm --filter @synamp/web dev",

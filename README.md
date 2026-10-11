@@ -89,6 +89,8 @@ the gotchas that only show up on Synology.
 
 ## Documentation
 
+- [`docs/business/README.md`](docs/business/README.md) — coordinated 90-day
+  business/development plan, release gates, measurement and messaging drafts
 - [`docs/synamp/README.md`](docs/synamp/README.md) — plan, TL;DR and the decision table
 - [`docs/synamp/DECISIONS.md`](docs/synamp/DECISIONS.md) — accepted decisions and the hardware baseline
 - [`docs/synamp/ARCHITECTURE.md`](docs/synamp/ARCHITECTURE.md) — full system design

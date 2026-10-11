@@ -1,5 +1,14 @@
 # SynAmp — Roadmap
 
+Execution priority update (2026-10-11): the
+[90-day business and development roadmap](../business/90-day-roadmap.md) now
+sets the near-term release order: real-library usefulness, stranger-safe
+installation, reliable recovery and updates, then controlled paid early access.
+It incorporates the owner's 20–25 hours/week and one-time purchase with optional
+cloud later. The working December 1 target and November 24 stretch are internal,
+conditional review dates. This does not mark any feature or release gate done.
+The product phases below preserve the wider direction.
+
 Sequencing principle: **get you off your streaming subscriptions as early as
 possible**, then build the things that don't exist anywhere else.
 

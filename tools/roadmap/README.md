@@ -1,5 +1,19 @@
 # tools/roadmap
 
+## Business and development timeline
+
+`pnpm roadmap:business` generates `docs/business/roadmap.html`, a Codex inline
+visualization fragment, from `docs/business/roadmap-data.json` and
+`tools/roadmap/business-template.html`. The JSON owns the timeline's task dates,
+release scenarios and gates; the business markdown owns the full acceptance
+criteria. Keep both aligned when changing the operating plan. The fragment has
+no network dependencies and uses the conversation's theme. For an inline
+response, pass `--out /absolute/task-owned/path.html` to `build-business.mjs`.
+
+The timeline is a proposed operating schedule, not shipped-feature status.
+
+## Product phase roadmap
+
 Generates the **visual roadmap** from the markdown roadmap, so the two can never
 drift apart.
 

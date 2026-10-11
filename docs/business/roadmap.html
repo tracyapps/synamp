@@ -1,0 +1,155 @@
+<div id="synamp-business-roadmap">
+  <style>
+    #synamp-business-roadmap .plan-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:12px 24px; }
+    #synamp-business-roadmap .plan-heading h3 { flex:1; margin:0; }
+    #synamp-business-roadmap .plan-meta { margin:12px 0; }
+    #synamp-business-roadmap .lane { margin:12px 0; }
+    #synamp-business-roadmap .lane-label { display:flex; gap:8px; align-items:baseline; }
+    #synamp-business-roadmap .lane-label strong { font-weight:500; }
+    #synamp-business-roadmap .time-axis, #synamp-business-roadmap .lane-svg { display:block; width:100%; overflow:visible; }
+    #synamp-business-roadmap svg text { fill:var(--foreground); font-size:12px; font-weight:400; }
+    #synamp-business-roadmap .lane-svg .task { fill:var(--viz-series-1); opacity:.22; }
+    #synamp-business-roadmap .lane.business .task { fill:var(--viz-series-2); opacity:.22; }
+    #synamp-business-roadmap .guide { stroke:var(--border); stroke-width:1; }
+    #synamp-business-roadmap .release-line { stroke:var(--foreground); stroke-width:1; stroke-dasharray:3 3; }
+    #synamp-business-roadmap .gate-controls { display:flex; flex-wrap:wrap; gap:4px; margin-top:14px; }
+    #synamp-business-roadmap .detail { margin:12px 0 0; min-height:3em; }
+    #synamp-business-roadmap .legend { display:flex; flex-wrap:wrap; gap:16px; margin:10px 0; }
+    #synamp-business-roadmap .swatch { display:inline-block; width:12px; height:8px; margin-right:5px; background:var(--viz-series-1); }
+    #synamp-business-roadmap .swatch.business { background:var(--viz-series-2); }
+    @media print { #synamp-business-roadmap .gate-controls { display:none; } }
+  </style>
+  <div class="plan-heading">
+    <h3>SynAmp · business alongside development</h3>
+    <label class="form-label">Release target
+      <select class="form-select" data-scenario aria-label="Release target scenario">
+        <option value="working">Working plan · Dec 1</option>
+        <option value="stretch">Stretch · Nov 24</option>
+        <option value="fallback">Fallback · Dec 15</option>
+      </select>
+    </label>
+  </div>
+  <p class="text-small plan-meta">Oct 11, 2026–Jan 9, 2027 · 20–25 owner hours/week · proposed dates</p>
+  <div class="legend text-small"><span><i class="swatch" aria-hidden="true"></i>Development</span><span><i class="swatch business" aria-hidden="true"></i>Business and customers</span><span>Dashed line: paid early access</span></div>
+  <svg class="time-axis" role="img" aria-label="Shared time axis from October 11 to January 9"></svg>
+  <div data-lanes></div>
+  <p class="text-small" data-scenario-detail></p>
+  <div class="gate-controls" role="group" aria-label="Read release gates"></div>
+  <p class="detail text-small" aria-live="polite" data-detail></p>
+  <script type="application/json" data-roadmap>{"title":"SynAmp business and development roadmap","start":"2026-10-11","end":"2027-01-09","capacity":"20–25 owner hours/week · one-time purchase · optional cloud later","scenarios":[{"id":"working","label":"Working plan · Dec 1","date":"2026-12-01","detail":"Limited paid early access · all gates required · broader promotion after seven stable days"},{"id":"stretch","label":"Stretch · Nov 24","date":"2026-11-24","detail":"Same gates · about 20.4 pre-release hours/week · small invited cohort before Thanksgiving"},{"id":"fallback","label":"Fallback · Dec 15","date":"2026-12-15","detail":"Extra stabilization time · if gates remain open, move release to January"}],"lanes":[{"name":"Listening quality","kind":"dev","tasks":[{"id":"B02","label":"Measure → repair → ten-library proof","start":"2026-10-11","end":"2026-11-17","detail":"12 frozen requests; two raters per library; measured coverage and strict shortages; ≥80% useful supported pairs; no observed hard-rule violation."},{"id":"B02","label":"Workday listening and variety","start":"2026-11-18","end":"2027-01-09","detail":"Check continuous mixes, corrections, repeat cycling and restart on actual libraries; measure mature cohort return."}]},{"name":"Install and recovery","kind":"dev","tasks":[{"id":"B04","label":"Spike → guided first listen","start":"2026-10-11","end":"2026-10-25","detail":"One supported server/Mac combination, small-library first value, honest analysis wait, resumable setup."},{"id":"B04/B05","label":"Cold installs · restore · updates","start":"2026-10-26","end":"2026-11-17","detail":"≥9/10 unassisted installs including ≥5 non-friends; preserve every failed attempt; test backup/restore and upgrade/data rollback."},{"id":"B04/B05","label":"Candidate and lifecycle support","start":"2026-11-18","end":"2027-01-09","detail":"Versioned releases and running build identity; actual native-client/cellular/locked-phone evidence; storage migration if bounded file stores fail."}]},{"name":"CI and release safety","kind":"dev","tasks":[{"id":"B03/B05","label":"Fix known failure · required checks","start":"2026-10-11","end":"2026-11-08","detail":"Root-cause capitalization failure on case-insensitive filesystem; CI based on current scripts; no pass wrapper; real critical browser flows."},{"id":"B03/B05","label":"Freeze scope · close blockers","start":"2026-11-09","end":"2027-01-09","detail":"No open supported-path release-blocking S1/S2; single writer, interrupted-state recovery, private access and bounded storage proven."}]},{"name":"Testers and retention","kind":"business","tasks":[{"id":"B07","label":"Five → ten supported testers","start":"2026-10-19","end":"2026-11-08","detail":"Wave 1; activation ≥6/10 completed installs aged 72h; blockers \u003c20%; five interviews; install failures retained in separate funnel."},{"id":"B07","label":"Five-person waves · mature W4","start":"2026-10-28","end":"2027-01-09","detail":"May start Oct 28 only if G2 passes early; ≤15 active testers. Nov 24 requires ten activations by Oct 27; Dec 1 requires ten by Nov 3. W4 ≥50% with n≥10 mature; missing replies remain unknown."}]},{"name":"Messaging and demand","kind":"business","tasks":[{"id":"B08","label":"Claims · consent · real-build clips","start":"2026-10-11","end":"2026-11-17","detail":"Collector/NAS audience; proposed all-surface copy sweep; keep launch-only email promise; two actual-build clips and overview; no fake DJ or mood claim."},{"id":"B10","label":"Two small channel batches","start":"2026-12-02","end":"2027-01-09","detail":"Broad publicity only after G5; moments ≥3 days apart; ≥3 activated households in each batch; pause above 5 support hours/week."}]},{"name":"Rights and paid offer","kind":"business","tasks":[{"id":"B06","label":"Name · licenses · external services","start":"2026-10-11","end":"2026-11-23","detail":"Per-artifact rights decisions; preserve upstream notices; Last.fm commercial position, lyrics/AcoustID and name review; unresolved services excluded or release blocked."},{"id":"B09","label":"Offer test → sandbox checkout","start":"2026-10-26","end":"2026-11-23","detail":"Proposed $39 launch/$49 standard Home convenience and bounded support; MIT source available; purchase/refund/fulfillment checks; future cloud not offered."},{"id":"B09/B10","label":"Paid cohort → January review","start":"2026-12-01","end":"2027-01-09","detail":"Target ≥10 real paid customers; one-time sales separate from MRR; actual support cost and mature conversion; bottom-up market memo."}]}],"gates":[{"id":"G0","date":"2026-10-18","label":"Baseline","detail":"Supported scope and first listening path; quality/throughput baseline; external dependencies inventoried."},{"id":"G1","date":"2026-10-25","label":"Safe beta","detail":"Trial copy or verified backup; optional small reviewed write/undo; five attempts recorded."},{"id":"G2","date":"2026-11-08","label":"First value","detail":"≥10 installs aged 72h; activation ≥60%; blocker incidence \u003c20%."},{"id":"G3","date":"2026-11-17","label":"Cold installs","detail":"≥9/10 unassisted successes; ≥5 non-friends; ten real-library reviews; supported path verified."},{"id":"G4","date":"2026-12-01","label":"Paid EA","detail":"All quality/install/safety/rights/checkout gates; W4 ≥50% with ≥10 mature users; no open release-blocking S1/S2. Target follows selected scenario."},{"id":"G5","date":"2026-12-08","label":"Widen carefully","detail":"At least seven stable days after actual release, manageable support, small channel evidence and a try-without-signup path."},{"id":"G6","date":"2027-01-09","label":"Review","detail":"25–40 cumulative testers; 100 qualified waitlist; activation ≥60%; W4 ≥50%; ≥10 paying; repeated channel; support ≤5h/week."}]}</script>
+  <script>
+  (() => {
+    const root = document.getElementById('synamp-business-roadmap');
+    const data = JSON.parse(root.querySelector('[data-roadmap]').textContent);
+    const select = root.querySelector('[data-scenario]');
+    const lanes = root.querySelector('[data-lanes]');
+    const axis = root.querySelector('.time-axis');
+    const detail = root.querySelector('[data-detail]');
+    const gateControls = root.querySelector('.gate-controls');
+    const ns = 'http://www.w3.org/2000/svg';
+    const day = 86400000;
+    const time = d => Date.parse(d + 'T00:00:00Z');
+    const start = time(data.start), end = time(data.end);
+    const shortDate = d => new Date(time(d)).toLocaleDateString('en-US', {month:'short',day:'numeric',timeZone:'UTC'});
+    const plusDays = (d,n) => new Date(time(d) + n*day).toISOString().slice(0,10);
+    const scenario = () => data.scenarios.find(s => s.id === select.value);
+    let selectedGate = 'G4';
+    const shortLabels = {
+      'Measure → repair → ten-library proof':'Measure + repair',
+      'Workday listening and variety':'Listen + return',
+      'Spike → guided first listen':'Setup',
+      'Cold installs · restore · updates':'Cold installs',
+      'Candidate and lifecycle support':'Updates + recovery',
+      'Fix known failure · required checks':'CI + safety',
+      'Freeze scope · close blockers':'Close blockers',
+      'Five → ten supported testers':'Wave 1',
+      'Five-person waves · mature W4':'Small waves + W4',
+      'Claims · consent · real-build clips':'Claims + proof',
+      'Two small channel batches':'Two channel batches',
+      'Name · licenses · external services':'Rights review',
+      'Offer test → sandbox checkout':'Offer + checkout',
+      'Paid cohort → January review':'Paid cohort + review'
+    };
+    function svgNode(name, attrs, content) {
+      const el = document.createElementNS(ns,name);
+      Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,String(v)));
+      if(content) el.textContent=content;
+      return el;
+    }
+    const views = data.lanes.map(lane => {
+      const row=document.createElement('div'); row.className='lane '+lane.kind;
+      const label=document.createElement('div'); label.className='lane-label';
+      const name=document.createElement('strong'); name.textContent=lane.name;
+      const ids=document.createElement('span'); ids.className='text-small text-muted';
+      ids.textContent=[...new Set(lane.tasks.map(t=>t.id))].join(' · ');
+      label.append(name,ids); row.append(label);
+      const svg=svgNode('svg',{class:'lane-svg',role:'img','aria-label':lane.name});
+      row.append(svg); lanes.append(row); return {lane,svg};
+    });
+    data.gates.forEach(gate => {
+      const btn=document.createElement('button'); btn.type='button';
+      btn.className='btn btn-ghost'; btn.dataset.gate=gate.id;
+      btn.addEventListener('click',()=>{selectedGate=gate.id;updateDetail();saveState();});
+      gateControls.append(btn);
+    });
+    function gateDate(g) {
+      if(g.id==='G4') return scenario().date;
+      if(g.id==='G5') return plusDays(scenario().date,7);
+      return g.date;
+    }
+    function updateDetail() {
+      const gate=data.gates.find(g=>g.id===selectedGate);
+      gateControls.querySelectorAll('button').forEach(btn=>{
+        const g=data.gates.find(g=>g.id===btn.dataset.gate);
+        btn.textContent=g.id+' · '+shortDate(gateDate(g));
+        btn.setAttribute('aria-pressed',String(g.id===selectedGate));
+        btn.setAttribute('aria-label',g.id+' '+g.label+', '+shortDate(gateDate(g)));
+      });
+      detail.textContent=gate.id+' · '+gate.label+' · '+shortDate(gateDate(gate))+': '+gate.detail;
+      root.querySelector('[data-scenario-detail]').textContent=scenario().detail;
+    }
+    function draw() {
+      const width=Math.max(280,axis.getBoundingClientRect().width);
+      const x = d => 6 + (time(d)-start)/(end-start)*(width-12);
+      const ticks=[data.start,'2026-11-10','2026-12-10',data.end];
+      axis.setAttribute('viewBox','0 0 '+width+' 27'); axis.replaceChildren();
+      ticks.forEach((d,i)=>axis.append(svgNode('text',{x:x(d),y:16,'text-anchor':i===0?'start':i===ticks.length-1?'end':'middle'},shortDate(d))));
+      const release=x(scenario().date);
+      views.forEach(({lane,svg})=>{
+        svg.replaceChildren();
+        const height=lane.tasks.length===3?72:48;
+        svg.setAttribute('viewBox','0 0 '+width+' '+height);
+        svg.append(svgNode('desc',{},lane.tasks.map(t=>t.id+' '+t.label+': '+t.detail).join(' ')));
+        ticks.forEach(d=>svg.append(svgNode('line',{class:'guide',x1:x(d),x2:x(d),y1:0,y2:height})));
+        lane.tasks.forEach((task,i)=>{
+          let s=task.start;
+          if(task.label==='Paid cohort → January review') s=scenario().date;
+          if(task.label==='Two small channel batches') s=plusDays(scenario().date,7);
+          const left=x(s), right=x(task.end), y=3+i*24;
+          svg.append(svgNode('rect',{class:'task',x:left,y,width:Math.max(1,right-left),height:20,'data-tooltip':task.id+' · '+task.label+' · '+shortDate(s)+'–'+shortDate(task.end)}));
+          const label=svgNode('text',{x:left+4,y:y+14},shortLabels[task.label]);
+          svg.append(label);
+          if(left+4+label.getComputedTextLength()>width-6) {
+            label.setAttribute('x',width-6);
+            label.setAttribute('text-anchor','end');
+          }
+        });
+        svg.append(svgNode('line',{class:'release-line',x1:release,x2:release,y1:0,y2:height}));
+      });
+      updateDetail();
+    }
+    function saveState() {
+      if(window.openai?.setWidgetState) window.openai.setWidgetState({modelContent:{scenario:select.value,gate:selectedGate},privateContent:null}).catch(()=>{});
+    }
+    function restore(state) {
+      if(data.scenarios.some(s=>s.id===state?.modelContent?.scenario)) select.value=state.modelContent.scenario;
+      if(data.gates.some(g=>g.id===state?.modelContent?.gate)) selectedGate=state.modelContent.gate;
+    }
+    restore(window.openai?.widgetState);
+    select.addEventListener('change',()=>{draw();saveState();});
+    window.addEventListener('openai:set_globals',e=>{restore(e.detail?.globals?.widgetState);draw();});
+    new ResizeObserver(draw).observe(root);
+    draw();
+  })();
+  </script>
+</div>

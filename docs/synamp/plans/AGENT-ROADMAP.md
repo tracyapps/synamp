@@ -1,5 +1,11 @@
 # Research-to-implementation roadmap
 
+Release-order update (2026-10-11): use the
+[business execution backlog](../../business/execution-backlog.md) for the next
+90 days. Prioritize supported real-library quality, installation, recovery and
+release evidence. The research sequence below remains the technical reference;
+its historical implementation receipts do not establish launch readiness.
+
 Updated 2026-09-29. This is the execution companion to the product
 [roadmap](../ROADMAP.md), not a replacement for the Phase 1 listening milestone.
 Research sources: [Brain dossier](../../research/synamp-brain-dossier.html)
