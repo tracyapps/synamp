@@ -39,6 +39,7 @@ export type EngineEvents = {
   paused: (paused: boolean) => void;
   /** Waiting for a song to load (decoding an album track can take a second). */
   loading: (loading: boolean) => void;
+  transitioning?: (active: boolean) => void;
 };
 
 /** Decoded songs longer than this are streamed instead (memory). */
@@ -316,6 +317,7 @@ export class PlaybackEngine {
 
   private crossfade(from: Voice, to: Voice, seconds: number): void {
     this.fading = true;
+    this.events.transitioning?.(true);
     const now = this.ctx.currentTime + 0.05;
     const span = Math.max(0.5, seconds);
     to.gain.gain.cancelScheduledValues(0);
@@ -328,7 +330,7 @@ export class PlaybackEngine {
     to.ready.then(() => { if (this.next === to || this.current === to) to.start(now, 0); }, () => undefined);
     this.reportEnded(from);
     this.current = to; this.next = null;
-    window.setTimeout(() => { from.dispose(); this.fading = false; }, (span + 0.2) * 1000);
+    window.setTimeout(() => { from.dispose(); this.fading = false; this.events.transitioning?.(false); }, (span + 0.2) * 1000);
   }
 
   private finishFade(): void { /* fades run on the audio clock; nothing to cancel by hand */ }

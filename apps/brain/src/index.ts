@@ -30,6 +30,7 @@ import type { EpochPolicyView, Proposal } from "./learning/types.ts";
 import { EventLog } from "./session/events.ts";
 import { deriveFeedback, FeedbackError, recordFeedback } from "./session/feedback.ts";
 import type { FeedbackInput, FeedbackView } from "./session/feedback.ts";
+import { similarNext } from "./session/similar.ts";
 import { SessionError, SessionStore } from "./session/session.ts";
 import type { Session } from "./session/session.ts";
 import { resolveInside, sendFile, StreamSigner } from "./session/stream.ts";
@@ -534,6 +535,7 @@ function brainSessionView() {
 
 /** The session as clients see it: each entry says whether it can be streamed, and from where. */
 function sessionView(session: Session) {
+  const loved = new Set(events.all().filter(event => event.signal === "love").map(event => library.canonicalId(event.track_id)));
   const lib = currentLibrary();
   const byId = new Map(lib.tracks.map((track) => [track.id, track]));
   return {
@@ -550,7 +552,7 @@ function sessionView(session: Session) {
       const extra = track as (typeof track & { camelot?: string; key?: string; tempo_status?: string }) | undefined;
       const bpm = extra?.signals?.bpm;
       return {
-        ...entry, playable,
+        ...entry, playable, loved: loved.has(entry.track_id),
         ...(playable ? { stream_url: signer.url(entry.track_id), album_key: albumFolder(track!.path!) } : {}),
         ...(near && file ? (() => { const g = gaplessInfo(file, track?.quality?.sample_rate); return g ? { gapless: g } : {}; })() : {}),
         ...(near && typeof bpm === "number" && extra?.tempo_status !== "no_steady_beat" ? { bpm } : {}),
@@ -889,6 +891,28 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const session = sessions.replaceQueue(String(input.event_id ?? ""), tracks,
       { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, startAt(start), mix);
     return send(res, 200, { session: sessionView(session) });
+  }
+  if (path === "/api/v1/session/more-like-this" && req.method === "POST") {
+    const input = await body(req);
+    const eventId = String(input.event_id ?? "");
+    const snapshot = sessions.get();
+    const lib = currentLibrary();
+    const receipt = events.get(`${eventId}:next`);
+    if (receipt) {
+      const track = lib.tracks.find(track => track.id === receipt.track_id);
+      return send(res, 200, { session: sessionView(snapshot), track: { title: track?.title ?? "Your next song" }, reason: "already queued from this request" });
+    }
+    const entry = snapshot.queue[snapshot.index];
+    if (!entry || entry.entry_id !== input.entry_id) throw new SessionError("That song is no longer current", 409);
+    const node = entry.source && playlists.list().find(node => node.id === entry.source!.playlist_id);
+    const track = similarNext(lib, library.canonicalId(entry.track_id), {
+      excluded: new Set(snapshot.queue.slice(0, snapshot.index + 1).map(entry => library.canonicalId(entry.track_id))),
+      playable: track => !!track.path && !!resolveInside(config.libraryPath, track.path),
+      ...(node && node.type === "smart" ? { plan: node.plan } : {}),
+      policy: policyOptions(entry.source?.playlist_id),
+    });
+    const next = sessions.playNext(eventId, [{ id: track.id, title: track.title, artist: track.artist }], { moveExisting: true });
+    return send(res, 200, { session: sessionView(next), track: { title: track.title }, reason: "similar sound, queued next" });
   }
   if (path === "/api/v1/session/report" && req.method === "POST") {
     const input = await body(req);

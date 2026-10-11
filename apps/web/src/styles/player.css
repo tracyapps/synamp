@@ -67,3 +67,19 @@
   .player:has(.player__queue-toggle[aria-expanded="true"]) .player__feedback { display: flex; }
 }
 @media (max-height: 600px) { .player { padding-block: 6px; } }
+
+/* Acknowledgement stays directly below the pressed controls, across the bar. */
+.song-controls { width: 100%; min-width: 0; }
+.song-controls__buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.song-controls__buttons .chip { min-height: 36px; height: auto; padding-block: 6px; }
+.song-controls__love.is-loved { color: var(--gold); border-color: var(--gold); background: rgba(255,205,0,.12); opacity: 1; }
+.song-controls__love.is-loved path { fill: currentColor; }
+.song-controls__status { grid-column: 1 / -1; margin: 8px 0 0; padding: 8px 12px; border-left: 3px solid var(--gold); background: var(--ghost); color: var(--fg); font-size: .875rem; overflow-wrap: anywhere; }
+.song-controls__status:empty { display: none; }
+.song-controls__status.is-pending { border-left-color: var(--gold); background: rgba(255,205,0,.14); }
+.player__shortcuts { font-size: .75rem; color: var(--muted); }
+.player__shortcuts p { max-width: 640px; margin: 6px 0; }
+@media (max-width: 820px) { .player__feedback { display: flex; } }
+
+.song-controls__reason { font-size: .8rem; color: var(--muted); }
+.song-controls__reason .cluster { margin-top: 8px; }

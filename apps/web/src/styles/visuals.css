@@ -75,3 +75,21 @@ dialog.visuals::backdrop { background: var(--ink); }
   .visuals__looks { top: 8px; right: 8px; left: 8px; width: auto; bottom: auto; max-height: calc(100dvh - 300px); }
   .visuals__bar { left: 8px; right: 8px; bottom: 8px; }
 }
+
+.visuals-display { position: fixed; inset: 0; background: var(--ink); color: var(--fg); }
+.visuals-display video { object-fit: cover; }
+.visuals__song { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+.visuals__song strong { font-size: clamp(1.15rem, 1rem + 1vw, 1.8rem); }
+.visuals__song > span:last-child { color: var(--muted); }
+.visuals__displays { width: 100%; font-size: .8rem; }
+.visuals__bar { max-height: calc(100dvh - 32px); overflow-y: auto; }
+@media (max-width: 640px) {
+  .visuals.has-list .visuals__bar { display: none; }
+  .visuals__looks { max-height: calc(100dvh - 16px); }
+}
+
+.visuals__options { min-width: 0; font-size: .875rem; color: var(--muted); }
+.visuals__options > summary { cursor: pointer; padding: 8px; border-radius: var(--r-sm); }
+.visuals__options > summary:focus-visible { outline: 2px solid var(--gold); }
+.visuals__options[open] { flex: 1 1 100%; }
+.visuals__options[open] > .cluster, .visuals__options[open] > .visuals__now { margin-top: 8px; }

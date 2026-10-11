@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Player from "./Player";
+import type { PlayerView } from "./player-commands";
 import type { SessionView } from "./Player";
 import Playlists from "./Playlists";
 import Library from "./Library";
@@ -80,6 +81,7 @@ export default function App() {
   const [session, setSession] = useState<SessionView | null>(null);
   const [station, setStation] = useState<Station | null>(null);
   const [visuals, setVisuals] = useState(false);
+  const [playerView, setPlayerView] = useState<PlayerView | null>(null);
   const canShowVisuals = useMemo(visualsSupported, []);
   const openVisuals = canShowVisuals ? () => setVisuals(true) : undefined;
   const headingId = "screen-title";
@@ -230,11 +232,11 @@ export default function App() {
       </div>
       <div className="app__footer">
         {station && <RadioBar station={station} onStop={() => setStation(null)} onVisuals={openVisuals} />}
-        <Player request={call} session={session} onSession={setSession} away={!!station} onVisuals={openVisuals}
+        <Player onView={setPlayerView} request={call} session={session} onSession={setSession} away={!!station} onVisuals={openVisuals}
         playlistName={(id) => nodes.find((node) => node.id === id)?.name}
         onChanged={() => { refreshNodes().catch(() => undefined); }} />
       </div>
-      {visuals && <Suspense fallback={null}><Visuals open={visuals} onClose={() => setVisuals(false)} request={call} /></Suspense>}
+      {visuals && <Suspense fallback={null}><Visuals player={playerView} radioName={station?.name} open={visuals} onClose={() => setVisuals(false)} request={call} /></Suspense>}
     </div>
     </FavouritesProvider>
   );

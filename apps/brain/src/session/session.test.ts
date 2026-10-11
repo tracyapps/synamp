@@ -300,3 +300,19 @@ test("feedback recorded under a track's old ID still counts after it moves", () 
   assert.ok(view.adjust("p:new").value > 0);
   assert.equal(view.adjust("p:old").value, 0);
 });
+
+
+test("more like this moves an upcoming song next without duplicating it or losing playlist provenance; retries do not reorder twice", () => {
+  const env = setup();
+  try {
+    const { store } = env.open();
+    const before = store.replaceQueue(rid(), TRACKS, { playlist_id: "focus" });
+    const id = rid();
+    const after = store.playNext(id, [TRACKS[2]!], { moveExisting: true });
+    assert.deepEqual(after.queue.map(entry => entry.track_id), ["a", "c", "b"]);
+    assert.equal(after.queue[1]!.entry_id, before.queue[2]!.entry_id);
+    assert.deepEqual(after.queue[1]!.source, before.queue[2]!.source);
+    assert.deepEqual(store.playNext(id, [TRACKS[2]!], { moveExisting: true }).queue, after.queue);
+    assert.equal(after.index, before.index);
+  } finally { env.cleanup(); }
+});

@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import "./styles/player.css";
+import SongControls from "./SongControls";
+import { PLAYER_COMMAND, shortcut, type PlayerCommand, type PlayerView } from "./player-commands";
 import { newId } from "./ids";
 import Icon from "./ui/Icon";
 import { audioContext, setActiveAudio } from "./visuals/audio-graph";
@@ -18,7 +20,7 @@ import { skipBlendSeconds, transitionFor } from "./audio/transition";
 export type QueueEntry = {
   entry_id: string; track_id: string; title: string; artist?: string;
   source?: { playlist_id: string; plan_hash?: string; rank: number };
-  playable: boolean; stream_url?: string;
+  playable: boolean; stream_url?: string; loved?: boolean;
   /** The album folder, so albums can play straight through. */
   album_key?: string;
   /** A party guest asked for it. */
@@ -39,8 +41,9 @@ const clock = (seconds: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
-export default function Player({ request, session, onSession, playlistName, onChanged, away = false, onVisuals }: {
+export default function Player({ request, session, onSession, playlistName, onChanged, away = false, onVisuals, onView }: {
   request: Request;
+  onView?: (view: PlayerView | null) => void;
   /** Opens the MilkDrop visuals; absent when this browser can't show them. */
   onVisuals?: () => void;
   /** Something else (the radio) has the player bar: pause, and stay out of sight. */
@@ -66,10 +69,15 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const [duration, setDuration] = useState(0);
   const [paused, setPaused] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [fading, setFading] = useState(false);
   const [status, setStatus] = useState("");
   const [undo, setUndo] = useState<null | { track_id: string; playlist_id: string }>(null);
   const [showQueue, setShowQueue] = useState(false);
-  const [askWhy, setAskWhy] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [action, setAction] = useState("");
+  const [lovedTracks, setLovedTracks] = useState<Set<string>>(new Set());
+  const actionLock = useRef(false);
+  const actions = useRef<Partial<Record<PlayerCommand, () => void>>>({});
   const queueId = useId();
   const current = session ? session.queue[session.index] : undefined;
   const upNext = session ? session.queue[session.index + 1] : undefined;
@@ -116,6 +124,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
       },
       paused: (now) => setPaused(now),
       loading: (now) => setLoading(now),
+      transitioning: setFading,
     }, audioContext());
     made.setVolume(prefs.volume);
     engine.current = made;
@@ -134,7 +143,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const planKey = JSON.stringify([current?.entry_id, current?.playable, upNext?.entry_id, upNext?.playable, plan, lighter]);
   useEffect(() => {
     engine.current?.setPlan(item(current), item(upNext), plan.transition, plan.decode);
-    if (current?.entry_id !== engine.current?.currentId()) { setPosition(0); setAskWhy(false); }
+    if (current?.entry_id !== engine.current?.currentId()) { setPosition(0); }
   }, [planKey]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { engine.current?.setVolume(prefs.volume); }, [prefs.volume]);
   useEffect(() => {
@@ -171,6 +180,32 @@ export default function Player({ request, session, onSession, playlistName, onCh
   }, [current?.entry_id, away]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = away ? "none" : paused ? "paused" : "playing"; }, [paused, away]);
 
+  const from = current?.source ? playlistName(current.source.playlist_id) ?? "playlist" : undefined;
+  const view: PlayerView | null = session?.queue.length && !away ? {
+    title: current?.title ?? "End of queue", artist: current?.artist, available: !!current, canUndo: !!undo, loved: !!current?.loved || (!!current && lovedTracks.has(current.track_id)),
+    paused, busy, transitioning: fading, action, status: fading ? `Crossfading… ${status}` : status, playlist: from,
+  } : null;
+  const viewKey = JSON.stringify(view);
+  useEffect(() => {
+    onView?.(view);
+    const native = window as Window & { webkit?: { messageHandlers?: { synampPlayer?: { postMessage: (value: unknown) => void } } } };
+    native.webkit?.messageHandlers?.synampPlayer?.postMessage(JSON.parse(JSON.stringify(view ? { ...view, empty: !view.available } : { empty: true, title: "Nothing playing" })));
+  }, [viewKey, onView]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const run = (event: Event) => { if (away) return; actions.current[(event as CustomEvent<PlayerCommand>).detail]?.(); };
+    const key = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const editing = !!target?.closest("input, textarea, select, [contenteditable='true'], [role='textbox']");
+      const action = shortcut(event, editing);
+      if (!action || away || !latest.current.current) return;
+      event.preventDefault(); actions.current[action]?.();
+    };
+    window.addEventListener(PLAYER_COMMAND, run);
+    window.addEventListener("keydown", key);
+    return () => { window.removeEventListener(PLAYER_COMMAND, run); window.removeEventListener("keydown", key); };
+  }, [away]);
+  actions.current = { visuals: onVisuals };
+
   if (!session || !session.queue.length) return (
     <section className="player player--idle" aria-label="Player" hidden={away}>
       <div className="player__now">
@@ -195,12 +230,25 @@ export default function Player({ request, session, onSession, playlistName, onCh
     sound.play();
     if (started.current === current.entry_id) report(entryBody("resume"));
   };
-  const next = () => {
-    const sound = engine.current;
-    const listened = ms(played.current), length = duration ? ms(duration) : undefined;
-    // Skipping mid-song blends into the next song (or fades out quickly) instead of cutting.
-    if (sound?.isPlaying()) sound.skip(upNext?.playable ? skipBlendSeconds(prefs, session.mix) : 0);
-    report(entryBody("skip", { played_ms: listened, duration_ms: length }));
+  async function advance(target = current) {
+    if (!target || latest.current.current?.entry_id !== target.entry_id) return;
+    const body = { event_id: newId(), report: { type: "skip", entry_id: target.entry_id, played_ms: ms(played.current), duration_ms: duration ? ms(duration) : undefined } };
+    const send = () => request<{ session: SessionView }>("/session/report", { method: "POST", body: JSON.stringify(body) });
+    let result;
+    try { result = await send(); } catch (error) {
+      if ((error as Error).message.includes("no longer current")) return;
+      result = await send(); // same event id: retry cannot skip twice
+    }
+    if (latest.current.current?.entry_id !== target.entry_id) return;
+    if (engine.current?.isPlaying()) engine.current.skip(upNext?.playable ? skipBlendSeconds(prefs, session!.mix) : 0);
+    onSession(result.session);
+  }
+  const next = async () => {
+    if (actionLock.current || !current) return;
+    actionLock.current = true; setBusy(true); setAction("next"); setStatus(`Skipping “${current.title}”…`);
+    try { await advance(); setStatus(`Skipped “${current.title}”.${upNext ? ` Playing next: ${upNext.title}.` : " End of queue."}`); }
+    catch (error) { setStatus(`Couldn’t skip: ${(error as Error).message}`); }
+    finally { actionLock.current = false; setBusy(false); }
   };
   const previous = () => {
     const sound = engine.current;
@@ -220,33 +268,56 @@ export default function Player({ request, session, onSession, playlistName, onCh
   };
   controls.current = { toggle, next, previous, seek: seekTo };
 
-  async function feedback(signal: "love" | "thumb_down" | "remove" | "restore", extra: Record<string, unknown> = {}, target = current) {
-    if (!target) return;
+  async function feedback(signal: "love" | "thumb_down" | "remove", reason?: "wrong_energy" | "wrong_vibe") {
+    const target = current;
+    if (!target || actionLock.current || (signal === "love" && view?.loved)) return;
+    actionLock.current = true; setBusy(true); setAction(signal);
+    setStatus(signal === "love" ? `Loving “${target.title}”…` : signal === "remove" ? `Removing “${target.title}”… next song.` : `Not for this: “${target.title}”… skipping.`);
     const playlist_id = target.source?.playlist_id;
+    let saved = false;
     try {
-      await request("/feedback", { method: "POST", body: JSON.stringify({
-        event_id: newId(), signal, track_id: target.track_id, entry_id: target.entry_id,
-        ...(signal === "remove" || signal === "restore" || (signal === "thumb_down" && playlist_id) ? { scope: "playlist", playlist_id } : {}),
-        ...extra,
-      }) });
+      const body = JSON.stringify({ event_id: newId(), signal, track_id: target.track_id, entry_id: target.entry_id,
+        ...(reason ? { reason } : {}),
+        ...(signal === "remove" || (signal === "thumb_down" && playlist_id) ? { scope: "playlist", playlist_id } : {}),
+      });
+      const send = () => request("/feedback", { method: "POST", body });
+      try { await send(); } catch { await send(); }
+      saved = true;
       const where = playlist_id ? playlistName(playlist_id) ?? "this playlist" : "your library";
-      if (signal === "love") setStatus(`Loved “${target.title}”.`);
-      if (signal === "thumb_down") setStatus(`Noted: less of “${target.title}” in ${where}.`);
-      if (signal === "remove" && playlist_id) { setStatus(`Removed “${target.title}” from ${where}.`); setUndo({ track_id: target.track_id, playlist_id }); }
-      if (signal === "restore") { setStatus(`Restored “${target.title}”.`); setUndo(null); }
-      if (signal === "remove" || signal === "restore") onChanged();
-      setAskWhy(false);
-    } catch (cause) { setStatus((cause as Error).message); }
+      if (signal === "love") { setLovedTracks(before => new Set([...before, target.track_id])); setStatus(`Loved “${target.title}”. More of this in future mixes.`); }
+      else {
+        if (signal === "remove" && playlist_id) { setUndo({ track_id: target.track_id, playlist_id }); onChanged(); }
+        await advance(target);
+        setStatus(signal === "remove" ? `Removed “${target.title}” from ${where}. Next song.` : `Noted: less of “${target.title}” in ${where}. Next song.`);
+      }
+    } catch (cause) { setStatus(`${saved ? "Saved your feedback, but couldn’t skip. Press Skip to try again." : "Couldn’t save your feedback."} ${(cause as Error).message}`); }
+    finally { actionLock.current = false; setBusy(false); }
   }
+  async function moreLikeThis() {
+    if (!current || actionLock.current) return;
+    actionLock.current = true; setBusy(true); setAction("more-like-this"); setStatus(`Finding a song like “${current.title}” to play next…`);
+    const body = JSON.stringify({ event_id: newId(), entry_id: current.entry_id });
+    try {
+      const send = () => request<{ session: SessionView; track: { title: string }; reason: string }>("/session/more-like-this", { method: "POST", body });
+      let result;
+      try { result = await send(); } catch { result = await send(); }
+      onSession(result.session); setStatus(`Up next: “${result.track.title}” · ${result.reason}.`);
+    } catch (cause) { setStatus(`Couldn’t find your next song: ${(cause as Error).message}`); }
+    finally { actionLock.current = false; setBusy(false); }
+  }
+
   const restore = async () => {
-    if (!undo) return;
+    if (!undo || actionLock.current) return;
+    actionLock.current = true; setBusy(true);
     await request("/feedback", { method: "POST", body: JSON.stringify({ event_id: newId(), signal: "restore", track_id: undo.track_id, scope: "playlist", playlist_id: undo.playlist_id }) })
       .then(() => { setStatus("Restored."); setUndo(null); onChanged(); })
-      .catch((cause) => setStatus((cause as Error).message));
+      .catch((cause) => setStatus((cause as Error).message))
+      .finally(() => { actionLock.current = false; setBusy(false); });
   };
 
+  actions.current = { toggle, next, previous, love: () => feedback("love"), "not-for-this": () => feedback("thumb_down"), remove: () => { if (current?.source) void feedback("remove"); }, "more-like-this": moreLikeThis, visuals: onVisuals, "undo-remove": restore, "wrong-energy": () => feedback("thumb_down", "wrong_energy"), "wrong-vibe": () => feedback("thumb_down", "wrong_vibe") };
+
   const finished = session.index >= session.queue.length;
-  const from = current?.source ? playlistName(current.source.playlist_id) : undefined;
   return (
     <section className="player" aria-label="Player" hidden={away}>
       <div className="player__now">
@@ -263,7 +334,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
       <div className="player__transport">
         <button type="button" className="player__btn" onClick={previous} aria-label="Previous track" disabled={finished && session.index === 0}><Icon name="previous" /></button>
         <button type="button" className="player__btn player__play" onClick={toggle} aria-label={paused ? "Play" : "Pause"} disabled={!current?.playable}><Icon name={paused ? "play" : "pause"} size={20} /></button>
-        <button type="button" className="player__btn" onClick={next} aria-label="Skip to next track" disabled={finished}><Icon name="next" /></button>
+        <button type="button" className="player__btn" onClick={next} aria-label={busy && action === "next" ? "Skipping…" : "Skip to next track"} title="Skip · Option/Alt + Shift + →" disabled={finished || busy}><Icon name="next" /></button>
       </div>
       <div className="player__right">
         {current?.live ? <span className="badge badge--live player__live"><span className="status-dot status-dot--live" aria-hidden="true" />Live radio</span> : (
@@ -284,22 +355,11 @@ export default function Player({ request, session, onSession, playlistName, onCh
         </button>
       </div>
       {current && !current.playable && !finished && <p className="player__note">No audio file for this track yet. It plays once the analyzer has listed it.</p>}
-      {current && !finished && (
-        <div className="player__feedback" role="group" aria-label="Tell SynAmp what you think of this track">
-          <button type="button" className="chip" onClick={() => feedback("love")}><Icon name="heart" size={15} />Love</button>
-          <button type="button" className="chip" aria-expanded={askWhy} onClick={() => setAskWhy(!askWhy)}>Not for this</button>
-          {current.source && <button type="button" className="chip" onClick={() => feedback("remove")}>Remove from {from ?? "playlist"}</button>}
-          {askWhy && (
-            <div className="player__why" role="group" aria-label="Why? (optional)">
-              <button type="button" className="chip" onClick={() => feedback("thumb_down", { reason: "wrong_energy" })}>Wrong energy</button>
-              <button type="button" className="chip" onClick={() => feedback("thumb_down", { reason: "wrong_vibe" })}>Wrong vibe</button>
-              <button type="button" className="chip" onClick={() => feedback("thumb_down")}>Just not this</button>
-              <span className="muted">Skipping on its own only counts for right now.</span>
-            </div>
-          )}
-          <p className="player__status" role="status">{status}{undo && <> <button type="button" className="linklike" onClick={restore}>Undo</button></>}</p>
-        </div>
-      )}
+      {view && <div className="player__feedback">
+        <SongControls view={view} />
+        <details className="player__shortcuts"><summary>Keyboard shortcuts</summary><p>Option/Alt + Shift: → skip · ← previous · Space play/pause · L love · N not for this · R remove · M more like this · V visuals. Available while SynAmp is focused. Use the Mac companion for global shortcuts.</p></details>
+      </div>}
+      {!view && status && <p className="song-controls__status" role="status">{status}</p>}
       <ol id={queueId} hidden={!showQueue} className="player__queue" aria-label="Queue">
         {session.queue.map((entry, index) => (
           <li key={entry.entry_id} aria-current={index === session.index ? "true" : undefined}>

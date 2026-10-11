@@ -3,6 +3,10 @@ import type { Request } from "../api";
 import { onActiveAudio, audioContext, tap } from "./audio-graph";
 import { change, lookLabel, type Looks, matches, NO_LOOKS, type Pool, poolOf, step } from "./looks";
 import Icon from "../ui/Icon";
+import SongControls from "../SongControls";
+import type { PlayerView } from "../player-commands";
+import VisualDisplays from "./VisualDisplays";
+import "../styles/player.css";
 import "../styles/visuals.css";
 
 /*
@@ -29,7 +33,7 @@ const write = (key: string, value: string) => { try { localStorage.setItem(key, 
 
 type ListFilter = "all" | "favourites" | "hidden";
 
-export default function Visuals({ open, onClose, request }: { open: boolean; onClose: () => void; request?: Request }) {
+export default function Visuals({ open, onClose, request, player, radioName }: { open: boolean; onClose: () => void; request?: Request; player?: PlayerView | null; radioName?: string }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const reduced = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -63,11 +67,14 @@ export default function Visuals({ open, onClose, request }: { open: boolean; onC
     const surfaces = [document.documentElement, document.body];
     const overflow = surfaces.map((surface) => ({ value: surface.style.getPropertyValue("overflow"), priority: surface.style.getPropertyPriority("overflow") }));
     surfaces.forEach((surface) => surface.style.setProperty("overflow", "hidden"));
-    return () => surfaces.forEach((surface, index) => {
+    return () => {
+      if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+      surfaces.forEach((surface, index) => {
       const previous = overflow[index]!;
       if (previous.value) surface.style.setProperty("overflow", previous.value, previous.priority);
       else surface.style.removeProperty("overflow");
     });
+    };
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Your favourite and hidden looks, from the brain.
@@ -261,6 +268,10 @@ export default function Visuals({ open, onClose, request }: { open: boolean; onC
         )}
         <div className="visuals__bar">
           <h2 id={`${ids}-title`} className="visually-hidden">Visuals</h2>
+          <div className="visuals__song"><span className="eyebrow">Now playing</span><strong>{player?.title ?? radioName ?? "Nothing playing"}</strong>{player?.artist && <span>{player.artist}</span>}</div>
+          {player && <SongControls view={player} transport />}
+          <VisualDisplays canvas={canvas} player={player} radioName={radioName} gentle={gentle} />
+          <details className="visuals__options"><summary>Looks & motion</summary>
           <div className="visuals__now">
             {hasAudio && current && (
               <button type="button" className={`visuals__heart ${loved ? "is-on" : ""}`} aria-pressed={loved} aria-label="Favourite this look" title="Favourite" onClick={() => favourite(current, !loved)}>
@@ -284,8 +295,9 @@ export default function Visuals({ open, onClose, request }: { open: boolean; onC
             </fieldset>
             <button type="button" role="switch" aria-checked={gentle} className={`switch ${gentle ? "is-on" : ""}`} onClick={() => { setGentle(!gentle); write(GENTLE_KEY, gentle ? "off" : "on"); }}>
               <span className="switch__track" aria-hidden="true"><span className="switch__thumb" /></span>Gentler</button>
-            <button type="button" className="btn btn--primary btn--sm" onClick={onClose}><Icon name="close" size={16} />Close</button>
           </div>
+          </details>
+          <button type="button" className="btn btn--primary btn--sm" onClick={onClose}><Icon name="close" size={16} />Close</button>
           <p className="visuals__said" role="status">{fallback === "no-favourites" ? "No favourites to pick from yet, so all looks are in. " : fallback === "all-hidden" ? "Every look is hidden, so all of them are in. " : ""}{said}</p>
           {problem && <p className="alert" role="alert">{problem}</p>}
         </div>

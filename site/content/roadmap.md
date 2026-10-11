@@ -70,6 +70,7 @@ short: The Brain
 goal: The part nobody else has: "make me a playlist that sounds like this."
 - [~] Listens to every song in your library: tempo, energy, loudness, rhythm
 - [x] Learns from what you skip, love and remove
+- [~] Clear feedback beside the buttons, automatic next song after a rejection, and “more like this” for the next song
 - [x] Double-check the measurements yourself: tap along to the beat
 - [~] Knows which songs have words, and which have piano (or guitar, or horns)
 - [~] "Sounds like these two songs"
@@ -84,6 +85,8 @@ goal: The fun stuff: world radio and visuals that dance with the music.
 - [x] Thousands of radio stations by country, genre and mood
 - [x] Radio stations in your playlists, right next to your own music
 - [x] Milkdrop-style visualizers, back again
+- [~] Fullscreen visuals with song controls and extra display windows
+- [~] Mac menu-bar controls and global keyboard shortcuts
 
 ## Gapless, crossfade and DJ mode
 id: dj
