@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import type { Library } from "../query/evaluate.ts";
-import { BACK_OFF_MS, LOOKUP_GAP_MS, lrclib, type Lookup, LyricsStore, LyricsWorker } from "./lyrics.ts";
+import { BACK_OFF_MS, LOOKUP_GAP_MS, lrclib, type Lookup, LyricsStore, LyricsWorker, applyLyrics, LYRICS_VOCAL_FLOOR, MIN_LYRIC_WORDS } from "./lyrics.ts";
 import { cleanLyrics, readTags } from "./tags.ts";
 
 // --- synthetic files (same layouts as import.test.ts) -----------------------------------------
@@ -83,7 +83,7 @@ function library(): Library {
   ] };
 }
 
-test("files first; LRCLIB only when switched on, only for songs with a voice, politely, and it backs off", async () => {
+test("files first; LRCLIB only when switched on, songs with a voice first, politely, and it backs off", async () => {
   const dir = mkdtempSync(join(tmpdir(), "synamp-lyrics-"));
   try {
     const root = join(dir, "music");
@@ -103,7 +103,7 @@ test("files first; LRCLIB only when switched on, only for songs with a voice, po
     assert.equal(progress.from_files, 1);
     assert.equal(store.text("has-words"), "Words from the file");
     assert.equal(progress.lookup, false);
-    assert.equal(progress.to_look_up, 1, "Fire Door would be looked up; Eno (no voice), the nameless track and the missing file wouldn't");
+    assert.equal(progress.to_look_up, 2, "Fire Door and Eno (no voice heard, but the analysis misses voices) would be looked up; the nameless track and the missing file wouldn't");
     assert.equal(progress.no_voice, 1);
     assert.deepEqual(asked, [], "nothing leaves the NAS while the switch is off");
 
@@ -113,7 +113,12 @@ test("files first; LRCLIB only when switched on, only for songs with a voice, po
     assert.equal(store.text("bare"), "Words from LRCLIB");
     progress = worker.progress();
     assert.equal(progress.from_lrclib, 1);
-    assert.equal(progress.to_look_up, 0);
+    assert.equal(progress.to_look_up, 1, "Eno is left, asked last");
+    clock += LOOKUP_GAP_MS;
+    reply = { kind: "none" };
+    assert.equal(await worker.step(), true);
+    assert.match(asked[1]!, /^Brian Eno — 1\/1/);
+    assert.equal(worker.progress().to_look_up, 0);
 
     // Asked again only after a long while, and never faster than the gap.
     store.put("bare", { status: "none", file_sig: store.state.entries.bare!.file_sig!, looked_up: clock, at: clock });
@@ -133,14 +138,14 @@ test("files first; LRCLIB only when switched on, only for songs with a voice, po
     assert.equal(await worker.step(), true);
     assert.equal(worker.progress().instrumental, 1);
     assert.equal(worker.progress().problem, null);
-    assert.equal(asked.length, 3);
+    assert.equal(asked.length, 4);
 
     // Switching off stops lookups straight away; what was found stays.
     worker.setLookup(false);
     store.put("bare", { status: "none", file_sig: store.state.entries.bare!.file_sig!, at: clock });
     clock += LOOKUP_GAP_MS;
     assert.equal(await worker.step(), false);
-    assert.equal(asked.length, 3);
+    assert.equal(asked.length, 4);
     store.flush();
 
     const reloaded = new LyricsStore(join(dir, "lyrics"));
@@ -171,4 +176,41 @@ test("the LRCLIB call: the right question, and every kind of answer", async () =
   assert.deepEqual(await ask(429, "slow down"), { kind: "problem", message: "LRCLIB answered 429", retryable: true });
   assert.deepEqual(await ask(400, "bad"), { kind: "problem", message: "LRCLIB answered 400", retryable: false });
   assert.equal((await ask(200, "<html>")).kind, "problem");
+});
+
+test("lyrics mean words: a song with real lyrics isn't instrumental, whatever the analysis heard", () => {
+  const dir = mkdtempSync(join(tmpdir(), "synamp-lyrics-"));
+  try {
+    const store = new LyricsStore(join(dir, "lyrics"));
+    const lib: Library = { version: "v1", tracks: [
+      { id: "monkey-wrench", title: "Monkey Wrench", signals: { vocal_fraction: 0, instrumental: 1 } },
+      { id: "sung", title: "Sung", signals: { vocal_fraction: 0.8, instrumental: 0.2 } },
+      { id: "short", title: "Short", signals: { vocal_fraction: 0, instrumental: 1 } },
+      { id: "unheard", title: "Unheard" },
+      { id: "airports", title: "1/1", signals: { vocal_fraction: 0, instrumental: 1 } },
+    ] } as Library;
+    assert.equal(applyLyrics(lib, store), lib, "no lyrics: nothing changes");
+    const found = (words: number) => ({ status: "found" as const, source: "file" as const, words, at: 1 });
+    store.put("monkey-wrench", found(159), "What have we done with innocence");
+    store.put("sung", found(200), "la la");
+    store.put("short", found(1), "Instrumental");
+    store.put("unheard", found(120), "words");
+    store.put("airports", { status: "instrumental", source: "lrclib", at: 1 });
+
+    const applied = applyLyrics(lib, store);
+    assert.notEqual(applied.version, lib.version);
+    const by = Object.fromEntries(applied.tracks.map((track) => [track.id, track.signals]));
+    assert.deepEqual(by["monkey-wrench"], { vocal_fraction: LYRICS_VOCAL_FLOOR, instrumental: 1 - LYRICS_VOCAL_FLOOR });
+    assert.deepEqual(by.sung, { vocal_fraction: 0.8, instrumental: 0.2 }, "already heard singing: left alone");
+    assert.deepEqual(by.short, { vocal_fraction: 0, instrumental: 1 }, `fewer than ${MIN_LYRIC_WORDS} words ("Instrumental") don't count`);
+    assert.equal(by.unheard, undefined, "not listened to yet: stays unmeasured");
+    assert.deepEqual(by.airports, { vocal_fraction: 0, instrumental: 1 });
+    assert.ok(LYRICS_VOCAL_FLOOR > 0.1 + 0.08, "clear of the \"no words\" rule and its near-miss band");
+
+    assert.equal(applyLyrics(lib, store), applied, "cached until a song gains or loses words");
+    store.put("sung", found(210), "la la la");
+    assert.equal(applyLyrics(lib, store), applied, "more words for a song that already had them: same result");
+    store.put("monkey-wrench", { status: "none", at: 2 });
+    assert.equal(applyLyrics(lib, store).tracks[0]!.signals!.vocal_fraction, 0);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });

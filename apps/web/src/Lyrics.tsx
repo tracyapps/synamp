@@ -83,7 +83,7 @@ export default function Lyrics({ request }: { request: Request }) {
         <p className="lyrics__what muted" id={`${ids}-what`}>
           When this is on, SynAmp sends each song’s title, artist, album and length to <strong>LRCLIB</strong> (lrclib.net), a free
           community lyrics site, one song at a time. Nothing else is sent. The words are kept on your NAS for you, and never shared.
-          Songs SynAmp heard no singing in aren’t looked up.
+          Songs SynAmp heard no singing in are looked up last. Its listening sometimes misses a voice, and a song with lyrics never counts as instrumental.
         </p>
         {p.to_look_up > 0 && <p className="muted">
           {p.lookup ? <>{songs(p.to_look_up)} left to look up, {duration(p.to_look_up)} at a polite pace.</>
