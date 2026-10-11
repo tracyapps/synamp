@@ -49,8 +49,19 @@ type State = { format: "synamp.lyrics/1"; lookup: boolean; entries: Record<strin
 
 /** Ask LRCLIB again about a song it didn't know after this long. */
 export const LOOK_AGAIN_MS = 60 * 24 * 3600 * 1000;
-/** Songs the analysis heard a voice in less than this share of the time aren't looked up. */
+/** Songs the analysis heard a voice in less than this share of the time. They used to be skipped
+ *  for LRCLIB; now they're looked up last, because the analysis misses voices (see applyLyrics). */
 export const NO_VOICE = 0.05;
+/** Fewer words than this ("Instrumental", "[no lyrics]", a title) don't count as a song having words. */
+export const MIN_LYRIC_WORDS = 8;
+/**
+ * What a song with lyrics but (almost) no measured singing is raised to. Enough to rule it out of
+ * "no words" (vocal_fraction ≤ 0.10, plus its near-miss band), not a measurement of how much
+ * singing there is — so it stays eligible for "not too much singing" (≤ 0.4).
+ */
+export const LYRICS_VOCAL_FLOOR = 0.25;
+/** Words worth believing: found, and more than a word or two. */
+export const hasWords = (entry: Entry | undefined) => entry?.status === "found" && (entry.words ?? 0) >= MIN_LYRIC_WORDS;
 /** One LRCLIB request at a time, this far apart. */
 export const LOOKUP_GAP_MS = 1500;
 /** After a refusal or an outage, wait this long before asking again. */
@@ -89,6 +100,9 @@ export class LyricsStore {
   state: State;
   private dirty = 0;
 
+  /** Moves only when a song gains or loses believable words (applyLyrics caches on it). */
+  wordsRev = 0;
+
   constructor(dir: string) {
     this.dir = dir;
     let loaded: Partial<State> = {};
@@ -121,6 +135,7 @@ export class LyricsStore {
     } else if (entry.status !== "found" && existsSync(file)) {
       rmSync(file, { force: true });
     }
+    if (hasWords(this.state.entries[id]) !== hasWords(entry)) this.wordsRev++;
     this.state.entries[id] = entry;
     this.dirty++;
     this.flush(false);
@@ -198,13 +213,16 @@ export class LyricsWorker {
     if (lib.version !== this.unreadableFor) { this.unreadable.clear(); this.unreadableFor = lib.version; }
     const entries = this.store.state.entries;
     this.fileQueue = lib.tracks.filter((track) => track.path && entries[track.id]?.file_sig === undefined && !this.unreadable.has(track.id));
-    this.lookupQueue = this.store.state.lookup ? lib.tracks.filter((track) => this.wantsLookup(track)) : [];
+    // Songs the analysis heard singing in go first; "no voice" songs last (the analysis misses some voices).
+    this.lookupQueue = this.store.state.lookup
+      ? lib.tracks.filter((track) => this.wantsLookup(track)).sort((a, b) => Number(noVoice(a)) - Number(noVoice(b)))
+      : [];
   }
 
   private wantsLookup(track: LibraryTrack): boolean {
     const entry = this.store.state.entries[track.id];
     if (!entry || entry.file_sig === undefined || entry.status !== "none") return false;
-    if (!track.title || !track.artist || noVoice(track)) return false;
+    if (!track.title || !track.artist) return false;
     return entry.looked_up === undefined || this.now() - entry.looked_up >= LOOK_AGAIN_MS;
   }
 
@@ -302,11 +320,36 @@ export class LyricsWorker {
       files_to_read: this.fileQueue.length,
       to_look_up: this.store.state.lookup ? this.lookupQueue.length : lib.tracks.filter((track) => {
         const entry = entries[track.id];
-        return entry?.file_sig !== undefined && entry.status === "none" && entry.looked_up === undefined && !!track.title && !!track.artist && !noVoice(track);
+        return entry?.file_sig !== undefined && entry.status === "none" && entry.looked_up === undefined && !!track.title && !!track.artist;
       }).length,
       working_on: this.workingOn,
       problem: this.problem,
       waiting_until: this.problem && this.nextLookupAt > this.now() ? this.nextLookupAt : null,
     };
   }
+}
+
+const lyricsCache = new WeakMap<LyricsStore, { key: string; library: Library }>();
+
+/**
+ * Lyrics mean words: a song with believable lyrics (from its file or LRCLIB) is not instrumental,
+ * whatever the analysis heard. Its vocal_fraction is raised to LYRICS_VOCAL_FLOOR when lower.
+ * Songs not listened to yet are left as they are (unmeasured, so strict "no words" rules skip them
+ * anyway). Your own answers (wordchecks.ts) are applied after this and win.
+ */
+export function applyLyrics(library: Library, store: LyricsStore): Library {
+  const key = `${library.version}:${store.wordsRev}`;
+  const cached = lyricsCache.get(store);
+  if (cached?.key === key) return cached.library;
+  const entries = store.state.entries;
+  let changed = 0;
+  const tracks = library.tracks.map((track) => {
+    const vocal = track.signals?.vocal_fraction;
+    if (typeof vocal !== "number" || vocal >= LYRICS_VOCAL_FLOOR || !hasWords(entries[track.id])) return track;
+    changed++;
+    return { ...track, signals: { ...track.signals, vocal_fraction: LYRICS_VOCAL_FLOOR, instrumental: 1 - LYRICS_VOCAL_FLOOR } };
+  });
+  const result = changed ? { version: `${library.version}+l${store.wordsRev}`, tracks } : library;
+  lyricsCache.set(store, { key, library: result });
+  return result;
 }
