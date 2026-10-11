@@ -439,7 +439,9 @@ def run_analyze(
         summary["backfilled"] = queue.requeue_incomplete(stages)
 
     def run_state() -> dict:
-        remaining = db.conn.execute("SELECT COUNT(*) FROM jobs WHERE state IN ('pending', 'running')").fetchone()[0]
+        remaining = db.conn.execute(
+            "SELECT COUNT(*) FROM jobs j JOIN tracks t ON t.path = j.track_path WHERE t.missing = 0 AND j.state IN ('pending', 'running')"
+        ).fetchone()[0]
         return {
             "started_at": clock.started, "claimed": summary["claimed"], "completed": summary["completed"],
             "failed": summary["failed"],
@@ -595,25 +597,35 @@ def requeue_outdated(db: Database, queue: JobQueue) -> int:
     the revision each stage ran at (missing = 1). When the code moves a stage
     on, only that stage is redone; the others keep their values.
     """
+    queue.clear_finished_updates()
     newer = {stage: rev for stage, rev in STAGE_REVISIONS.items() if rev > 1}
     if not newer:
         return 0
     reopened = 0
+    waiting_updates: list[tuple[str, list[str]]] = []
     rows = db.conn.execute(
         "SELECT j.track_path, j.stages_done, r.payload FROM jobs j LEFT JOIN results r ON r.track_path = j.track_path"
     ).fetchall()
     for row in rows:
         done = set(json.loads(row["stages_done"] or "[]"))
-        stale = [stage for stage in newer if stage in done]
-        if not stale:
-            continue
         try:
             revisions = json.loads(row["payload"] or "{}").get("stage_revisions") or {}
         except ValueError:
             revisions = {}
-        outdated = [stage for stage in stale if int(revisions.get(stage, 1)) < newer[stage]]
+        outdated = [stage for stage in newer if stage in done and int(revisions.get(stage, 1)) < newer[stage]]
         if outdated:
             reopened += queue.reset_stages(Path(row["track_path"]), outdated)
+        # Sent back by an earlier run (before stage_updates existed) and not redone yet:
+        # the old result records the stage, so this is an update, not a first pass.
+        waiting = [stage for stage in newer if stage not in done and stage in revisions
+                   and int(revisions[stage]) < newer[stage]]
+        if waiting:
+            waiting_updates.append((row["track_path"], waiting))
+    if waiting_updates:
+        db.conn.execute("BEGIN IMMEDIATE")
+        for track_path, waiting in waiting_updates:
+            queue.note_update(track_path, waiting)
+        db.conn.execute("COMMIT")
     return reopened
 
 

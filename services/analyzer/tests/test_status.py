@@ -133,3 +133,59 @@ def test_reports_are_throttled_unless_forced(tmp_path: Path) -> None:
         assert len(brain.received) == 3
     finally:
         brain.close()
+
+
+def _fake_track(db: Database, path: str, stages: list[str], state: str = "done", missing: int = 0, revisions: dict | None = None) -> None:
+    db.conn.execute("INSERT INTO tracks (path, size_bytes, mtime, first_seen, last_seen, missing) VALUES (?, 1, 0, 0, 0, ?)", (path, missing))
+    db.conn.execute("INSERT INTO jobs (track_path, state, stages_done, updated_at) VALUES (?, ?, ?, 0)", (path, state, json.dumps(stages)))
+    if revisions is not None:
+        db.conn.execute("INSERT INTO results (track_path, payload, computed_at) VALUES (?, ?, 0)",
+                        (path, json.dumps({"track_path": path, "stage_revisions": revisions}), ))
+
+
+def test_songs_being_redone_are_reported_as_updates_not_as_unfinished(tmp_path: Path) -> None:
+    """A stage moved to a newer revision: the done count drops, and the report says why."""
+    from synamp_analyzer import pipeline
+    from synamp_analyzer.models import STAGES, STAGE_REVISIONS
+    from synamp_analyzer.queue import JobQueue
+
+    every = list(STAGES)
+    newest = dict(STAGE_REVISIONS)
+    older_voice = {**newest, "voice": newest["voice"] - 1}
+    with Database(tmp_path / "a.sqlite3") as db:
+        _fake_track(db, "/m/up-to-date.flac", every, revisions=newest)
+        _fake_track(db, "/m/old-voice.flac", every, revisions=older_voice)
+        # Sent back by an older analyzer, before updates were remembered.
+        _fake_track(db, "/m/sent-back-earlier.flac", [s for s in every if s != "voice"], state="pending", revisions=older_voice)
+        _fake_track(db, "/m/new-song.flac", ["identity"], state="pending", revisions={"identity": 1})
+        _fake_track(db, "/m/gone.flac", [], state="failed", missing=1)
+        _fake_track(db, "/m/unreadable.flac", [], state="failed")
+
+        assert pipeline.requeue_outdated(db, JobQueue(db)) == 1, "only the song still marked done is reopened"
+        snap = snapshot(db, Path("/m"))
+        assert snap["queue"]["failed"] == 1, "a song no longer on disk is not 'couldn't read'"
+        assert snap["catalog"]["missing"] == 1
+        assert snap["fully_analysed"] == 1
+        assert snap["analysed_once"] == 3, "songs only waiting for an update have been analysed once"
+        assert snap["updates"] == {"voice": {"total": 2, "waiting": 2}}
+
+        # One update finishes: it stays in the total for this run, then is cleared next run.
+        db.conn.execute("UPDATE jobs SET state = 'done', stages_done = ? WHERE track_path = '/m/old-voice.flac'", (json.dumps(every),))
+        db.conn.execute("UPDATE results SET payload = ? WHERE track_path = '/m/old-voice.flac'",
+                        (json.dumps({"track_path": "/m/old-voice.flac", "stage_revisions": newest}),))
+        assert snapshot(db, Path("/m"))["updates"] == {"voice": {"total": 2, "waiting": 1}}
+        assert pipeline.requeue_outdated(db, JobQueue(db)) == 0
+        assert snapshot(db, Path("/m"))["updates"] == {"voice": {"total": 1, "waiting": 1}}
+
+
+def test_time_left_follows_recent_speed_not_the_whole_run() -> None:
+    now = [0.0]
+    clock = RunClock(now=lambda: now[0], window=600)
+    for _ in range(10):  # slow start: 10 songs in the first hour
+        now[0] += 360
+        clock.tick()
+    for _ in range(60):  # then one song every 10 s
+        now[0] += 10
+        clock.tick()
+    assert clock.rate_per_minute() == 6.0, "rate over the last 10 minutes"
+    assert clock.eta_seconds(60) == 600.0

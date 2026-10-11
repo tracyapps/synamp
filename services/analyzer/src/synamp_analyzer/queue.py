@@ -229,9 +229,31 @@ class JobQueue:
                 """,
                 (json.dumps(sorted(done)), JobState.PENDING.value, now, row["track_path"]),
             )
+            self.note_update(row["track_path"], [stage], now)
             cleared += 1
         self.db.conn.commit()
         return cleared
+
+    def note_update(self, track_path: Path | str, stages: list[str], now: float | None = None) -> None:
+        """Remember that these stages are being redone for this track (see stage_updates)."""
+        when = time.time() if now is None else now
+        self.db.conn.executemany(
+            "INSERT OR IGNORE INTO stage_updates (track_path, stage, queued_at) VALUES (?, ?, ?)",
+            [(str(track_path), stage, when) for stage in stages],
+        )
+
+    def clear_finished_updates(self) -> int:
+        """Forget updates whose stage is done again (they belong to an earlier run)."""
+        cur = self.db.conn.execute(
+            """
+            DELETE FROM stage_updates
+             WHERE EXISTS (SELECT 1 FROM jobs j, json_each(j.stages_done) d
+                            WHERE j.track_path = stage_updates.track_path AND d.value = stage_updates.stage)
+                OR NOT EXISTS (SELECT 1 FROM jobs j WHERE j.track_path = stage_updates.track_path)
+            """
+        )
+        self.db.conn.commit()
+        return cur.rowcount or 0
 
     def reset_stages(self, track_path: Path, stages: list[str]) -> int:
         """Mark some stages not-done for one track and put it back in the queue."""
@@ -239,10 +261,12 @@ class JobQueue:
         if row is None:
             return 0
         done = set(json.loads(row["stages_done"] or "[]")) - set(stages)
+        now = time.time()
         self.db.conn.execute(
             "UPDATE jobs SET stages_done = ?, state = ?, updated_at = ? WHERE track_path = ?",
-            (json.dumps(sorted(done)), JobState.PENDING.value, time.time(), str(track_path)),
+            (json.dumps(sorted(done)), JobState.PENDING.value, now, str(track_path)),
         )
+        self.note_update(track_path, stages, now)
         self.db.conn.commit()
         return 1
 
