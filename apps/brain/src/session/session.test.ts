@@ -316,3 +316,69 @@ test("more like this moves an upcoming song next without duplicating it or losin
     assert.equal(after.index, before.index);
   } finally { env.cleanup(); }
 });
+
+test("continuous refill preserves prepared audio and requests, replaces only the adaptive tail, and survives restart", () => {
+  const { open, cleanup } = setup();
+  try {
+    const { store } = open();
+    const start = store.replaceQueue(rid(), TRACKS.slice(0, 2), { playlist_id: "focus" }, 0, undefined, { playlist_id: "focus", seeds: ["a"], since: 0 });
+    let s = store.refill(() => ({ tracks: [{ id: "c", title: "C" }, { id: "d", title: "D" }], recycled: false }));
+    const prepared = s.queue[1]!.entry_id;
+    assert.equal(s.queue.length, 4);
+    s = store.refill(() => ({ tracks: [{ id: "e", title: "E" }], recycled: false }), { replan: true });
+    assert.equal(s.queue[0]!.entry_id, start.queue[0]!.entry_id);
+    assert.equal(s.queue[1]!.entry_id, prepared);
+    assert.deepEqual(s.queue.map(e => e.track_id), ["a", "b", "e"]);
+    store.playNext(rid(), [{ id: "request", title: "Request" }]);
+    s = store.refill(() => ({ tracks: [], recycled: false }), { replan: true });
+    assert.equal(s.queue[1]!.track_id, "request");
+    assert.equal(open().store.get().continuation?.playlist_id, "focus");
+    const id = rid();
+    store.report(id, { type: "skip", entry_id: s.queue[0]!.entry_id, played_ms: 0 });
+    const retry = store.report(id, { type: "skip", entry_id: s.queue[0]!.entry_id, played_ms: 0 });
+    assert.equal(retry.duplicate, true);
+    assert.equal(retry.session.index, 1);
+  } finally { cleanup(); }
+});
+
+test("long continuous sessions stay bounded and standard queues still finish", () => {
+  const { open, cleanup } = setup();
+  try {
+    const { store } = open();
+    store.replaceQueue(rid(), TRACKS, undefined, 0, undefined, { playlist_id: "focus", seeds: ["a"], since: 0 });
+    for (let i = 0; i < 2200; i++) {
+      const s = store.refill((_, count) => ({ tracks: Array.from({ length: count }, (_, j) => ({ id: `new-${i}-${j}`, title: "New" })), recycled: false }));
+      const entry_id = s.queue[s.index]!.entry_id;
+      store.report(rid(), { type: "start", entry_id });
+      store.report(rid(), { type: "ended", entry_id, played_ms: 100 });
+    }
+    const s = store.get();
+    assert.ok(s.queue.length <= 205);
+    assert.ok(s.completed.length <= 201);
+    assert.ok(s.queue[s.index]);
+    const finite = store.replaceQueue(rid(), [TRACKS[0]!]);
+    assert.equal(finite.playback, "standard");
+    assert.equal(finite.continuation, undefined);
+    const end = store.report(rid(), { type: "skip", entry_id: finite.queue[0]!.entry_id, played_ms: 0 }).session;
+    assert.equal(store.refill(() => { throw new Error("finite queues cannot refill"); }).index, end.queue.length);
+  } finally { cleanup(); }
+});
+
+test("legacy smart sessions can upgrade without moving current/next; standard sessions cannot accidentally upgrade", () => {
+  const { dir, open, cleanup } = setup();
+  try {
+    let { store } = open();
+    const finite = store.replaceQueue(rid(), TRACKS, { playlist_id: "focus" });
+    const config = { playlist_id: "focus", seeds: ["a"], since: 0 };
+    assert.equal(store.enableContinuation(config).playback, "standard");
+    delete finite.playback;
+    writeFileSync(join(dir, "session.json"), JSON.stringify(finite));
+    store = open().store;
+    const upgraded = store.enableContinuation(config);
+    assert.equal(upgraded.playback, "continuous");
+    assert.deepEqual(upgraded.queue.map(e => e.entry_id), finite.queue.slice(0, 2).map(e => e.entry_id));
+    assert.equal(upgraded.index, finite.index);
+    assert.throws(() => store.refill(() => { throw new Error("candidate read failed"); }, { replan: true }), /candidate read failed/);
+    assert.deepEqual(store.get(), upgraded, "a failed selection cannot leave half a queue change in memory");
+  } finally { cleanup(); }
+});

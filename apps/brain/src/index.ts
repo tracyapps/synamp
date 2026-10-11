@@ -30,6 +30,7 @@ import type { EpochPolicyView, Proposal } from "./learning/types.ts";
 import { EventLog } from "./session/events.ts";
 import { deriveFeedback, FeedbackError, recordFeedback } from "./session/feedback.ts";
 import type { FeedbackInput, FeedbackView } from "./session/feedback.ts";
+import { continuationTracks } from "./session/continuation.ts";
 import { similarNext } from "./session/similar.ts";
 import { SessionError, SessionStore } from "./session/session.ts";
 import type { Session } from "./session/session.ts";
@@ -451,6 +452,44 @@ const playlists = new PlaylistStore(config.playlistDataPath, {
 });
 const explorerSelections = new ExplorerSelections();
 
+/** All clients share the same persisted adaptive horizon, including the companion. */
+function continueSession(replan = false): Session {
+  let snapshot = sessions.get();
+  if (snapshot.playback === "standard") return snapshot;
+  const sourceId = snapshot.continuation?.playlist_id ?? snapshot.queue[snapshot.index]?.source?.playlist_id;
+  const node = playlists.list().find(n => n.id === sourceId);
+  if (snapshot.playback === undefined && node?.type === "smart" && node.playback !== "standard") {
+    snapshot = sessions.enableContinuation({ playlist_id: node.id, plan_hash: node.planHash, seeds: snapshot.queue.map(e => e.track_id).slice(0, 50), since: 0 });
+  }
+  if (!snapshot.continuation) return snapshot;
+  if (!node) return sessions.refill(() => ({ tracks: [], recycled: false }), { message: "This playlist was deleted. Choose another playlist to keep going." });
+  const lib = currentLibrary();
+  const policy = policyOptions(node.id, node.type === "smart" ? node.plan : undefined);
+  const run = events.all().slice(snapshot.continuation.since).filter(e => e.session_id === snapshot.id && (!e.playlist_id || e.playlist_id === node.id))
+    .map(e => ({ ...e, track_id: library.canonicalId(e.track_id) }));
+  const blocked = new Set(policy.feedback?.removed(node.id) ?? []);
+  for (const id of policy.adaptive?.epochHides?.() ?? []) blocked.add(id);
+  const removed = new Set<string>();
+  for (const e of run) {
+    if (e.signal === "thumb_down" || e.signal === "playback_error") blocked.add(e.track_id);
+    if (e.signal === "remove") removed.add(e.track_id);
+    if (e.signal === "restore") removed.delete(e.track_id);
+  }
+  for (const id of removed) blocked.add(id);
+  try {
+    return sessions.refill((s, count) => continuationTracks(lib, {
+      seeds: s.continuation!.seeds.map(id => library.canonicalId(id)),
+      excluded: new Set((s.queue[s.index] ? s.queue.slice(s.index) : s.queue.slice(-1)).map(e => library.canonicalId(e.track_id))),
+      recent: s.queue.slice(0, s.index).map(e => library.canonicalId(e.track_id)),
+      events: run, playable: t => !!t.path && !!resolveInside(config.libraryPath, t.path), count,
+      ...(node.type === "smart" ? { plan: node.plan } : {}), policy,
+    }), { replan, blocked });
+  } catch (error) {
+    if (!(error instanceof SessionError)) throw error;
+    return sessions.refill(() => ({ tracks: [], recycled: false }), { blocked, message: error.message });
+  }
+}
+
 // --- the session brain: epoch readout, forget, cross-epoch proposals ---------
 
 /**
@@ -797,6 +836,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   }
 
   const nodePath = path.match(/^\/api\/v1\/playlists\/([^/]+)$/);
+  const playbackPath = path.match(/^\/api\/v1\/playlists\/([^/]+)\/playback$/);
   const resolvePath = path.match(/^\/api\/v1\/playlists\/([^/]+)\/resolve$/);
   const tracksPath = path.match(/^\/api\/v1\/playlists\/([^/]+)\/tracks$/);
   const trackPath = path.match(/^\/api\/v1\/playlists\/([^/]+)\/tracks\/(\d+)$/);
@@ -826,9 +866,10 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (req.method === "GET") radio.countClick(id);
     return radio.relay(req, res, station);
   }
-  if (path === "/api/v1/session" && req.method === "GET") return send(res, 200, { session: sessionView(sessions.get()) });
+  if (path === "/api/v1/session" && req.method === "GET") return send(res, 200, { session: sessionView(continueSession()) });
   if (path === "/api/v1/session/queue" && req.method === "POST") {
     const input = await body(req);
+    if (events.has(`${String(input.event_id ?? "")}:queued`)) return send(res, 200, { session: sessionView(continueSession()) });
     const shuffle = input.shuffle === true;
     // DJ mode: ordered so each song flows into the next (tempo and key), then played with longer blends.
     const dj = input.order === "dj";
@@ -884,13 +925,18 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (typeof input.playlist_id !== "string") throw new SessionError("playlist_id, album_key, artist or track_ids is required");
     const node = playlists.list().find((item) => item.id === input.playlist_id);
     if (!node) throw new PlaylistError("Playlist node not found", 404);
-    // A snapshot: later membership changes do not touch what is queued.
+    // Fixed playback remains a snapshot; smart playback starts a short adaptive horizon.
     // Shuffle works on anything, folders included: every playlist inside, mixed together.
     const start = Number(input.start_index ?? 0);
     const tracks = order(playlists.resolve(node.id), start);
-    const session = sessions.replaceQueue(String(input.event_id ?? ""), tracks,
-      { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, startAt(start), mix);
-    return send(res, 200, { session: sessionView(session) });
+    if (input.playback !== undefined && input.playback !== "standard" && input.playback !== "continuous") throw new SessionError("Choose standard or continuous playback");
+    const continuous = (input.playback ?? node.playback ?? (node.type === "smart" ? "continuous" : "standard")) === "continuous";
+    const offset = Math.min(Math.max(0, Math.trunc(startAt(start)) || 0), Math.max(0, tracks.length - 1));
+    const initial = continuous && node.type === "smart" ? tracks.slice(offset, offset + 2) : tracks;
+    sessions.replaceQueue(String(input.event_id ?? ""), initial,
+      { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, continuous && node.type === "smart" ? 0 : offset, mix,
+      continuous ? { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}), seeds: tracks.map(t => t.id).slice(0, 50), since: events.all().length } : undefined);
+    return send(res, 200, { session: sessionView(continueSession()) });
   }
   if (path === "/api/v1/session/more-like-this" && req.method === "POST") {
     const input = await body(req);
@@ -918,7 +964,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const input = await body(req);
     const result = sessions.report(String(input.event_id ?? ""), input.report);
     afterEvents(result.derived);
-    return send(res, 200, { session: sessionView(result.session), derived: result.derived.map((event) => event.signal), duplicate: result.duplicate });
+    return send(res, 200, { session: sessionView(continueSession(result.derived.some(e => e.signal === "skip_early"))), derived: result.derived.map((event) => event.signal), duplicate: result.duplicate });
   }
   if (path === "/api/v1/feedback" && req.method === "POST") {
     const input = (await body(req)) as unknown as FeedbackInput;
@@ -931,7 +977,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
         if (index >= 0) { playlists.removeTrack(node.id, index); playlistsChanged(); }
       }
     }
-    return send(res, result.duplicate ? 200 : 201, { event: result.event, duplicate: result.duplicate });
+    return send(res, result.duplicate ? 200 : 201, { event: result.event, duplicate: result.duplicate, session: sessionView(continueSession(!result.duplicate)) });
   }
   // --- library health: analyzer progress (pushed from the Mac) + index stats ---
   if (path === "/api/v1/analysis/progress" && req.method === "POST") {
@@ -1473,6 +1519,10 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const node = playlists.create((await body(req)) as CreateNode);
     playlistsChanged();
     return send(res, 201, { node });
+  }
+  if (playbackPath && req.method === "POST") {
+    const input = await body(req);
+    return send(res, 200, { node: playlists.setPlayback(playbackPath[1]!, input.playback) });
   }
   if (resolvePath && req.method === "GET") {
     return send(res, 200, { tracks: playlists.resolve(resolvePath[1]!) });

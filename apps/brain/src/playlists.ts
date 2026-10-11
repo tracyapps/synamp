@@ -5,7 +5,8 @@ import { validatePlan } from "./query/plan.ts";
 import type { QueryPlan } from "./query/plan.ts";
 
 export type TrackRef = { id: string; title: string; artist?: string };
-type BaseNode = { id: string; name: string; parentId: string | null };
+export type PlaybackMode = "standard" | "continuous";
+type BaseNode = { id: string; name: string; parentId: string | null; playback?: PlaybackMode };
 export type PlaylistNode =
   | (BaseNode & { type: "folder" })
   | (BaseNode & { type: "playlist"; tracks: TrackRef[] })
@@ -112,6 +113,16 @@ export class PlaylistStore {
     const previous = this.nodes;
     this.nodes = [...previous, node];
     try { this.save(); } catch (error) { this.nodes = previous; throw error; }
+    return structuredClone(node);
+  }
+
+  /** Change how this collection plays without replacing its saved songs or rules. */
+  setPlayback(id: string, playback: unknown): PlaylistNode {
+    if (playback !== "standard" && playback !== "continuous") throw new PlaylistError("Choose standard or continuous playback");
+    const node = this.get(id);
+    const previous = node.playback;
+    node.playback = playback;
+    try { this.save(); } catch (error) { if (previous) node.playback = previous; else delete node.playback; throw error; }
     return structuredClone(node);
   }
 

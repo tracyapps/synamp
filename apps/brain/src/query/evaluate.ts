@@ -286,6 +286,10 @@ function widen(plan: QueryPlan, target: string, by: number): { plan: QueryPlan; 
 }
 
 export type EvaluateOptions = {
+  /** Restrict candidates before ranking/caps; the full library still supplies exemplar measurements. */
+  candidateIds?: ReadonlySet<string>;
+  /** Optional playback eligibility, checked in ranked order before consuming a cap. */
+  acceptCandidate?: (track: LibraryTrack) => boolean;
   /** Listening feedback. Re-ranks within the strict tier and hides removed tracks; never adds a track. */
   feedback?: FeedbackView;
   /** The saved playlist being evaluated, for playlist-scoped feedback. */
@@ -365,6 +369,8 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library, options
   const hiddenBySession = pass.strict.filter((row) => epochHiddenIds.has(row.track.id) && !removedIds.has(row.track.id)).length;
   if (hiddenIds.size) pass = { ...pass, strict: pass.strict.filter((row) => !hiddenIds.has(row.track.id)) };
 
+  if (options.candidateIds) pass = { ...pass, strict: pass.strict.filter(row => options.candidateIds!.has(row.track.id)) };
+
   // --- scoring ---
   const soft = plan.constraints.filter((item) => !item.hard);
   const signals = plan.ranking.signals.length ? plan.ranking.signals : [{ name: "feature_soft" as const, weight: 1 }];
@@ -429,7 +435,7 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library, options
   const perAlbum = new Map<string, number>();
   const chosen: typeof scored = [];
   let capped = 0;
-  const pool = [...scored];
+  const pool = lambda === undefined ? [...scored].reverse() : [...scored];
   while (chosen.length < target && pool.length) {
     let pick = 0;
     if (lambda !== undefined && chosen.length) {
@@ -441,12 +447,13 @@ export function evaluatePlan(validated: ValidatedPlan, library: Library, options
         if (value > best) { best = value; pick = index; }
       });
     }
-    const [item] = pool.splice(pick, 1);
+    const item = lambda === undefined ? pool.pop() : pool.splice(pick, 1)[0];
     const track = item!.row.track;
     const artist = track.artist?.toLowerCase();
     const album = track.album ? `${artist ?? ""}\u0000${track.album.toLowerCase()}` : undefined;
     if ((artist && caps.max_per_artist && (perArtist.get(artist) ?? 0) >= caps.max_per_artist) ||
         (album && caps.max_per_album && (perAlbum.get(album) ?? 0) >= caps.max_per_album)) { capped++; continue; }
+    if (options.acceptCandidate && !options.acceptCandidate(track)) continue;
     if (artist) perArtist.set(artist, (perArtist.get(artist) ?? 0) + 1);
     if (album) perAlbum.set(album, (perAlbum.get(album) ?? 0) + 1);
     chosen.push(item!);

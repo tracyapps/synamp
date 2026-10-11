@@ -32,7 +32,7 @@ export type QueueEntry = {
   /** DJ mode: why this song follows the one before. */
   dj_note?: string;
 };
-export type SessionView = { id: string; queue: QueueEntry[]; index: number; state: "idle" | "playing" | "paused"; mix?: "dj" };
+export type SessionView = { id: string; queue: QueueEntry[]; index: number; state: "idle" | "playing" | "paused"; mix?: "dj"; playback?: "standard" | "continuous"; continuation?: { message?: string } };
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
 
 const clock = (seconds: number) => {
@@ -182,7 +182,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
 
   const from = current?.source ? playlistName(current.source.playlist_id) ?? "playlist" : undefined;
   const view: PlayerView | null = session?.queue.length && !away ? {
-    title: current?.title ?? "End of queue", artist: current?.artist, available: !!current, canUndo: !!undo, loved: !!current?.loved || (!!current && lovedTracks.has(current.track_id)),
+    title: current?.title ?? (session?.continuation ? "No matching songs left" : "End of queue"), artist: current?.artist, available: !!current, canUndo: !!undo, loved: !!current?.loved || (!!current && lovedTracks.has(current.track_id)),
     paused, busy, transitioning: fading, action, status: fading ? `Crossfading… ${status}` : status, playlist: from,
   } : null;
   const viewKey = JSON.stringify(view);
@@ -240,13 +240,19 @@ export default function Player({ request, session, onSession, playlistName, onCh
       result = await send(); // same event id: retry cannot skip twice
     }
     if (latest.current.current?.entry_id !== target.entry_id) return;
-    if (engine.current?.isPlaying()) engine.current.skip(upNext?.playable ? skipBlendSeconds(prefs, session!.mix) : 0);
+    const following = result.session.queue[result.session.index];
+    if (engine.current?.isPlaying()) {
+      const updatedPlan = transitionFor(target, following, prefs, result.session.mix, lighter, memory);
+      engine.current.setPlan(item(target), item(following), updatedPlan.transition, updatedPlan.decode);
+      engine.current.skip(following?.playable ? skipBlendSeconds(prefs, result.session.mix) : 0);
+    }
     onSession(result.session);
+    return following;
   }
   const next = async () => {
     if (actionLock.current || !current) return;
     actionLock.current = true; setBusy(true); setAction("next"); setStatus(`Skipping “${current.title}”…`);
-    try { await advance(); setStatus(`Skipped “${current.title}”.${upNext ? ` Playing next: ${upNext.title}.` : " End of queue."}`); }
+    try { const following = await advance(); setStatus(`Skipped “${current.title}”.${following ? ` Playing next: ${following.title}.` : session.continuation ? " No other songs currently match this mix." : " End of queue."}`); }
     catch (error) { setStatus(`Couldn’t skip: ${(error as Error).message}`); }
     finally { actionLock.current = false; setBusy(false); }
   };
@@ -280,11 +286,13 @@ export default function Player({ request, session, onSession, playlistName, onCh
         ...(reason ? { reason } : {}),
         ...(signal === "remove" || (signal === "thumb_down" && playlist_id) ? { scope: "playlist", playlist_id } : {}),
       });
-      const send = () => request("/feedback", { method: "POST", body });
-      try { await send(); } catch { await send(); }
+      const send = () => request<{ session?: SessionView }>("/feedback", { method: "POST", body });
+      let result;
+      try { result = await send(); } catch { result = await send(); }
+      if (result.session) { latest.current = { current: result.session.queue[result.session.index], session: result.session }; onSession(result.session); }
       saved = true;
       const where = playlist_id ? playlistName(playlist_id) ?? "this playlist" : "your library";
-      if (signal === "love") { setLovedTracks(before => new Set([...before, target.track_id])); setStatus(`Loved “${target.title}”. More of this in future mixes.`); }
+      if (signal === "love") { setLovedTracks(before => new Set([...before, target.track_id])); setStatus(`Loved “${target.title}”. ${session?.continuation ? "Guiding upcoming songs." : "More of this in future mixes."}`); }
       else {
         if (signal === "remove" && playlist_id) { setUndo({ track_id: target.track_id, playlist_id }); onChanged(); }
         await advance(target);
@@ -309,8 +317,8 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const restore = async () => {
     if (!undo || actionLock.current) return;
     actionLock.current = true; setBusy(true);
-    await request("/feedback", { method: "POST", body: JSON.stringify({ event_id: newId(), signal: "restore", track_id: undo.track_id, scope: "playlist", playlist_id: undo.playlist_id }) })
-      .then(() => { setStatus("Restored."); setUndo(null); onChanged(); })
+    await request<{ session?: SessionView }>("/feedback", { method: "POST", body: JSON.stringify({ event_id: newId(), signal: "restore", track_id: undo.track_id, scope: "playlist", playlist_id: undo.playlist_id }) })
+      .then(result => { if (result.session) onSession(result.session); setStatus("Restored."); setUndo(null); onChanged(); })
       .catch((cause) => setStatus((cause as Error).message))
       .finally(() => { actionLock.current = false; setBusy(false); });
   };
@@ -323,12 +331,13 @@ export default function Player({ request, session, onSession, playlistName, onCh
       <div className="player__now">
         <span className="player__cover" aria-hidden="true" />
         <div className="player__text">
-          {finished ? <p className="player__title">End of queue</p> : <>
+          {finished ? <p className="player__title">{session.continuation ? "No matching songs left" : "End of queue"}</p> : <>
             <p className="player__title">{current?.title}</p>
-            <p className="player__meta">{current?.artist ? `${current.artist} · ` : ""}{session.index + 1} of {session.queue.length}{from ? ` · from ${from}` : ""}{current?.requested_by ? ` · asked for by ${current.requested_by}` : ""}
+            <p className="player__meta">{current?.artist ? `${current.artist} · ` : ""}{session.continuation ? "Smart mix · keeps going" : `${session.index + 1} of ${session.queue.length}`}{from ? ` · from ${from}` : ""}{current?.requested_by ? ` · asked for by ${current.requested_by}` : ""}
               {session.mix === "dj" && <> · <span className="player__dj">DJ set{current?.bpm ? ` · ${Math.round(current.bpm)} BPM` : ""}{current?.camelot ? ` · ${current.camelot}` : ""}</span></>}
               {loading && <> · <span aria-live="polite">loading…</span></>}</p>
           </>}
+          {session.continuation?.message && <p className="player__meta" role="status">{session.continuation.message}</p>}
         </div>
       </div>
       <div className="player__transport">

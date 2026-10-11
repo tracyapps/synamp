@@ -99,3 +99,17 @@ test("smart playlists store the plan, resolve live, and reject invalid plans", (
     assert.throws(() => store.resolve(offline.id), /need a library source/);
   } finally { cleanup(); }
 });
+
+test("standard/continuous preference persists without converting or losing the starting songs", () => {
+  const { store, path, cleanup } = fixture();
+  try {
+    const node = store.create({ type: "playlist", name: "My songs" });
+    store.addTrack(node.id, { id: "a", title: "A" });
+    assert.equal(store.setPlayback(node.id, "continuous").playback, "continuous");
+    assert.equal(new PlaylistStore(path).list()[0]!.playback, "continuous");
+    assert.deepEqual(store.resolve(node.id), [{ id: "a", title: "A" }]);
+    store.setPlayback(node.id, "standard");
+    assert.equal(store.list()[0]!.type, "playlist");
+    assert.throws(() => store.setPlayback(node.id, "unknown"), /Choose standard/);
+  } finally { cleanup(); }
+});

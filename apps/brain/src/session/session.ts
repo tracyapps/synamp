@@ -7,8 +7,8 @@
  * player today, a party display or a Subsonic bridge later — agree.
  *
  * Two promises:
- *   - A queue is a SNAPSHOT. Starting a playlist copies its tracks; a smart
- *     playlist that changes membership later does not reshuffle what is playing.
+ *   - Standard queues are snapshots. Continuous queues preserve the current
+ *     and prepared next song while replenishing a short adaptive horizon.
  *   - Not every stop is a dislike. Errors, seeks, interruptions and replacing
  *     the queue are recorded but never become negative feedback.
  */
@@ -27,9 +27,13 @@ export type QueueEntry = {
   source?: { playlist_id: string; plan_hash?: string; rank: number };
   /** A party guest asked for it (their name, if they gave one). */
   requested_by?: string;
+  /** Automatically selected continuation; explicit requests remain fixed. */
+  generated?: boolean;
   /** DJ mode: why this song follows the one before ("same key · +2 BPM"). */
   dj_note?: string;
 };
+
+export type Continuation = { playlist_id: string; plan_hash?: string; seeds: string[]; since: number; message?: string };
 
 export type Session = {
   id: string;
@@ -44,6 +48,8 @@ export type Session = {
   policy_version: string;
   /** "dj": played as a DJ set (ordered by tempo and key, longer blends). */
   mix?: "dj";
+  playback?: "standard" | "continuous";
+  continuation?: Continuation;
 };
 
 export type Report =
@@ -135,7 +141,7 @@ export class SessionStore {
   }
 
   /** Replace the queue with a snapshot of `tracks`. Exposure is logged; nothing is inferred from it. */
-  replaceQueue(reportId: string, tracks: Array<{ id: string; title: string; artist?: string; dj_note?: string }>, source?: { playlist_id: string; plan_hash?: string }, startIndex = 0, mix?: "dj"): Session {
+  replaceQueue(reportId: string, tracks: Array<{ id: string; title: string; artist?: string; dj_note?: string }>, source?: { playlist_id: string; plan_hash?: string }, startIndex = 0, mix?: "dj", continuation?: Continuation): Session {
     if (typeof reportId !== "string" || !/^[A-Za-z0-9_-]{8,80}$/.test(reportId)) throw new SessionError("event_id must be 8–80 URL-safe characters");
     if (this.log.has(`${reportId}:queued`)) return this.get();
     if (!tracks.length) throw new SessionError("Nothing to play in that playlist");
@@ -146,6 +152,8 @@ export class SessionStore {
       ...(source ? { source: { ...source, rank } } : {}),
       ...(track.dj_note ? { dj_note: track.dj_note } : {}),
     }));
+    this.session.playback = continuation ? "continuous" : "standard";
+    if (continuation) this.session.continuation = structuredClone(continuation); else delete this.session.continuation;
     if (mix) this.session.mix = mix; else delete this.session.mix;
     this.session.index = Math.min(Math.max(0, Math.trunc(startIndex)), this.session.queue.length - 1);
     this.session.state = "paused";
@@ -170,7 +178,7 @@ export class SessionStore {
     const entries: QueueEntry[] = tracks.slice(0, 200).map((track) => {
       if (options.moveExisting) {
         const index = this.session.queue.findIndex((entry, index) => index > this.session.index && entry.track_id === track.id);
-        if (index >= 0) return this.session.queue.splice(index, 1)[0]!;
+        if (index >= 0) { const entry = this.session.queue.splice(index, 1)[0]!; delete entry.generated; return entry; }
       }
       return {
         entry_id: randomUUID(), track_id: track.id, title: track.title,
@@ -184,6 +192,49 @@ export class SessionStore {
     if (this.session.queue.length > 2000) this.session.queue.length = 2000;
     entries.forEach((entry, offset) => this.record(`${reportId}:next:${offset}`, "exposure", entry, { detail: { policy: "play_next" } }));
     this.log.append({ id: `${reportId}:next`, ts: Date.now(), signal: "receipt", track_id: entries[0]!.track_id, scope: "none", session_id: this.session.id, source: "server", policy_version: POLICY_VERSION });
+    this.save();
+    return this.get();
+  }
+
+  /** Upgrade a pre-continuation smart session without interrupting prepared audio. */
+  enableContinuation(continuation: Continuation): Session {
+    if (this.session.playback !== undefined) return this.get();
+    this.session.playback = "continuous";
+    this.session.continuation = structuredClone(continuation);
+    this.session.queue.splice(this.session.index + 2);
+    this.save();
+    return this.get();
+  }
+
+  /** Replenish the adaptive horizon. Current/prepared next entries retain their
+   * IDs; explicit requests and saved starting songs are never re-ranked. */
+  refill(select: (snapshot: Session, count: number) => { tracks: Array<{ id: string; title: string; artist?: string }>; recycled: boolean }, options: { replan?: boolean; blocked?: ReadonlySet<string>; message?: string } = {}): Session {
+    if (!this.session.continuation) return this.get();
+    const s = this.get();
+    s.queue = s.queue.filter((entry, index) => index <= s.index || (!options.blocked?.has(entry.track_id) && (!options.replan || !entry.generated || index === s.index + 1)));
+    // Keep useful Previous history without allowing an endless session to grow forever.
+    if (s.index > 200) {
+      const drop = s.index - 200;
+      s.queue.splice(0, drop); s.index -= drop;
+      const retained = new Set(s.queue.map(e => e.entry_id));
+      s.completed = s.completed.filter(id => retained.has(id));
+    }
+    const count = Math.max(0, 3 - Math.max(0, s.queue.length - s.index - 1));
+    const result = count ? select(s, count) : { tracks: [], recycled: false };
+    const entries: QueueEntry[] = result.tracks.slice(0, count).map((track, offset) => ({
+      entry_id: randomUUID(), track_id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}),
+      generated: true, source: { playlist_id: s.continuation!.playlist_id, ...(s.continuation!.plan_hash ? { plan_hash: s.continuation!.plan_hash } : {}), rank: s.queue.length + offset },
+    }));
+    s.queue.push(...entries);
+    if (s.index < s.queue.length && s.state === "idle") s.state = "paused";
+    const message = options.message ?? (count && !entries.length && !s.queue[s.index + 1]
+      ? "No other playable songs currently match this mix. Restore a song or change the playlist’s rules to continue."
+      : result.recycled ? "The eligible songs have cycled; mixing them again."
+      : !count && s.continuation!.message?.includes("cycled") ? s.continuation!.message : undefined);
+    if (message) s.continuation!.message = message; else delete s.continuation!.message;
+    if (JSON.stringify(s) === JSON.stringify(this.session)) return this.get();
+    this.session = s;
+    for (const entry of entries) this.record(`continuation:${entry.entry_id}`, "exposure", entry, { detail: { policy: "adaptive_continuation" } });
     this.save();
     return this.get();
   }

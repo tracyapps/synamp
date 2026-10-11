@@ -183,12 +183,15 @@ playlist persistence integration. Preserve manual and roll-up behavior.
    Reject `ignore_never_relax`; do not automatically widen an explicit exclusion.
 6. Store the canonical plan and stable hash, store/index/model versions and
    deterministic reasons. Refresh membership on relevant data/version changes.
-   Keep playback queue snapshots separate from changing playlist membership.
+   Keep standard playback snapshots separate from changing playlist membership.
+   Continuous playback preserves current/prepared-next audio and refreshes only
+   its automatic future selections (see CONTINUOUS-PLAYBACK.md).
 
 Exit: fixture-based flagship prompt obeys every exclusion, including after ANN
 union and re-ranking; zero/two results are honest; malformed/unsupported plans
 fail usefully; aliases round-trip; hash is stable under irrelevant object order;
-new analyzed tracks refresh saved plans without changing an in-flight queue.
+new analyzed tracks refresh saved plans without changing an in-flight standard
+queue or interrupting prepared audio in continuous playback.
 Do not describe fixtures as proof of classifier accuracy on real music.
 
 ## P3 — Playback and personal feedback
@@ -800,3 +803,12 @@ and Cher — plausibly alike in sound).
   404 asked again after 60 days; 429/5xx back off 10 min). `GET/POST /api/v1/lyrics`, `GET /api/v1/lyrics/track?id=`.
   Settings → Lyrics card (switch says exactly what is sent).
 - Next: theme search over the lyrics (local text embeddings), `has_lyrics` signal, lyrics in the player.
+
+
+### 2026-10-11 — Continuous smart playback (local implementation)
+
+- Smart query playlists now default to a replenished adaptive queue. Every saved collection can choose Standard playlist or Smart mix; manual saved songs remain intact and play before library additions.
+- The server owns refill, feedback-guided selection, safe repeat cycling, removal/error suppression, and bounded history. The current/prepared-next entries and explicit requests remain stable. Hard rules do not relax to fill a shortage.
+- See [CONTINUOUS-PLAYBACK.md](CONTINUOUS-PLAYBACK.md) for exact ownership, data/API contracts, acceptance checks, and release limitations.
+- Local evidence: 45 focused checks, including 2,200 consecutive advances, plus the real Brain/Player/Playlists browser harness with generated audio. Brain type checking and web production build pass. The broader Brain run retains the unrelated artist-merge capitalization failure and one skipped check.
+- Next: owner-library workday listening, recommendation/variety assessment, Brain restart during an active mix, and installed companion behavior before release. No deployment performed by this change.

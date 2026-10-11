@@ -70,6 +70,7 @@ short: The Brain
 goal: The part nobody else has: "make me a playlist that sounds like this."
 - [~] Listens to every song in your library: tempo, energy, loudness, rhythm
 - [x] Learns from what you skip, love and remove
+- [~] Smart mixes keep adding songs as you listen; play any saved playlist once or let it keep going
 - [~] Clear feedback beside the buttons, automatic next song after a rejection, and “more like this” for the next song
 - [x] Double-check the measurements yourself: tap along to the beat
 - [~] Knows which songs have words, and which have piano (or guitar, or horns)

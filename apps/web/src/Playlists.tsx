@@ -19,6 +19,7 @@ export type PlaylistNode = {
   name: string;
   parentId: string | null;
   type: "folder" | "playlist" | "rollup" | "smart";
+  playback?: "standard" | "continuous";
   prompt?: string;
   plan?: { constraints: Array<{ id: string; source_phrase: string }> };
   tracks?: Track[];
@@ -51,6 +52,8 @@ export default function Playlists({ request, upload, nodes, loading, refreshNode
   const [resolved, setResolved] = useState<Track[]>([]);
   const [explain, setExplain] = useState<Evaluation | null>(null);
   const [error, setError] = useState("");
+  const [savingPlayback, setSavingPlayback] = useState(false);
+  const [playbackStatus, setPlaybackStatus] = useState<{ id: string; text: string } | null>(null);
   const [name, setName] = useState("");
   const [kind, setKind] = useState<Kind>("playlist");
   const [parentId, setParentId] = useState("");
@@ -124,6 +127,18 @@ export default function Playlists({ request, upload, nodes, loading, refreshNode
     } catch (cause) { setError((cause as Error).message); }
   }
 
+  async function savePlayback(playback: "standard" | "continuous") {
+    if (!selected || savingPlayback) return;
+    const id = selected.id;
+    setSavingPlayback(true); setError(""); setPlaybackStatus({ id, text: "Saving playback choice…" });
+    try {
+      await api(`/${id}/playback`, { method: "POST", body: JSON.stringify({ playback }) });
+      await refreshNodes();
+      setPlaybackStatus({ id, text: playback === "continuous" ? "Saved. Press Play to start a smart mix that keeps going." : "Saved. Press Play to play this list once." });
+    } catch (cause) { setError((cause as Error).message); setPlaybackStatus(null); }
+    finally { setSavingPlayback(false); }
+  }
+
   const playSelected = (how: "order" | "shuffle" | "dj" = "order") => selected && play({ playlist_id: selected.id, ...(how === "shuffle" ? { shuffle: true } : how === "dj" ? { order: "dj" } : {}) })
     .catch((cause) => setError((cause as Error).message));
 
@@ -161,14 +176,21 @@ export default function Playlists({ request, upload, nodes, loading, refreshNode
             <div className="section-card__head">
               <div><p className="eyebrow">{TYPE_NAME[selected.type]}</p><h2 className="section-card__title workshop__name">{selected.name}</h2></div>
               <div className="cluster">
-                <button type="button" className="btn btn--primary" onClick={() => playSelected()}><Icon name="play" />Play</button>
-                <button type="button" className="btn btn--ghost" onClick={() => playSelected("shuffle")}><Icon name="shuffle" />{selected.type === "folder" ? "Shuffle everything inside" : "Shuffle"}</button>
-                <button type="button" className="btn btn--ghost" onClick={() => playSelected("dj")} aria-describedby="dj-set-hint"><Icon name="rollup" />Play as a DJ set</button>
+                <button type="button" className="btn btn--primary" disabled={savingPlayback} onClick={() => playSelected()}><Icon name="play" />Play</button>
+                <button type="button" className="btn btn--ghost" disabled={savingPlayback} onClick={() => playSelected("shuffle")}><Icon name="shuffle" />{selected.type === "folder" ? "Shuffle everything inside" : "Shuffle"}</button>
+                <button type="button" className="btn btn--ghost" disabled={savingPlayback} onClick={() => playSelected("dj")} aria-describedby="dj-set-hint"><Icon name="rollup" />Play as a DJ set</button>
                 <span id="dj-set-hint" className="visually-hidden">Orders the songs so each flows into the next, by tempo and key, with longer blends between them.</span>
                 <button type="button" className="btn btn--ghost btn--sm" onClick={removeNode}>Delete</button>
               </div>
             </div>
             <div className="section-card__body">
+              <fieldset className="playlist-playback" disabled={savingPlayback} aria-describedby="playlist-playback-hint">
+                <legend>How should this playlist play?</legend>
+                <label><input type="radio" name={`playback-${selected.id}`} value="standard" checked={(selected.playback ?? (selected.type === "smart" ? "continuous" : "standard")) === "standard"} onChange={() => savePlayback("standard")} />Standard playlist <small>Play the list once</small></label>
+                <label><input type="radio" name={`playback-${selected.id}`} value="continuous" checked={(selected.playback ?? (selected.type === "smart" ? "continuous" : "standard")) === "continuous"} onChange={() => savePlayback("continuous")} />Smart mix <small>Keep going, guided by your feedback</small></label>
+                <p id="playlist-playback-hint" className="muted">{selected.type === "smart" ? "Smart mixes keep finding songs within your playlist’s rules." : "Your saved songs play first, then SynAmp adds more from your library. Your saved list stays yours."} Loves steer new choices; skips and “Not for this” guide the mix. This choice applies when you next press Play.</p>
+                <p className="muted" role="status">{playbackStatus?.id === selected.id ? playbackStatus.text : ""}</p>
+              </fieldset>
               {selected.type === "rollup" && <p className="muted">{selected.mode === "merge" ? "Merged in order" : selected.mode === "shuffle" ? "Shuffled" : "Interleaved"} · from {nodes.find((node) => node.id === selected.sourceId)?.name ?? "a missing source"}</p>}
               {selected.type === "playlist" && <SongPicker request={request} onPick={addTrack} />}
               {selected.type === "folder" && <p className="muted">Play runs every playlist inside, in order; Shuffle mixes them all together, folders inside folders included. To keep a mix like that, make a roll-up of this folder.</p>}
