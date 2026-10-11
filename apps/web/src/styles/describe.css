@@ -92,3 +92,17 @@
 .describe__picked li { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); overflow-wrap: anywhere; }
 .describe__found button { width: 100%; justify-content: flex-start; text-align: left; white-space: normal; }
 .describe__found-name { font-weight: 400; }
+
+/* Checking a preview song by song (hear a clip, leave out, why). */
+.describe__review-hint { margin: 14px 0 0; }
+.smart-list__review { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.smart-list__clip[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+/* Left out: dimmed and struck through, with the words "Left out" too, so it isn't colour or strike alone. */
+.smart-list > li.is-left-out .track-title { text-decoration: line-through; text-decoration-thickness: 1px; color: var(--muted); }
+.smart-list > li.is-left-out .track-number { opacity: .5; }
+.smart-list__out { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.smart-list__why { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; }
+.describe__said { min-height: 1.4em; margin: 10px 0 0; font-size: 14px; }
+@media (pointer: coarse) {
+  .smart-list__review .btn, .smart-list__why .chip { min-height: 44px; }
+}

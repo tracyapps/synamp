@@ -44,7 +44,8 @@ export type Signal =
 export type Scope = "global" | "playlist" | "session" | "none";
 
 /** Optional reason the listener can attach to a negative. */
-export type Reason = "wrong_energy" | "wrong_vibe" | "not_now";
+/** has_words: left out of a playlist because it has words (also recorded as a word check). */
+export type Reason = "wrong_energy" | "wrong_vibe" | "not_now" | "has_words";
 
 export type ListeningEvent = {
   /** Client-supplied for reports (retries dedupe on it); server-made for derived events. */

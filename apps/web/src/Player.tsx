@@ -4,6 +4,7 @@ import { newId } from "./ids";
 import Icon from "./ui/Icon";
 import { audioContext, setActiveAudio } from "./visuals/audio-graph";
 import { streamUrl, usePrefs, wantsLighter, writePrefs } from "./playback-prefs";
+import { CLIP_EVENT, stopClip, type ClipState } from "./preview-clip";
 import { PlaybackEngine } from "./audio/engine";
 import type { Gapless, Item } from "./audio/engine";
 import { skipBlendSeconds, transitionFor } from "./audio/transition";
@@ -174,6 +175,9 @@ export default function Player({ request, session, onSession, playlistName, onCh
     if (!current?.playable) return;
     const sound = ensureEngine();
     if (sound.isPlaying()) { sound.pause(); report(entryBody("pause")); return; }
+    // Pressing play yourself ends any preview clip, and the player doesn't wait for it.
+    resumeAfterClip.current = false;
+    stopClip();
     setStatus("");
     if (!sound.currentId()) sound.setPlan(item(current), item(upNext), plan.transition, plan.decode);
     sound.play();
@@ -203,6 +207,17 @@ export default function Player({ request, session, onSession, playlistName, onCh
     setPosition(seconds);
   };
   controls.current = { toggle, next, previous, seek: seekTo };
+  // A preview clip (Describe) pauses what's playing; it carries on when the clip ends.
+  const resumeAfterClip = useRef(false);
+  useEffect(() => {
+    const on = (event: Event) => {
+      const playing = (event as CustomEvent<ClipState>).detail.trackId !== null;
+      if (playing && engine.current?.isPlaying()) { resumeAfterClip.current = true; controls.current.toggle?.(); }
+      else if (!playing && resumeAfterClip.current) { resumeAfterClip.current = false; controls.current.toggle?.(); }
+    };
+    window.addEventListener(CLIP_EVENT, on);
+    return () => window.removeEventListener(CLIP_EVENT, on);
+  }, []);
 
   async function feedback(signal: "love" | "thumb_down" | "remove" | "restore", extra: Record<string, unknown> = {}, target = current) {
     if (!target) return;
