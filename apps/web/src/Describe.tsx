@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import "./styles/describe.css";
 import { Callout } from "./ui/kit";
+import { newId } from "./ids";
+import { playClip, stopClip, useClip } from "./preview-clip";
 
 /* Shapes mirror apps/brain/src/query/evaluate.ts — kept minimal on purpose. */
 type ResultTrack = {
@@ -129,15 +131,55 @@ function InterpretationView({ interpretation }: { interpretation: Interpretation
   );
 }
 
-function TrackList({ tracks, nearMiss = false }: { tracks: ResultTrack[]; nearMiss?: boolean }) {
+/** Why a song doesn't fit. "has_words" also tells SynAmp the song has words (POST /library/words). */
+export type LeaveOutReason = "has_words" | "wrong_energy" | "wrong_vibe";
+/** Optional: none pressed means "just not this one". */
+const REASON_WORDS: Array<[LeaveOutReason, string]> = [
+  ["has_words", "It has words"], ["wrong_energy", "Wrong energy"], ["wrong_vibe", "Wrong mood"],
+];
+/** Checking a preview song by song: hear a clip, leave a song out, say why. */
+export type Review = {
+  leftOut: Map<string, LeaveOutReason | null>;
+  onLeaveOut: (track: ResultTrack) => void;
+  onPutBack: (track: ResultTrack) => void;
+  onReason: (track: ResultTrack, reason: LeaveOutReason | null) => void;
+  onClip: (track: ResultTrack) => void;
+};
+
+function TrackList({ tracks, nearMiss = false, review }: { tracks: ResultTrack[]; nearMiss?: boolean; review?: Review }) {
+  const clipping = useClip();
   return (
     <ol className="smart-list">
-      {tracks.map((track, index) => (
-        <li key={track.id}>
+      {tracks.map((track, index) => {
+        const out = review?.leftOut.has(track.id) ?? false;
+        const reason = review?.leftOut.get(track.id) ?? null;
+        return (
+        <li key={track.id} className={out ? "is-left-out" : undefined}>
           <span className="track-number" aria-hidden="true">{index + 1}</span>
           <div className="smart-list__body">
             <span className="track-title">{track.title}<small>{[track.artist, track.album].filter(Boolean).join(" · ") || track.id}</small></span>
             {nearMiss && track.near_miss && <p className="smart-list__miss">{track.near_miss.label}</p>}
+            {out && <p className="smart-list__out">Left out of this playlist.</p>}
+            {review && (
+              <div className="smart-list__review">
+                <button type="button" className="btn btn--ghost btn--sm smart-list__clip" aria-pressed={clipping === track.id}
+                  aria-label={`Hear a clip of ${track.title}`} onClick={() => review.onClip(track)}>
+                  <span aria-hidden="true">{clipping === track.id ? "■" : "▶"}</span> Hear a clip
+                </button>
+                {out
+                  ? <button type="button" className="btn btn--ghost btn--sm" aria-label={`Put it back: ${track.title}`} onClick={() => review.onPutBack(track)}>Put it back</button>
+                  : <button type="button" className="btn btn--ghost btn--sm" aria-label={`Doesn’t fit: ${track.title}`} onClick={() => review.onLeaveOut(track)}>Doesn’t fit</button>}
+              </div>
+            )}
+            {review && out && (
+              <div className="smart-list__why" role="group" aria-label={`Why doesn’t ${track.title} fit? Optional`}>
+                <span className="muted" aria-hidden="true">Why? (optional)</span>
+                {REASON_WORDS.map(([value, words]) => (
+                  <button type="button" key={words} className="chip" aria-pressed={reason === value}
+                    onClick={() => review.onReason(track, value)}>{words}</button>
+                ))}
+              </div>
+            )}
             <details>
               <summary>Why {nearMiss ? "it was close" : "it’s here"}</summary>
               <ul>
@@ -147,13 +189,14 @@ function TrackList({ tracks, nearMiss = false }: { tracks: ResultTrack[]; nearMi
             </details>
           </div>
         </li>
-      ))}
+        );
+      })}
     </ol>
   );
 }
 
 /** Renders an evaluation: strict tier, honest counts, then the separate near-miss tier. */
-export function ResultView({ result, labels, onRestore }: { result: Evaluation; labels?: Record<string, string>; onRestore?: (trackId: string) => void }) {
+export function ResultView({ result, labels, onRestore, review }: { result: Evaluation; labels?: Record<string, string>; onRestore?: (trackId: string) => void; review?: Review }) {
   const [showNear, setShowNear] = useState(false);
   const nearId = useId();
   const name = (id: string) => labels?.[id] ? `“${labels[id]}”` : id;
@@ -203,7 +246,7 @@ export function ResultView({ result, labels, onRestore }: { result: Evaluation; 
       {result.sequencing_applied && result.sequencing_applied.length > 0 && (
         <p className="muted describe__sequencing">Order: {result.sequencing_applied.join("; ")}</p>
       )}
-      {result.strict.length > 0 ? <TrackList tracks={result.strict} /> : <p className="muted">No track satisfies every rule yet.</p>}
+      {result.strict.length > 0 ? <TrackList tracks={result.strict} review={review} /> : <p className="muted">No track satisfies every rule yet.</p>}
       {onRestore && result.hidden.length > 0 && (
         <details className="hidden-by-you">
           <summary>Removed by you ({result.hidden.length})</summary>
@@ -289,13 +332,52 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
   const [draft, setDraft] = useState<DraftResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [leftOut, setLeftOut] = useState<Map<string, LeaveOutReason | null>>(new Map());
+  const [said, setSaid] = useState("");
   const promptId = useId();
+  // A clip shouldn't outlive the preview it came from.
+  useEffect(() => () => stopClip(), []);
+
+  const leave = (id: string, reason: LeaveOutReason | null | undefined) => setLeftOut((now) => {
+    const next = new Map(now);
+    if (reason === undefined) next.delete(id); else next.set(id, reason);
+    return next;
+  });
+  /** "It has words" is a fact about the song, so it's told to SynAmp straight away (and taken back if you change your mind). */
+  const tellWords = (track: ResultTrack, has: boolean) =>
+    request(has ? "/library/words" : "/library/words/forget", { method: "POST", body: JSON.stringify(has ? { track_id: track.id, words: "has_words" } : { track_id: track.id }) })
+      .catch(() => undefined);
+  const review: Review = {
+    leftOut,
+    onLeaveOut: (track) => { leave(track.id, null); setSaid(`${track.title} left out. Say why if you like — it helps SynAmp learn.`); },
+    onPutBack: (track) => { leave(track.id, undefined); setSaid(`${track.title} is back in.`); },
+    onReason: (track, reason) => {
+      const before = leftOut.get(track.id) ?? null;
+      const next = before === reason ? null : reason; // pressing the chosen reason again clears it
+      leave(track.id, next);
+      if (next === "has_words") { void tellWords(track, true); setSaid(`Noted: ${track.title} has words. It won’t count as instrumental from now on.`); }
+      else {
+        if (before === "has_words") void tellWords(track, false);
+        setSaid(next ? `Noted for ${track.title}.` : "");
+      }
+    },
+    onClip: async (track) => {
+      setSaid("");
+      if (clipping === track.id) { stopClip(); return; }
+      try {
+        const clip = await request<{ stream_url: string; start_s: number; seconds: number }>("/listening/clip", { method: "POST", body: JSON.stringify({ track_id: track.id }) });
+        await playClip(track.id, clip.stream_url, clip.start_s, clip.seconds, setSaid);
+      } catch (cause) { setSaid((cause as Error).message); }
+    },
+  };
+  const clipping = useClip();
 
   async function preview(event?: React.FormEvent, text = prompt) {
     event?.preventDefault();
     if (!text.trim() && !like.length) return;
     setBusy(true); setError("");
     try {
+      stopClip(); setLeftOut(new Map()); setSaid("");
       setDraft(await request<DraftResponse>("/plans/draft", { method: "POST", body: JSON.stringify({ prompt: text, like: like.map((track) => track.id) }) }));
       if (!name) setName((text.trim() ? text.replace(/[.!?].*$/, "") : `Like ${like.map((track) => track.title).join(" and ")}`).slice(0, 60));
     } catch (cause) { setError((cause as Error).message); } finally { setBusy(false); }
@@ -309,6 +391,12 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
         method: "POST",
         body: JSON.stringify({ type: "smart", name: name.trim() || "Smart playlist", plan: draft.validation.plan, prompt }),
       });
+      // Songs you left out stay out of this playlist (Playlists → "Removed by you" can put them back).
+      await Promise.all([...leftOut].map(([trackId, reason]) => request("/feedback", {
+        method: "POST",
+        body: JSON.stringify({ event_id: newId(), signal: "remove", track_id: trackId, scope: "playlist", playlist_id: result.node.id, ...(reason ? { reason } : {}) }),
+      })));
+      stopClip();
       onSaved(result.node.id);
     } catch (cause) { setError((cause as Error).message); } finally { setBusy(false); }
   }
@@ -352,11 +440,13 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
             <p className="muted describe__parser">{draft.parser}</p>
           </div>
           {draft.preview && <>
-            <ResultView result={draft.preview} labels={labels} />
+            {draft.preview.strict.length > 0 && <p className="muted describe__review-hint">Check it before you save: hear a clip of any song, and mark the ones that don’t fit. They’ll stay out of this playlist.</p>}
+            <ResultView result={draft.preview} labels={labels} review={review} />
+            <p className="describe__said" role="status">{said}</p>
             <div className="describe__save">
               <label>Playlist name<input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} /></label>
               <button className="btn btn--primary" onClick={save} disabled={busy}>Save as smart playlist</button>
-              <p className="muted">Saves the rules, not the tracks — newly analysed music joins automatically.</p>
+              <p className="muted">Saves the rules, not the tracks — newly analysed music joins automatically.{leftOut.size > 0 && ` ${leftOut.size === 1 ? "The song" : `The ${leftOut.size} songs`} you left out stay out.`}</p>
             </div>
           </>}
         </div>

@@ -44,7 +44,7 @@ export class FeedbackError extends Error {
 }
 
 const SIGNALS: readonly ExplicitSignal[] = ["love", "thumb_up", "thumb_down", "remove", "restore"];
-const REASONS: readonly Reason[] = ["wrong_energy", "wrong_vibe", "not_now"];
+const REASONS: readonly Reason[] = ["wrong_energy", "wrong_vibe", "not_now", "has_words"];
 
 export function recordFeedback(log: EventLog, input: FeedbackInput): { event: ListeningEvent; duplicate: boolean } {
   if (!input || typeof input !== "object") throw new FeedbackError("Invalid feedback");

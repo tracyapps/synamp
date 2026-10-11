@@ -49,6 +49,8 @@ import { RuntimeSettings, SettingsError } from "./settings.ts";
 import { VersionCheck } from "./version.ts";
 import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
 import { MoodCheckError, MoodChecks } from "./library/moodcheck.ts";
+import { WordCheckError, WordChecks } from "./library/wordchecks.ts";
+import { clipWindow } from "./session/clip.ts";
 import { LyricsError, LyricsStore, LyricsWorker, lrclib } from "./library/lyrics.ts";
 import { FavouriteError, Favourites, syncStars } from "./library/favourites.ts";
 import { favouriteWeight, withFavourites } from "./learning/favourite-prior.ts";
@@ -267,9 +269,11 @@ setInterval(() => playlistsChanged(0), 30 * 60_000).unref();
 const spotChecks = new SpotChecks(join(dataDir, "spotchecks.json"));
 /** "How does this feel?": your answers, the yardstick for the mood readings. */
 const moodChecks = new MoodChecks(join(dataDir, "moodchecks.json"));
+/** "It has words" / "no words": your answers beat the Mac's guess (vocal_fraction, instrumental). */
+const wordChecks = new WordChecks(join(dataDir, "wordchecks.json"));
 /** As analysed (moved files followed), before your tempo corrections. */
 function measuredLibrary() { return overlay.apply(library.get()); }
-function currentLibrary() { return spotChecks.apply(measuredLibrary()); }
+function currentLibrary() { return wordChecks.apply(spotChecks.apply(measuredLibrary())); }
 /** Lyrics: from the song files, then (only when switched on) from LRCLIB. */
 const lyricsStore = new LyricsStore(join(dataDir, "lyrics"));
 const lyrics = new LyricsWorker({ store: lyricsStore, root: config.libraryPath, library: () => currentLibrary(), lookup: lrclib("SynAmp (https://synamp.app)") });
@@ -968,6 +972,19 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/library/search" && req.method === "GET") {
     return send(res, 200, searchTracks(currentLibrary(), url.searchParams.get("q") ?? "", Number(url.searchParams.get("limit") ?? 50)));
   }
+  // --- "it has words" / "no words": your answers about songs ---------------------------
+  if (path === "/api/v1/library/words" && req.method === "GET") return send(res, 200, wordChecks.summary());
+  if (path === "/api/v1/library/words" && req.method === "POST") {
+    const input = await body(req);
+    const track = measuredLibrary().tracks.find((item) => item.id === input.track_id);
+    if (!track) throw new WordCheckError("No song with that id", 404);
+    const check = wordChecks.record(track, input.words);
+    return send(res, 200, { checked: { id: track.id, ...check }, summary: wordChecks.summary() });
+  }
+  if (path === "/api/v1/library/words/forget" && req.method === "POST") {
+    wordChecks.forget(String((await body(req)).track_id ?? ""));
+    return send(res, 200, { summary: wordChecks.summary() });
+  }
   if (path === "/api/v1/library/health" && req.method === "GET") {
     return send(res, 200, { analysis: analysisStatus.view(), library: libraryStats(currentLibrary()) });
   }
@@ -1288,6 +1305,13 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   }
 
   // Can this brain make lighter streams (is ffmpeg here)? The Settings screen says so either way.
+  // A short clip for checking a playlist preview by ear (Describe → "Hear a clip").
+  if (path === "/api/v1/listening/clip" && req.method === "POST") {
+    const input = await body(req);
+    const track = currentLibrary().tracks.find((item) => item.id === input.track_id);
+    if (!track?.path) return send(res, 404, { error: "That song has no audio file to play" });
+    return send(res, 200, { track_id: track.id, stream_url: signer.url(track.id), ...clipWindow(track.duration_s ?? track.audio_duration_s) });
+  }
   if (path === "/api/v1/listening/streams" && req.method === "GET") return send(res, 200, { lighter: lighterAvailable(), kbps: LIGHTER_KBPS });
   if (path === "/api/v1/listening" && req.method === "GET") {
     const external = events.all().filter((event) => event.source === "subsonic");
@@ -1554,7 +1578,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof MoodCheckError || error instanceof LyricsError || error instanceof FavouriteError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof MoodCheckError || error instanceof WordCheckError || error instanceof LyricsError || error instanceof FavouriteError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
