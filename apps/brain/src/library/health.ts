@@ -48,6 +48,14 @@ export function cleanProgress(input: unknown, now = Date.now()): Progress {
     stage_order: order,
     stages: Object.fromEntries(order.map((stage) => [stage, count(stages[stage])])),
     fully_analysed: count(input.fully_analysed),
+    // Older analyzers don't send these; then every song not fully analysed counts as not yet done.
+    analysed_once: count(input.analysed_once ?? input.fully_analysed),
+    updates: Object.fromEntries((isObject(input.updates) ? Object.entries(input.updates) : [])
+      .filter(([stage, value]) => order.includes(stage) && isObject(value))
+      .map(([stage, value]) => {
+        const update = value as Record<string, unknown>;
+        return [stage, { total: count(update.total), waiting: Math.min(count(update.waiting), count(update.total)) }];
+      })),
     fingerprints: isObject(input.fingerprints) ? Object.fromEntries(Object.entries(input.fingerprints).slice(0, 10).map(([k, v]) => [k.slice(0, 40), count(v)])) : {},
     recent_failures: Array.isArray(input.recent_failures) ? input.recent_failures.slice(0, 20).filter(isObject).map((f) => ({
       path: text(f.path) ?? "", error: text(f.error) ?? "", attempts: count(f.attempts),

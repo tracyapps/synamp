@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import socket
 import time
+from collections import deque
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -26,17 +27,34 @@ REPORT_FORMAT = "synamp.analysis-progress/1"
 def snapshot(db: Database, library_root: Path, failures: int = 20) -> dict:
     conn = db.conn
     catalog = conn.execute("SELECT COUNT(*) AS total, COALESCE(SUM(missing), 0) AS missing FROM tracks").fetchone()
-    queue = {row["state"]: row["n"] for row in conn.execute("SELECT state, COUNT(*) AS n FROM jobs GROUP BY state")}
-    stages = {stage: 0 for stage in STAGES}
-    complete = 0
+    # Songs no longer on disk keep their jobs (so a moved song keeps its history); leave them out.
+    queue = {row["state"]: row["n"] for row in conn.execute(
+        "SELECT j.state, COUNT(*) AS n FROM jobs j JOIN tracks t ON t.path = j.track_path WHERE t.missing = 0 GROUP BY j.state"
+    )}
+    redo: dict[str, set[str]] = {}
     for row in conn.execute(
-        "SELECT j.stages_done FROM jobs j JOIN tracks t ON t.path = j.track_path WHERE t.missing = 0"
+        "SELECT u.track_path, u.stage FROM stage_updates u JOIN tracks t ON t.path = u.track_path WHERE t.missing = 0"
+    ):
+        redo.setdefault(row["track_path"], set()).add(row["stage"])
+    stages = {stage: 0 for stage in STAGES}
+    updates = {stage: {"total": 0, "waiting": 0} for stage in STAGES}
+    complete = 0
+    once = 0
+    for row in conn.execute(
+        "SELECT j.track_path, j.stages_done FROM jobs j JOIN tracks t ON t.path = j.track_path WHERE t.missing = 0"
     ):
         done = set(json.loads(row["stages_done"] or "[]"))
         for stage in done & stages.keys():
             stages[stage] += 1
+        being_redone = redo.get(row["track_path"], set()) & stages.keys()
+        for stage in being_redone:
+            updates[stage]["total"] += 1
+            if stage not in done:
+                updates[stage]["waiting"] += 1
         if set(STAGES) <= done:
             complete += 1
+        if set(STAGES) <= done | being_redone:
+            once += 1
     fingerprints: dict[str, int] = {}
     try:
         for row in conn.execute(
@@ -63,24 +81,41 @@ def snapshot(db: Database, library_root: Path, failures: int = 20) -> dict:
         "stages": stages,
         "stage_order": list(STAGES),
         "fully_analysed": complete,
+        # Every stage done at least once (some may be getting redone with newer code).
+        "analysed_once": once,
+        "updates": {stage: counts for stage, counts in updates.items() if counts["total"]},
         "fingerprints": fingerprints,
         "recent_failures": recent,
     }
 
 
 class RunClock:
-    """Rate and time-left for the current run, from jobs actually finished in it."""
+    """Rate and time-left for the current run, from jobs actually finished in it.
 
-    def __init__(self, now=time.time):
+    The rate is taken over the last `window` seconds, not the whole run: speed
+    changes during a run (memory settings, "while I'm away" mode, a pause for a
+    library update), and an all-run average lags behind for hours.
+    """
+
+    def __init__(self, now=time.time, window: float = 30 * 60):
         self.now = now
         self.started = now()
         self.finished = 0
+        self.window = window
+        self.recent: deque[float] = deque()
 
     def tick(self) -> None:
         self.finished += 1
+        self.recent.append(self.now())
 
     def rate_per_minute(self) -> float | None:
-        elapsed = self.now() - self.started
+        now = self.now()
+        while self.recent and now - self.recent[0] >= self.window:
+            self.recent.popleft()
+        span = min(self.window, now - self.started)
+        if len(self.recent) >= 3 and span > 0:
+            return len(self.recent) / span * 60
+        elapsed = now - self.started
         return (self.finished / elapsed) * 60 if self.finished >= 3 and elapsed > 0 else None
 
     def eta_seconds(self, remaining: int) -> float | None:

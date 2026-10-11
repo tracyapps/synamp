@@ -24,6 +24,18 @@ test("progress reports are type-checked and trimmed to what the UI uses", () => 
   assert.throws(() => cleanProgress({ format: "other" }), /Expected a synamp.analysis-progress\/1 report/);
 });
 
+test("songs being redone with newer code are passed on as updates", () => {
+  const old = cleanProgress(report());
+  assert.equal(old.analysed_once, 55, "an older analyzer: analysed once = fully analysed");
+  assert.deepEqual(old.updates, {});
+  const clean = cleanProgress(report({
+    analysed_once: 96,
+    updates: { beat: { total: 41, waiting: 50 }, unknown_stage: { total: 1, waiting: 1 }, dsp_core: "lots" },
+  }));
+  assert.equal(clean.analysed_once, 96);
+  assert.deepEqual(clean.updates, { beat: { total: 41, waiting: 41 } }, "waiting never exceeds total; unknown stages dropped");
+});
+
 test("the latest report survives a restart, and silence while analysing shows as stale", () => {
   const dir = mkdtempSync(join(tmpdir(), "synamp-health-"));
   try {

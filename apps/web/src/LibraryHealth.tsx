@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import "./styles/library-health.css";
+import { STAGE_NAMES, summarise, timeLeft as duration, type StageUpdate } from "./analysis-progress";
 
 /* Library health: analysis progress (reported by the analyzer on the Mac) and what the library index shows. */
 
@@ -10,6 +11,7 @@ type Analysis =
     catalog: { tracks: number; present: number; missing: number };
     queue: { pending: number; running: number; done: number; failed: number };
     stage_order: string[]; stages: Record<string, number>; fully_analysed: number;
+    analysed_once?: number; updates?: Record<string, StageUpdate>;
     fingerprints: Record<string, number>;
     recent_failures: Array<{ path: string; error: string; attempts: number }>;
     run: { completed: number; failed: number; reused: number; remaining: number; current: string; rate_per_minute: number | null; eta_seconds: number | null };
@@ -38,21 +40,8 @@ const ACTION_NAMES: Record<Command["action"], string> = {
 const STATUS_NAMES: Record<string, string> = { done: "Done", failed: "Didn’t work", stopped: "Paused", cancelled: "Cancelled" };
 type Request = <T>(path: string, options?: RequestInit) => Promise<T>;
 
-const STAGE_NAMES: Record<string, string> = {
-  identity: "Recognising songs (identity)",
-  dsp_core: "Sound measurements",
-  beat: "Beat & timing",
-  voice: "Singing & instruments",
-};
 const n = (value: number) => value.toLocaleString();
 const pct = (part: number, whole: number) => (whole ? Math.min(100, (100 * part) / whole) : 0);
-function duration(seconds: number): string {
-  if (seconds < 90) return "about a minute";
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `about ${minutes} min`;
-  const hours = Math.floor(minutes / 60), rest = minutes % 60;
-  return hours < 48 ? `about ${hours} h${rest ? ` ${rest} min` : ""}` : `about ${Math.round(hours / 24)} days`;
-}
 /** "26,300 of 46,151 (57%)", or "" before the count is known. */
 const listProgress = (activity: NonNullable<Command["activity"]>) =>
   activity.total ? `${n(activity.done ?? 0)} of ${n(activity.total)} (${Math.floor(100 * (activity.done ?? 0) / activity.total)}%)` : "";
@@ -101,6 +90,8 @@ export default function LibraryHealth({ request }: { request: Request }) {
 
   let headline: string;
   let detail = "";
+  const summary = a.reported ? summarise(a, { current: a.run.current }) : null;
+  const bar = summary?.bar ?? null;
   const listUpdate = control?.running?.activity;
   if (listUpdate && control?.running?.action === "analyze") {
     // Analysis stops reporting while this runs, so say why rather than "stopped reporting".
@@ -112,26 +103,21 @@ export default function LibraryHealth({ request }: { request: Request }) {
   } else if (a.stale) {
     headline = `Analysis stopped reporting ${ago(a.age_ms)}.`;
     detail = "The Mac may be asleep or the run was stopped. It picks up where it left off when it runs again.";
-  } else if (a.state === "analyzing") {
-    headline = `Analysing your library — ${n(a.fully_analysed)} of ${n(a.catalog.present)} tracks done`;
-    detail = [a.run.eta_seconds !== null ? `${duration(a.run.eta_seconds)} left` : "estimating time left…",
-      a.run.current ? `now: ${a.run.current}` : ""].filter(Boolean).join(" · ");
   } else {
-    headline = `${n(a.fully_analysed)} of ${n(a.catalog.present)} tracks fully analysed`;
-    detail = `Last report ${ago(a.age_ms)} from ${a.host}.`;
+    headline = summary!.headline;
+    detail = [summary!.detail, a.state === "idle" ? `Last report ${ago(a.age_ms)} from ${a.host}.` : ""].filter(Boolean).join(" ");
   }
 
   return (
     <section className="panel health" aria-labelledby={`${detailsId}-title`}>
       <div className="health__summary">
         <div className="health__text">
-          <p className="eyebrow" id={`${detailsId}-title`}>Library</p>
+          <h2 className="eyebrow" id={`${detailsId}-title`}>Library</h2>
           <p className="health__headline" aria-live="polite">{headline}</p>
           {detail && <p className="health__detail">{detail}</p>}
         </div>
-        {a.reported && (
-          <progress className="health__bar" max={a.catalog.present || 1} value={a.fully_analysed}
-            aria-label={`Fully analysed: ${n(a.fully_analysed)} of ${n(a.catalog.present)} tracks`} />
+        {a.reported && bar && (
+          <progress className="health__bar" max={bar.max} value={bar.value} aria-label={bar.label} />
         )}
         <button type="button" className="btn btn--ghost btn--sm" aria-expanded={open} aria-controls={detailsId} onClick={() => setOpen(!open)}>
           {open ? "Hide details" : "Details"}
@@ -144,7 +130,8 @@ export default function LibraryHealth({ request }: { request: Request }) {
           <ul className="health__stages">
             {a.stage_order.map((stage) => (
               <li key={stage}>
-                <span>{STAGE_NAMES[stage] ?? stage}</span>
+                <span>{STAGE_NAMES[stage] ?? stage}{(a.updates?.[stage]?.waiting ?? 0) > 0 &&
+                  <span className="health__updating"> · updating {n(a.updates![stage]!.waiting)}</span>}</span>
                 <progress max={a.catalog.present || 1} value={a.stages[stage] ?? 0} aria-label={`${STAGE_NAMES[stage] ?? stage}: ${n(a.stages[stage] ?? 0)} of ${n(a.catalog.present)}`} />
                 <span className="health__num">{pct(a.stages[stage] ?? 0, a.catalog.present).toFixed(0)}%</span>
               </li>
@@ -154,7 +141,7 @@ export default function LibraryHealth({ request }: { request: Request }) {
             <div><dt>Waiting</dt><dd>{n(a.queue.pending + a.queue.running)}</dd></div>
             <div><dt>Couldn’t read</dt><dd>{n(a.queue.failed)}</dd></div>
             <div><dt>Missing from disk</dt><dd>{n(a.catalog.missing)}</dd></div>
-            {a.run.rate_per_minute !== null && <div><dt>Speed</dt><dd>{a.run.rate_per_minute.toFixed(1)} tracks/min</dd></div>}
+            {a.run.rate_per_minute !== null && <div><dt>Speed</dt><dd>{a.run.rate_per_minute.toFixed(1)} songs/min</dd></div>}
             {a.run.reused > 0 && <div><dt>Recognised, not re-analysed</dt><dd>{n(a.run.reused)}</dd></div>}
           </dl>
           {(a.fingerprints.tool_missing ?? 0) > 0 && (

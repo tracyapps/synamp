@@ -2,7 +2,7 @@
 
 .panel.health { padding: 18px 24px; }
 .health__summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 260px) auto; gap: 18px; align-items: center; }
-.health__text .eyebrow { margin: 0 0 4px; }
+.health__text .eyebrow { margin: 0 0 4px; font-weight: inherit; }
 .health__headline { margin: 0; font: 400 17px var(--font-display); }
 .health__detail { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
 
@@ -45,3 +45,4 @@
 .health__jobs li { padding: 6px 0; border-top: 1px solid var(--hair); }
 .health__job-summary { display: block; color: var(--muted); font-size: 13px; }
 .health__list-bar { max-width: 40ch; margin: 4px 0 0; }
+.health__updating { color: var(--muted); font-size: 13px; }

@@ -66,6 +66,18 @@ CREATE TABLE IF NOT EXISTS results (
     analyzer_version TEXT,
     computed_at REAL    NOT NULL
 );
+
+-- Stages sent back to be redone with newer code (a stage revision moved on, or
+-- a stage was cleared on request). Lets progress say "updating 20,000 songs"
+-- instead of the done count dropping with no reason given. A row is finished
+-- once its stage is back in jobs.stages_done; finished rows are cleared at the
+-- start of the next run.
+CREATE TABLE IF NOT EXISTS stage_updates (
+    track_path  TEXT NOT NULL,
+    stage       TEXT NOT NULL,
+    queued_at   REAL NOT NULL,
+    PRIMARY KEY (track_path, stage)
+);
 """
 
 
