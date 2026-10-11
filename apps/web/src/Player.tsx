@@ -144,6 +144,18 @@ export default function Player({ request, session, onSession, playlistName, onCh
 
   // Lock screen, headphone buttons and media keys (Media Session API).
   const controls = useRef<{ toggle?: () => void; next?: () => void; previous?: () => void; seek?: (seconds: number) => void }>({});
+  // A preview clip (Describe) pauses what's playing; it carries on when the clip ends.
+  // Hooks stay above the early return below (no queue): React needs the same hooks on every render.
+  const resumeAfterClip = useRef(false);
+  useEffect(() => {
+    const on = (event: Event) => {
+      const playing = (event as CustomEvent<ClipState>).detail.trackId !== null;
+      if (playing && engine.current?.isPlaying()) { resumeAfterClip.current = true; controls.current.toggle?.(); }
+      else if (!playing && resumeAfterClip.current) { resumeAfterClip.current = false; controls.current.toggle?.(); }
+    };
+    window.addEventListener(CLIP_EVENT, on);
+    return () => window.removeEventListener(CLIP_EVENT, on);
+  }, []);
   useEffect(() => {
     if (!("mediaSession" in navigator)) return;
     const media = navigator.mediaSession;
@@ -207,17 +219,6 @@ export default function Player({ request, session, onSession, playlistName, onCh
     setPosition(seconds);
   };
   controls.current = { toggle, next, previous, seek: seekTo };
-  // A preview clip (Describe) pauses what's playing; it carries on when the clip ends.
-  const resumeAfterClip = useRef(false);
-  useEffect(() => {
-    const on = (event: Event) => {
-      const playing = (event as CustomEvent<ClipState>).detail.trackId !== null;
-      if (playing && engine.current?.isPlaying()) { resumeAfterClip.current = true; controls.current.toggle?.(); }
-      else if (!playing && resumeAfterClip.current) { resumeAfterClip.current = false; controls.current.toggle?.(); }
-    };
-    window.addEventListener(CLIP_EVENT, on);
-    return () => window.removeEventListener(CLIP_EVENT, on);
-  }, []);
 
   async function feedback(signal: "love" | "thumb_down" | "remove" | "restore", extra: Record<string, unknown> = {}, target = current) {
     if (!target) return;
