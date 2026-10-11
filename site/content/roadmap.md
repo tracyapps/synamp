@@ -114,6 +114,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-10 — Songs with lyrics no longer count as instrumental, even when SynAmp’s listening missed the voice (about 530 songs in the first library it was tried on). With LRCLIB switched on, SynAmp now also looks up words for songs it heard no singing in, last
 - 2026-10-10 — Playlist previews: hear a 30-second clip of any song before you save (whatever was playing pauses, then carries on), and mark songs that don’t fit. They stay out of that playlist, and if you say “it has words”, SynAmp stops counting that song as instrumental everywhere
 - 2026-10-09 — Library: group by two things at once (say, decade then artist) in folding sections, tick a whole group or single songs, then play, shuffle, play next, add to a playlist, favourite or tidy them in one go; in the table, artist and album names go to their pages
 - 2026-10-09 — Favourites: heart artists, albums and songs, show just your favourites in the Library, and see them as favourites in your phone apps too (stars there come back here). The Brain gives them a small head start that fades as it learns what you want right now

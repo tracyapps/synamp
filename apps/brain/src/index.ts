@@ -51,7 +51,7 @@ import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
 import { MoodCheckError, MoodChecks } from "./library/moodcheck.ts";
 import { WordCheckError, WordChecks } from "./library/wordchecks.ts";
 import { clipWindow } from "./session/clip.ts";
-import { LyricsError, LyricsStore, LyricsWorker, lrclib } from "./library/lyrics.ts";
+import { applyLyrics, LyricsError, LyricsStore, LyricsWorker, lrclib } from "./library/lyrics.ts";
 import { FavouriteError, Favourites, syncStars } from "./library/favourites.ts";
 import { favouriteWeight, withFavourites } from "./learning/favourite-prior.ts";
 import { otherAppPlays, pingCore, SetupError, SetupStore } from "./setup.ts";
@@ -273,9 +273,10 @@ const moodChecks = new MoodChecks(join(dataDir, "moodchecks.json"));
 const wordChecks = new WordChecks(join(dataDir, "wordchecks.json"));
 /** As analysed (moved files followed), before your tempo corrections. */
 function measuredLibrary() { return overlay.apply(library.get()); }
-function currentLibrary() { return wordChecks.apply(spotChecks.apply(measuredLibrary())); }
 /** Lyrics: from the song files, then (only when switched on) from LRCLIB. */
 const lyricsStore = new LyricsStore(join(dataDir, "lyrics"));
+/** Measurements, then your tempo checks, then "lyrics mean words", then your own answers about words (they win). */
+function currentLibrary() { return wordChecks.apply(applyLyrics(spotChecks.apply(measuredLibrary()), lyricsStore)); }
 const lyrics = new LyricsWorker({ store: lyricsStore, root: config.libraryPath, library: () => currentLibrary(), lookup: lrclib("SynAmp (https://synamp.app)") });
 lyrics.start();
 /** The analyzer on the Mac takes its orders from here (Library strip buttons). */
