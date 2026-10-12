@@ -48,7 +48,45 @@ export function albumFolder(path: string): string {
   return folder;
 }
 
+const VARIOUS = /^(?:various(?: artists)?|va|v\.a\.)$/i;
+const COMPILATION_FOLDER = /^(?:various(?: artists)?|va|v\.a\.|compilations?|soundtracks?)$/i;
+
+/**
+ * Who an album folder is credited to. The album-artist tag wins only when the
+ * folder's tags agree on it: a compilation where a few songs carry their own
+ * performer's album-artist tag (2 of 486 saying "Naughty by Nature") must not
+ * be filed under that performer. Then the track artist, if most songs share
+ * one; then "Various Artists" for a mixed folder; then the top-level folder.
+ */
+export function albumCredit(key: string, tracks: LibraryTrack[]): string {
+  const tagged = tracks.filter((t) => t.album_artist).length;
+  const albumArtist = majority(tracks.map((t) => t.album_artist));
+  if (albumArtist) {
+    const votes = Math.round(albumArtist.share * tracks.length);
+    const agreed = votes / tagged >= 2 / 3 && votes >= tracks.length / 4;
+    if (albumArtist.share >= 0.5 || agreed) return VARIOUS.test(albumArtist.value.trim()) ? "Various Artists" : albumArtist.value;
+  }
+  const artist = majority(tracks.map((t) => t.artist));
+  if (artist && artist.share > 0.5) return artist.value;
+  const parent = posix.dirname(key);
+  if (parent !== "." && COMPILATION_FOLDER.test(posix.basename(parent))) return "Various Artists";
+  if (tracks.length > 2 && artist) return "Various Artists";
+  return albumArtist?.value ?? key.split("/")[0]!;
+}
+
+/**
+ * Grouping 46,000 tracks takes a few hundred milliseconds, and several pages ask
+ * on every request, so the last answer is kept for each library list. Treat the
+ * result as read-only: copy before sorting or changing it.
+ */
+const grouped = new WeakMap<Library, AlbumUnit[]>();
 export function groupAlbums(library: Library): AlbumUnit[] {
+  let units = grouped.get(library);
+  if (!units) { units = groupAlbumsNow(library); grouped.set(library, units); }
+  return units;
+}
+
+function groupAlbumsNow(library: Library): AlbumUnit[] {
   const folders = new Map<string, LibraryTrack[]>();
   for (const track of library.tracks) {
     if (!track.path) continue;
@@ -62,15 +100,12 @@ export function groupAlbums(library: Library): AlbumUnit[] {
   return [...folders].map(([key, tracks]) => {
     const folderName = posix.basename(key);
     const album = majority(tracks.map((t) => t.album));
-    const albumArtist = majority(tracks.map((t) => t.album_artist));
-    const artist = majority(tracks.map((t) => t.artist));
     const year = majority(tracks.map((t) => t.year));
     const yearInName = folderName.match(YEAR_SUFFIX);
     const mbid = majority(tracks.map((t) => t.mb_albumid));
     const title = album && album.share >= 0.5 ? album.value : folderName.replace(YEAR_SUFFIX, "");
-    const who = albumArtist?.value ?? (artist && artist.share > 0.5 ? artist.value : tracks.length > 2 && artist ? "Various Artists" : key.split("/")[0]!);
     return {
-      key, title, artist: who, tracks,
+      key, title, artist: albumCredit(key, tracks), tracks,
       ...(year ? { year: year.value } : yearInName ? { year: Number(yearInName[1]) } : {}),
       ...(mbid && mbid.share >= 0.5 ? { mb_albumid: mbid.value } : {}),
       fingerprint: createHash("sha256").update(tracks.map((t) => t.id).sort().join("\n")).digest("hex").slice(0, 16),

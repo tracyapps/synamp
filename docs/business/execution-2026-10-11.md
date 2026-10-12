@@ -290,3 +290,38 @@ but one Explorer request took 3.698 seconds. Another grouped/sorted Explorer
 request took 2.083 seconds and delayed a simultaneous health request 1.958
 seconds. Synchronous Explorer work is a separate outstanding responsiveness
 issue; these observations do not identify the original HTTP 499 cause.
+
+## October 12: compilation credit, album grouping cost, public roadmap
+
+Follows up the deferred "Various Artists/The 90's (1994)" finding above.
+
+- **Credit rule (B02/B05 trust).** `albumCredit` in
+  `apps/brain/src/library/albums.ts` accepts an album-artist tag only when it
+  covers half the folder, or when the tagged songs agree on it (at least two
+  thirds of them) and cover at least a quarter of the folder. Otherwise: the
+  track artist if most songs share one; "Various Artists" when the parent folder
+  is a Various Artists/VA/Compilations/Soundtracks folder or the folder is mixed;
+  then the top-level folder. "VA"-style tags read as "Various Artists", so the
+  missing-tracks matcher no longer searches MusicBrainz under one performer's
+  name for a compilation. Album keys (folders) are unchanged, so no stored
+  match, playlist or listening identity moves. Partly tagged single-artist
+  albums with guest credits keep their album artist (tested).
+- **Grouping cost (B05 responsiveness).** On a synthetic 46,000-track list,
+  `groupAlbums` took about 280 ms and was recomputed on each Library care,
+  missing-tracks, song-details, discography and progress request. It is now kept
+  per library object (a `WeakMap`), so overlays that produce a new library list
+  regroup and unchanged lists don't. This is a synthetic measurement in a Linux
+  container, not an owner-NAS benchmark, and it does not address the separately
+  observed slow Explorer filter/sort requests.
+- **Public roadmap (B08).** Added the "Ready for your server" phase with the
+  install, first-listen, update/rollback, tested-restore and quality-report
+  outcomes the launch kit asks for: no dates, no prices, nothing ticked done.
+  The guided setup is marked under way because the read-only preflight exists;
+  the installer line moved out of "Apps". Recently shipped now lists the
+  October 11–12 fixes in listener language.
+
+Checks (Linux container, Node 22.22.0): Brain suite 326 pass, 0 fail, 0 skip;
+Brain type check passes; site tests 10 pass and the site builds. Not deployed
+to the NAS; the owner library's corrected credit is unverified in the app.
+Still open from that finding: a reviewable "wrong grouping or credit"
+correction in the app.

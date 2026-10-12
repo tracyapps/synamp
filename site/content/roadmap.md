@@ -52,6 +52,17 @@ goal: Leave your library better than SynAmp found it — tidy, complete, and saf
 - [x] Fix song details inside the files (artist, album, track numbers)
 - [ ] Add music straight from Dropbox
 
+## Ready for your server
+id: ready
+number: ✦
+short: Ready to install
+goal: Make SynAmp something you can set up, trust and keep up to date on your own server, without the developer there to help.
+- [~] A guided setup that checks your server is ready before it changes anything
+- [ ] Hear a first playlist from part of your library, without waiting for all of it to be listened to
+- [ ] See which version you're running, update safely, and go back if an update goes wrong
+- [ ] Backups of your playlists, history and settings that have been tested by actually restoring them
+- [ ] A public report of how well playlists work on real libraries, with every miss counted
+
 ## Playlists that scale
 id: playlists
 number: 2
@@ -115,9 +126,11 @@ short: Apps
 goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A menu-bar player for your Mac
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
-- [ ] An easy installer so others can run SynAmp on their own NAS
 
 ## Recently shipped
+- 2026-10-12 — Compilations stay under Various Artists: a mixed album where a few songs carry their own artist tag is no longer filed under that one artist, or looked up under their name when SynAmp checks for missing tracks. Library care pages also answer faster on big libraries
+- 2026-10-12 — Fixed: picking a song right after switching artists could show “Playing” with no sound
+- 2026-10-11 — “Reveal in Finder” on any song shows you its file on your Mac, and album lists that got stuck on “Loading…” now say what went wrong and offer Retry
 - 2026-10-10 — Songs with lyrics no longer count as instrumental, even when SynAmp’s listening missed the voice (about 530 songs in the first library it was tried on). With LRCLIB switched on, SynAmp now also looks up words for songs it heard no singing in, last
 - 2026-10-10 — Playlist previews: hear a 30-second clip of any song before you save (whatever was playing pauses, then carries on), and mark songs that don’t fit. They stay out of that playlist, and if you say “it has words”, SynAmp stops counting that song as instrumental everywhere
 - 2026-10-09 — Library: group by two things at once (say, decade then artist) in folding sections, tick a whole group or single songs, then play, shuffle, play next, add to a playlist, favourite or tidy them in one go; in the table, artist and album names go to their pages
