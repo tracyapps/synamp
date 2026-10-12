@@ -9,7 +9,7 @@ import { MoodChecks } from "./library/moodcheck.ts";
 import { Favourites } from "./library/favourites.ts";
 import { RuntimeSettings } from "./settings.ts";
 
-const defaults = { musicbrainzContact: "", lastfmApiKey: "", lastfmApiSecret: "", publicUrl: "", uploadMaxMb: 2048, listeningPolicy: "epoch-v1" as const };
+const defaults = { musicbrainzContact: "", lastfmApiKey: "", lastfmApiSecret: "", publicUrl: "", uploadMaxMb: 2048, listeningPolicy: "epoch-v1" as const, updateChecks: true, updateBeta: false };
 const stores = [
   { name: "words", load: (path: string) => new WordChecks(path), format: "synamp.wordchecks/1", field: "checks" },
   { name: "tempo", load: (path: string) => new SpotChecks(path), format: "synamp.spotchecks/1", field: "checks" },

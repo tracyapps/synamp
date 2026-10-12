@@ -49,6 +49,7 @@ import type { CapturedPlay } from "./subsonic/proxy.ts";
 import { LastfmClient, LastfmError } from "./lastfm/client.ts";
 import { RuntimeSettings, SettingsError } from "./settings.ts";
 import { VersionCheck } from "./version.ts";
+import { UpdateCheck, UpdateError } from "./updates.ts";
 import { SpotCheckError, SpotChecks } from "./library/spotcheck.ts";
 import { MoodCheckError, MoodChecks } from "./library/moodcheck.ts";
 import { WordCheckError, WordChecks } from "./library/wordchecks.ts";
@@ -97,9 +98,16 @@ const missingNotes = new MissingNotes(join(dataDir, "missing-notes.json"));
 const runtime = new RuntimeSettings(join(dataDir, "settings.json"), {
   musicbrainzContact: config.musicbrainzContact, lastfmApiKey: config.lastfmApiKey, lastfmApiSecret: config.lastfmApiSecret,
   publicUrl: config.publicUrl, uploadMaxMb: Math.round(config.uploadMaxBytes / 1048576), listeningPolicy: "epoch-v1",
+  updateChecks: config.updateChecks, updateBeta: false,
 });
 /** Which code is running, and whether a newer copy on the NAS is waiting for Build. */
 const versionCheck = new VersionCheck(config.buildInfoPath, config.sourcePath);
+/** Is a newer SynAmp release out? Only on release installs, and only while Settings allows it. */
+const updateCheck = new UpdateCheck({
+  path: join(dataDir, "updates.json"), feedUrl: config.updateFeedUrl,
+  current: () => versionCheck.view().running?.version,
+  enabled: () => runtime.updateChecks, beta: () => runtime.updateBeta,
+});
 /** One client for the whole process, so every MusicBrainz request shares one rate limit. */
 let musicbrainz: MusicBrainz | undefined;
 const mbClient = () => (musicbrainz ??= new MusicBrainz({ contact: runtime.musicbrainzContact }));
@@ -1200,6 +1208,21 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return send(res, 200, { version: versionCheck.view(Date.now(), url.searchParams.has("fresh") ? 0 : 60_000) });
   }
 
+  // --- a newer SynAmp release: check, skip a version, remind later -------------------
+  if (path === "/api/v1/system/updates" && req.method === "GET") {
+    return send(res, 200, { updates: updateCheck.view() });
+  }
+  if (path === "/api/v1/system/updates" && req.method === "POST") {
+    const input = await body(req);
+    const action = input.action;
+    const updates = action === "check" ? await updateCheck.check()
+      : action === "skip" ? updateCheck.skip(String(input.version ?? ""))
+      : action === "remind" ? updateCheck.remindLater()
+      : action === "notice-seen" ? updateCheck.noticeSeen()
+      : (() => { throw new UpdateError('action must be "check", "skip", "remind" or "notice-seen"'); })();
+    return send(res, 200, { updates });
+  }
+
   // --- visuals: favourite and hidden looks -------------------------------------------
   if (path === "/api/v1/visuals/looks" && (req.method === "GET" || req.method === "POST")) {
     if (req.method === "POST") looks.update(await body(req));
@@ -1665,7 +1688,7 @@ const server = createServer((req, res) => {
     if (error instanceof PlaylistError || error instanceof SessionError || error instanceof FeedbackError) {
       return send(res, error.status, { error: error.message });
     }
-    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof SpotCheckError || error instanceof MoodCheckError || error instanceof WordCheckError || error instanceof LyricsError || error instanceof FavouriteError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
+    if (error instanceof HealthError || error instanceof MissingError || error instanceof OrganiseError || error instanceof DiscographyError || error instanceof AnalyzerError || error instanceof SettingsError || error instanceof UpdateError || error instanceof SpotCheckError || error instanceof MoodCheckError || error instanceof WordCheckError || error instanceof LyricsError || error instanceof FavouriteError || error instanceof SetupError || error instanceof LooksError || error instanceof BrowseError || error instanceof SyncError || error instanceof ImportError || error instanceof RadioError || error instanceof PartyError) return send(res, error.status, { error: error.message });
     if (error instanceof MusicBrainzError) return send(res, error.status === 400 ? 400 : 502, { error: error.message });
     if (error instanceof LastfmError) return send(res, error.code === -1 ? 400 : 502, { error: error.message });
     console.error("Brain request failed", error);
@@ -1689,6 +1712,14 @@ const warmLibrary = () => {
   } catch { /* the library isn't readable yet: try again later */ }
 };
 setTimeout(warmLibrary, 2_000).unref();
+// A minute after starting, then twice a day; does nothing while checks are off.
+updateCheck.start();
+// Turning checks (or betas) on in Settings looks straight away rather than at the next tick.
+const settingsChanged = runtime.onChange;
+runtime.onChange = (changed) => {
+  settingsChanged?.(changed);
+  if (changed.includes("update_checks") || changed.includes("update_beta")) void updateCheck.check();
+};
 setInterval(warmLibrary, 60_000).unref();
 
 // Stop (Container Manager, docker stop) means stop now. Every store is written

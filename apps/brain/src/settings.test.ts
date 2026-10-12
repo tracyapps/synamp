@@ -14,7 +14,7 @@ test("saved values win over the server file; clearing goes back to it; secrets n
   const dir = mkdtempSync(join(tmpdir(), "synamp-settings-"));
   try {
     const path = join(dir, "settings.json");
-    const defaults = { musicbrainzContact: "me@example.org", lastfmApiKey: "", lastfmApiSecret: "", publicUrl: "", uploadMaxMb: 2048, listeningPolicy: "epoch-v1" as const };
+    const defaults = { musicbrainzContact: "me@example.org", lastfmApiKey: "", lastfmApiSecret: "", publicUrl: "", uploadMaxMb: 2048, listeningPolicy: "epoch-v1" as const, updateChecks: true, updateBeta: false };
     const settings = new RuntimeSettings(path, defaults);
     const seen: string[][] = [];
     settings.onChange = (changed) => seen.push(changed);
@@ -54,7 +54,7 @@ test("the listening policy starts at epoch-v1, switches to legacy-v1, and reject
   const dir = mkdtempSync(join(tmpdir(), "synamp-settings-policy-"));
   try {
     const path = join(dir, "settings.json");
-    const defaults = { musicbrainzContact: "", lastfmApiKey: "", lastfmApiSecret: "", publicUrl: "", uploadMaxMb: 2048, listeningPolicy: "epoch-v1" as const };
+    const defaults = { musicbrainzContact: "", lastfmApiKey: "", lastfmApiSecret: "", publicUrl: "", uploadMaxMb: 2048, listeningPolicy: "epoch-v1" as const, updateChecks: true, updateBeta: false };
     const settings = new RuntimeSettings(path, defaults);
     assert.equal(settings.listeningPolicy, "epoch-v1", "default policy is session learning");
     assert.equal(settings.view().listening_policy, "epoch-v1");
@@ -71,5 +71,25 @@ test("the listening policy starts at epoch-v1, switches to legacy-v1, and reject
     settings.update({ listening_policy: "" });
     assert.equal(settings.listeningPolicy, "epoch-v1", "cleared: back to the default");
     assert.equal(settings.view().origins.listening_policy, "server");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("update checks are on by default and can be turned off here; beta versions are opt-in", () => {
+  const dir = mkdtempSync(join(tmpdir(), "synamp-settings-"));
+  try {
+    const path = join(dir, "settings.json");
+    const defaults = { musicbrainzContact: "", lastfmApiKey: "", lastfmApiSecret: "", publicUrl: "", uploadMaxMb: 2048, listeningPolicy: "epoch-v1" as const, updateChecks: true, updateBeta: false };
+    const settings = new RuntimeSettings(path, defaults);
+    assert.equal(settings.updateChecks, true);
+    assert.equal(settings.updateBeta, false);
+    assert.deepEqual(settings.update({ update_checks: false, update_beta: true }), ["update_checks", "update_beta"]);
+    const reloaded = new RuntimeSettings(path, defaults);
+    assert.equal(reloaded.updateChecks, false, "saved off stays off");
+    assert.equal(reloaded.view().update_beta, true);
+    assert.equal(reloaded.view().origins.update_checks, "app");
+    reloaded.update({ update_checks: "" });
+    assert.equal(reloaded.updateChecks, true, "clearing goes back to the server's default");
+    assert.throws(() => reloaded.update({ update_checks: "yes" }), /on or off/);
+    assert.equal(new RuntimeSettings(join(dir, "other.json"), { ...defaults, updateChecks: false }).updateChecks, false, "UPDATE_CHECKS=off on the server");
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

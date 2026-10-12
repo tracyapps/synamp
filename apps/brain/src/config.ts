@@ -56,6 +56,12 @@ export const config = {
   buildInfoPath: env("BUILD_INFO_PATH", new URL("../build.json", import.meta.url).pathname),
   /** The NAS copy of apps/, read-only, to notice an update waiting for Build. Empty: don't check. */
   sourcePath: env("SOURCE_PATH", ""),
+  /**
+   * Checking GitHub for new SynAmp releases: on by default (Settings can turn it
+   * off). UPDATE_CHECKS=off turns it off for this server; the feed URL is for tests.
+   */
+  updateChecks: env("UPDATE_CHECKS", "on") !== "off",
+  updateFeedUrl: env("UPDATE_FEED_URL", "https://api.github.com/repos/tracyapps/synamp/releases?per_page=30"),
   /** Largest single file accepted from the web app. */
   uploadMaxBytes: Number(env("UPLOAD_MAX_MB", "2048")) * 1024 * 1024,
   /** Required by the deployed app profile; optional for localhost development. */
