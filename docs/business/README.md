@@ -13,6 +13,7 @@ commitment. The original report's December 15 window remains the fallback.
 
 - [Current baseline](baseline.md): candidate scope, reads/writes and evidence gaps.
 - [October 11 execution](execution-2026-10-11.md): implementation, fresh checks and next steps.
+- [October 12 continuation](execution-2026-10-12.md): Explorer responsiveness and the private challenge listening baseline.
 - [Listening evaluation](listening-evaluation.md): frozen twelve-case suite and two-rater procedure.
 - [90-day roadmap](90-day-roadmap.md): outcomes, dates, gates, capacity and scope.
 - [Execution backlog](execution-backlog.md): dependencies, owners, exact files and acceptance checks.

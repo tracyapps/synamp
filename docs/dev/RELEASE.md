@@ -53,14 +53,21 @@ With the repository's existing Puppeteer/Chromium available, run:
 
 ```sh
 node tools/player/check-actions.mjs /absolute/private/evidence/player
+node tools/player/check-library-finder.mjs /absolute/private/evidence/library-finder
+node tools/player/check-library-playback.mjs /absolute/private/evidence/library-playback
 ```
 
 The harness starts isolated Brain/web processes and generated audio, records
 results/screenshots, and cleans up its stores/processes. It is a separate local
 check: browser downloads are disabled in the default Node CI job, which does
 not run this harness. Do not infer its success from the unit checks or build.
-First-listen, correction/shortage, update and restore coverage still needs
-build-specific review beyond this player harness.
+The Library harnesses also cover artist changes, album failure/retry, file
+reveal requests, clicked-track identity and actual generated-audio startup from
+the full App while stopped, paused and playing. Brain tests include cold large
+Explorer queries yielding to other server work. None of these checks establish
+owner-NAS latency, physical Finder selection or by-ear audio quality.
+Correction/shortage, update and restore coverage still needs build-specific
+review beyond these harnesses.
 
 ## Hosted checks and candidate identity
 

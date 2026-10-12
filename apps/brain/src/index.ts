@@ -64,7 +64,7 @@ import { albumFolder, groupAlbums } from "./library/albums.ts";
 import { ImportError, matchPlaylists, parsePlaylistFile } from "./library/playlist-import.ts";
 import type { MatchedPlaylist } from "./library/playlist-import.ts";
 import { albumTracks, artistPage, artistTracks, BrowseError, listAlbums, searchTracks, shuffled, trackSummary } from "./library/browse.ts";
-import { explore, exploreSections } from "./library/explore.ts";
+import { ExploreService } from "./library/explore-service.ts";
 import { djOrder } from "./session/dj.ts";
 import { gaplessInfo } from "./session/gapless.ts";
 import { ExplorerSelections } from "./library/explorer-selection.ts";
@@ -451,6 +451,7 @@ const playlists = new PlaylistStore(config.playlistDataPath, {
     .map((track) => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) })),
 });
 const explorerSelections = new ExplorerSelections();
+const explorer = new ExploreService();
 
 /** All clients share the same persisted adaptive horizon, including the companion. */
 function continueSession(replan = false): Session {
@@ -997,8 +998,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     // "Favourites only": the hearted keys, with their revision so remembered results refresh after a change.
     if (options.favourites === "1") options.favourites = `rev${favourites.rev}`;
     // sections=1: the grouped list, with collapsible group headers (see exploreSections).
-    if (options.sections === "1") return send(res, 200, exploreSections(currentLibrary(), options, favourites.keys()));
-    return send(res, 200, explore(currentLibrary(), options, favourites.keys()));
+    return send(res, 200, await explorer.query(currentLibrary(), options, favourites.keys(), options.sections === "1"));
   }
   // Rows and whole groups ticked in the list, turned into songs once (a receipt the actions below use).
   if (path === "/api/v1/library/explore/pick" && req.method === "POST") {
@@ -1685,7 +1685,7 @@ const warmLibrary = () => {
     const lib = currentLibrary();
     if (lib.version === warmed || !lib.tracks.length) return;
     warmed = lib.version;
-    explore(lib, {});
+    void explorer.query(lib).catch(() => { warmed = ""; });
   } catch { /* the library isn't readable yet: try again later */ }
 };
 setTimeout(warmLibrary, 2_000).unref();
@@ -1698,6 +1698,7 @@ for (const signal of ["SIGTERM", "SIGINT"] as const) {
   process.on(signal, () => {
     console.log(`synamp-brain: ${signal}, stopping`);
     lyrics.stop(); // the lyrics index is saved in batches
+    void explorer.close();
     server.close();
     setTimeout(() => process.exit(0), 1500).unref();
     server.closeAllConnections?.();
