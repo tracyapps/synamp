@@ -7,7 +7,8 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
  */
 
 export type VersionView = {
-  running: { fingerprint: string; short: string; built_at: number } | null;
+  /** `version`: the release number, only on installs from a GitHub release. */
+  running: { fingerprint: string; short: string; built_at: number; version?: string } | null;
   copy: "same" | "waiting" | "unknown";
   copied_at?: number;
   checked_at: number;
@@ -46,6 +47,19 @@ export function useVersion(request: Request, everyMs = 5 * 60_000) {
     };
   }, [load, everyMs]);
   return { version, check: () => load(true) };
+}
+
+const RELEASES = "https://github.com/tracyapps/synamp/releases";
+
+/** Installed from a release: updating (or going back) means choosing a release, not copying code. */
+function ReleaseSteps() {
+  return (
+    <ol className="update__steps">
+      <li><a href={RELEASES} target="_blank" rel="noopener noreferrer">Open SynAmp’s releases<span className="visually-hidden"> (opens in a new tab)</span></a> and download the one you want (the newest, or an earlier one to go back).</li>
+      <li>Unzip it over your SynAmp folder on the NAS. Your settings file (<code>.env</code>) and your data are kept.</li>
+      <li>In <a href={dsmUrl()} target="_blank" rel="noopener noreferrer">DSM<span className="visually-hidden"> (opens in a new tab)</span></a>: <strong>Container Manager</strong> → <strong>Project</strong> → <strong>synamp</strong> → <strong>Action</strong> → <strong>Build</strong>.</li>
+    </ol>
+  );
 }
 
 function BuildSteps() {
@@ -89,7 +103,11 @@ export function AboutInstall({ request }: { request: Request }) {
       <legend>About this install</legend>
       {!version ? <p className="settings__hint">Loading…</p> : !version.running ? (
         <p className="settings__hint">This copy wasn’t built by Container Manager (development), so there’s no version to show.</p>
-      ) : <>
+      ) : version.running.version ? <>
+        <p>Version <strong>{version.running.version}</strong>, built {when(version.running.built_at)}.</p>
+        <p className="settings__hint">Back up first (your SynAmp data folder), so going back to this version also brings back today’s data. To update, or to go back to an earlier version:</p>
+        <ReleaseSteps />
+      </> : <>
         <p>Version <code>{version.running.short}</code>, built {when(version.running.built_at)}.</p>
         <p className="settings__hint">
           {version.copy === "same" ? "Up to date with the copy on the NAS."
@@ -97,10 +115,12 @@ export function AboutInstall({ request }: { request: Request }) {
             : "Can’t see the copy on the NAS to compare (the brain has no read-only view of apps/)."}
         </p>
       </>}
-      <p className="settings__hint">To update: copy the new version to the NAS (<code>synamp-sync</code> on the Mac), then:</p>
-      <BuildSteps />
-      <div><button type="button" className="btn btn--ghost btn--sm" disabled={checking} onClick={checkNow}>{checking ? "Checking…" : "Check for an update"}</button>
-        <span className="settings__hint" role="status"> {said}</span></div>
+      {!version?.running?.version && <>
+        <p className="settings__hint">To update: copy the new version to the NAS (<code>synamp-sync</code> on the Mac), then:</p>
+        <BuildSteps />
+        <div><button type="button" className="btn btn--ghost btn--sm" disabled={checking} onClick={checkNow}>{checking ? "Checking…" : "Check for an update"}</button>
+          <span className="settings__hint" role="status"> {said}</span></div>
+      </>}
     </fieldset>
   );
 }
@@ -113,5 +133,5 @@ export function VersionBadge({ request }: { request: Request }) {
     return <a className="badge badge--soon version-badge" href="#/settings"><span className="status-dot status-dot--soon" aria-hidden="true" />Update ready</a>;
   }
   if (!version.running) return <span className="badge badge--muted" title="Not built by Container Manager">Development copy</span>;
-  return <span className="badge badge--muted" title={`Built ${when(version.running.built_at)}`}>Version {version.running.short}</span>;
+  return <span className="badge badge--muted" title={`Built ${when(version.running.built_at)}`}>Version {version.running.version ?? version.running.short}</span>;
 }

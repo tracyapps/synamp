@@ -13,6 +13,10 @@
  *
  * Only code files count, so Finder's .DS_Store and similar never look like an update.
  *
+ * Release images (built by GitHub from a version tag) also carry that version
+ * number, and have no NAS copy to compare: they update by downloading the next
+ * release instead (see deploy/README.md).
+ *
  * Run at build time:  node --experimental-strip-types src/version.ts <apps folder> > build.json
  */
 
@@ -53,7 +57,14 @@ export function fingerprint(root: string): Fingerprint | null {
   return { fingerprint: hash.digest("hex"), files: all.length, newest: Math.round(newest) };
 }
 
-export type Build = { fingerprint: string; built_at: number };
+/** `version` is the release number (e.g. "0.1.0"), present only in published release images. */
+export type Build = { fingerprint: string; built_at: number; version?: string };
+
+/** A release number as tagged on GitHub: 1.2.3, optionally -beta.1; a leading v is dropped. */
+export function releaseVersion(value: string | undefined): string | undefined {
+  const match = /^v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?)$/.exec(value?.trim() ?? "");
+  return match?.[1];
+}
 
 export type UpdateView = {
   /** The code inside the running images (null when not built as an image, e.g. in development). */
@@ -72,7 +83,9 @@ export class VersionCheck {
     this.sourceRoot = sourceRoot;
     try {
       const raw = JSON.parse(readFileSync(buildPath, "utf8")) as Partial<Build>;
-      this.build = typeof raw.fingerprint === "string" && typeof raw.built_at === "number" ? { fingerprint: raw.fingerprint, built_at: raw.built_at } : null;
+      const version = releaseVersion(raw.version);
+      this.build = typeof raw.fingerprint === "string" && typeof raw.built_at === "number"
+        ? { fingerprint: raw.fingerprint, built_at: raw.built_at, ...(version ? { version } : {}) } : null;
     } catch { this.build = null; }
   }
 
@@ -102,5 +115,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.stderr.write("version: no code found to fingerprint\n");
     process.exit(1);
   }
-  process.stdout.write(JSON.stringify({ fingerprint: result.fingerprint, built_at: Date.now() }) + "\n");
+  // SYNAMP_VERSION is set only when GitHub builds a release (.github/workflows/release.yml).
+  const version = releaseVersion(process.env.SYNAMP_VERSION);
+  process.stdout.write(JSON.stringify({ fingerprint: result.fingerprint, built_at: Date.now(), ...(version ? { version } : {}) }) + "\n");
 }

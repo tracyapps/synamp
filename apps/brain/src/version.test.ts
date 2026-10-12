@@ -6,7 +6,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { fingerprint, VersionCheck } from "./version.ts";
+import { fingerprint, releaseVersion, VersionCheck } from "./version.ts";
 
 function apps(dir: string) {
   mkdirSync(join(dir, "brain/src/library"), { recursive: true });
@@ -58,5 +58,22 @@ test("running vs the NAS copy: same, waiting for Build, or unknown", () => {
 
     assert.equal(new VersionCheck(join(dir, "build.json"), "").view().copy, "unknown", "no NAS copy mounted");
     assert.equal(new VersionCheck(join(dir, "missing.json"), source).view().running, null, "not built as an image");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("release images carry their version number; NAS-built copies don't", () => {
+  assert.equal(releaseVersion("v0.1.0"), "0.1.0");
+  assert.equal(releaseVersion("1.2.3-beta.1"), "1.2.3-beta.1");
+  for (const bad of [undefined, "", "latest", "1.2", "v1.2.3; rm -rf", "1.2.3 "+"x"]) assert.equal(releaseVersion(bad), undefined, String(bad));
+  const dir = mkdtempSync(join(tmpdir(), "synamp-version-"));
+  try {
+    const source = join(dir, "apps");
+    apps(source);
+    const run = (version?: string) => execFileSync(process.execPath, ["--experimental-strip-types", "--no-warnings", new URL("./version.ts", import.meta.url).pathname, source],
+      { encoding: "utf8", env: { ...process.env, SYNAMP_VERSION: version ?? "" } });
+    writeFileSync(join(dir, "release.json"), run("v0.2.0"));
+    writeFileSync(join(dir, "nas.json"), run());
+    assert.equal(new VersionCheck(join(dir, "release.json"), "").view().running!.version, "0.2.0");
+    assert.equal(new VersionCheck(join(dir, "nas.json"), source).view().running!.version, undefined);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
