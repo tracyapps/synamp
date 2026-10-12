@@ -27,6 +27,10 @@ export type Defaults = {
   publicUrl: string;
   uploadMaxMb: number;
   listeningPolicy: ListeningPolicy;
+  /** Check GitHub for new SynAmp releases (on unless the server file turns it off). */
+  updateChecks: boolean;
+  /** Offer beta (pre-release) versions too. */
+  updateBeta: boolean;
 };
 type Saved = Partial<{
   musicbrainz_contact: string;
@@ -35,6 +39,8 @@ type Saved = Partial<{
   public_url: string;
   upload_max_mb: number;
   listening_policy: ListeningPolicy;
+  update_checks: boolean;
+  update_beta: boolean;
 }>;
 export type Field = keyof Required<Saved>;
 export type Origin = "app" | "server" | "unset";
@@ -61,10 +67,12 @@ export class RuntimeSettings {
   get uploadMaxMb(): number { return this.saved.upload_max_mb ?? this.defaults.uploadMaxMb; }
   get uploadMaxBytes(): number { return this.uploadMaxMb * 1024 * 1024; }
   get listeningPolicy(): ListeningPolicy { return this.saved.listening_policy ?? this.defaults.listeningPolicy; }
+  get updateChecks(): boolean { return this.saved.update_checks ?? this.defaults.updateChecks; }
+  get updateBeta(): boolean { return this.saved.update_beta ?? this.defaults.updateBeta; }
 
-  private origin(field: Field, fallback: string | number): Origin {
+  private origin(field: Field, fallback: string | number | boolean): Origin {
     if (this.saved[field] !== undefined) return "app";
-    return fallback !== "" && fallback !== 0 ? "server" : "unset";
+    return fallback !== "" && fallback !== 0 && fallback !== false ? "server" : "unset";
   }
 
   /** What the browser may see: plain values, except secrets, which are only "set" or not. */
@@ -77,6 +85,8 @@ export class RuntimeSettings {
       public_url: this.publicUrl,
       upload_max_mb: this.uploadMaxMb,
       listening_policy: this.listeningPolicy,
+      update_checks: this.updateChecks,
+      update_beta: this.updateBeta,
       origins: {
         musicbrainz_contact: this.origin("musicbrainz_contact", this.defaults.musicbrainzContact),
         lastfm_api_key: this.origin("lastfm_api_key", this.defaults.lastfmApiKey),
@@ -84,6 +94,8 @@ export class RuntimeSettings {
         public_url: this.origin("public_url", this.defaults.publicUrl),
         upload_max_mb: this.origin("upload_max_mb", this.defaults.uploadMaxMb),
         listening_policy: this.origin("listening_policy", this.defaults.listeningPolicy),
+        update_checks: this.origin("update_checks", this.defaults.updateChecks),
+        update_beta: this.origin("update_beta", this.defaults.updateBeta),
       },
     };
   }
@@ -144,6 +156,13 @@ export class RuntimeSettings {
         throw new SettingsError('The listening policy must be "epoch-v1" (session learning) or "legacy-v1" (the v1 re-ranker)');
       }
       set("listening_policy", policy ? (policy as ListeningPolicy) : undefined);
+    }
+    for (const field of ["update_checks", "update_beta"] as const) {
+      const value = input[field];
+      if (value === undefined) continue;
+      if (value === "" || value === null) set(field, undefined);
+      else if (typeof value === "boolean") set(field, value);
+      else throw new SettingsError(`${field} must be on or off`);
     }
     if (!changed.length) return [];
     this.saved = next;
