@@ -82,12 +82,15 @@ export function preflight({ envPath, platform = process.platform, arch = process
     } catch { add('shared-journal', false, 'Create MUSIC_SHARE/.synamp and verify journal/export permissions.'); }
   }
   const deploy = dirname(resolve(envPath));
+  // A release download has no source to build: its Compose file names published images instead.
+  let builds = true;
+  try { builds = /^\s*build:/m.test(readFileSync(join(deploy, 'docker-compose.yml'), 'utf8')); } catch { /* reported as compose-file */ }
   for (const [id, path] of [
     ['compose-file', join(deploy, 'docker-compose.yml')], ['edge-config', join(deploy, 'Caddyfile')],
-    ['brain-build', join(deploy, '../apps/brain/Dockerfile')], ['web-build', join(deploy, '../apps/web/Dockerfile')],
+    ...(builds ? [['brain-build', join(deploy, '../apps/brain/Dockerfile')], ['web-build', join(deploy, '../apps/web/Dockerfile')]] : []),
   ]) {
     try { if (!statSync(path).isFile()) throw new Error(); accessSync(path, constants.R_OK); add(id, true); }
-    catch { add(id, false, 'Keep deploy/ beside apps/ with readable Compose, Caddyfile and Dockerfiles.'); }
+    catch { add(id, false, builds ? 'Keep deploy/ beside apps/ with readable Compose, Caddyfile and Dockerfiles.' : 'Keep the deploy folder complete, as it came in the release download.'); }
   }
   // docker: false when the caller checks Docker itself (deploy/setup.sh runs this inside a container).
   if (docker) for (const [id, args] of [

@@ -163,6 +163,8 @@ function plainError(error) {
   return code ? `failed (${code})` : 'failed';
 }
 function buildId(root) {
+  // A release download says which release it is; a source checkout, which commit.
+  try { return `release ${readFileSync(join(root, 'deploy/VERSION'), 'utf8').trim()}`; } catch { /* not a release */ }
   try {
     const head = readFileSync(join(root, '.git/HEAD'), 'utf8').trim();
     const ref = /^ref: (.+)$/.exec(head)?.[1];
