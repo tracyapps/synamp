@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync, symlinkSync, lstatSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -47,3 +47,13 @@ for (const store of stores) {
     finally { rmSync(dir, { recursive: true, force: true }); }
   });
 }
+
+test("a dangling state symlink is refused and retained, rather than replaced by first-run defaults", () => {
+  const dir = mkdtempSync(join(tmpdir(), "synamp-dangling-state-"));
+  const path = join(dir, "state.json");
+  try {
+    symlinkSync(join(dir, "missing-target.json"), path);
+    for (const store of stores) assert.throws(() => store.load(path), /recovery/i);
+    assert.ok(lstatSync(path).isSymbolicLink());
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

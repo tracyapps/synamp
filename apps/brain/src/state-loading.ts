@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { lstatSync, readFileSync } from "node:fs";
 
 const object = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value);
@@ -12,7 +12,12 @@ export function loadUserState<T>(path: string, format: string, maps: string[], a
   let text: string;
   try { text = readFileSync(path, "utf8"); }
   catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return {};
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      // A dangling link is existing state, not an empty first-run store.
+      try { lstatSync(path); } catch (statError) {
+        if ((statError as NodeJS.ErrnoException).code === "ENOENT") return {};
+      }
+    }
     throw recovery();
   }
   let value: unknown;

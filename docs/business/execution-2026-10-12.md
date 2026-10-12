@@ -149,3 +149,8 @@ six-retained/two-inactive/two-missing example. B07 remains open for real operati
 Broader fresh verification: all 72 selected root/lab/NAS/install tool checks
 pass and the web production build passes. These are local Node 24 checks;
 hosted Node 22 compatibility is still pending. No real tester data was used.
+
+Final state-loader review also found ENOENT from a dangling state symlink could
+look like a missing file. That case now refuses startup and preserves the link;
+eleven focused state-loading checks pass, along with typecheck and recovery
+checks. Valid symlinked stores retain their earlier read behavior.
