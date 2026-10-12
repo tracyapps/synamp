@@ -94,8 +94,11 @@ function Check() { const [session, setSession] = useState(null), [view, setView]
   await page.click('.visuals__displays summary');
   const popupPromise = new Promise(resolve => page.once('popup', resolve)); await clickText('New display window'); const popup = await popupPromise;
   await popup.waitForSelector('.song-controls'); await popup.waitForFunction(() => document.querySelector('video')?.srcObject?.active);
+  // Love must not move the queue. Compare with the song just before the press: the
+  // 30-second fixture songs can end by themselves while display windows open on a slow runner.
+  const indexBeforeLove = (await call('/session')).session.index;
   await clickText('Love', popup); await page.waitForFunction(() => document.querySelector('.visuals__bar .song-controls__love').textContent.includes('Loved'));
-  assert.equal((await call('/session')).session.index, 1); await popup.screenshot({ path: path.join(output, 'display-window.png') }); pass('Display window receives live canvas video and Love controls operate the original player');
+  assert.equal((await call('/session')).session.index, indexBeforeLove); await popup.screenshot({ path: path.join(output, 'display-window.png') }); pass('Display window receives live canvas video and Love controls operate the original player');
   const popup2Promise = new Promise(resolve => page.once('popup', resolve)); await clickText('New display window'); const popup2 = await popup2Promise; await popup2.waitForFunction(() => document.querySelector('video')?.srcObject?.active); pass('Multiple display windows share visuals without extra audio players');
   await page.click('.visuals__displays summary');
   await page.setViewport({ width: 390, height: 844 });
