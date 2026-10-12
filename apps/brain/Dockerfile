@@ -7,7 +7,7 @@
 
 # 1. Fingerprint the code these images are built from. Docker re-runs this only
 #    when that code changed, so build.json always matches what's inside.
-FROM node:22-alpine AS fingerprint
+FROM node:22.23.3-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS fingerprint
 WORKDIR /apps
 COPY brain/src ./brain/src
 COPY web/src ./web/src
@@ -16,7 +16,7 @@ RUN node --experimental-strip-types brain/src/version.ts /apps > /build.json
 
 # 2. The brain itself. ffmpeg makes the lighter streams for mobile data
 #    (src/session/lighter.ts); without it the player just gets the original files.
-FROM node:22-alpine
+FROM node:22.23.3-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402
 RUN apk add --no-cache ffmpeg
 WORKDIR /app
 COPY brain/src ./src
