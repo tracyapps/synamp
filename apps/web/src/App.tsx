@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Player from "./Player";
 import type { PlayerView } from "./player-commands";
-import type { SessionView } from "./Player";
+import type { PlayerHandle, SessionView } from "./Player";
 import Playlists from "./Playlists";
 import Library from "./Library";
 import Radio, { RadioBar } from "./Radio";
@@ -122,12 +122,16 @@ export default function App() {
 
   /** Queue something (a playlist, an album, some tracks) and show it in the player. */
   const playRequest = useRef(0);
+  const player = useRef<PlayerHandle>(null);
+  const [playEntry, setPlayEntry] = useState<string>();
   const play = useCallback(async (body: Record<string, unknown>) => {
     const ticket = ++playRequest.current;
+    if (body.next !== true) player.current?.preparePlayback();
     const result = await call<{ session: SessionView }>("/session/queue", { method: "POST", body: JSON.stringify({ event_id: newId(), ...body }) });
     if (ticket !== playRequest.current) return;
     setStation(null);
     setSession(result.session);
+    if (body.next !== true) setPlayEntry(result.session.queue[result.session.index]?.entry_id);
   }, [call]);
 
   const tokenForm = needsToken && (
@@ -235,7 +239,7 @@ export default function App() {
       </div>
       <div className="app__footer">
         {station && <RadioBar station={station} onStop={() => setStation(null)} onVisuals={openVisuals} />}
-        <Player onView={setPlayerView} request={call} session={session} onSession={setSession} away={!!station} onVisuals={openVisuals}
+        <Player ref={player} playEntry={playEntry} onView={setPlayerView} request={call} session={session} onSession={setSession} away={!!station} onVisuals={openVisuals}
         playlistName={(id) => nodes.find((node) => node.id === id)?.name}
         onChanged={() => { refreshNodes().catch(() => undefined); }} />
       </div>

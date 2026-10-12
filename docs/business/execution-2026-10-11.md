@@ -261,3 +261,32 @@ All 23 existing generated-audio playback checks also pass after async session
 presentation. Evidence roots: `/tmp/synamp-library-playback-evidence/` and
 `/tmp/synamp-library-player-regression/`. These fixes have not been deployed to
 the NAS; owner-library audio and live HTTP 499 closure remain unverified.
+
+### Silent Play after switching artists
+
+Owner clarification: switch artists, choose a song, no error appears and no
+audio starts. A fresh isolated full-App reproduction confirmed that Library
+Play selected the correct song and displayed “Playing”, but never created the
+audio engine. Queue identity alone was insufficient playback verification.
+
+App now prepares/unlocks the player synchronously during the explicit Play
+click, then starts the specific returned queue entry after its plan arrives.
+This resumes paused playback too. Play-next insertion does not request a start;
+restoring a saved session or navigating does not request one either. Current
+audio errors and unavailable-file results now have visible player feedback.
+
+Fresh generated-WAV full-App browser checks cover first playback after an artist
+switch, paused playback, active playback, 500 ms queue delays, actual nonzero
+audio output (RMS 0.043), pause preservation and queue restoration without
+autoplay. Zero browser exceptions. Web production build passes. The regression
+is `tools/player/check-library-playback.mjs`; evidence is under
+`/tmp/synamp-library-playback-regression-delayed/`. NAS deployment and owner
+audio verification of this new fix remain pending.
+
+Read-only live checks before this change: NAS reported running fingerprint
+`23ed313`, matching its copied source (including earlier Library fixes).
+Artist/album requests usually answered in tens to hundreds of milliseconds,
+but one Explorer request took 3.698 seconds. Another grouped/sorted Explorer
+request took 2.083 seconds and delayed a simultaneous health request 1.958
+seconds. Synchronous Explorer work is a separate outstanding responsiveness
+issue; these observations do not identify the original HTTP 499 cause.

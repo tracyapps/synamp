@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useImperativeHandle, useRef, useState, type Ref } from "react";
 import "./styles/player.css";
 import SongControls from "./SongControls";
 import { PLAYER_COMMAND, shortcut, type PlayerCommand, type PlayerView } from "./player-commands";
@@ -41,7 +41,12 @@ const clock = (seconds: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
-export default function Player({ request, session, onSession, playlistName, onChanged, away = false, onVisuals, onView }: {
+export type PlayerHandle = { preparePlayback: () => void };
+
+export default function Player({ request, session, onSession, playlistName, onChanged, away = false, onVisuals, onView, ref, playEntry }: {
+  ref?: Ref<PlayerHandle>;
+  /** An explicit Play action, applied only once its requested queue entry arrives. */
+  playEntry?: string;
   request: Request;
   onView?: (view: PlayerView | null) => void;
   /** Opens the MilkDrop visuals; absent when this browser can't show them. */
@@ -64,6 +69,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const started = useRef<string>("");   // entries we've reported "start" for
   const heartbeat = useRef(0);
   const played = useRef(0);
+  const resumeAfterClip = useRef(false);
   const prefs = usePrefs();
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -118,7 +124,9 @@ export default function Player({ request, session, onSession, playlistName, onCh
         if (played.current - heartbeat.current >= 10) { heartbeat.current = played.current; reportFor(id, "progress", { played_ms: ms(played.current) }); }
       },
       error: (id, message) => {
+        if (id !== latest.current.current?.entry_id) return;
         setLoading(false);
+        setStatus(message);
         if (message.startsWith("Press play")) { setStatus(message); setPaused(true); return; }
         if (id === latest.current.current?.entry_id) reportFor(id, "error", { message });
       },
@@ -133,6 +141,15 @@ export default function Player({ request, session, onSession, playlistName, onCh
     return made;
   }
 
+  // Unlock audio during the Library/playlist click, before waiting for the server.
+  // Starting is separate: the old queue must not play while the new one loads.
+  useImperativeHandle(ref, () => ({ preparePlayback: () => {
+    resumeAfterClip.current = false;
+    stopClip();
+    ensureEngine();
+    audioContext();
+  } }));
+
   // What the engine should play: the current song, the next, and how one goes into the other.
   const lighter = wantsLighter(prefs);
   const item = (entry: QueueEntry | undefined): Item | null => (entry?.playable && entry.stream_url
@@ -145,6 +162,14 @@ export default function Player({ request, session, onSession, playlistName, onCh
     engine.current?.setPlan(item(current), item(upNext), plan.transition, plan.decode);
     if (current?.entry_id !== engine.current?.currentId()) { setPosition(0); }
   }, [planKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const playedRequest = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (!playEntry || playEntry !== current?.entry_id || playedRequest.current === playEntry) return;
+    playedRequest.current = playEntry;
+    if (!current.playable) { setStatus("This song's file is unavailable. Reveal it in Finder to check its location."); return; }
+    setStatus("");
+    ensureEngine().play();
+  }, [playEntry, current?.entry_id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { engine.current?.setVolume(prefs.volume); }, [prefs.volume]);
   useEffect(() => {
     if (away && engine.current?.isPlaying()) { engine.current.pause(); reportFor(current?.entry_id, "pause"); }
@@ -155,7 +180,6 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const controls = useRef<{ toggle?: () => void; next?: () => void; previous?: () => void; seek?: (seconds: number) => void }>({});
   // A preview clip (Describe) pauses what's playing; it carries on when the clip ends.
   // Hooks stay above the early return below (no queue): React needs the same hooks on every render.
-  const resumeAfterClip = useRef(false);
   useEffect(() => {
     const on = (event: Event) => {
       const playing = (event as CustomEvent<ClipState>).detail.trackId !== null;
