@@ -14,7 +14,7 @@ import MissingTracks from "./MissingTracks";
 import OrganiseLibrary from "./OrganiseLibrary";
 import DiscographyGaps from "./DiscographyGaps";
 import Settings from "./Settings";
-import { UpdateNotice, VersionBadge } from "./Updates";
+import { UpdateAvailable, UpdateNotice, VersionBadge } from "./Updates";
 import SpotCheck from "./SpotCheck";
 import MoodCheck from "./MoodCheck";
 import { AlbumPage, ArtistPage } from "./LibraryPages";
@@ -151,6 +151,7 @@ export default function App() {
       body = <div className="screen">
         <ScreenHead id={headingId} eyebrow="Listen" title="Library"><p>Search, group, and explore the music you own.</p></ScreenHead>
         <UpdateNotice request={call} />
+        <UpdateAvailable request={call} />
         {libraryRoute.kind === "list" && <LibraryHealth request={call} />}
         {libraryRoute.kind === "artist" && <ArtistPage name={libraryRoute.name} request={call} play={play} playlists={nodes} />}
         {libraryRoute.kind === "album" && <AlbumPage albumKey={libraryRoute.key} request={call} play={play} playlists={nodes} />}

@@ -1714,12 +1714,7 @@ const warmLibrary = () => {
 setTimeout(warmLibrary, 2_000).unref();
 // A minute after starting, then twice a day; does nothing while checks are off.
 updateCheck.start();
-// Turning checks (or betas) on in Settings looks straight away rather than at the next tick.
-const settingsChanged = runtime.onChange;
-runtime.onChange = (changed) => {
-  settingsChanged?.(changed);
-  if (changed.includes("update_checks") || changed.includes("update_beta")) void updateCheck.check();
-};
+
 setInterval(warmLibrary, 60_000).unref();
 
 // Stop (Container Manager, docker stop) means stop now. Every store is written

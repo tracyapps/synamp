@@ -91,6 +91,8 @@ jobs:
         run: node tools/player/check-library-finder.mjs "$RUNNER_TEMP/synamp-evidence/library-finder"
       - name: Full App Library playback after artist changes
         run: node tools/player/check-library-playback.mjs "$RUNNER_TEMP/synamp-evidence/library-playback"
+      - name: New-version notice, skip, remind and the off switch
+        run: node tools/player/check-updates.mjs "$RUNNER_TEMP/synamp-evidence/updates"
 
   macos-renames:
     name: macOS librarian rename and undo
