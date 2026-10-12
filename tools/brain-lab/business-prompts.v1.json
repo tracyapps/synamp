@@ -1,0 +1,19 @@
+{
+  "format": "synamp.business-prompts/1",
+  "version": "2026-10-11.1",
+  "target_size": 12,
+  "cases": [
+    {"id":"Q01","prompt":"I need to focus. no words, no piano, nothing too slow/relaxing.","method":"prompt","scope":"candidate","listen_for":"Lead vocals, quiet vocals and piano hidden in mixtures; retain every violation."},
+    {"id":"Q02","prompt":"no vocals","method":"prompt","scope":"candidate","listen_for":"Singing, speech, rap, background vocals and wordless voices. Do not score wordless voices as automatically acceptable."},
+    {"id":"Q03","prompt":"no piano","method":"prompt","scope":"candidate","listen_for":"Piano in a full band, quiet accompaniment and solo piano."},
+    {"id":"Q04","prompt":"a steady beat","method":"prompt","scope":"candidate","listen_for":"Weak pulse, beatless music, rubato and irregular live performances; unknown is not a measured pass."},
+    {"id":"Q05","prompt":"nothing too slow","method":"prompt","scope":"candidate","listen_for":"Tempo octave errors, felt pace versus measured BPM, and unknown tempo."},
+    {"id":"Q06","prompt":"live recordings without vocals","method":"prompt","scope":"probe","listen_for":"Whether live-recording metadata is actually available/enforced; applause and audience voices. Partial interpretation must be visible."},
+    {"id":"Q07","prompt":"songs with exactly three clarinets","method":"prompt","scope":"unsupported","listen_for":"Honest refusal or clarification; never count refusal as a successful supported playlist."},
+    {"id":"Q08","prompt":"instrumentals with heavy lead vocals over 300 bpm","method":"prompt","scope":"unsupported","listen_for":"Contradiction, unsupported vocal character, bounded tempo and honest refusal; no fabricated result."},
+    {"id":"Q09","prompt":"no vocals, no piano, no guitar, no drums","method":"prompt","scope":"candidate","listen_for":"Strict shortage on a bounded library. Preserve requested/returned and unknown counts; never add near misses to fill."},
+    {"id":"Q10","prompt":"More like this song","method":"manual","scope":"candidate","listen_for":"Select a real seed ID through the app, include unfamiliar artists, record seed and similarities; two raters judge fit. Do not substitute a guessed natural-language interpretation."},
+    {"id":"Q11","prompt":"This song has vocals; correct it and try again","method":"manual","scope":"candidate","listen_for":"On a separate trial state, record before/after IDs and correction; restart Brain and resolve again. Verify persistence and unchanged hard exclusions."},
+    {"id":"Q12","prompt":"Keep this mix playing through my workday","method":"manual","scope":"candidate","listen_for":"An actual workday: variety, repeats only after eligible pool cycles, corrections, shortage and Brain restart. Record elapsed listening, skips and failures; queue tests alone cannot pass it."}
+  ]
+}

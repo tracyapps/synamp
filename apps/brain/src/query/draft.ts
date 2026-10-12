@@ -124,6 +124,17 @@ export function draftPlan(prompt: string, library?: Library): Draft {
   });
 
   // --- affirmative asks ---------------------------------------------------------
+  each(/\bsteady\s+beats?\b/g, (match) => {
+    if (consumed.some(([start, end]) => match.index >= start && match.index < end)) return;
+    confirm.push("steady_beat");
+    add({ id: "steady_beat", source_phrase: phrase(match), hard: true, unknown_policy: "exclude", confidence: 0.75,
+      proxy: "steady beat → measured pulse strength and tempo agreement across windows",
+      where: { all: [
+        { field: "pulse_clarity", op: "gte", value: 0.3 },
+        { field: "pulse_steadiness", op: "gte", value: 0.5 },
+      ] } }, "pulse_clarity ≥ 0.30 and pulse_steadiness ≥ 0.50 (hard; unmeasured fails)");
+    assumptions.push("“Steady beat” uses the analyzer's measured pulse proxy: strength ≥ 0.30 and agreement ≥ 0.50 across windows. This does not prove an accurate beat grid or beat-locked playback.");
+  });
   each(/\binstrumentals?(?:\s+only)?\b/g, (match) => noWords(phrase(match)));
   each(/\b(?:between\s+)?(\d{2,3})\s*(?:-|–|to|and)\s*(\d{2,3})\s*bpm\b/g, (match) => {
     const [low, high] = [Number(match[1]), Number(match[2])].sort((a, b) => a - b);

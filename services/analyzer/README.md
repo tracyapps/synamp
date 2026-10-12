@@ -56,8 +56,15 @@ hides the problems a real library has.
 
 ```bash
 uv run synamp-analyze sample --count 200 --seed 7 --out ~/synamp-sample
-LIBRARY_PATH=~/synamp-sample ANALYZER_DB_PATH=~/synamp-sample/analyzer.sqlite3 \
-  uv run synamp-analyze scan && uv run synamp-analyze analyze
+(
+  set -e
+  export LIBRARY_PATH="$HOME/synamp-sample"
+  export ANALYZER_DB_PATH="$HOME/synamp-sample/analyzer.sqlite3"
+  export ANALYZER_CACHE="$HOME/synamp-sample/cache"
+  export SYNAMP_BRAIN_URL="" SYNAMP_BRAIN_TOKEN="" RENAME_JOURNAL_PATH=""
+  uv run synamp-analyze scan
+  uv run synamp-analyze analyze
+)
 ```
 
 - `--mode uniform` (default) — every file equally likely. **Representative**: if
@@ -70,6 +77,17 @@ LIBRARY_PATH=~/synamp-sample ANALYZER_DB_PATH=~/synamp-sample/analyzer.sqlite3 \
   the exact files that produced it.
 - The sample is **symlinks**, not copies. A 274 GB library must not be duplicated
   to take a 200-file sample, and the worker only ever reads.
+- Use a new or empty sample directory in a separate tree from the source
+  library. Existing files are never overwritten. An unchanged sample with the
+  identical selection, manifest and symlinks can be repeated; a different seed,
+  changed links, extra files or a partial sample requires a new directory.
+  Reuse the existing directory for analysis/resume, not for resampling after
+  database/cache files have been added. Rejected sample creation exits 1.
+- The subshell above keeps scan **and** analysis on the scratch database and
+  disables owner progress/control and rename-journal wiring. A one-command env
+  prefix before `scan && analyze` would apply only to scan. Do not install a
+  background worker or point the librarian at this symlink sample: those links
+  still refer to the originals. Use copies for any write/undo trial.
 
 ## What this worker currently produces
 
@@ -207,6 +225,23 @@ and, if the music isn't mounted, tries `SYNAMP_MUSIC_SHARE_URL` (e.g.
 `smb://Syd.local/music`) through Finder with the Keychain password.
 
 ## Progress in the web app
+
+### Reveal a song in Finder
+
+Right-click a song in the Library list, grid or table, in an expanded album,
+or in an artist's song list, then choose **Reveal in Finder**. The Brain resolves
+the song's current file path and queues it for the connected analyzer Mac.
+Finder selects the file on that Mac; it does not start playback. If the file is
+missing, the worker opens the nearest existing parent folder. The UI reports
+that the request was sent, rather than claiming Finder has already opened.
+An offline Mac produces an error. Requests expire after one minute.
+
+Both the Brain/web app and Mac analyzer need this version. An older Mac worker
+opens the containing folder rather than selecting the file. Existing Organise
+folder actions keep opening their folders as before. This action changes no
+music files or tags.
+
+## Analysis progress
 
 Set these and the worker reports progress to the brain, which shows it in the
 web app's **Library** strip (state, tracks done, time left, current file,

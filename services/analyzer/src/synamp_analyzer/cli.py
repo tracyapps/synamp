@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import sys
 from pathlib import Path
 
@@ -98,12 +99,23 @@ def _cmd_sample(
         return 0
 
     out_dir = Path(out) if out else cfg.cache_dir / "sample"
-    written = materialise(plan, out_dir)
+    try:
+        written = materialise(plan, out_dir)
+    except (ValueError, OSError) as error:
+        print(f"sample: refused: {error}", file=sys.stderr)
+        return 1
     print(f"sample: {written} symlinks written to {out_dir}")
     print(f"sample: manifest {out_dir / 'sample-manifest.json'}")
     print("sample: to analyse it")
-    print(f"  LIBRARY_PATH={out_dir} ANALYZER_DB_PATH={out_dir}/analyzer.sqlite3 \\")
-    print("    synamp-analyze scan && synamp-analyze analyze")
+    print("  (")
+    print("    set -e")
+    print(f"    export LIBRARY_PATH={shlex.quote(str(out_dir))}")
+    print(f"    export ANALYZER_DB_PATH={shlex.quote(str(out_dir / 'analyzer.sqlite3'))}")
+    print(f"    export ANALYZER_CACHE={shlex.quote(str(out_dir / 'cache'))}")
+    print('    export SYNAMP_BRAIN_URL="" SYNAMP_BRAIN_TOKEN="" RENAME_JOURNAL_PATH=""')
+    print("    synamp-analyze scan")
+    print("    synamp-analyze analyze")
+    print("  )")
     return 0
 
 

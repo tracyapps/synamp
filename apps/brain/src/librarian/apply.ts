@@ -146,21 +146,53 @@ function moveOne(ctx: Context, move: Move): void {
   ctx.beforeRename?.(move.from, move.to);
   const size = statSync(from).size;
   mkdirSync(dirname(to), { recursive: true });
-  if (existsSync(to)) {
-    if (!sameFile(from, to)) throw new Error(`“${label(move.to, move.to_area)}” already exists`);
-    // Only the letter case changes: go through a temporary name.
-    const temp = `${to}.synamp-${randomBytes(4).toString("hex")}`;
-    renameSync(from, temp);
-    renameSync(temp, to);
-  } else {
-    try {
-      renameSync(from, to);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EXDEV") throw error;
-      copyVerified(from, to);
+  // mkdir on a case-insensitive volume preserves the old directory spelling.
+  // Correct each aliased component, without ever merging distinct directories.
+  const base = resolve(rootOf(ctx, move.to_area));
+  const recased: Array<{ from: string; to: string }> = [];
+  let parent = base;
+  try {
+    for (const name of dirname(to).slice(base.length + 1).split(sep).filter(Boolean)) {
+      const wanted = join(parent, name);
+      const entries = readdirSync(parent);
+      if (!entries.includes(name)) {
+        const actual = entries.find((entry) => sameFile(join(parent, entry), wanted));
+        if (actual) {
+          const original = join(parent, actual);
+          const temp = join(parent, `.synamp-case-${randomBytes(8).toString("hex")}`);
+          renameSync(original, temp);
+          try { renameSync(temp, wanted); }
+          catch (error) { renameSync(temp, original); throw error; }
+          recased.push({ from: original, to: wanted });
+        }
+      }
+      parent = wanted;
     }
+    if (existsSync(to)) {
+      if (!sameFile(from, to)) throw new Error(`“${label(move.to, move.to_area)}” already exists`);
+      // Only the letter case changes: go through a temporary name.
+      const temp = `${to}.synamp-${randomBytes(4).toString("hex")}`;
+      renameSync(from, temp);
+      try { renameSync(temp, to); }
+      catch (error) { renameSync(temp, from); throw error; }
+    } else {
+      try {
+        renameSync(from, to);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EXDEV") throw error;
+        copyVerified(from, to);
+      }
+    }
+    if (statSync(to).size !== size) throw new Error(`“${label(move.to, move.to_area)}” has the wrong size after moving`);
+  } catch (error) {
+    for (const change of recased.reverse()) {
+      const temp = `${change.to}.synamp-${randomBytes(8).toString("hex")}`;
+      renameSync(change.to, temp);
+      try { renameSync(temp, change.from); }
+      catch (restoreError) { renameSync(temp, change.to); throw restoreError; }
+    }
+    throw error;
   }
-  if (statSync(to).size !== size) throw new Error(`“${label(move.to, move.to_area)}” has the wrong size after moving`);
 }
 
 /** Removes `dir` and its sub-folders when they hold nothing but junk files. Never `root` itself. */

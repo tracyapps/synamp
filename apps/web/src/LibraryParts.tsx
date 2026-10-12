@@ -5,6 +5,8 @@ import Icon from "./ui/Icon";
 import { albumHref, artistHref, openFromList } from "./library-route";
 import type { MenuItem } from "./ui/ContextMenu";
 import { Heart } from "./favourites";
+import { revealSong } from "./finder";
+import { useContextMenu } from "./ui/ContextMenu";
 import "./styles/library.css";
 
 /*
@@ -87,6 +89,7 @@ export function openKey(event: React.KeyboardEvent, href: string) {
 /** An album's songs, loaded when first shown. Click a song to play the album from there. */
 export function AlbumSongs({ album, request, play, playlists, say, disabled = false }: { album: AlbumSummary; request: Request; play: Play; playlists: PlaylistNode[]; say: (text: string) => void; disabled?: boolean }) {
   const [tracks, setTracks] = useState<TrackSummary[] | null>(null);
+  const { open, menu } = useContextMenu();
   useEffect(() => {
     let live = true;
     request<{ tracks: TrackSummary[] }>(`/library/album?key=${encodeURIComponent(album.key)}`)
@@ -95,9 +98,12 @@ export function AlbumSongs({ album, request, play, playlists, say, disabled = fa
   }, [album.key]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!tracks) return <p className="muted album__loading">Loading…</p>;
   return (
-    <ol className="tracklist" aria-label={`Songs on ${album.title}`}>
+    <><ol className="tracklist" aria-label={`Songs on ${album.title}`}>
       {tracks.map((track, index) => (
-        <li key={track.id}>
+        <li key={track.id} tabIndex={0} onContextMenu={(event) => {
+          event.stopPropagation();
+          open(event, track.title, [{ label: "Reveal in Finder", onSelect: () => void revealSong(request, track.id, say) }]);
+        }}>
           <button type="button" className="tracklist__play" disabled={disabled}
             onClick={() => play({ album_key: album.key, start_index: index }).then(() => say(`Playing ${track.title}.`)).catch((cause) => say((cause as Error).message))}>
             <span className="tracklist__n" aria-hidden="true">{track.track_no ?? index + 1}</span>
@@ -109,7 +115,7 @@ export function AlbumSongs({ album, request, play, playlists, say, disabled = fa
           <AddToPlaylist request={request} track={track} playlists={playlists} onAdded={say} disabled={disabled} />
         </li>
       ))}
-    </ol>
+    </ol>{menu}</>
   );
 }
 

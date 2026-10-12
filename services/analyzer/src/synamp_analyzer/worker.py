@@ -326,7 +326,7 @@ class Worker:
 
 def reveal_target(path: str, library: Path) -> Path | None:
     """
-    The folder to open for a path the brain sent: only inside the library or the
+    The file or folder for a path the brain sent: only inside the library or the
     incoming folder beside it (never anywhere else on the Mac). If it isn't
     there (yet, or any more), the nearest folder above it that is.
     """
@@ -337,6 +337,13 @@ def reveal_target(path: str, library: Path) -> Path | None:
     root = next((r for r in roots if wanted == r or r in wanted.parents), None)
     if root is None:
         return None
+    # Lexical containment alone permits symlinks to private files elsewhere.
+    resolved = wanted.resolve()
+    real_root = root.resolve()
+    if resolved != real_root and real_root not in resolved.parents:
+        return None
+    if wanted.is_file():
+        return wanted
     target = wanted
     while target != root and not target.is_dir():
         target = target.parent
@@ -347,7 +354,7 @@ def open_in_finder(folder: Path) -> bool:
     if sys.platform != "darwin":
         return False
     try:
-        subprocess.run(["open", str(folder)], check=True, timeout=20, capture_output=True)
+        subprocess.run(["open", *(["-R"] if folder.is_file() else []), str(folder)], check=True, timeout=20, capture_output=True)
         return True
     except (OSError, subprocess.SubprocessError):
         return False

@@ -121,25 +121,35 @@ def _stratified(
 def materialise(plan: SamplePlan, out_dir: Path) -> int:
     """Write the sample to `out_dir` as symlinks plus a manifest.
 
-    Returns the number of links written. Existing files are overwritten, so
-    re-running with the same seed and directory is idempotent; re-running with a
-    *different* seed into the same directory leaves the union of both, which is
-    why the manifest carries the whole selection rather than a diff.
+    Returns the number of selected links. A new/empty, separate destination is
+    required, or an unchanged existing sample with the identical manifest and
+    links. Nothing is deleted or overwritten. Use a new directory for a new
+    selection or a partial/tampered sample.
     """
-    out_dir.mkdir(parents=True, exist_ok=True)
-    written = 0
+    root = plan.library_root.resolve(strict=True)
+    output = out_dir.resolve()
+    # Path comparisons alone miss differently cased aliases on APFS/SMB.
+    aliases_source = any(path.exists() and path.samefile(root) for path in (output, *output.parents))
+    aliases_parent = output.exists() and any(output.samefile(path) for path in (root, *root.parents))
+    if output.is_relative_to(root) or root.is_relative_to(output) or aliases_source or aliases_parent:
+        raise ValueError("sample output must be in a separate tree from the source library")
+    if out_dir.is_symlink():
+        raise ValueError("sample output must not be an existing symlink")
+    links: dict[Path, Path] = {}
     for track in plan.tracks:
         try:
             relative = track.path.relative_to(plan.library_root)
-        except ValueError:
-            relative = Path(track.path.name)
-        destination = out_dir / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        if destination.is_symlink() or destination.exists():
-            destination.unlink()
-        destination.symlink_to(track.path.resolve())
-        written += 1
-
+        except ValueError as error:
+            raise ValueError("sample track must be inside the selected library") from error
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError("sample track must be inside the selected library")
+        source = track.path.resolve(strict=True)
+        if not source.is_file() or source.is_relative_to(output):
+            raise ValueError("sample audio and output must be separate")
+        destination = output / relative
+        if destination in links:
+            raise ValueError("sample selection contains duplicate destinations")
+        links[destination] = source
     manifest = {
         "created_at": time.time(),
         "library_root": str(plan.library_root),
@@ -156,7 +166,26 @@ def materialise(plan: SamplePlan, out_dir: Path) -> int:
             for track in plan.tracks
         ],
     }
-    (out_dir / "sample-manifest.json").write_text(
-        json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8"
-    )
-    return written
+    manifest_path = output / "sample-manifest.json"
+    if output.exists() and any(output.iterdir()):
+        try:
+            if manifest_path.is_symlink() or not manifest_path.is_file():
+                raise ValueError("existing sample has no regular manifest")
+            previous = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if not isinstance(previous, dict) or {k: v for k, v in previous.items() if k != "created_at"} != {k: v for k, v in manifest.items() if k != "created_at"}:
+                raise ValueError("existing sample selection differs; use a new empty directory")
+            expected = set(links) | {manifest_path}
+            actual = {path for path in output.rglob("*") if not path.is_dir() or path.is_symlink()}
+            if actual != expected or any(not path.is_symlink() or path.resolve(strict=True) != source for path, source in links.items()):
+                raise ValueError("existing sample changed; use a new empty directory")
+        except (OSError, json.JSONDecodeError) as error:
+            raise ValueError("existing sample cannot be verified; use a new empty directory") from error
+        return len(links)
+    # Preflight the whole selection before creating even the first link.
+    output.mkdir(parents=True, exist_ok=True)
+    for destination, source in links.items():
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.symlink_to(source)
+    with manifest_path.open("x", encoding="utf-8") as handle:
+        handle.write(json.dumps(manifest, indent=2, sort_keys=True))
+    return len(links)

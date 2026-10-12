@@ -1,6 +1,8 @@
 # SynAmp early-access execution backlog
 
-Status on October 11, 2026: all packages below are planned. Existing capabilities
+Status on October 11, 2026: B01/B02/B03/B04 have initial local work recorded in
+[the execution receipt](execution-2026-10-11.md); no release gate is closed.
+Remaining acceptance work below is planned. Existing capabilities
 are inputs to the work, not proof that a launch gate is complete. This backlog
 uses the [90-day roadmap](90-day-roadmap.md) gates and the owner's 20–25h/week
 capacity. One implementer owns any shared contract or persistence file at a time.

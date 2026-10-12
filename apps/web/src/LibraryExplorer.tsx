@@ -14,6 +14,7 @@ import { allState, emptySelection, groupState, isEmpty, itemChecked, selectionSp
 import type { Selection } from "./library-selection";
 import type { ReactNode } from "react";
 import type { MenuItem } from "./ui/ContextMenu";
+import { revealSong } from "./finder";
 import { albumHref, artistHref, openFromList } from "./library-route";
 import Icon from "./ui/Icon";
 import LibraryTable from "./LibraryTable";
@@ -180,6 +181,7 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
       { label: "Show their albums and songs in this list", onSelect: () => inspectArtist(row) },
     ] : [
       { label: "Play", onSelect: () => void playRow(row) },
+      { label: "Reveal in Finder", onSelect: () => void revealSong(request, row.key, say) },
       ...(row.album_key ? [{ label: "Open album page", onSelect: () => openFromList(albumHref(row.album_key!)) }] : []),
       ...(row.artist ? [{ label: `Go to ${row.artist}`, onSelect: () => openFromList(artistHref(row.artist!)) }] : []),
     ];

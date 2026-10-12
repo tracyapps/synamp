@@ -5,6 +5,8 @@
  * Pure, so it's tested on its own (tools/finder.test.mts).
  */
 
+import type { Request } from "./api";
+
 export type Finder = { host: string };
 export type Folder = { area: "library" | "incoming"; path: string };
 type Movable = { kind: "artist" | "album" | "import" | "tags"; preview: Array<{ from: string }>; moves: Array<{ from: string }>; edits?: Array<{ path: string }> };
@@ -29,3 +31,14 @@ export const DUPLICATES_FOLDER: Folder = { area: "incoming", path: "_duplicates"
 
 /** "tappsBook-Pro.local" → "tappsBook-Pro". */
 export const macName = (finder: Finder) => finder.host.replace(/\.local$/, "");
+
+/** Resolve the current path on the server rather than trusting an old row's path. */
+export async function revealSong(request: Request, id: string, say: (message: string) => void) {
+  say("Asking the analyzer Mac to reveal this file…");
+  try {
+    const result = await request<{ host?: string }>("/analyzer/reveal", { method: "POST", body: JSON.stringify({ track_id: id }) });
+    say(`Finder request sent to ${result.host ? macName({ host: result.host }) : "the analyzer Mac"}. It should select the file in a few seconds.`);
+  } catch (cause) {
+    say(`Couldn’t reveal this file: ${(cause as Error).message}`);
+  }
+}

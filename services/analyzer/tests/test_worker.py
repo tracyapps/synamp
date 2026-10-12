@@ -260,3 +260,23 @@ def test_open_in_finder_only_inside_the_music_folders(tmp_path: Path) -> None:
     assert worker.reveal_once() == 1
     assert opened == [music / "Artist" / "Album"]
     assert any("not opening '/etc'" in line for line in lines)
+
+
+def test_reveal_selects_exact_file_and_refuses_external_symlinks(tmp_path: Path, monkeypatch) -> None:
+    from synamp_analyzer import worker as module
+    cfg, music = library(tmp_path)
+    song = music / "Artist" / "Album" / "01 - tone.flac"
+    assert module.reveal_target(str(song), music) == song
+    outside = tmp_path / "private.flac"
+    outside.write_bytes(b"private")
+    (music / "escape.flac").symlink_to(outside)
+    (music / "escape-dir").symlink_to(tmp_path, target_is_directory=True)
+    assert module.reveal_target(str(music / "escape.flac"), music) is None
+    assert module.reveal_target(str(music / "escape-dir" / "private.flac"), music) is None
+    calls = []
+    monkeypatch.setattr(module.sys, "platform", "darwin")
+    monkeypatch.setattr(module.subprocess, "run", lambda args, **kwargs: calls.append(args))
+    assert module.open_in_finder(song)
+    assert calls == [["open", "-R", str(song)]]
+    assert module.open_in_finder(song.parent)
+    assert calls[-1] == ["open", str(song.parent)]

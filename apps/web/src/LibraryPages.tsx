@@ -7,6 +7,7 @@ import { albumHref, backToList } from "./library-route";
 import { useContextMenu } from "./ui/ContextMenu";
 import Icon from "./ui/Icon";
 import { Heart } from "./favourites";
+import { revealSong } from "./finder";
 
 /*
  * The Library's own pages: an artist (their albums, the albums they appear on,
@@ -91,7 +92,9 @@ export function ArtistPage({ name, request, play, playlists }: Props & { name: s
         <div id="artist-songs" hidden={!showSongs}>
           {showSongs && <ol className="tracklist tracklist--wide" aria-label={`Songs by ${data.artist.name}`}>
             {data.songs.map((track, index) => (
-              <li key={track.id}>
+              <li key={track.id} tabIndex={0} onContextMenu={(event) => open(event, track.title, [
+                { label: "Reveal in Finder", onSelect: () => void revealSong(request, track.id, say) },
+              ])}>
                 <button type="button" className="tracklist__play" onClick={() => start({ start_index: index }, track.title)}>
                   <span className="tracklist__title">{track.title}<span className="visually-hidden">, play</span></span>
                 </button>

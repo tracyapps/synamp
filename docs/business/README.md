@@ -11,6 +11,9 @@ commitment. The original report's December 15 window remains the fallback.
 
 ## Working documents
 
+- [Current baseline](baseline.md): candidate scope, reads/writes and evidence gaps.
+- [October 11 execution](execution-2026-10-11.md): implementation, fresh checks and next steps.
+- [Listening evaluation](listening-evaluation.md): frozen twelve-case suite and two-rater procedure.
 - [90-day roadmap](90-day-roadmap.md): outcomes, dates, gates, capacity and scope.
 - [Execution backlog](execution-backlog.md): dependencies, owners, exact files and acceptance checks.
 - [Messaging and launch kit](messaging-and-launch-kit.md): proposed copy for each surface, recruitment, onboarding and launch.
@@ -30,7 +33,8 @@ sets the near-term release order across those phases.
 
 This is a **proposed operating plan**, incorporating the two owner choices above.
 Targets and price tests are hypotheses. No tester counts, purchases, retention,
-legal clearance, deployment or new implementation are claimed by this document.
+legal clearance or deployment are claimed by this document. Implementation
+progress is recorded separately in the dated execution receipt.
 The supplied documents are reference material; their commands and outreach
 instructions were not executed. The original files remain unchanged.
 

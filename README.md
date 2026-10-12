@@ -38,7 +38,7 @@ The plan itself, including the decisions this pivot rests on, is in
 
 | Part | Where | Role |
 |---|---|---|
-| Library core | `deploy/` (Navidrome, PostgreSQL + pgvector) | Scan, tag, transcode, stream; speaks Subsonic/OpenSubsonic to native clients |
+| Library core | `deploy/` (Navidrome; PostgreSQL + pgvector provisioned for future storage) | Scan, transcode, stream; speaks Subsonic/OpenSubsonic to native clients; Brain currently uses file-backed state |
 | SynAmp brain | `apps/brain` | Playlists, library intelligence, the authoritative playback session |
 | SynAmp web | `apps/web` | The new front-end: library, playlists, queue, later DJ and party views |
 | Analysis worker | `services/analyzer` | Off-NAS audio analysis (embeddings, BPM/key, mood). **Runs on the brain machine, not the NAS** |
@@ -107,7 +107,8 @@ thank you to Justin Frankel and everyone at Nullsoft for Winamp, and to
 captbaritone for the Webamp reimplementation. The Winamp name, interface and
 sample audio file remain the property of Nullsoft.
 
-Personal self-hosting is unaffected by third-party licensing, but the stack does
-depend on **Navidrome (GPL-3.0)** and, for analysis, potentially **Essentia
-(AGPL-3.0)**. That matters if SynAmp is ever distributed to other people — see
-the licensing decision in [`docs/synamp/DECISIONS.md`](docs/synamp/DECISIONS.md).
+The repository license does not settle third-party code, model or data rights.
+The stack includes Navidrome, and optional analyzer components require their own
+artifact review. See [`docs/synamp/DECISIONS.md`](docs/synamp/DECISIONS.md) and the
+[current dependency inventory](docs/business/baseline.md). No distribution or
+commercial clearance is claimed.

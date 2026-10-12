@@ -1120,6 +1120,11 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   }
   if (path === "/api/v1/analyzer/reveal" && req.method === "POST") {
     const input = await body(req);
+    if (input.track_id !== undefined) {
+      const track = currentLibrary().tracks.find((item) => item.id === input.track_id);
+      if (!track?.path) throw new BrowseError("That song has no current file path in the library.", 404);
+      return send(res, 202, analyzerControl.reveal("library", track.path));
+    }
     return send(res, 202, analyzerControl.reveal(input.area, input.path));
   }
   if (path === "/api/v1/analyzer/reveals" && req.method === "POST") return send(res, 200, { paths: analyzerControl.takeReveals() });

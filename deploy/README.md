@@ -18,8 +18,16 @@ why the layout is shaped this way.
     └── data/                 postgres · navidrome · caddy   (DATA_DIR)
 ```
 
-The music share is mounted **read-only** into the containers. Everything the app
-*writes* lives under `DATA_DIR`, which is also the only thing you need to back up.
+The library is mounted **read-only** in Brain and Navidrome; the librarian has
+write access to the music share for reviewed operations. Brain also writes
+uploads to `incoming/`. Backups must include app state under `DATA_DIR`, music
+and its `.synamp` journals/tag backups, and the Mac analyzer database. Restore
+has to be rehearsed; backing up DATA_DIR alone does not recover music changes.
+
+For a new tester installation, start with the
+[read-only NAS preflight](../tools/install/README.md) and record an attempt.
+The hardware above is the candidate target; no independent-install success is
+established by these instructions.
 
 > **First time?** Follow [`../docs/synamp/FIRST-RUN.md`](../docs/synamp/FIRST-RUN.md)
 > instead of this page from top to bottom: it puts these steps in the safe order
@@ -170,17 +178,17 @@ Put **Tailscale** in front rather than port-forwarding: install the Synology
 Tailscale package, then reach the NAS at its Tailscale name from your phone and
 Mac as if you were on the LAN.
 
-When you want a public hostname, give Caddy a real domain in `Caddyfile` and open
-only 443. Note that **`.app` domains are HSTS-preloaded** — `synamp.app` can only
-ever be served over HTTPS, which is fine (Caddy handles certificates) but means
-there is no plain-HTTP fallback.
+The initial beta scope is private-network access. Public internet exposure
+requires separate security work and verification before it becomes supported.
 
 ## What does NOT run here
 
 The **analysis worker** (`services/analyzer`) deliberately runs on the brain
 machine — the M4 Pro — not on the NAS. The V1500B has no GPU; audio-embedding and
 LLM inference would be unusably slow here and would compete with file serving.
-The worker writes results into the `db` service, which *does* run on the NAS.
+The worker stores analysis in local SQLite on the Mac and exports library signals
+to the music share's `.synamp/library-signals.json`, which Brain reads. The
+provisioned Postgres service is not the current analyzer/Brain storage path.
 
 ## Notes
 

@@ -163,6 +163,44 @@ test("artist merge: whole folders, everything follows, the variant folder disapp
   } finally { lib.cleanup(); }
 });
 
+test("case-only folder and file changes preserve bytes and undo the directory spelling", (t) => {
+  const lib = library({ "Artist/album/SONG.mp3": "audio", "Artist/album/cover.jpg": "art" });
+  try {
+    const alias = join(lib.root, "ARTIST");
+    t.diagnostic(existsSync(alias) && statSync(alias).ino === statSync(join(lib.root, "Artist")).ino
+      ? "Real temporary volume is case-insensitive; directory alias behavior exercised."
+      : "Real temporary volume is case-sensitive; separate-directory merge behavior exercised.");
+    const decision: JobDecision = { id: "case", title: "Case correction", kind: "album",
+      moves: [{ from: "Artist/album/SONG.mp3", to: "ARTIST/Album/song.mp3" }],
+      folders: [{ from: "Artist/album", to: "ARTIST/Album" }] };
+    const ctx = { root: lib.root, batch: "case", journal: lib.journal };
+    const result = applyDecision(decision, ctx);
+    assert.equal(result.status, "applied", result.errors.join());
+    assert.deepEqual(lib.tree(), ["ARTIST/Album/cover.jpg", "ARTIST/Album/song.mp3"]);
+    assert.equal(lib.read("ARTIST/Album/song.mp3"), "audio");
+    const undone = undoDecision({ ...decision, moves: [...result.moved].reverse().map(reverseMove) }, ctx);
+    assert.equal(undone.status, "applied", undone.errors.join());
+    assert.deepEqual(lib.tree(), ["Artist/album/SONG.mp3", "Artist/album/cover.jpg"]);
+    assert.equal(lib.read("Artist/album/cover.jpg"), "art");
+  } finally { lib.cleanup(); }
+});
+
+test("a failed decision rolls back case-only folder changes along with the files", () => {
+  const lib = library({ "Artist/album/a.mp3": "a", "Artist/album/b.mp3": "b" });
+  try {
+    const before = lib.tree();
+    const decision: JobDecision = { id: "case-fail", title: "Case correction", kind: "album", folders: [],
+      moves: ["a", "b"].map(name => ({ from: `Artist/album/${name}.mp3`, to: `ARTIST/Album/${name}.mp3` })) };
+    let calls = 0;
+    const result = applyDecision(decision, { root: lib.root, batch: "b", journal: lib.journal,
+      beforeRename: () => { if (++calls === 2) throw new Error("interrupted"); } });
+    assert.equal(result.status, "failed");
+    assert.deepEqual(lib.tree(), before);
+    assert.equal(lib.read("Artist/album/a.mp3"), "a");
+    assert.equal(lib.read("Artist/album/b.mp3"), "b");
+  } finally { lib.cleanup(); }
+});
+
 test("the librarian loop: claims a job from the brain, does it, reports — and resends a lost report", async () => {
   const lib = library(startingFiles);
   const state = mkdtempSync(join(tmpdir(), "synamp-librarian-state-"));

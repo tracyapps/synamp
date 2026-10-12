@@ -1,5 +1,12 @@
 # SynAmp — first run on the NAS
 
+This is the existing owner's setup procedure and contains owner-specific
+hostnames, paths and timing observations. New tester installations should begin
+with the [read-only NAS preflight](../../tools/install/README.md) and
+[candidate scope/evidence ledger](../business/baseline.md). This procedure does
+not establish an independently verified installation or a time-to-first-value
+promise; a generic guided installer remains B04 work.
+
 The order matters. **Use Navidrome last.** It identifies tracks by their
 path, so anything renamed after it has collected plays loses those play counts
 in Navidrome (SynAmp keeps its own). It starts with everything else

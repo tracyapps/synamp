@@ -19,6 +19,8 @@
     "research:build": "node tools/research/build.mjs",
     "research:check": "node tools/research/build.mjs --check",
     "brain:readback:test": "node --experimental-strip-types --test tools/brain-lab/readback.test.mts",
+    "business:baseline:test": "node --experimental-strip-types --test tools/brain-lab/business-baseline.test.mts",
+    "install:preflight:test": "node --test tools/install/preflight.test.mjs",
     "brain:readback:type-check": "tsc -p tools/brain-lab/tsconfig.readback.json"
   },
   "devDependencies": {

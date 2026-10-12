@@ -72,6 +72,7 @@ def test_audio_hash_ignores_tags_but_not_audio(tmp_path: Path) -> None:
 def test_fingerprint_is_null_without_the_tool_and_read_from_it_when_present(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     tone(tmp_path / "a.flac")
     monkeypatch.setattr(identity.shutil, "which", lambda _name: None)
+    monkeypatch.setattr(identity, "FPCALC_PLACES", ())
     assert identity.chromaprint(tmp_path / "a.flac") == (None, "tool_missing")
     fake = tmp_path / "fpcalc"
     fake.write_text('#!/bin/sh\necho \'{"duration": 2.0, "fingerprint": "AQAAfake"}\'\n')
@@ -81,6 +82,19 @@ def test_fingerprint_is_null_without_the_tool_and_read_from_it_when_present(tmp_
     broken.write_text("#!/bin/sh\necho nope\n")
     broken.chmod(broken.stat().st_mode | stat.S_IEXEC)
     assert identity.chromaprint(tmp_path / "a.flac", fpcalc=str(broken)) == (None, "failed")
+
+
+def test_fpcalc_discovery_checks_path_then_launchd_fallbacks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fallback = tmp_path / "homebrew" / "fpcalc"
+    fallback.parent.mkdir()
+    fallback.write_text("fixture")
+    monkeypatch.setattr(identity, "FPCALC_PLACES", (str(tmp_path / "missing"), str(fallback)))
+    monkeypatch.setattr(identity.shutil, "which", lambda _name: "/path/fpcalc")
+    assert identity.find_fpcalc() == "/path/fpcalc", "PATH takes precedence"
+    monkeypatch.setattr(identity.shutil, "which", lambda _name: None)
+    assert identity.find_fpcalc() == str(fallback), "launchd can discover the Homebrew fallback"
+    fallback.unlink()
+    assert identity.find_fpcalc() is None, "missing means absent from PATH and every fallback"
 
 
 def test_a_retag_keeps_the_analysis(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -115,8 +129,13 @@ def test_a_moved_file_keeps_its_id_and_analysis(tmp_path: Path, monkeypatch: pyt
     with Database(config.db_path) as db:
         original_id = by_path(build_export(db, library, read_file_tags=False))["ani difranco/Album/song.flac"]["id"]
     new = library / "Ani DiFranco" / "Album" / "01 - Song.flac"
-    new.parent.mkdir(parents=True)
-    old.rename(new)
+    # Actually change the directory entry's case on both APFS and Linux.
+    # mkdir with another spelling aliases the old directory on a Mac.
+    temporary = library / ".artist-rename"
+    (library / "ani difranco").rename(temporary)
+    temporary.rename(library / "Ani DiFranco")
+    (new.parent / old.name).rename(new)
+    assert [path.name for path in library.iterdir()] == ["Ani DiFranco"]
     forbid_analysis(monkeypatch)
     run_scan(config, progress=quiet)
     summary = run_analyze(config, progress=quiet)

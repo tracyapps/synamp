@@ -1,0 +1,110 @@
+name: Release checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node:
+    name: Node ${{ matrix.node }} / Linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22.x', '24.x']
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6, resolved 2026-10-11
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - name: Install pinned package manager
+        run: npm install --global pnpm@9.12.0
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install generated-audio test decoder
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg
+      - name: Brain tests
+        run: pnpm --filter @synamp/brain test
+      - name: Brain and lab type checks
+        run: |
+          pnpm --filter @synamp/brain type-check
+          pnpm brain:readback:type-check
+      - name: Tool and contract tests
+        run: node --experimental-strip-types --test tools/*.test.mts tools/brain-lab/*.test.mts tools/nas/*.test.mjs tools/install/*.test.mjs
+      - name: Web production build
+        run: pnpm --filter @synamp/web build
+      - name: Site tests and build
+        run: |
+          pnpm --dir site test
+          pnpm --dir site build
+      - name: Whitespace check
+        run: git diff --check
+
+  macos-renames:
+    name: macOS librarian rename and undo
+    runs-on: macos-14
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6, resolved 2026-10-11
+        with:
+          node-version: '22.x'
+          package-manager-cache: false
+      - name: Require a case-insensitive temporary volume
+        run: |
+          node --input-type=module - <<'JS'
+          import { mkdtempSync, writeFileSync, statSync, rmSync } from 'node:fs';
+          import { tmpdir } from 'node:os';
+          import { join } from 'node:path';
+          const root = mkdtempSync(join(tmpdir(), 'synamp-ci-case-'));
+          try {
+            writeFileSync(join(root, 'CaseProbe'), 'fixture');
+            if (statSync(join(root, 'CaseProbe')).ino !== statSync(join(root, 'caseprobe')).ino) {
+              throw new Error('This job requires a real case-insensitive temporary volume.');
+            }
+          } finally { rmSync(root, { recursive: true, force: true }); }
+          JS
+      - name: Librarian apply, collision, rollback and undo
+        run: node --experimental-strip-types --test apps/brain/src/librarian/librarian.test.ts
+
+  analyzer:
+    name: Analyzer / ${{ matrix.os }} / Python 3.12
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: '0.12.1'
+      - name: Install locked CPU-only development dependencies
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/synamp-analyzer-venv
+        run: uv sync --locked --extra dev --python 3.12 --project services/analyzer
+      - name: Analyzer tests without optional models or downloaded weights
+        env:
+          UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/synamp-analyzer-venv
+        run: uv run --no-sync --project services/analyzer python -m pytest services/analyzer/tests -q
