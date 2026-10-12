@@ -16,8 +16,9 @@
  *   hearted here, not in Navidrome → starred there; un-hearted here → unstarred there.
  */
 
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { loadUserState } from "../state-loading.ts";
 import { randomBytes } from "node:crypto";
 import type { Library, LibraryTrack } from "../query/evaluate.ts";
 import { albumFolder } from "./albums.ts";
@@ -52,8 +53,7 @@ export class Favourites {
 
   constructor(path: string) {
     this.path = path;
-    let loaded: Partial<State> = {};
-    try { loaded = JSON.parse(readFileSync(path, "utf8")) as Partial<State>; } catch { /* first run */ }
+    const loaded = loadUserState<State>(path, "synamp.favourites/1", ["items", "removed", "last_sync"], ["synced"]);
     this.state = { format: "synamp.favourites/1", items: loaded.items ?? {}, removed: loaded.removed ?? {}, synced: loaded.synced ?? [],
       ...(loaded.last_sync ? { last_sync: loaded.last_sync } : {}) };
   }

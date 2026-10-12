@@ -8,8 +8,9 @@
  * the brain; secrets are never sent back to the browser, only "set" or not.
  */
 
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { loadUserState } from "./state-loading.ts";
 import { randomBytes } from "node:crypto";
 
 export class SettingsError extends Error {
@@ -50,7 +51,7 @@ export class RuntimeSettings {
   constructor(path: string, defaults: Defaults) {
     this.path = path;
     this.defaults = defaults;
-    try { this.saved = (JSON.parse(readFileSync(path, "utf8")) as { settings?: Saved }).settings ?? {}; } catch { this.saved = {}; }
+    this.saved = loadUserState<{ settings: Saved }>(path, "synamp.settings/1", ["settings"]).settings ?? {};
   }
 
   get musicbrainzContact(): string { return this.saved.musicbrainz_contact ?? this.defaults.musicbrainzContact; }

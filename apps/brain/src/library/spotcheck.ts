@@ -16,8 +16,9 @@
  *   checked again.
  */
 
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { loadUserState } from "../state-loading.ts";
 import { randomBytes } from "node:crypto";
 import type { Library, LibraryTrack } from "../query/evaluate.ts";
 
@@ -81,8 +82,7 @@ export class SpotChecks {
 
   constructor(path: string) {
     this.path = path;
-    let loaded: Partial<State> = {};
-    try { loaded = JSON.parse(readFileSync(path, "utf8")) as Partial<State>; } catch { /* first run */ }
+    const loaded = loadUserState<State>(path, "synamp.spotchecks/1", ["checks"]);
     this.state = { format: "synamp.spotchecks/1", checks: loaded.checks ?? {} };
   }
   private save(): void {

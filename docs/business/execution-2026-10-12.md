@@ -116,3 +116,19 @@ generated audio was measured. `actionlint 1.7.12` and whitespace checks pass.
 This configures six hosted jobs; it is not evidence of a hosted run. Browser
 screenshots remain temporary runner files and assertions stay in job logs.
 Hosted Node 22/Linux browser compatibility still needs the user's push.
+
+## B05: refuse silent reset of critical user stores
+
+Words/tempo/mood corrections, favourites and runtime settings previously caught
+all read/parse errors as a first run. Ten regression checks reproduced this gap.
+The loaders now allow defaults only for ENOENT; malformed JSON, read failures,
+wrong envelope/container shapes and incompatible format markers stop startup
+without writing. Error text excludes JSON contents and credentials. Legacy
+unversioned objects and omitted optional fields remain compatible. Recovery
+steps preserve originals and require a fresh-directory rehearsal. This is
+container/envelope validation, not comprehensive record-schema validation or
+power-loss durability. Other optional/cache loaders remain separate work.
+
+Fresh verification: Brain typecheck passes; Brain suite reports 341 tests,
+340 passed, zero failures and the existing one cross-filesystem skip. The
+seven offline recovery tests still pass with these stricter loaders.

@@ -14,8 +14,9 @@
  * The first guess is never shown before you answer, so it can't sway you.
  */
 
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { loadUserState } from "../state-loading.ts";
 import { randomBytes } from "node:crypto";
 import type { Library, LibraryTrack } from "../query/evaluate.ts";
 import { AUDIO_MOODS } from "../query/signals.ts";
@@ -107,8 +108,7 @@ export class MoodChecks {
 
   constructor(path: string) {
     this.path = path;
-    let loaded: Partial<State> = {};
-    try { loaded = JSON.parse(readFileSync(path, "utf8")) as Partial<State>; } catch { /* first run */ }
+    const loaded = loadUserState<State>(path, "synamp.moodchecks/1", ["answers"]);
     this.state = { format: "synamp.moodchecks/1", answers: loaded.answers ?? {} };
   }
   private save(): void {

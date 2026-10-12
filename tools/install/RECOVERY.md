@@ -61,3 +61,21 @@ Run local safety and behavior checks with:
 ```sh
 node --experimental-strip-types --test tools/install/brain-state*.test.mjs
 ```
+
+## Startup refuses damaged user state
+
+Words/tempo/mood corrections, favourites and app settings now treat only a
+missing file as a first run. Unreadable JSON, a non-object root, an incompatible
+format marker or an invalid collection container stops startup with a recovery
+message. Existing unversioned objects and omitted optional containers remain
+compatible. Record-level semantic validation is not claimed; other cached and
+optional stores have their own loaders.
+
+If startup reports this error, keep the service stopped. Preserve the original
+file and its private backup; do not delete it to make startup succeed. Check
+ownership/permissions first. For damaged bytes, restore a known-good offline
+backup into a new directory, verify it, then rehearse with the matching build
+as above before choosing the restored state. Do not paste state or credentials
+into a public issue. A successful byte-copy backup of damaged JSON does not
+repair that JSON. Unknown future formats need their matching software or an
+explicit migration; changing the format string is not a migration.
