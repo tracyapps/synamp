@@ -121,8 +121,11 @@ export default function App() {
   }, [call, refreshNodes]);
 
   /** Queue something (a playlist, an album, some tracks) and show it in the player. */
+  const playRequest = useRef(0);
   const play = useCallback(async (body: Record<string, unknown>) => {
+    const ticket = ++playRequest.current;
     const result = await call<{ session: SessionView }>("/session/queue", { method: "POST", body: JSON.stringify({ event_id: newId(), ...body }) });
+    if (ticket !== playRequest.current) return;
     setStation(null);
     setSession(result.session);
   }, [call]);

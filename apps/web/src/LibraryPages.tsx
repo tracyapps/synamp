@@ -8,6 +8,7 @@ import { useContextMenu } from "./ui/ContextMenu";
 import Icon from "./ui/Icon";
 import { Heart } from "./favourites";
 import { revealSong } from "./finder";
+import useLibraryPage from "./useLibraryPage";
 
 /*
  * The Library's own pages: an artist (their albums, the albums they appear on,
@@ -41,20 +42,8 @@ function PageHead({ eyebrow, title, children }: { eyebrow: string; title: string
   );
 }
 
-function usePage<T>(request: Request, path: string) {
-  const [data, setData] = useState<T | null>(null);
-  const [problem, setProblem] = useState("");
-  useEffect(() => {
-    let live = true;
-    setData(null); setProblem("");
-    request<T>(path).then((result) => { if (live) setData(result); }, (cause) => { if (live) setProblem((cause as Error).message); });
-    return () => { live = false; };
-  }, [request, path]);
-  return { data, problem };
-}
-
 export function ArtistPage({ name, request, play, playlists }: Props & { name: string }) {
-  const { data, problem } = usePage<ArtistData>(request, `/library/artist?name=${encodeURIComponent(name)}`);
+  const { data, problem, retry } = useLibraryPage<ArtistData>(request, `/library/artist?name=${encodeURIComponent(name)}`);
   const [message, setMessage] = useState("");
   const [showSongs, setShowSongs] = useState(false);
   const { open, menu } = useContextMenu();
@@ -70,7 +59,7 @@ export function ArtistPage({ name, request, play, playlists }: Props & { name: s
   return (
     <section className="section-card library-page" aria-labelledby="library-page-title">
       {!data ? (
-        <div className="section-card__body"><PageHead eyebrow="Artist" title={name} /><p className={problem ? "alert" : "muted"} role={problem ? "alert" : "status"}>{problem || "Loading…"}</p></div>
+        <div className="section-card__body"><PageHead eyebrow="Artist" title={name} /><p className={problem ? "alert" : "muted"} role={problem ? "alert" : "status"}>{problem || "Loading…"}</p>{problem && <button className="btn btn--ghost btn--sm" onClick={retry}>Retry artist</button>}</div>
       ) : <div className="section-card__body">
         <PageHead eyebrow="Artist" title={data.artist.name}>
           <p className="muted library-page__facts">{n(data.artist.albums, "album")} · {n(data.artist.songs, "song")}{data.artist.duration_s ? ` · ${clock(data.artist.duration_s)}` : ""}</p>
@@ -91,11 +80,11 @@ export function ArtistPage({ name, request, play, playlists }: Props & { name: s
         </h3>
         <div id="artist-songs" hidden={!showSongs}>
           {showSongs && <ol className="tracklist tracklist--wide" aria-label={`Songs by ${data.artist.name}`}>
-            {data.songs.map((track, index) => (
+            {data.songs.map((track) => (
               <li key={track.id} tabIndex={0} onContextMenu={(event) => open(event, track.title, [
                 { label: "Reveal in Finder", onSelect: () => void revealSong(request, track.id, say) },
               ])}>
-                <button type="button" className="tracklist__play" onClick={() => start({ start_index: index }, track.title)}>
+                <button type="button" className="tracklist__play" onClick={() => start({ start_track_id: track.id }, track.title)}>
                   <span className="tracklist__title">{track.title}<span className="visually-hidden">, play</span></span>
                 </button>
                 <PageLink href={albumHref(track.album_key)} label={`Open the album page for ${track.album ?? "this album"}`} className="tracklist__album">{track.album ?? "Album"}</PageLink>
@@ -115,13 +104,13 @@ export function ArtistPage({ name, request, play, playlists }: Props & { name: s
 }
 
 export function AlbumPage({ albumKey, request, play, playlists }: Props & { albumKey: string }) {
-  const { data, problem } = usePage<{ album: AlbumSummary; tracks: TrackSummary[] }>(request, `/library/album?key=${encodeURIComponent(albumKey)}`);
+  const { data, problem, retry } = useLibraryPage<{ album: AlbumSummary; tracks: TrackSummary[] }>(request, `/library/album?key=${encodeURIComponent(albumKey)}`);
   const [message, setMessage] = useState("");
   const start = (body: Record<string, unknown>, what: string) => play({ album_key: albumKey, ...body }).then(() => setMessage(`Playing ${what}.`)).catch((cause) => setMessage((cause as Error).message));
   return (
     <section className="section-card library-page" aria-labelledby="library-page-title">
       <div className="section-card__body">
-        {!data ? <><PageHead eyebrow="Album" title={albumKey.split("/").pop() ?? "Album"} /><p className={problem ? "alert" : "muted"} role={problem ? "alert" : "status"}>{problem || "Loading…"}</p></> : <>
+        {!data ? <><PageHead eyebrow="Album" title={albumKey.split("/").pop() ?? "Album"} /><p className={problem ? "alert" : "muted"} role={problem ? "alert" : "status"}>{problem || "Loading…"}</p>{problem && <button className="btn btn--ghost btn--sm" onClick={retry}>Retry album</button>}</> : <>
           <PageHead eyebrow="Album" title={data.album.title}>
             <p className="library-page__facts"><ArtistLink name={data.album.artist} /><span className="muted">{data.album.year ? ` · ${data.album.year}` : ""} · {n(data.album.tracks, "song")}{data.album.duration_s ? ` · ${clock(data.album.duration_s)}` : ""}</span></p>
             <div className="cluster">

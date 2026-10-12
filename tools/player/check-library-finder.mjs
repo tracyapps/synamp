@@ -18,7 +18,8 @@ const port=net.address().port; await new Promise(r=>net.close(r));
 const api=`http://127.0.0.1:${port}`;
 const relative="Artist/Album/01 - words ' & $(nothing).flac";
 const track={id:'fixture-song',title:'Finder song',artist:'Artist',album:'Album',path:relative,signals:{}};
-await writeFile(path.join(scratch,'library.json'),JSON.stringify({tracks:[track]}));
+const other={id:'other-song',title:'Other song',artist:'Other',album:'Other album',path:'Other/Other album/song.flac',signals:{}};
+await writeFile(path.join(scratch,'library.json'),JSON.stringify({tracks:[track,other]}));
 const brain=spawn(process.execPath,['--experimental-strip-types','src/index.ts'],{cwd:path.join(repo,'apps/brain'),env:{...process.env,BRAIN_PORT:String(port),BRAIN_HOST:'127.0.0.1',LIBRARY_PATH:scratch,LIBRARY_SIGNALS_PATH:path.join(scratch,'library.json'),PLAYLIST_DATA_PATH:path.join(scratch,'data/playlists.json'),EVENTS_PATH:path.join(scratch,'data/events.jsonl'),SESSION_PATH:path.join(scratch,'data/session.json'),PLAYLIST_API_TOKEN:'',CORE_URL:'http://127.0.0.1:1',SOURCE_PATH:'',INCOMING_PATH:''},stdio:['ignore','pipe','pipe']});
 let log='';brain.stdout.on('data',c=>log+=c);brain.stderr.on('data',c=>log+=c);
 let server,browser;
@@ -39,9 +40,9 @@ import {ArtistPage} from ${JSON.stringify(moduleUrl('apps/web/src/LibraryPages.t
 import {makeApi} from ${JSON.stringify(moduleUrl('apps/web/src/api.ts'))};
 import ${JSON.stringify(moduleUrl('apps/web/src/styles/tokens.css'))};
 import ${JSON.stringify(moduleUrl('apps/web/src/styles/ui.css'))};
-const request=makeApi('').call,play=async()=>{};
-function Check(){const [view,setView]=useState('explorer'),[note,say]=useState(''); return <><button onClick={()=>setView('album')}>Album test</button><button onClick={()=>setView('artist')}>Artist test</button>{view==='explorer'?<Explorer request={request} play={play} playlists={[]}/>:view==='album'?<><AlbumSongs album={{key:'Artist/Album',title:'Album',artist:'Artist',tracks:1}} request={request} play={play} playlists={[]} say={say}/><p role="status">{note}</p></>:<ArtistPage name="Artist" request={request} play={play} playlists={[]}/>}</>};createRoot(document.getElementById('root')).render(<Check/>);`);
- await writeFile(path.join(scratch,'vite.config.mjs'),`import {defineConfig} from ${JSON.stringify(path.join(repo,'apps/web/node_modules/vite/dist/node/index.js'))};import react from '@vitejs/plugin-react';export default defineConfig({root:${JSON.stringify(scratch)},plugins:[react()],server:{host:'127.0.0.1',port:0,fs:{allow:${JSON.stringify([scratch,repo])}},proxy:{'/api':${JSON.stringify(api)}}}});`);
+const apiCall=makeApi('').call,request=(route,options)=>apiCall(window.failAlbum&&route.startsWith('/library/album?')?'/__fixture/error499':route,options),play=async body=>{window.lastPlayBody=body;window.lastSession=(await request('/session/queue',{method:'POST',body:JSON.stringify({...body,event_id:crypto.randomUUID()})})).session;};
+function Check(){const [view,setView]=useState('explorer'),[note,say]=useState(''),[artist,setArtist]=useState('Artist'); return <><button onClick={()=>setView('album')}>Album test</button><button onClick={()=>setView('artist')}>Artist test</button><button onClick={()=>setArtist('Other')}>Next artist</button>{view==='explorer'?<Explorer request={request} play={play} playlists={[]}/>:view==='album'?<><AlbumSongs album={{key:'Artist/Album',title:'Album',artist:'Artist',tracks:1}} request={request} play={play} playlists={[]} say={say}/><p role="status">{note}</p></>:<ArtistPage name={artist} request={request} play={play} playlists={[]}/>}</>};createRoot(document.getElementById('root')).render(<Check/>);`);
+ await writeFile(path.join(scratch,'vite.config.mjs'),`import {defineConfig} from ${JSON.stringify(path.join(repo,'apps/web/node_modules/vite/dist/node/index.js'))};import react from '@vitejs/plugin-react';export default defineConfig({root:${JSON.stringify(scratch)},plugins:[react(),{name:'fixture-error',configureServer(server){server.middlewares.use((req,res,next)=>{if(req.url==='/api/v1/__fixture/error499'){res.statusCode=499;res.setHeader('content-type','application/json');res.end(JSON.stringify({error:'HTTP 499'}));}else next();});}}],server:{host:'127.0.0.1',port:0,fs:{allow:${JSON.stringify([scratch,repo])}},proxy:{'/api':${JSON.stringify(api)}}}});`);
  server=spawn(process.execPath,[path.join(repo,'apps/web/node_modules/vite/bin/vite.js'),'--config',path.join(scratch,'vite.config.mjs')],{stdio:['ignore','pipe','pipe']});
  const url=await new Promise((resolve,reject)=>{let lines='';const timer=setTimeout(()=>reject(Error(lines)),15000);const read=c=>{lines+=c.toString().replace(/\x1b\[[0-9;]*m/g,'');const found=lines.match(/http:\/\/127\.0\.0\.1:\d+\//);if(found){clearTimeout(timer);resolve(found[0]);}};server.stdout.on('data',read);server.stderr.on('data',read);});
  browser=await puppeteer.launch({headless:true,args:['--no-sandbox']});
@@ -75,12 +76,37 @@ function Check(){const [view,setView]=useState('explorer'),[note,say]=useState('
  await page.waitForSelector('#artist-songs li');await page.click('#artist-songs li',{button:'right'});await click('Reveal in Finder');
  await page.waitForFunction(()=>document.body.textContent.includes('Finder request sent'));
  assert.deepEqual((await call('/analyzer/reveals',{})).data.paths,[`/Volumes/music/library/${relative}`]);
+ await page.click('#artist-songs .tracklist__play');
+ await page.waitForFunction(()=>window.lastSession?.queue[window.lastSession.index]?.track_id==='fixture-song');
+ assert.equal(await page.evaluate(()=>window.lastPlayBody.start_track_id),'fixture-song');
+ await page.setRequestInterception(true);
+ page.on('request',req=>{
+  if(req.url().includes('/library/artist?name=Other'))setTimeout(()=>req.continue().catch(()=>{}),500);
+  else req.continue();
+ });
+ await click('Next artist');
+ assert.equal(await page.$('#artist-songs .tracklist__play'),null,'previous artist songs disappear while the next artist loads');
+ await page.waitForFunction(()=>document.querySelector('#artist-songs')?.textContent.includes('Other song'));
+ await page.click('#artist-songs .tracklist__play');
+ await page.waitForFunction(()=>window.lastSession?.queue[window.lastSession.index]?.track_id==='other-song');
+ await page.evaluate(()=>window.failAlbum=true);await click('Album test');
+ await page.waitForFunction(()=>document.body.textContent.includes('Retry songs'));
+ assert.match(await page.$eval('[role="alert"]',el=>el.textContent),/HTTP 499/);
+ assert.equal(await page.$('.album__loading'),null,'failed requests stop showing Loading');
+ await page.screenshot({path:path.join(output,'album-error-retry.png')});
+ await page.evaluate(()=>window.failAlbum=false);await click('Retry songs');await page.waitForSelector('.tracklist__play');
+ // A changed album order must still start at the clicked identity, not the old row index.
+ const inserted={...track,id:'inserted-song',title:'Inserted',path:'Artist/Album/00.flac',track_no:0};
+ await writeFile(path.join(scratch,'library.json'),JSON.stringify({tracks:[inserted,track,other]}));
+ await page.click('.tracklist__play');
+ await page.waitForFunction(()=>window.lastSession?.queue[window.lastSession.index]?.track_id==='fixture-song');
+ assert.equal((await call('/session/queue',{artist:'Other',start_track_id:'fixture-song',event_id:'wrong-artist-target'})).status,409);
  // Updated exports resolve by identity at action time, without a stale client path.
  await writeFile(path.join(scratch,'library.json'),JSON.stringify({tracks:[{...track,path:'Artist/Renamed/01.flac'}]}));
  assert.equal((await call('/analyzer/reveal',{track_id:track.id,path:'/etc'})).status,202);
  assert.deepEqual((await call('/analyzer/reveals',{})).data.paths,['/Volumes/music/library/Artist/Renamed/01.flac']);
  assert.deepEqual(errors,[]);
- await writeFile(path.join(output,'results.json'),JSON.stringify({passed:['offline and missing-song errors','Explorer list/grid/table song right-click','expanded album song right-click','artist song right-click','exact file queue and one-shot delivery','current path after export change'],errors,browser:await browser.version(),limitations:'Scratch metadata and queued worker requests only. No owner server deployment or physical Finder selection.'},null,2));
+ await writeFile(path.join(output,'results.json'),JSON.stringify({passed:['offline and missing-song errors','Explorer list/grid/table song right-click','expanded album song right-click','artist song right-click','exact file queue and one-shot delivery','current path after export change','direct artist playback by identity','switch artists during a delayed request','HTTP 499 album failure and retry','album playback after order changes','reject a song outside the requested artist'],errors,browser:await browser.version(),limitations:'Scratch metadata and queued worker requests only. No owner server deployment, actual audio playback or physical Finder selection.'},null,2));
  console.log(`PASS Library Finder UI/API checks. Evidence: ${output}`);
 }catch(error){console.error(log.slice(-2000));throw error;}
 finally{await browser?.close();server?.kill('SIGTERM');brain.kill('SIGTERM');await rm(scratch,{recursive:true,force:true});}

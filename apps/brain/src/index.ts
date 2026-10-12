@@ -34,7 +34,7 @@ import { continuationTracks } from "./session/continuation.ts";
 import { similarNext } from "./session/similar.ts";
 import { SessionError, SessionStore } from "./session/session.ts";
 import type { Session } from "./session/session.ts";
-import { resolveInside, sendFile, StreamSigner } from "./session/stream.ts";
+import { resolveInside, resolveFilesInside, sendFile, StreamSigner } from "./session/stream.ts";
 import { LIGHTER_KBPS, lighterAvailable, planLighter, probeSeconds, sendLighter } from "./session/lighter.ts";
 import { POLICY_VERSION } from "./session/events.ts";
 import type { ListeningEvent } from "./session/events.ts";
@@ -573,17 +573,18 @@ function brainSessionView() {
 }
 
 /** The session as clients see it: each entry says whether it can be streamed, and from where. */
-function sessionView(session: Session) {
+async function sessionView(session: Session) {
   const loved = new Set(events.all().filter(event => event.signal === "love").map(event => library.canonicalId(event.track_id)));
   const lib = currentLibrary();
   const byId = new Map(lib.tracks.map((track) => [track.id, track]));
+  const paths = await resolveFilesInside(config.libraryPath, session.queue.map(entry => byId.get(entry.track_id)?.path));
   return {
     ...session,
     queue: session.queue.map((entry, index) => {
       // A radio station saved in a playlist: always "playable", never ends by itself.
       if (entry.track_id.startsWith("radio:")) return { ...entry, playable: true, live: true, stream_url: radioListenUrl(entry.track_id.slice(6)) };
       const track = byId.get(entry.track_id);
-      const file = track?.path ? resolveInside(config.libraryPath, track.path) : undefined;
+      const file = paths[index];
       const playable = !!file;
       // The album folder lets the player play an album straight through instead of crossfading inside it.
       // Near the playhead: the encoder's silence to trim (gapless), and tempo/key (DJ blends).
@@ -866,10 +867,10 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     if (req.method === "GET") radio.countClick(id);
     return radio.relay(req, res, station);
   }
-  if (path === "/api/v1/session" && req.method === "GET") return send(res, 200, { session: sessionView(continueSession()) });
+  if (path === "/api/v1/session" && req.method === "GET") return send(res, 200, { session: await sessionView(continueSession()) });
   if (path === "/api/v1/session/queue" && req.method === "POST") {
     const input = await body(req);
-    if (events.has(`${String(input.event_id ?? "")}:queued`)) return send(res, 200, { session: sessionView(continueSession()) });
+    if (events.has(`${String(input.event_id ?? "")}:queued`)) return send(res, 200, { session: await sessionView(continueSession()) });
     const shuffle = input.shuffle === true;
     // DJ mode: ordered so each song flows into the next (tempo and key), then played with longer blends.
     const dj = input.order === "dj";
@@ -891,36 +892,42 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       return djOrder(facts, { start: shuffle ? Math.floor(Math.random() * tracks.length) : start }).map((step) => ({ ...byRef.get(step.id)!, ...(step.note ? { dj_note: step.note } : {}) }));
     };
     const startAt = (requested: number) => (dj || shuffle ? 0 : requested);
+    const requestedStart = (tracks: Array<{ id: string }>) => {
+      if (input.start_track_id === undefined) return Number(input.start_index ?? 0);
+      const index = tracks.findIndex(track => track.id === input.start_track_id);
+      if (index < 0) throw new SessionError("That song is no longer in this library selection. Refresh the page.", 409);
+      return index;
+    };
     const ref = (track: { id: string; title: string; artist?: string }): Ref => ({ id: track.id, title: track.title, ...(track.artist ? { artist: track.artist } : {}) });
     const mix = dj ? "dj" as const : undefined;
     // An album, or some songs picked from the library: no playlist behind them.
     if (typeof input.album_key === "string") {
       const { tracks } = albumTracks(lib, input.album_key);
-      const start = Number(input.start_index ?? 0);
+      const start = requestedStart(tracks);
       const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks.map(ref), start), undefined, startAt(start), mix);
-      return send(res, 200, { session: sessionView(session) });
+      return send(res, 200, { session: await sessionView(session) });
     }
     if (typeof input.selection_id === "string") {
       const present = new Set(lib.tracks.map((track) => track.id));
       const tracks = explorerSelections.get(input.selection_id).tracks.filter((track) => present.has(track.id)).map(ref);
       if (input.next === true) {
         // Play next: after the song that's playing (up to 200), the rest of the queue stays.
-        return send(res, 200, { session: sessionView(sessions.playNext(String(input.event_id ?? ""), tracks)) });
+        return send(res, 200, { session: await sessionView(sessions.playNext(String(input.event_id ?? ""), tracks)) });
       }
       const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks, 0), undefined, 0, mix);
-      return send(res, 200, { session: sessionView(session) });
+      return send(res, 200, { session: await sessionView(session) });
     }
     if (typeof input.artist === "string") {
       const tracks = artistTracks(lib, input.artist).map(ref);
-      const start = Number(input.start_index ?? 0);
+      const start = requestedStart(tracks);
       const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks, start), undefined, startAt(start), mix);
-      return send(res, 200, { session: sessionView(session) });
+      return send(res, 200, { session: await sessionView(session) });
     }
     if (Array.isArray(input.track_ids)) {
       const tracks = input.track_ids.slice(0, 2000).map((id) => byId.get(library.canonicalId(String(id)))).filter((track) => track !== undefined).map(ref);
       const start = Number(input.start_index ?? 0);
       const session = sessions.replaceQueue(String(input.event_id ?? ""), order(tracks, start), undefined, startAt(start), mix);
-      return send(res, 200, { session: sessionView(session) });
+      return send(res, 200, { session: await sessionView(session) });
     }
     if (typeof input.playlist_id !== "string") throw new SessionError("playlist_id, album_key, artist or track_ids is required");
     const node = playlists.list().find((item) => item.id === input.playlist_id);
@@ -936,7 +943,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     sessions.replaceQueue(String(input.event_id ?? ""), initial,
       { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}) }, continuous && node.type === "smart" ? 0 : offset, mix,
       continuous ? { playlist_id: node.id, ...(node.type === "smart" ? { plan_hash: node.planHash } : {}), seeds: tracks.map(t => t.id).slice(0, 50), since: events.all().length } : undefined);
-    return send(res, 200, { session: sessionView(continueSession()) });
+    return send(res, 200, { session: await sessionView(continueSession()) });
   }
   if (path === "/api/v1/session/more-like-this" && req.method === "POST") {
     const input = await body(req);
@@ -946,7 +953,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const receipt = events.get(`${eventId}:next`);
     if (receipt) {
       const track = lib.tracks.find(track => track.id === receipt.track_id);
-      return send(res, 200, { session: sessionView(snapshot), track: { title: track?.title ?? "Your next song" }, reason: "already queued from this request" });
+      return send(res, 200, { session: await sessionView(snapshot), track: { title: track?.title ?? "Your next song" }, reason: "already queued from this request" });
     }
     const entry = snapshot.queue[snapshot.index];
     if (!entry || entry.entry_id !== input.entry_id) throw new SessionError("That song is no longer current", 409);
@@ -958,13 +965,13 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       policy: policyOptions(entry.source?.playlist_id),
     });
     const next = sessions.playNext(eventId, [{ id: track.id, title: track.title, artist: track.artist }], { moveExisting: true });
-    return send(res, 200, { session: sessionView(next), track: { title: track.title }, reason: "similar sound, queued next" });
+    return send(res, 200, { session: await sessionView(next), track: { title: track.title }, reason: "similar sound, queued next" });
   }
   if (path === "/api/v1/session/report" && req.method === "POST") {
     const input = await body(req);
     const result = sessions.report(String(input.event_id ?? ""), input.report);
     afterEvents(result.derived);
-    return send(res, 200, { session: sessionView(continueSession(result.derived.some(e => e.signal === "skip_early"))), derived: result.derived.map((event) => event.signal), duplicate: result.duplicate });
+    return send(res, 200, { session: await sessionView(continueSession(result.derived.some(e => e.signal === "skip_early"))), derived: result.derived.map((event) => event.signal), duplicate: result.duplicate });
   }
   if (path === "/api/v1/feedback" && req.method === "POST") {
     const input = (await body(req)) as unknown as FeedbackInput;
@@ -977,7 +984,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
         if (index >= 0) { playlists.removeTrack(node.id, index); playlistsChanged(); }
       }
     }
-    return send(res, result.duplicate ? 200 : 201, { event: result.event, duplicate: result.duplicate, session: sessionView(continueSession(!result.duplicate)) });
+    return send(res, result.duplicate ? 200 : 201, { event: result.event, duplicate: result.duplicate, session: await sessionView(continueSession(!result.duplicate)) });
   }
   // --- library health: analyzer progress (pushed from the Mac) + index stats ---
   if (path === "/api/v1/analysis/progress" && req.method === "POST") {
@@ -1587,7 +1594,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const request = party.waiting().find((item) => item.id === id);
     if (!request) throw new PartyError("That request isn't waiting any more", 404);
     if (path.endsWith("/dismiss")) party.decide(id, "dismissed");
-    else return send(res, 200, { ...partyHostView(), session: sessionView(queueRequest(request, false)) });
+    else return send(res, 200, { ...partyHostView(), session: await sessionView(queueRequest(request, false)) });
     return send(res, 200, partyHostView());
   }
   // --- world radio --------------------------------------------------------------------

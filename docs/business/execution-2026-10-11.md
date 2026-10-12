@@ -222,3 +222,42 @@ This is a confirmed misleading-credit mechanism, not evidence that the owner
 should reorganize the folder. Deferred follow-up: a reviewable “wrong grouping
 or credit” flag/correction flow and compilation-aware grouping/credit rules.
 Do not use a rescan as a promised repair: the same tags and folder reproduce it.
+
+## Direct Library playback and stalled album expansion
+
+Owner confirmed this happens at `Syd.local:8080`. Read-only authenticated GETs
+to the live NAS returned three artist pages and three album lists successfully:
+artist requests took 2.088 s cold, then 0.062/0.060 s; album requests took
+0.024/0.024/0.012 s. No live queue was replaced or audio played. Container logs
+were inaccessible: SSH batch authentication was denied. The reported HTTP 499
+was not reproduced live, and its exact proxy/cancellation source remains open.
+
+Confirmed and repaired locally:
+
+- Album fetch rejection left the component permanently displaying `Loading…`.
+  Artist/album pages now share cancellable, path-keyed requests with a 15-second
+  timeout, visible failure and Retry. Departed pages abort their requests and
+  stale artist data is hidden immediately when navigation changes the path.
+- Clicking a song used an index into a freshly rebuilt artist/album queue.
+  Changing export order could select a different song. Clicks now send the
+  selected track ID; the server resolves its current index within that artist
+  or album and refuses IDs no longer in the requested selection. Legacy index
+  clients still work. Late responses from older play actions no longer replace
+  newer playback state in App.
+- Building every session response synchronously resolved/statted every queue
+  file. A read-only 200-track check of the frozen owner NAS sample blocked the
+  JS event loop for 9,045 ms. The replacement checks asynchronously with up to
+  eight pending tasks and resolves the root once. The same sample produced
+  identical 200 file results and allowed the event-loop heartbeat to run.
+  Its sequential warm-cache time was 8 ms, which is NOT a valid speedup
+  benchmark. Small near-playhead gapless-header reads and other background
+  work remain synchronous; no blanket server-responsiveness claim is made.
+
+Fresh verification: Brain 320 tests (319 pass, existing cross-disk skip), web
+production build and Brain TypeScript pass. Browser harness exercises direct
+artist queueing, delayed artist switch, injected HTTP 499 and album Retry,
+clicked-song identity after export reordering and wrong-artist rejection.
+All 23 existing generated-audio playback checks also pass after async session
+presentation. Evidence roots: `/tmp/synamp-library-playback-evidence/` and
+`/tmp/synamp-library-player-regression/`. These fixes have not been deployed to
+the NAS; owner-library audio and live HTTP 499 closure remain unverified.

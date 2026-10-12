@@ -17,6 +17,7 @@
 
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { createReadStream, realpathSync, statSync } from "node:fs";
+import { realpath, stat } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, isAbsolute, relative, resolve } from "node:path";
 
@@ -59,6 +60,26 @@ export function resolveInside(root: string, relativePath: string): string | null
     if (!rel || rel.startsWith("..") || isAbsolute(rel)) return null;
     return statSync(real).isFile() ? real : null;
   } catch { return null; }
+}
+
+/** Queue presentation must not block every API request on hundreds of disk checks. */
+export async function resolveFilesInside(root: string, paths: Array<string | undefined>): Promise<Array<string | null>> {
+  const files: Array<string | null> = paths.map(() => null);
+  let realRoot: string;
+  try { realRoot = await realpath(root); } catch { return files; }
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(8, paths.length) }, async () => {
+    while (next < paths.length) {
+      const index = next++, path = paths[index];
+      if (!path || isAbsolute(path) || path.includes("\0")) continue;
+      try {
+        const file = await realpath(resolve(realRoot, path));
+        const rel = relative(realRoot, file);
+        if (rel && !rel.startsWith("..") && !isAbsolute(rel) && (await stat(file)).isFile()) files[index] = file;
+      } catch { /* Missing/unreadable files stay unplayable. */ }
+    }
+  }));
+  return files;
 }
 
 /** Streams a file with single-range support (what <audio> needs for seeking). */

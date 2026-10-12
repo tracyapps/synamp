@@ -7,6 +7,7 @@ import type { MenuItem } from "./ui/ContextMenu";
 import { Heart } from "./favourites";
 import { revealSong } from "./finder";
 import { useContextMenu } from "./ui/ContextMenu";
+import useLibraryPage from "./useLibraryPage";
 import "./styles/library.css";
 
 /*
@@ -88,15 +89,12 @@ export function openKey(event: React.KeyboardEvent, href: string) {
 
 /** An album's songs, loaded when first shown. Click a song to play the album from there. */
 export function AlbumSongs({ album, request, play, playlists, say, disabled = false }: { album: AlbumSummary; request: Request; play: Play; playlists: PlaylistNode[]; say: (text: string) => void; disabled?: boolean }) {
-  const [tracks, setTracks] = useState<TrackSummary[] | null>(null);
   const { open, menu } = useContextMenu();
-  useEffect(() => {
-    let live = true;
-    request<{ tracks: TrackSummary[] }>(`/library/album?key=${encodeURIComponent(album.key)}`)
-      .then((result) => { if (live) setTracks(result.tracks); }).catch((cause) => say((cause as Error).message));
-    return () => { live = false; };
-  }, [album.key]); // eslint-disable-line react-hooks/exhaustive-deps
-  if (!tracks) return <p className="muted album__loading">Loading…</p>;
+  const { data, problem, retry } = useLibraryPage<{ tracks: TrackSummary[] }>(request, `/library/album?key=${encodeURIComponent(album.key)}`);
+  if (!data) return problem
+    ? <div role="alert"><p>{problem}</p><button className="btn btn--ghost btn--sm" onClick={retry}>Retry songs</button></div>
+    : <p className="muted album__loading" role="status">Loading…</p>;
+  const tracks = data.tracks;
   return (
     <><ol className="tracklist" aria-label={`Songs on ${album.title}`}>
       {tracks.map((track, index) => (
@@ -105,7 +103,7 @@ export function AlbumSongs({ album, request, play, playlists, say, disabled = fa
           open(event, track.title, [{ label: "Reveal in Finder", onSelect: () => void revealSong(request, track.id, say) }]);
         }}>
           <button type="button" className="tracklist__play" disabled={disabled}
-            onClick={() => play({ album_key: album.key, start_index: index }).then(() => say(`Playing ${track.title}.`)).catch((cause) => say((cause as Error).message))}>
+            onClick={() => play({ album_key: album.key, start_track_id: track.id }).then(() => say(`Playing ${track.title}.`)).catch((cause) => say((cause as Error).message))}>
             <span className="tracklist__n" aria-hidden="true">{track.track_no ?? index + 1}</span>
             <span className="tracklist__title">{track.title}<span className="visually-hidden">, play</span></span>
           </button>
