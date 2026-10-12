@@ -89,6 +89,12 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const upNext = session ? session.queue[session.index + 1] : undefined;
   const latest = useRef({ current, session });
   latest.current = { current, session };
+  // What the Play/Pause button says, for handlers that are set up once.
+  const pausedShown = useRef(paused);
+  pausedShown.current = paused;
+  // Pause means pause: sound is coming out, or a song is loading after Play (the button says Pause).
+  // Not when the browser blocked autoplay: the button says Play then, and Play should play.
+  const audible = (sound: PlaybackEngine) => sound.isPlaying() || (sound.isActive() && !pausedShown.current);
 
   /** Send a report; one retry on a network failure, with the same id so the brain dedupes it. */
   async function report(body: Record<string, unknown>) {
@@ -183,7 +189,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
   useEffect(() => {
     const on = (event: Event) => {
       const playing = (event as CustomEvent<ClipState>).detail.trackId !== null;
-      if (playing && engine.current?.isActive()) { resumeAfterClip.current = true; controls.current.toggle?.(); }
+      if (playing && engine.current && audible(engine.current)) { resumeAfterClip.current = true; controls.current.toggle?.(); }
       else if (!playing && resumeAfterClip.current) { resumeAfterClip.current = false; controls.current.toggle?.(); }
     };
     window.addEventListener(CLIP_EVENT, on);
@@ -245,8 +251,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const toggle = () => {
     if (!current?.playable) return;
     const sound = ensureEngine();
-    // A song still loading counts as playing: Pause then stops it starting, rather than pressing Play again.
-    if (sound.isActive()) { sound.pause(); report(entryBody("pause")); return; }
+    if (audible(sound)) { sound.pause(); report(entryBody("pause")); return; }
     // Pressing play yourself ends any preview clip, and the player doesn't wait for it.
     resumeAfterClip.current = false;
     stopClip();

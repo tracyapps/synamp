@@ -151,7 +151,10 @@ function Check() { const [session, setSession] = useState(null), [view, setView]
   }
   pass('Natural completion refills across 18 songs and safe library cycles; repeated reports cannot advance twice');
   await page.evaluate(() => window.refreshSession());
-  await page.click('.player__play');
+  // Smart playback carries on by itself; press the button only if it offers Play
+  // (a press while the next song loads is Pause, and must stay Pause).
+  await page.waitForFunction(() => window.__synampEngine?.isPlaying() || document.querySelector('.player__play')?.getAttribute('aria-label') === 'Play');
+  if (await page.$eval('.player__play', b => b.getAttribute('aria-label')) === 'Play') await page.click('.player__play');
   await page.waitForFunction(() => window.__synampEngine?.isPlaying());
   const outgoing = (await call('/session')).session;
   await page.click('[aria-label="Skip to next track"]');
