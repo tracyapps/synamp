@@ -124,6 +124,8 @@ export class PlaybackEngine {
   output(): AudioNode { return this.master; }
   setVolume(volume: number): void { this.master.gain.setTargetAtTime(Math.max(0, Math.min(1, volume)), this.ctx.currentTime, 0.02); }
   isPlaying(): boolean { return !!this.current?.playing(); }
+  /** Playing, or about to: Play was pressed and the song is still loading. Pause should win here too. */
+  isActive(): boolean { return this.wantPlay && !!this.current; }
   position(): number { return this.current?.position() ?? 0; }
   duration(): number { return this.current?.duration() ?? 0; }
   currentId(): string | undefined { return this.current?.item.id; }

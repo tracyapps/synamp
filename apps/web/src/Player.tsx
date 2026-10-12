@@ -183,7 +183,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
   useEffect(() => {
     const on = (event: Event) => {
       const playing = (event as CustomEvent<ClipState>).detail.trackId !== null;
-      if (playing && engine.current?.isPlaying()) { resumeAfterClip.current = true; controls.current.toggle?.(); }
+      if (playing && engine.current?.isActive()) { resumeAfterClip.current = true; controls.current.toggle?.(); }
       else if (!playing && resumeAfterClip.current) { resumeAfterClip.current = false; controls.current.toggle?.(); }
     };
     window.addEventListener(CLIP_EVENT, on);
@@ -245,7 +245,8 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const toggle = () => {
     if (!current?.playable) return;
     const sound = ensureEngine();
-    if (sound.isPlaying()) { sound.pause(); report(entryBody("pause")); return; }
+    // A song still loading counts as playing: Pause then stops it starting, rather than pressing Play again.
+    if (sound.isActive()) { sound.pause(); report(entryBody("pause")); return; }
     // Pressing play yourself ends any preview clip, and the player doesn't wait for it.
     resumeAfterClip.current = false;
     stopClip();

@@ -128,6 +128,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-10-12 — Fixed: pressing Pause while a song is still loading now keeps it paused, instead of starting it anyway
 - 2026-10-12 — Compilations stay under Various Artists: a mixed album where a few songs carry their own artist tag is no longer filed under that one artist, or looked up under their name when SynAmp checks for missing tracks. Library care pages also answer faster on big libraries
 - 2026-10-12 — Fixed: picking a song right after switching artists could show “Playing” with no sound
 - 2026-10-11 — “Reveal in Finder” on any song shows you its file on your Mac, and album lists that got stuck on “Loading…” now say what went wrong and offer Retry
