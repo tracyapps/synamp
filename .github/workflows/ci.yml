@@ -46,7 +46,7 @@ jobs:
           pnpm --filter @synamp/brain type-check
           pnpm brain:readback:type-check
       - name: Tool and contract tests
-        run: node --experimental-strip-types --test tools/*.test.mts tools/brain-lab/*.test.mts tools/nas/*.test.mjs tools/install/*.test.mjs
+        run: node --experimental-strip-types --test tools/*.test.mts tools/brain-lab/*.test.mts tools/nas/*.test.mjs tools/install/*.test.mjs tools/release/*.test.mjs
       - name: Web production build
         run: pnpm --filter @synamp/web build
       - name: Site tests and build

@@ -15,7 +15,7 @@ are separate and are not claimed by this procedure.
 pnpm --filter @synamp/brain test
 pnpm --filter @synamp/brain type-check
 pnpm brain:readback:type-check
-node --experimental-strip-types --test tools/*.test.mts tools/brain-lab/*.test.mts tools/nas/*.test.mjs tools/install/*.test.mjs
+node --experimental-strip-types --test tools/*.test.mts tools/brain-lab/*.test.mts tools/nas/*.test.mjs tools/install/*.test.mjs tools/release/*.test.mjs
 pnpm --filter @synamp/web build
 pnpm --dir site test
 pnpm --dir site build
