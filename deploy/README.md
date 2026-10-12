@@ -35,6 +35,12 @@ established by these instructions.
 
 ## 1. One-time setup
 
+**The guided way:** install Container Manager, put the SynAmp folder at
+`/volume1/docker/synamp`, then over SSH run `cd /volume1/docker/synamp/deploy`
+and `sudo ./setup.sh`. It does steps 2 and 4 below for you, after showing you
+the plan, and names the Container Manager steps at the end. See
+[`tools/install/README.md`](../tools/install/README.md). By hand:
+
 1. In DSM, install **Container Manager** from Package Center.
 2. Create the app state directories (SSH, as an admin user):
 

@@ -1,6 +1,44 @@
-# Read-only NAS installation spike
+# Guided setup
 
-This is B04's prerequisite check, not an installer or a supported-hardware claim.
+On the server, from the SynAmp folder's `deploy/` directory:
+
+```sh
+sudo ./setup.sh            # asks, shows the plan, changes nothing until you type yes
+sudo ./setup.sh --start    # not on a Synology: also starts SynAmp and waits until it answers
+sudo ./setup.sh --yes --show-token   # later: print the access token the app asks for
+```
+
+What it does: finds your music folder and the user who owns it, creates the
+app-data folders, `incoming/` and `.synamp/` (the Brain's and librarian's
+folders go to the music owner), writes `deploy/.env` from `.env.example` with
+new random secrets (file mode 600, never printed unless you ask), then runs the
+preflight below. It never moves or changes music files, and refuses a layout it
+can't support: music not in `MUSIC_SHARE/library`, app data inside the music
+share, or root as the music owner.
+
+Safe to run again: an existing `.env` is kept exactly as it is, and only
+missing folders are created. Every run leaves a receipt in `DATA_DIR/receipts/`
+(steps, timings, failed check IDs; no paths, names or secrets).
+
+DSM has no Node, so `setup.sh` runs [`setup.mjs`](setup.mjs) in the pinned Node
+image from `apps/brain/Dockerfile`, with no network and `/volume*` mounted at
+the same paths. A server with Node 22+ uses its own (set
+`SYNAMP_SETUP_IN_CONTAINER=1` to use the image anyway). On a Synology it stops
+at "ready" and names the Container Manager steps: a Project created there stays
+manageable from DSM, while a Terminal start later collides with it (see
+FIRST-RUN "Switch once").
+
+Rehearsed October 12 on Linux x86-64 Docker with a Synology-shaped layout
+(`/volume1/...`, music owned by uid 1026): fresh setup through the container
+route, a second run that left `.env` byte-identical, `--start` to six healthy
+services in about 35 seconds, the token accepted, and a FLAC streamed through
+the edge's Subsonic route by `tools/nas/check-playback.mjs`. Not yet run on DSM
+or Container Manager; that remains the B04 trial below.
+
+# Read-only NAS preflight
+
+B04's prerequisite check (the guided setup above runs it for you). Not a
+supported-hardware claim.
 Run it on the intended Linux x86-64 NAS, from an inspected source checkout:
 
 ```sh
