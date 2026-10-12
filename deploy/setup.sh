@@ -71,7 +71,8 @@ cd "$deploy"
 port=$(sed -n 's/^HTTP_PORT=\([0-9]*\).*/\1/p' .env | tail -n 1); port=${port:-8080}
 say ""
 if [ "$start" = yes ] && [ "$synology" = no ]; then
-  say "Starting SynAmp. The first start builds it, which takes a few minutes..."
+  if [ -f "$deploy/VERSION" ]; then say "Starting SynAmp $(cat "$deploy/VERSION"). The first start downloads it, which takes a few minutes..."
+  else say "Starting SynAmp. The first start builds it, which takes a few minutes..."; fi
   "$docker" compose --env-file .env up -d --build --wait --wait-timeout 900 \
     || stop "SynAmp didn't start. See what went wrong with: sudo docker compose logs --tail 50"
   if command -v curl >/dev/null 2>&1 && curl -fsS "http://127.0.0.1:$port/health" >/dev/null 2>&1; then
