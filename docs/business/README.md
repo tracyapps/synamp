@@ -18,6 +18,7 @@ commitment. The original report's December 15 window remains the fallback.
 - [90-day roadmap](90-day-roadmap.md): outcomes, dates, gates, capacity and scope.
 - [Execution backlog](execution-backlog.md): dependencies, owners, exact files and acceptance checks.
 - [Messaging and launch kit](messaging-and-launch-kit.md): proposed copy for each surface, recruitment, onboarding and launch.
+- [Private beta scorecard](../beta/README.md): offline install, activation and mature-retention aggregates.
 - [Measurement and economics](measurement-and-economics.md): metric definitions, targets, revenue math and the weekly operating ritual.
 - [Source review](source-review.md): findings from all three attachments, contradictions and corrections.
 - [Verification receipt](verification.md): checks on the plan and visual, with evidence limits.

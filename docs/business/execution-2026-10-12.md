@@ -132,3 +132,20 @@ power-loss durability. Other optional/cache loaders remain separate work.
 Fresh verification: Brain typecheck passes; Brain suite reports 341 tests,
 340 passed, zero failures and the existing one cross-filesystem skip. The
 seven offline recovery tests still pass with these stricter loaders.
+
+## B07: offline denominator-complete beta scorecard
+
+`tools/beta-scorecard.mjs` reports aggregate install, 72-hour activation and
+mature W4 counts from an owner-maintained private JSON snapshot. It retains
+failed/assisted attempts, missing replies and unobserved activation; excludes
+immature windows; reports unknown zero-denominator rates; validates dates,
+ordering, consent references, duplicate households and an intentionally small
+schema. No network, contact data, automatic telemetry or actual tester registry
+is created. The [operating guide](../beta/README.md) defines explicit elapsed-day
+windows and separates this slice from recruitment, permissions, support, rights
+and actual cohort evidence. Five initial regression checks pass, including the
+six-retained/two-inactive/two-missing example. B07 remains open for real operation.
+
+Broader fresh verification: all 72 selected root/lab/NAS/install tool checks
+pass and the web production build passes. These are local Node 24 checks;
+hosted Node 22 compatibility is still pending. No real tester data was used.
