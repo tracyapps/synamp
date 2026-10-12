@@ -128,6 +128,8 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-10-12 — Guided setup: one command asks where your music is, shows you the plan, and changes nothing until you say yes. It makes the folders and private settings for you, checks the server is ready, and never touches your music. Every install now gets exactly the same versions of the parts SynAmp is built on
+- 2026-10-12 — Fixed: pressing Pause while a song is still loading now keeps it paused, instead of starting it anyway
 - 2026-10-12 — Compilations stay under Various Artists: a mixed album where a few songs carry their own artist tag is no longer filed under that one artist, or looked up under their name when SynAmp checks for missing tracks. Library care pages also answer faster on big libraries
 - 2026-10-12 — Fixed: picking a song right after switching artists could show “Playing” with no sound
 - 2026-10-11 — “Reveal in Finder” on any song shows you its file on your Mac, and album lists that got stuck on “Loading…” now say what went wrong and offer Retry

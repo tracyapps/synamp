@@ -52,7 +52,8 @@ try {
  
  // Queue responses are deliberately delayed: audio must unlock during the click.
  await page.setRequestInterception(true);
- page.on('request',req=>{if(req.url().includes('/session/queue'))setTimeout(()=>req.continue().catch(()=>{}),500);else req.continue();});
+ // Song B's audio is held back too, so Pause can be pressed while it is still loading.
+ page.on('request',req=>{if(req.url().includes('/session/queue'))setTimeout(()=>req.continue().catch(()=>{}),500);else if(req.url().includes('/tracks/b/stream'))setTimeout(()=>req.continue().catch(()=>{}),2000);else req.continue();});
  // Pause, then choose a song under the other artist. A Play action must resume.
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('synamp:player-command',{detail:'toggle'})));
  await page.waitForFunction(()=>!window.__synampEngine.isPlaying());
@@ -66,8 +67,26 @@ try {
  // An active player also switches to the clicked song without a second Play.
  await page.evaluate(()=>{location.hash='#/library/artist/Other%20Artist';});
  await page.waitForFunction(()=>document.querySelector('#artist-songs')?.textContent.includes('Song C'));
+ const songA=await page.evaluate(()=>window.__synampEngine.currentId());
  await page.click('#artist-songs .tracklist__play');
- await page.waitForFunction(()=>document.querySelector('.player__title')?.textContent==='Song C' && window.__synampEngine?.isPlaying() && window.__synampEngine.position()>.5);
+ // The engine's own current song must change: Song A's sound alone mustn't satisfy this wait.
+ await page.waitForFunction(id=>document.querySelector('.player__title')?.textContent==='Song C' && window.__synampEngine?.currentId()!==id && window.__synampEngine.isPlaying() && window.__synampEngine.position()>.5,{},songA);
+ // Pause pressed while the clicked song is still loading wins: it must not start afterwards.
+ await page.evaluate(()=>{location.hash='#/library/artist/Fixture%20Artist';});
+ await page.waitForFunction(()=>document.querySelector('#artist-songs')?.textContent.includes('Song B'));
+ await page.evaluate(()=>{window.__synampEngine.pause();});
+ await page.evaluate(()=>[...document.querySelectorAll('#artist-songs .tracklist__play')].find(b=>b.textContent.includes('Song B')).click());
+ await page.waitForFunction(()=>document.querySelector('.player__title')?.textContent==='Song B' && window.__synampEngine.isActive() && !window.__synampEngine.isPlaying());
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('synamp:player-command',{detail:'toggle'})));
+ await new Promise(r=>setTimeout(r,3000));
+ assert.equal(await page.evaluate(()=>window.__synampEngine.isPlaying()),false,'Pause while loading keeps the song from starting');
+ await page.evaluate(()=>window.dispatchEvent(new CustomEvent('synamp:player-command',{detail:'toggle'})));
+ await page.waitForFunction(()=>window.__synampEngine.isPlaying() && window.__synampEngine.position()>.5);
+ await page.evaluate(()=>{location.hash='#/library/artist/Other%20Artist';});
+ await page.waitForFunction(()=>document.querySelector('#artist-songs')?.textContent.includes('Song C'));
+ const songB=await page.evaluate(()=>window.__synampEngine.currentId());
+ await page.click('#artist-songs .tracklist__play');
+ await page.waitForFunction(id=>document.querySelector('.player__title')?.textContent==='Song C' && window.__synampEngine?.currentId()!==id && window.__synampEngine.isPlaying() && window.__synampEngine.position()>.5,{},songB);
  // Pause remains paused across unrelated renders/navigation.
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('synamp:player-command',{detail:'toggle'})));
  await page.waitForFunction(()=>!window.__synampEngine.isPlaying());
@@ -78,7 +97,7 @@ try {
  await page.reload({waitUntil:'networkidle0'});
  assert.equal(await page.evaluate(()=>!!window.__synampEngine),false);
  assert.deepEqual(errors,[]);
- console.log(JSON.stringify({passed:['first Library song click starts audio after switching artists','Library click resumes paused playback','actual generated waveform output','switch artist while playing','navigation preserves pause','reload restores queue without autoplay'],rms,errors},null,2));
+ console.log(JSON.stringify({passed:['first Library song click starts audio after switching artists','Library click resumes paused playback','actual generated waveform output','switch artist while playing','pause while the next song loads wins','navigation preserves pause','reload restores queue without autoplay'],rms,errors},null,2));
 
  await writeFile(path.join(output,'results.json'),JSON.stringify({result,rms,errors,limitations:'Isolated App/Brain with generated WAV audio. No NAS deployment or owner audio playback.'},null,2));
  assert.equal(result.playing,true,'Library song click starts sound');assert.equal(result.engineCreated,true,'Library play creates the audio engine');

@@ -30,7 +30,7 @@ const within = (parent, child) => {
   return part === '' || (part !== '..' && !part.startsWith(`..${sep}`) && !isAbsolute(part));
 };
 
-export function preflight({ envPath, platform = process.platform, arch = process.arch, run = spawnSync }) {
+export function preflight({ envPath, platform = process.platform, arch = process.arch, run = spawnSync, docker = true }) {
   const checks = [];
   const add = (id, pass, remedy) => checks.push({ id, status: pass ? 'pass' : 'fail', ...(pass ? {} : { remedy }) });
   add('nas-host', platform === 'linux' && arch === 'x64', 'Run this NAS preflight on the intended Linux x86-64 server. A Mac run cannot verify NAS mounts.');
@@ -89,7 +89,8 @@ export function preflight({ envPath, platform = process.platform, arch = process
     try { if (!statSync(path).isFile()) throw new Error(); accessSync(path, constants.R_OK); add(id, true); }
     catch { add(id, false, 'Keep deploy/ beside apps/ with readable Compose, Caddyfile and Dockerfiles.'); }
   }
-  for (const [id, args] of [
+  // docker: false when the caller checks Docker itself (deploy/setup.sh runs this inside a container).
+  if (docker) for (const [id, args] of [
     ['docker-daemon', ['info', '--format', '{{.Architecture}}']],
     ['compose-plugin', ['compose', 'version', '--short']],
     ['compose-config', ['compose', '--env-file', resolve(envPath), '-f', join(deploy, 'docker-compose.yml'), 'config', '--quiet']],

@@ -19,12 +19,18 @@
 # keeps that quick when nothing changed). Without it, Build reuses the old
 # images and an update never arrives.
 
+# Every image is pinned to a version and its exact fingerprint (sha256), so each
+# install gets the same parts and an update never arrives by surprise. Navidrome
+# and Postgres upgrades can change their data, so they move only in a SynAmp
+# release that has rehearsed the upgrade and the way back.
+# tools/install/pins.test.mjs fails if an image is left unpinned.
+
 name: synamp
 
 services:
   # --- brain database: playlists, session state, embeddings -------------------
   db:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:0.8.7-pg16@sha256:7b822b0aac60967beb1ea5e576b8602c94c300a157d187f385ae3e0da199b90a
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-synamp}
@@ -41,7 +47,7 @@ services:
 
   # --- library core: scan, transcode, Subsonic/OpenSubsonic -------------------
   core:
-    image: deluan/navidrome:latest
+    image: deluan/navidrome:0.64.2@sha256:38dc2727bfcfd5ede290f8ada114fc90368146f265ae4701ddddbcbe2a44ee52
     restart: unless-stopped
     environment:
       ND_MUSICFOLDER: /music
@@ -159,7 +165,7 @@ services:
 
   # --- edge: single entry point, TLS, routing ---------------------------------
   edge:
-    image: caddy:2-alpine
+    image: caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
     restart: unless-stopped
     # Not on `core`: the edge never talks to Navidrome directly (the brain proxies
     # /rest), so the app can run before Navidrome's first scan — see FIRST-RUN.md.
