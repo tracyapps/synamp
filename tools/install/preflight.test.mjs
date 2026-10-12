@@ -86,3 +86,16 @@ test('CLI refuses ambiguous paths and missing files with nonzero status', () => 
     assert.ok(!(result.stdout + result.stderr).includes('ENOENT'));
   }
 });
+
+test('a release download needs no Dockerfiles: its Compose file names published images', () => {
+  const f = fixture();
+  try {
+    writeFileSync(join(f.root, 'deploy/docker-compose.yml'), 'services:\n  brain:\n    image: ghcr.io/x/synamp-brain:1.0.0@sha256:' + 'a'.repeat(64) + '\n');
+    rmSync(join(f.root, 'apps'), { recursive: true });
+    const report = f.report();
+    assert.equal(report.ready, true);
+    assert.ok(!report.checks.some(c => c.id === 'brain-build' || c.id === 'web-build'));
+    writeFileSync(join(f.root, 'deploy/docker-compose.yml'), 'services:\n  brain:\n    build:\n      context: ../apps\n');
+    assert.ok(f.report().checks.some(c => c.id === 'brain-build' && c.status === 'fail'), 'a source compose still needs its Dockerfiles');
+  } finally { f.cleanup(); }
+});

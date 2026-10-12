@@ -35,7 +35,12 @@ established by these instructions.
 
 ## 1. One-time setup
 
-**The guided way:** install Container Manager, put the SynAmp folder at
+**From a release (easiest):** download `synamp-<version>.zip` from
+[Releases](https://github.com/tracyapps/synamp/releases), unzip it into
+`/volume1/docker/synamp`, and follow its `README.txt`. Nothing is built on the
+NAS; updating or going back is unzipping another release and pressing Build.
+
+**The guided way, from source:** install Container Manager, put the SynAmp folder at
 `/volume1/docker/synamp`, then over SSH run `cd /volume1/docker/synamp/deploy`
 and `sudo ./setup.sh`. It does steps 2 and 4 below for you, after showing you
 the plan, and names the Container Manager steps at the end. See

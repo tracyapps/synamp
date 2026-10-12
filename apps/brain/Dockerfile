@@ -12,7 +12,9 @@ WORKDIR /apps
 COPY brain/src ./brain/src
 COPY web/src ./web/src
 COPY web/index.html web/package.json web/package-lock.json ./web/
-RUN node --experimental-strip-types brain/src/version.ts /apps > /build.json
+# Set only for release images; a copy built on the NAS has no version number.
+ARG SYNAMP_VERSION=""
+RUN SYNAMP_VERSION="$SYNAMP_VERSION" node --experimental-strip-types brain/src/version.ts /apps > /build.json
 
 # 2. The brain itself. ffmpeg makes the lighter streams for mobile data
 #    (src/session/lighter.ts); without it the player just gets the original files.

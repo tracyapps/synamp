@@ -59,7 +59,7 @@ short: Ready to install
 goal: Make SynAmp something you can set up, trust and keep up to date on your own server, without the developer there to help.
 - [~] A guided setup that checks your server is ready before it changes anything
 - [ ] Hear a first playlist from part of your library, without waiting for all of it to be listened to
-- [ ] See which version you're running, update safely, and go back if an update goes wrong
+- [~] See which version you're running, update safely, and go back if an update goes wrong
 - [ ] Backups of your playlists, history and settings that have been tested by actually restoring them
 - [ ] A public report of how well playlists work on real libraries, with every miss counted
 
@@ -128,6 +128,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-10-12 — Ready-made releases are on the way: SynAmp shows its version number, nothing has to be built on your NAS, and updating (or going back to an earlier version) is one download and one button in Container Manager
 - 2026-10-12 — Guided setup: one command asks where your music is, shows you the plan, and changes nothing until you say yes. It makes the folders and private settings for you, checks the server is ready, and never touches your music. Every install now gets exactly the same versions of the parts SynAmp is built on
 - 2026-10-12 — Fixed: pressing Pause while a song is still loading now keeps it paused, instead of starting it anyway
 - 2026-10-12 — Compilations stay under Various Artists: a mixed album where a few songs carry their own artist tag is no longer filed under that one artist, or looked up under their name when SynAmp checks for missing tracks. Library care pages also answer faster on big libraries

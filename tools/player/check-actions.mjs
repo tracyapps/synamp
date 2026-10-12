@@ -19,7 +19,10 @@ await new Promise(resolve => portServer.listen(0, '127.0.0.1', resolve));
 const port = portServer.address().port;
 await new Promise(resolve => portServer.close(resolve));
 const api = `http://127.0.0.1:${port}`;
-const samples = 44100 * 30;
+// Long enough that no song ends by itself during the slow steps (display windows on a CI
+// runner take ~20s); the natural-ending check jumps to near the end instead of waiting.
+const SONG_SECONDS = 90;
+const samples = 44100 * SONG_SECONDS;
 const wav = Buffer.alloc(44 + samples * 2);
 wav.write('RIFF'); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVE', 8); wav.write('fmt ', 12); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22); wav.writeUInt32LE(44100, 24); wav.writeUInt32LE(88200, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(samples * 2, 40);
 for (let i = 0; i < samples; i++) wav.writeInt16LE(Math.round(2000 * Math.sin(2 * Math.PI * 220 * i / 44100)), 44 + i * 2);
@@ -94,8 +97,10 @@ function Check() { const [session, setSession] = useState(null), [view, setView]
   await page.click('.visuals__displays summary');
   const popupPromise = new Promise(resolve => page.once('popup', resolve)); await clickText('New display window'); const popup = await popupPromise;
   await popup.waitForSelector('.song-controls'); await popup.waitForFunction(() => document.querySelector('video')?.srcObject?.active);
+  // Love must not move the queue: compare with the song just before the press.
+  const indexBeforeLove = (await call('/session')).session.index;
   await clickText('Love', popup); await page.waitForFunction(() => document.querySelector('.visuals__bar .song-controls__love').textContent.includes('Loved'));
-  assert.equal((await call('/session')).session.index, 1); await popup.screenshot({ path: path.join(output, 'display-window.png') }); pass('Display window receives live canvas video and Love controls operate the original player');
+  assert.equal((await call('/session')).session.index, indexBeforeLove); await popup.screenshot({ path: path.join(output, 'display-window.png') }); pass('Display window receives live canvas video and Love controls operate the original player');
   const popup2Promise = new Promise(resolve => page.once('popup', resolve)); await clickText('New display window'); const popup2 = await popup2Promise; await popup2.waitForFunction(() => document.querySelector('video')?.srcObject?.active); pass('Multiple display windows share visuals without extra audio players');
   await page.click('.visuals__displays summary');
   await page.setViewport({ width: 390, height: 844 });
@@ -151,7 +156,10 @@ function Check() { const [session, setSession] = useState(null), [view, setView]
   }
   pass('Natural completion refills across 18 songs and safe library cycles; repeated reports cannot advance twice');
   await page.evaluate(() => window.refreshSession());
-  await page.click('.player__play');
+  // Smart playback carries on by itself; press the button only if it offers Play
+  // (a press while the next song loads is Pause, and must stay Pause).
+  await page.waitForFunction(() => window.__synampEngine?.isPlaying() || document.querySelector('.player__play')?.getAttribute('aria-label') === 'Play');
+  if (await page.$eval('.player__play', b => b.getAttribute('aria-label')) === 'Play') await page.click('.player__play');
   await page.waitForFunction(() => window.__synampEngine?.isPlaying());
   const outgoing = (await call('/session')).session;
   await page.click('[aria-label="Skip to next track"]');
@@ -170,7 +178,7 @@ function Check() { const [session, setSession] = useState(null), [view, setView]
   await page.waitForFunction(() => window.__synampEngine?.isPlaying() && !document.querySelector('.song-controls__status').textContent.includes('Crossfading'));
   const naturalFrom = (await call('/session')).session;
   const naturalId = naturalFrom.queue[naturalFrom.index].entry_id;
-  await page.evaluate(() => window.__synampEngine.seek(29.5));
+  await page.evaluate(end => window.__synampEngine.seek(end), SONG_SECONDS - 0.5);
   await page.waitForFunction(id => window.currentSession?.queue[window.currentSession.index]?.entry_id !== id && window.__synampEngine?.isPlaying(), {}, naturalId);
   snapshot = (await call('/session')).session;
   assert.ok(snapshot.queue[snapshot.index + 1], 'the real natural transition has a replenished next song');

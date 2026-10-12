@@ -28,7 +28,7 @@ stop() { say "$*"; exit 1; }
 
 if [ -f /etc/synoinfo.conf ]; then synology=yes; else synology=no; fi
 [ "$(id -u)" = 0 ] || stop "Run setup as an administrator: sudo ./setup.sh"
-[ -f "$root/tools/install/setup.mjs" ] || stop "Keep this deploy folder beside the apps and tools folders it came with."
+[ -f "$root/tools/install/setup.mjs" ] || stop "Keep this deploy folder beside the tools folder it came with."
 
 docker=$(command -v docker || true)
 [ -n "$docker" ] || [ ! -x /usr/local/bin/docker ] || docker=/usr/local/bin/docker
@@ -46,9 +46,14 @@ node_ok() { command -v node >/dev/null 2>&1 && node -e 'process.exit(Number(proc
 if [ "${SYNAMP_SETUP_IN_CONTAINER:-}" != 1 ] && node_ok; then
   node "$root/tools/install/setup.mjs" --no-docker-checks "$@" || exit $?
 else
-  # The Node image the Brain is built from: one pinned version for everything.
-  image=$(sed -n 's/^FROM \(node:[^ ]*\).*/\1/p' "$root/apps/brain/Dockerfile" | tail -n 1)
-  [ -n "$image" ] || stop "Couldn't find SynAmp's Node image in apps/brain/Dockerfile."
+  # One pinned Node for everything: a release download uses its published brain
+  # image (which has Node); a source copy uses the image the brain is built from.
+  if [ -f "$root/apps/brain/Dockerfile" ]; then
+    image=$(sed -n 's/^FROM \(node:[^ ]*\).*/\1/p' "$root/apps/brain/Dockerfile" | tail -n 1)
+  else
+    image=$(sed -n 's/^ *image: *\([^ ]*synamp-brain[^ ]*\).*/\1/p' "$deploy/docker-compose.yml" | head -n 1)
+  fi
+  [ -n "$image" ] || stop "Couldn't find which image to run setup in. Is this folder a complete SynAmp download?"
   # Folders appear at the same paths inside, so the paths you type are the real ones.
   mounts="-v $root:$root -v /etc/passwd:/etc/passwd:ro"
   for volume in /volume*; do [ -d "$volume" ] && mounts="$mounts -v $volume:$volume"; done
@@ -66,7 +71,8 @@ cd "$deploy"
 port=$(sed -n 's/^HTTP_PORT=\([0-9]*\).*/\1/p' .env | tail -n 1); port=${port:-8080}
 say ""
 if [ "$start" = yes ] && [ "$synology" = no ]; then
-  say "Starting SynAmp. The first start builds it, which takes a few minutes..."
+  if [ -f "$deploy/VERSION" ]; then say "Starting SynAmp $(cat "$deploy/VERSION"). The first start downloads it, which takes a few minutes..."
+  else say "Starting SynAmp. The first start builds it, which takes a few minutes..."; fi
   "$docker" compose --env-file .env up -d --build --wait --wait-timeout 900 \
     || stop "SynAmp didn't start. See what went wrong with: sudo docker compose logs --tail 50"
   if command -v curl >/dev/null 2>&1 && curl -fsS "http://127.0.0.1:$port/health" >/dev/null 2>&1; then

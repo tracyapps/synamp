@@ -1,0 +1,71 @@
+name: Release
+
+# Push a version tag (git tag v0.1.0 && git push origin v0.1.0) to make a release:
+# every release check runs first; only if all pass are the images published and
+# a DRAFT GitHub Release made with the download. Nothing reaches testers until
+# you press "Publish release" on that draft.
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+', 'v[0-9]+.[0-9]+.[0-9]+-*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Publish images and draft release
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write   # the draft release
+      packages: write   # ghcr.io images
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6, resolved 2026-10-11
+        with:
+          node-version: '22.x'
+          package-manager-cache: false
+      - name: Sign in to GitHub's container registry
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: printf '%s' "$TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+      - name: Build, push and bundle
+        env:
+          TAG: ${{ github.ref_name }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          registry="ghcr.io/$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')"
+          tools/release/publish.sh "$registry" "$TAG" dist/release | tee dist-images.txt
+      - name: Draft the GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          {
+            echo "Download **synamp-$version.zip**, unzip it into your SynAmp folder on the NAS, and follow README.txt inside."
+            echo
+            echo "Updating or going back: back up your SynAmp data folder, unzip this release over the same folder (your settings and data are kept), then Container Manager → Project → synamp → Action → Build."
+            echo
+            echo "Images in this release (x86-64):"
+            echo '```'
+            tail -n 2 dist-images.txt
+            echo '```'
+          } > notes.md
+          prerelease=""
+          case "$version" in *-*) prerelease="--prerelease" ;; esac
+          gh release create "$TAG" --draft $prerelease --verify-tag \
+            --title "SynAmp $version" --notes-file notes.md \
+            "dist/release/synamp-$version.zip" "dist/release/synamp-$version.zip.sha256"
