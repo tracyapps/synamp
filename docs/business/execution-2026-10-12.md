@@ -86,3 +86,22 @@ analysis refresh; use the private baseline report to collect actual listening
 judgments. Investigate Q01's unsupported `not_relaxing` producer separately
 before changing any supported promise or threshold. B04 cold-install and
 B05 restore/device evidence remain open in the main backlog.
+
+## B04/B05: offline Brain-state recovery tooling
+
+`tools/install/brain-state.mjs` now captures a private regular-file Brain-state
+copy with a SHA-256 manifest, verifies its complete file set, and restores only
+into a fresh directory. Source/target overlap, existing outputs, symlinks,
+special files, changed copies, unsafe/duplicate manifest entries and integrity
+failures are refused. It requires the owner's explicit stopped-writer
+attestation and documents its bounded file/size envelope. It never stops a
+service, changes Compose or replaces current state. Incomplete outputs remain
+for inspection. Backups are not signed and cannot establish power-loss or
+live-database consistency.
+
+Seven fresh tests pass, including real PlaylistStore, SessionStore, EventLog
+and WordChecks restore/restart, torn final-log recovery, source-byte
+preservation and negative safety cases. The new [recovery procedure](../../tools/install/RECOVERY.md)
+separates Brain from music/journals/tag backups, Mac SQLite, other services,
+secrets and image identities. Installed NAS restore, complete-system backup,
+single-writer enforcement and actual data rollback remain open.

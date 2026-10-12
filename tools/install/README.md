@@ -61,3 +61,9 @@ Never discard a failed or abandoned attempt when calculating install success.
 Start with a copy/trial library and optional writes disabled. A small-library
 first-listen procedure still needs hardware validation; the owner procedure in
 `docs/synamp/FIRST-RUN.md` is not cold-install evidence.
+# Brain-state recovery rehearsal
+
+The [offline recovery tool](RECOVERY.md) creates a private, checksummed Brain
+state backup and restores it only into a fresh trial directory. It never
+stops services or replaces current state. Music, analyzer databases and other
+services have separate backup requirements.
