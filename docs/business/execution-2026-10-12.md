@@ -105,3 +105,14 @@ preservation and negative safety cases. The new [recovery procedure](../../tools
 separates Brain from music/journals/tag backups, Mac SQLite, other services,
 secrets and image identities. Installed NAS restore, complete-system backup,
 single-writer enforcement and actual data rollback remain open.
+
+## B03: browser checks in release CI
+
+A separate Node 22 / Ubuntu 24.04 job now installs the locked Puppeteer Chrome
+build and runs all three isolated player/Library harnesses. Ordinary Node jobs
+still skip browser downloads. Fresh local execution passed all player actions,
+Library navigation/reveal checks and six full-App playback assertions; actual
+generated audio was measured. `actionlint 1.7.12` and whitespace checks pass.
+This configures six hosted jobs; it is not evidence of a hosted run. Browser
+screenshots remain temporary runner files and assertions stay in job logs.
+Hosted Node 22/Linux browser compatibility still needs the user's push.

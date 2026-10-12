@@ -58,9 +58,13 @@ node tools/player/check-library-playback.mjs /absolute/private/evidence/library-
 ```
 
 The harness starts isolated Brain/web processes and generated audio, records
-results/screenshots, and cleans up its stores/processes. It is a separate local
-check: browser downloads are disabled in the default Node CI job, which does
-not run this harness. Do not infer its success from the unit checks or build.
+results/screenshots, and cleans up its stores/processes. A separate Node 22
+Ubuntu browser CI job runs all three harnesses with the Chrome build pinned by
+the locked Puppeteer dependency. Ordinary Node jobs keep downloads disabled.
+Runtime dependencies follow the [Puppeteer Linux guidance](https://pptr.dev/troubleshooting),
+using Ubuntu 24.04 package names. Assertions remain in hosted logs; screenshots
+are temporary runner files, not uploaded artifacts. Do not infer browser success
+from unit checks, a build, or workflow lint.
 The Library harnesses also cover artist changes, album failure/retry, file
 reveal requests, clicked-track identity and actual generated-audio startup from
 the full App while stopped, paused and playing. Brain tests include cold large
@@ -80,8 +84,8 @@ and [uv action](https://github.com/astral-sh/setup-uv) inputs.
 Record SHA, dirty state, actual image/build identity, runtime versions, command
 exit codes, counts, skip reasons, hardware and private evidence locations for
 every candidate. Local workflow lint is not a GitHub run. Once a separately
-authorized push exists, require all five matrix jobs to pass on that exact SHA:
-two Node/Linux jobs, macOS rename job and two analyzer jobs. Branch protection
+authorized push exists, require all six jobs to pass on that exact SHA:
+two Node/Linux jobs, a browser job, macOS rename job and two analyzer jobs. Branch protection
 configuration needs its own explicit authorization and hosted verification.
 
 Passing software checks cannot close G4: actual install cohorts, quality raters,

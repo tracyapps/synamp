@@ -56,6 +56,39 @@ jobs:
       - name: Whitespace check
         run: git diff --check
 
+  browser:
+    name: Browser playback and Library
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6, resolved 2026-10-11
+        with:
+          node-version: '22.x'
+          package-manager-cache: false
+      - name: Install pinned package manager and locked dependencies
+        run: |
+          npm install --global pnpm@9.12.0
+          pnpm install --frozen-lockfile
+      - name: Install audio decoder and Chrome runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg fonts-liberation libasound2t64 libatk-bridge2.0-0t64 libatk1.0-0t64 libcups2t64 libgtk-3-0t64 libgbm1 libnspr4 libnss3 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxfixes3 libxi6 libxrandr2 libxss1 libxtst6 xdg-utils
+      - name: Keep browser cache in runner scratch storage
+        run: echo "PUPPETEER_CACHE_DIR=$RUNNER_TEMP/synamp-chromium" >> "$GITHUB_ENV"
+      - name: Install Chrome pinned by the locked Puppeteer version
+        run: pnpm exec puppeteer browsers install chrome
+      - name: Player actions with generated audio
+        run: node tools/player/check-actions.mjs "$RUNNER_TEMP/synamp-evidence/player"
+      - name: Library navigation and reveal requests
+        run: node tools/player/check-library-finder.mjs "$RUNNER_TEMP/synamp-evidence/library-finder"
+      - name: Full App Library playback after artist changes
+        run: node tools/player/check-library-playback.mjs "$RUNNER_TEMP/synamp-evidence/library-playback"
+
   macos-renames:
     name: macOS librarian rename and undo
     runs-on: macos-14
