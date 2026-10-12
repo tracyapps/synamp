@@ -1,11 +1,25 @@
 # SynAmp early-access execution backlog
 
-Status on October 11, 2026: B01/B02/B03/B04 have initial local work recorded in
-[the execution receipt](execution-2026-10-11.md); no release gate is closed.
-Remaining acceptance work below is planned. Existing capabilities
-are inputs to the work, not proof that a launch gate is complete. This backlog
-uses the [90-day roadmap](90-day-roadmap.md) gates and the owner's 20–25h/week
-capacity. One implementer owns any shared contract or persistence file at a time.
+Status updated October 12, 2026: local implementation slices are recorded in
+[October 11](execution-2026-10-11.md) and [October 12](execution-2026-10-12.md).
+No release gate is closed. The table separates reviewable local work from
+acceptance evidence still required. The backlog uses the
+[90-day roadmap](90-day-roadmap.md) gates and the owner's 20–25h/week capacity.
+
+| Package | Local progress available | Next acceptance dependency |
+|---|---|---|
+| B01/B02 | Scope/read-write inventory; frozen synthetic and private owner-library evaluations; strict shortages retained | Owner listening judgments, throughput and ten two-rater library reports; Q01 producer gap remains |
+| B03 | Rename regression; pinned CI including three browser harnesses; fresh local tests/build | Push, hosted six-job result on candidate SHA and authorized required-check configuration |
+| B04 | Read-only install preflight; build identity; install receipts | Real cold-install/resume/upgrade attempts on candidate hardware |
+| B05 | Playback fixes; browse worker; offline state backup/restore rehearsal; critical-store read/parse failures stop startup | NAS/device retest, full-system recovery, full disk/power loss, second writer and remaining optional-store audit |
+| B06 | External-service/write inventory and explicit unresolved rights | Per-artifact distribution evidence, provider/counsel/owner decisions |
+| B07 | Offline install/activation/W4 scorecard and private-record guide | Consented testers, working support route, actual attempts/check-ins and mature windows |
+| B08 | Draft messaging/surface map and evidence boundaries | Reviewed copy/consent implementation, actual clips and visual audit |
+| B09/B10 | Proposed offer, economics and gated distribution plan | Approved rights/offer/provider, sandbox flow and later real cohorts/channels |
+
+Existing capabilities are inputs to the work, not proof that a launch gate is
+complete. One implementer owns each shared contract/persistence file at a time.
+The user will review/push local commits and update/test the NAS separately.
 
 ## B01 Establish the baseline and supported scope
 

@@ -1,15 +1,17 @@
 # B01 baseline and release scope
 
-October 11, 2026. Source base: `8568c9b8e04e1f5c355c9fb86028f55aadb67823`.
-See [execution receipt](execution-2026-10-11.md) for fresh results on the edited
-working tree. This page is the starting point for implementers, not launch proof.
+Updated October 12, 2026. Original source base:
+`8568c9b8e04e1f5c355c9fb86028f55aadb67823`; current local feature commits are
+listed in [the October 12 receipt](execution-2026-10-12.md). The
+[October 11 receipt](execution-2026-10-11.md) retains earlier evidence. This page
+is the starting point for implementers, not launch proof.
 
 ## Narrow candidate promise
 
 One owner, one personally controlled music library, private-network access;
 Synology x86-64 Container Manager and an Apple Silicon Mac analyzer are the
 initial **candidate** combination. The repo names DS1825+/DSM 7.4.1 and an M4
-Pro, but this session has not inspected either installed server or analyzer.
+Pro, but current changes have not been verified on that installed combination.
 Do not advertise a supported combination until an actual attempt receipt passes.
 
 The proposed listening job is an explainable playlist from measured library
@@ -26,16 +28,17 @@ outside the paid-EA promise pending their own evidence.
 
 | Evidence class | Current observation | What is still missing |
 |---|---|---|
-| Local code/temp files | Brain suite, real temporary-file rename/undo/rollback tests, read-only preflight tests; see dated receipt | Installed server filesystem and interrupted-write/restore proof |
+| Local code/temp files | Brain 341 pass/one existing skip; three player/Library browser harnesses; 72 selected tool checks; web build; offline real-store restore and refusal of damaged critical state | Hosted CI, installed server filesystem, power-loss/full-disk/second-writer proof |
 | Synthetic library | Frozen twelve-case baseline: six evaluated but unrated, three interpretation reviews, three manual cases pending after the measured steady-beat parser repair | Actual musical fit, audible false negatives and independent raters |
-| Installed owner library | Not inspected in this execution | Exact build/hardware, track count/formats, stage coverage, throughput, first playback, full workday |
+| Owner-library snapshot | Consented private random-200 and challenge-30 captures; twelve frozen requests evaluated locally with shortages and unmeasured tracks retained; no listening ratings inferred from notes | Actual installed candidate/build, playback latency, throughput, by-ear quality, independent raters and full workday |
 | Independent customer | No attempts or users claimed | Eligible cold attempts, assistance, activation and mature retention |
 
 **G0 remains open:** first playback and quality/throughput on the actual candidate
 hardware are not demonstrated. B01's scope/evidence map is available; B01 is not
 closed. Start with [the evaluation procedure](listening-evaluation.md) and
-[NAS preflight](../../tools/install/README.md). Obtain explicit snapshots for a
-real-library report; do not search personal mounts or interrupt an owner analysis.
+[NAS preflight](../../tools/install/README.md). Use the existing private frozen
+captures for the next listening review; do not search personal mounts or interrupt an owner analysis. Snapshot evaluation is
+not evidence of live installed performance.
 
 ## Reads, writes and outbound services
 

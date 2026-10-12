@@ -154,3 +154,42 @@ Final state-loader review also found ENOENT from a dangling state symlink could
 look like a missing file. That case now refuses startup and preserves the link;
 eleven focused state-loading checks pass, along with typecheck and recovery
 checks. Valid symlinked stores retain their earlier read behavior.
+
+## Local handoff and next critical blockers
+
+Local feature commits in this continuation:
+
+| Commit | Reviewable slice |
+|---|---|
+| `11e4ca22` | Explorer queries leave the playback server thread |
+| `3af4c37c` | Private offline Brain-state backup/verify/restore |
+| `ba1f2f41` | Three browser harnesses added to release CI |
+| `959622c3`, `3b1f93af` | Damaged critical user stores and dangling links refuse silent reset |
+| `fa68c6f4` | Private denominator-complete beta scorecard |
+
+The next critical listening/release checks require evidence outside this local
+checkout: the user's reviewed NAS rebuild/update, installed build identity,
+artist-switch playback and expansion under the real library load, actual
+Finder reveal, and scored listening of the frozen private challenge. Hosted CI
+requires the user's push. No push, NAS update, recruitment or outgoing message
+was performed. The owner's spreadsheet was not edited in this continuation.
+
+For NAS review, keep existing state/backups available and check startup before
+playback: critical stores now refuse malformed/unreadable state rather than
+silently resetting it. Test first click after switching artists, paused resume,
+playing artist changes and album expansion while Explorer queries run. Capture
+build identity, action, observed delay/error and selected track. Local generated
+WAV and metadata checks cannot predict real decoder/storage/network latency.
+
+B04/B05 still require supported-hardware cold install, complete-system restore,
+process/power interruption, full disk, second-writer enforcement and data
+rollback. A safe cross-platform second-writer design needs a separate storage
+slice; no unreliable automatic stale-PID/lease takeover was added. B06/B09 need
+artifact/provider/owner decisions before commercial distribution or checkout;
+B07 needs consented real cohorts and elapsed time. These acceptance gates are
+open, with no claim that the entire roadmap or all possible local work is done.
+
+Final full Brain rerun after the dangling-link follow-up: 342 tests, 341 pass,
+zero failures, one existing cross-filesystem skip. Workflow actionlint and
+local documentation link/whitespace checks also pass. Final source changes
+remain local for the user's review and push.
