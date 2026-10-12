@@ -1,9 +1,12 @@
 name: Release checks
 
 on:
+  # Branch pushes only: a version tag runs these same checks through release.yml.
   push:
+    branches: ['**']
   pull_request:
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
