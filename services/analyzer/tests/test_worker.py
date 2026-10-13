@@ -280,3 +280,27 @@ def test_reveal_selects_exact_file_and_refuses_external_symlinks(tmp_path: Path,
     assert calls == [["open", "-R", str(song)]]
     assert module.open_in_finder(song.parent)
     assert calls[-1] == ["open", str(song.parent)]
+
+
+def test_picks_from_the_web_app_are_listened_to_first(tmp_path: Path) -> None:
+    cfg, music = library(tmp_path, count=4)
+    brain = FakeBrain([{"id": "a_000000000010", "action": "scan"}, {"id": "a_000000000011", "action": "analyze"}])
+    picks = {"rev": 3, "paths": ["Artist/Album/04 - tone.flac", "../../outside.flac", "/etc/passwd", 7]}
+    original = brain.post
+
+    def post(path: str, body: dict) -> dict:
+        answer = original(path, body)
+        if path == "/api/v1/analyzer/claim" and body["worker"].get("first_rev") != 3:
+            answer = {**answer, "first": picks}
+        return answer
+
+    brain.post = post  # type: ignore[method-assign]
+    worker, lines = make(cfg, brain, now=Clock())
+    assert worker.once() == "done"  # scan; the picks arrive with this hello
+    assert worker.first_rev == 3
+    assert worker.first_new == [music / "Artist" / "Album" / "04 - tone.flac"], "only paths inside the library"
+    assert worker.once() == "done"
+    assert brain.hellos[-1]["first_rev"] == 3, "the worker says which picks it has, so they aren't sent again"
+    analysed = [line.strip() for line in lines if line.startswith("  ") and line.strip().endswith("tone.flac")]
+    assert analysed[0] == "04 - tone.flac", lines
+    assert any("picked songs are listened to" in line for line in lines)

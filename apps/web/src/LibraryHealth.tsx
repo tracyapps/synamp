@@ -30,7 +30,10 @@ type Control = {
   worker: null | { online: boolean; last_seen: number; host?: string; library_ok?: boolean; library_path?: string; problem?: string };
   running: Command | null; queued: Command[]; recent: Command[];
   settings: { update_after_librarian: boolean };
+  /** "Listen to these first": songs picked in the Library, and how many are ready. */
+  first?: FirstPicks | null;
 };
+type FirstPicks = { count: number; listened: number; gone: number; at: number };
 const ACTION_NAMES: Record<Command["action"], string> = {
   update: "Scanning for changes and updating the library list",
   scan: "Scanning for changes",
@@ -124,6 +127,10 @@ export default function LibraryHealth({ request }: { request: Request }) {
         </button>
       </div>
       {control && <AnalyzerControls control={control} act={act} message={message} />}
+      {control?.first ? <FirstPicksProgress first={control.first} act={act} />
+        : a.reported && a.catalog.present > 0 && a.fully_analysed < a.catalog.present / 2 && (
+          <p className="health__tip">Want a first playlist sooner? Tick a few artists or albums in the Library below, then choose <strong>More → Listen to these first</strong>. SynAmp listens to those before the rest.</p>
+        )}
       <div id={detailsId} hidden={!open} className="health__details">
         {a.reported && <div>
           <h3>Analysis</h3>
@@ -174,6 +181,25 @@ export default function LibraryHealth({ request }: { request: Request }) {
         </div>
       </div>
     </section>
+  );
+}
+
+/** "Listen to these first": how far the picked songs have got, in words and a bar. */
+function FirstPicksProgress({ first, act }: { first: FirstPicks; act: (path: string, body: unknown, done: string) => void }) {
+  const here = first.count - first.gone;
+  const ready = here > 0 && first.listened >= here;
+  const label = `Your picked songs: ${n(first.listened)} of ${n(here)} listened to`;
+  return (
+    <div className="health__first">
+      <p className="health__first-text">
+        {ready
+          ? <>All {n(here)} of your picked songs are listened to. <a href="#/playlists">Describe a playlist</a> and they can be in it.</>
+          : <>{label}. They go before the rest of the library{first.listened === 0 ? "; the first ones are usually ready within minutes of analysis starting" : ""}.</>}
+        {first.gone > 0 && <> {n(first.gone)} {first.gone === 1 ? "has" : "have"} moved or gone since you picked {first.gone === 1 ? "it" : "them"}.</>}
+      </p>
+      {!ready && <progress className="health__first-bar" max={here || 1} value={first.listened} aria-label={label} />}
+      <button type="button" className="btn btn--quiet btn--sm" onClick={() => act("/analyzer/first", { clear: true }, "Forgot your picks. Analysis carries on in the usual order.")}>Forget my picks</button>
+    </div>
   );
 }
 

@@ -4,6 +4,14 @@ October 11, 2026–January 9, 2027. Owner capacity: 20–25 hours per week acros
 development, support and business work. Commercial direction: one-time purchase
 with optional cloud services considered later.
 
+## Schedule check (October 12)
+
+Building is **ahead**; proving it with real people has **not started** and is
+now the critical path. By this plan's own retention rule, **Nov 24 is out of
+reach**, **Dec 1 is at risk** (needs testers installing from Oct 19–25) and
+**Dec 15 is realistic** if recruiting starts by Oct 26. Details, gate by gate:
+[status-2026-10-12.md](status-2026-10-12.md). Update it at each Monday review.
+
 ## The outcome
 
 By January 9, establish that people beyond the founder can install SynAmp, get

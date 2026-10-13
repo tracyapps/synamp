@@ -106,6 +106,25 @@ class JobQueue:
         self.db.conn.commit()
         return reopened
 
+    def prioritize(self, paths: list[str]) -> list[str]:
+        """Put these tracks at the front of the line ("Listen to these first").
+
+        `claim` takes the oldest `updated_at` first, so a waiting job stamped 0
+        goes before everything else. Only waiting jobs move: finished ones are
+        already listened to and running ones are under way. Returns the paths
+        that moved, so the caller can tell when they're all done.
+        """
+        moved: list[str] = []
+        for path in dict.fromkeys(paths):
+            cur = self.db.conn.execute(
+                "UPDATE jobs SET updated_at = 0 WHERE track_path = ? AND state = ?",
+                (path, JobState.PENDING.value),
+            )
+            if cur.rowcount:
+                moved.append(path)
+        self.db.conn.commit()
+        return moved
+
     # -- workers -----------------------------------------------------------
 
     def claim(self) -> Job | None:

@@ -9,6 +9,10 @@ cloud later. The working December 1 target and November 24 stretch are internal,
 conditional review dates. This does not mark any feature or release gate done.
 The product phases below preserve the wider direction.
 
+Schedule check (2026-10-12): code is ahead of the 90-day plan; tester and
+real-hardware evidence has not started. See
+[status-2026-10-12](../business/status-2026-10-12.md).
+
 Sequencing principle: **get you off your streaming subscriptions as early as
 possible**, then build the things that don't exist anywhere else.
 

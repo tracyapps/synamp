@@ -11,6 +11,7 @@ commitment. The original report's December 15 window remains the fallback.
 
 ## Working documents
 
+- **[Schedule check, October 12](status-2026-10-12.md): are we on schedule? Gate by gate, lane by lane.**
 - [Current baseline](baseline.md): candidate scope, reads/writes and evidence gaps.
 - [October 11 execution](execution-2026-10-11.md): implementation, fresh checks and next steps.
 - [October 12 continuation](execution-2026-10-12.md): Explorer responsiveness and the private challenge listening baseline.

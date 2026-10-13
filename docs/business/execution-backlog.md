@@ -1,6 +1,7 @@
 # SynAmp early-access execution backlog
 
-Status updated October 12, 2026: local implementation slices are recorded in
+Status updated October 12, 2026 (evening): see the [schedule check](status-2026-10-12.md)
+for on/behind status. Local implementation slices are recorded in
 [October 11](execution-2026-10-11.md) and [October 12](execution-2026-10-12.md).
 No release gate is closed. The table separates reviewable local work from
 acceptance evidence still required. The backlog uses the
@@ -9,8 +10,8 @@ acceptance evidence still required. The backlog uses the
 | Package | Local progress available | Next acceptance dependency |
 |---|---|---|
 | B01/B02 | Scope/read-write inventory; frozen synthetic and private owner-library evaluations; strict shortages retained | Owner listening judgments, throughput and ten two-rater library reports; Q01 producer gap remains |
-| B03 | Rename regression; pinned CI including three browser harnesses; fresh local tests/build | Push, hosted six-job result on candidate SHA and authorized required-check configuration |
-| B04 | Read-only install preflight; build identity; install receipts | Real cold-install/resume/upgrade attempts on candidate hardware |
+| B03 | Rename regression; pinned CI with browser harnesses; hosted "Release checks" pass on `main` (Oct 12–13) | Authorized required-check configuration; hosted result on the release-candidate SHA |
+| B04 | Guided setup (plan first), release downloads with versions, update/roll-back rehearsal, new-version notice; "Listen to these first" puts picked songs at the front of analysis for a first playlist from part of a library | Real cold-install/resume/upgrade attempts on candidate hardware; measured time from picks to first playlist on the owner's NAS |
 | B05 | Playback fixes; browse worker; offline state backup/restore rehearsal; critical-store read/parse failures stop startup | NAS/device retest, full-system recovery, full disk/power loss, second writer and remaining optional-store audit |
 | B06 | External-service/write inventory and explicit unresolved rights | Per-artifact distribution evidence, provider/counsel/owner decisions |
 | B07 | Offline install/activation/W4 scorecard and private-record guide | Consented testers, working support route, actual attempts/check-ins and mature windows |

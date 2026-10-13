@@ -58,9 +58,9 @@ number: ✦
 short: Ready to install
 goal: Make SynAmp something you can set up, trust and keep up to date on your own server, without the developer there to help.
 - [~] A guided setup that checks your server is ready before it changes anything
-- [ ] Hear a first playlist from part of your library, without waiting for all of it to be listened to
+- [~] Hear a first playlist from part of your library, without waiting for all of it to be listened to
 - [~] See which version you're running, update safely, and go back if an update goes wrong
-- [ ] Backups of your playlists, history and settings that have been tested by actually restoring them
+- [~] Backups of your playlists, history and settings that have been tested by actually restoring them
 - [ ] A public report of how well playlists work on real libraries, with every miss counted
 
 ## Playlists that scale
@@ -128,6 +128,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-10-13 — Listen to these first: tick some artists, albums or songs in the Library and SynAmp listens to them before the rest of your library, so your first playlist can come from them in an hour instead of days. The Library strip shows how many are ready, and you can forget your picks at any time
 - 2026-10-13 — Library: opening an artist or album group no longer jumps the page, what’s inside a group is indented under it, the title bar and table headings stay at the top as you scroll, row buttons fit on one line, and a Full screen view spreads the Library across the whole window. Playing from the Library shows only the buttons that apply, plus “Make a smart playlist from this”
 - 2026-10-12 — SynAmp tells you when a new version is out and what’s new in it. Skip a version, get reminded in a few days, or turn the checks off in Settings; they only read GitHub’s public list of releases and send nothing about you or your music
 - 2026-10-12 — Ready-made releases are on the way: SynAmp shows its version number, nothing has to be built on your NAS, and updating (or going back to an earlier version) is one download and one button in Container Manager
