@@ -32,6 +32,16 @@ export class Layout {
     this.measured = new Uint8Array(this.lines);
   }
 
+  /**
+   * A new list whose first `count` lines are the same as before (a group below
+   * them just opened or closed): keep what was measured for them, so everything
+   * above the change stays exactly where it was on screen.
+   */
+  keepFrom(previous: Layout, count: number): void {
+    const n = Math.min(count, previous.lines, this.lines);
+    for (let i = 0; i < n; i++) if (previous.measured[i]) this.measure(i, previous.heights[i]!);
+  }
+
   /** A drawn line's real height. True when it changed anything. */
   measure(line: number, height: number): boolean {
     if (line < 0 || line >= this.lines || !(height > 0)) return false;

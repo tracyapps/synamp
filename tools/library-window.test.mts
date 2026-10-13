@@ -44,3 +44,14 @@ test('pages to fetch, and cards per row', () => {
   assert.equal(cardsPerRow(1000, 230, 14), 4);
   assert.equal(cardsPerRow(200, 230, 14), 1);
 });
+
+test('a group opening below keeps the measured lines above it, so they stay put', () => {
+  const before = new Layout(10, 50);
+  for (let line = 0; line < 6; line++) before.measure(line, 30 + line);
+  const after = new Layout(14, 50);
+  after.keepFrom(before, 5);
+  for (let line = 0; line < 5; line++) assert.equal(after.top(line + 1) - after.top(line), 30 + line);
+  assert.equal(after.top(5), before.top(5), 'everything above the change starts where it did');
+  const fresh = new Layout(14, 50);
+  assert.notEqual(fresh.top(5), before.top(5), 'without keeping, the same lines would move');
+});

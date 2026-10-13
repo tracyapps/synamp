@@ -30,13 +30,22 @@ function onScreen(element: HTMLElement) {
   return { scroller, top, bottom: top + (page ? window.innerHeight : scroller.clientHeight) };
 }
 
-export function useLibraryWindow({ total, perLine = 1, estimate, gap = 0, reset }: {
+export function useLibraryWindow({ total, perLine = 1, estimate, gap = 0, reset, keep }: {
   total: number; perLine?: number; estimate: number; gap?: number; reset: unknown;
+  /** When the list changes only below this many lines (a group opened or closed), keep their measurements. */
+  keep?: number;
 }) {
   const containerRef = useRef<HTMLElement | null>(null);
   const lines = Math.ceil(total / Math.max(1, perLine));
-  // A new list (other filters, sort, view or width): start measuring afresh.
-  const layout = useMemo(() => new Layout(lines, estimate), [lines, estimate, perLine, reset]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A new list (other filters, sort, view or width): start measuring afresh,
+  // except for the lines above a group that just opened or closed.
+  const previous = useRef<Layout | null>(null);
+  const layout = useMemo(() => {
+    const next = new Layout(lines, estimate);
+    if (keep !== undefined && previous.current) next.keepFrom(previous.current, keep);
+    return next;
+  }, [lines, estimate, perLine, reset]); // eslint-disable-line react-hooks/exhaustive-deps
+  previous.current = layout;
   const [range, setRange] = useState({ first: 0, last: Math.min(lines - 1, 30) });
   const [, redraw] = useState(0);
   const [focused, setFocused] = useState<number | null>(null);

@@ -91,8 +91,21 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
   const stale = settled !== params;
   /** Which groups are open: all closed (or all open, after Expand all), except the ones toggled. Starts closed. */
   const [opened, setOpened] = useState<{ all: boolean; toggled: ReadonlySet<string> }>(() => ({ all: false, toggled: new Set() }));
-  useEffect(() => { setOpened({ all: false, toggled: new Set() }); }, [group, group2]);
-  const toggleOpen = (path: string) => setOpened(current => { const toggled = new Set(current.toggled); if (toggled.has(path)) toggled.delete(path); else toggled.add(path); return { ...current, toggled }; });
+  useEffect(() => { setOpened({ all: false, toggled: new Set() }); keepAbove.current = undefined; }, [group, group2]);
+  /**
+   * Opening or closing a group only changes the list below its header. Remember
+   * where that header is, so the rows above it keep their places (and the header
+   * stays where it was clicked) instead of the whole list being laid out afresh.
+   */
+  const keepAbove = useRef<number | undefined>(undefined);
+  const toggleOpen = (path: string) => {
+    keepAbove.current = undefined;
+    for (const [number, rows] of pages) {
+      const at = rows.findIndex(row => row.type === "group" && row.key === path);
+      if (at >= 0) { keepAbove.current = number * PAGE_SIZE + at + 1; break; }
+    }
+    setOpened(current => { const toggled = new Set(current.toggled); if (toggled.has(path)) toggled.delete(path); else toggled.add(path); return { ...current, toggled }; });
+  };
   /** What's ticked; cleared when the filters or grouping change (it would mean something else). */
   const [sel, setSel] = useState<Selection>(emptySelection);
   useEffect(() => { setSel(emptySelection()); }, [settled]);
@@ -121,11 +134,26 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
     const id = ++ticket.current;
     pending.current = true; setBusy(true);
     const sameSearch = shown.current === settled;
+    // A group opened or closed: the rows above it are unchanged, so keep those
+    // pages and fetch the header's own page now, so nothing near it blinks to "Loading…".
+    const keep = sameSearch ? keepAbove.current : undefined;
+    const headerPage = keep !== undefined ? Math.floor((keep - 1) / PAGE_SIZE) : 0;
     try {
-      const result = await request<Page>(`/library/explore?${settled}&${layout}&offset=0&limit=${PAGE_SIZE}`);
+      const [result, around] = await Promise.all([
+        request<Page>(`/library/explore?${settled}&${layout}&offset=0&limit=${PAGE_SIZE}`),
+        headerPage > 0 ? request<Page>(`/library/explore?${settled}&${layout}&offset=${headerPage * PAGE_SIZE}&limit=${PAGE_SIZE}`) : Promise.resolve(null),
+      ]);
       if (id !== ticket.current) return;
-      asked.current = new Set([0]);
-      setPages(new Map([[0, result.rows]]));
+      asked.current = new Set([0, headerPage]);
+      setPages(current => {
+        const next = new Map<number, Element[]>([[0, result.rows]]);
+        for (let number = 1; number < headerPage; number++) {
+          const rows = current.get(number);
+          if (rows) { next.set(number, rows); asked.current.add(number); }
+        }
+        if (around) next.set(headerPage, around.rows);
+        return next;
+      });
       setPage(result);
       // Scrolled down into the old results: go back to the top of the new ones (not when a group just opened or closed).
       const box = listBox.current;
@@ -229,7 +257,11 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
   }, [view]);
   const total = page?.total ?? 0;
   // The grid comes in rows of cards (chunks), so every view is one element per line.
-  const win = useLibraryWindow({ total, perLine: 1, estimate: ESTIMATE[view], gap: 0, reset: `${settled}|${layout}|${view}|${page?.library_version}` });
+  // A new search or view lays the list out afresh; opening a group keeps what's above it.
+  const resetKey = `${settled}|${view}|${page?.library_version}`;
+  const lastReset = useRef(resetKey);
+  if (lastReset.current !== resetKey) { lastReset.current = resetKey; keepAbove.current = undefined; }
+  const win = useLibraryWindow({ total, perLine: 1, estimate: ESTIMATE[view], gap: 0, reset: `${resetKey}|${layout}`, keep: keepAbove.current });
   useEffect(() => {
     if (!page || stale) return;
     for (const number of pagesFor(win.first, win.last, total)) if (!asked.current.has(number)) void fetchPage(number);
