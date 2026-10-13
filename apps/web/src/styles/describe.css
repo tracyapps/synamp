@@ -106,3 +106,4 @@
 @media (pointer: coarse) {
   .smart-list__review .btn, .smart-list__why .chip { min-height: 44px; }
 }
+.describe__started { margin: 0; font-size: 0.875rem; color: var(--gold); }

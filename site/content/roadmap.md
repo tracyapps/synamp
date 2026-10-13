@@ -128,6 +128,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-10-13 — Library: opening an artist or album group no longer jumps the page, what’s inside a group is indented under it, the title bar and table headings stay at the top as you scroll, row buttons fit on one line, and a Full screen view spreads the Library across the whole window. Playing from the Library shows only the buttons that apply, plus “Make a smart playlist from this”
 - 2026-10-12 — SynAmp tells you when a new version is out and what’s new in it. Skip a version, get reminded in a few days, or turn the checks off in Settings; they only read GitHub’s public list of releases and send nothing about you or your music
 - 2026-10-12 — Ready-made releases are on the way: SynAmp shows its version number, nothing has to be built on your NAS, and updating (or going back to an earlier version) is one download and one button in Container Manager
 - 2026-10-12 — Guided setup: one command asks where your music is, shows you the plan, and changes nothing until you say yes. It makes the folders and private settings for you, checks the server is ready, and never touches your music. Every install now gets exactly the same versions of the parts SynAmp is built on

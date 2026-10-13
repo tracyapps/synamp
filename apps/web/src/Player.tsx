@@ -1,7 +1,8 @@
 import { useEffect, useId, useImperativeHandle, useRef, useState, type Ref } from "react";
 import "./styles/player.css";
 import SongControls from "./SongControls";
-import { PLAYER_COMMAND, shortcut, type PlayerCommand, type PlayerView } from "./player-commands";
+import { PLAYER_COMMAND, PLAYLIST_ONLY, shortcut, type PlayerCommand, type PlayerView } from "./player-commands";
+import { askForSmartPlaylist } from "./Describe";
 import { newId } from "./ids";
 import Icon from "./ui/Icon";
 import { audioContext, setActiveAudio } from "./visuals/audio-graph";
@@ -213,7 +214,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const from = current?.source ? playlistName(current.source.playlist_id) ?? "playlist" : undefined;
   const view: PlayerView | null = session?.queue.length && !away ? {
     title: current?.title ?? (session?.continuation ? "No matching songs left" : "End of queue"), artist: current?.artist, available: !!current, canUndo: !!undo, loved: !!current?.loved || (!!current && lovedTracks.has(current.track_id)),
-    paused, busy, transitioning: fading, action, status: fading ? `Crossfading… ${status}` : status, playlist: from,
+    paused, busy, transitioning: fading, action, status: fading ? `Crossfading… ${status}` : status, playlist: from, ...(current?.live ? { live: true } : {}),
   } : null;
   const viewKey = JSON.stringify(view);
   useEffect(() => {
@@ -222,12 +223,14 @@ export default function Player({ request, session, onSession, playlistName, onCh
     native.webkit?.messageHandlers?.synampPlayer?.postMessage(JSON.parse(JSON.stringify(view ? { ...view, empty: !view.available } : { empty: true, title: "Nothing playing" })));
   }, [viewKey, onView]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const run = (event: Event) => { if (away) return; actions.current[(event as CustomEvent<PlayerCommand>).detail]?.(); };
+    // Playlist feedback (not for this, more like this, remove…) means nothing for a song started from the Library.
+    const allowed = (action: PlayerCommand) => !PLAYLIST_ONLY.has(action) || !!latest.current.current?.source || action === "undo-remove";
+    const run = (event: Event) => { const action = (event as CustomEvent<PlayerCommand>).detail; if (away || !allowed(action)) return; actions.current[action]?.(); };
     const key = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       const editing = !!target?.closest("input, textarea, select, [contenteditable='true'], [role='textbox']");
       const action = shortcut(event, editing);
-      if (!action || away || !latest.current.current) return;
+      if (!action || away || !latest.current.current || !allowed(action)) return;
       event.preventDefault(); actions.current[action]?.();
     };
     window.addEventListener(PLAYER_COMMAND, run);
@@ -353,7 +356,8 @@ export default function Player({ request, session, onSession, playlistName, onCh
       .finally(() => { actionLock.current = false; setBusy(false); });
   };
 
-  actions.current = { toggle, next, previous, love: () => feedback("love"), "not-for-this": () => feedback("thumb_down"), remove: () => { if (current?.source) void feedback("remove"); }, "more-like-this": moreLikeThis, visuals: onVisuals, "undo-remove": restore, "wrong-energy": () => feedback("thumb_down", "wrong_energy"), "wrong-vibe": () => feedback("thumb_down", "wrong_vibe") };
+  actions.current = { toggle, next, previous, love: () => feedback("love"), "not-for-this": () => feedback("thumb_down"), remove: () => { if (current?.source) void feedback("remove"); }, "more-like-this": moreLikeThis, visuals: onVisuals, "undo-remove": restore,
+    "smart-from-this": () => { if (current && !current.live) askForSmartPlaylist({ id: current.track_id, title: current.title, ...(current.artist ? { artist: current.artist } : {}) }); }, "wrong-energy": () => feedback("thumb_down", "wrong_energy"), "wrong-vibe": () => feedback("thumb_down", "wrong_vibe") };
 
   const finished = session.index >= session.queue.length;
   return (
@@ -396,7 +400,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
       {current && !current.playable && !finished && <p className="player__note">No audio file for this track yet. It plays once the analyzer has listed it.</p>}
       {view && <div className="player__feedback">
         <SongControls view={view} />
-        <details className="player__shortcuts"><summary>Keyboard shortcuts</summary><p>Option/Alt + Shift: → skip · ← previous · Space play/pause · L love · N not for this · R remove · M more like this · V visuals. Available while SynAmp is focused. Use the Mac companion for global shortcuts.</p></details>
+        <details className="player__shortcuts"><summary>Keyboard shortcuts</summary><p>Option/Alt + Shift: → skip · ← previous · Space play/pause · L love · V visuals. Playing from a playlist: N not for this · R remove · M more like this. Available while SynAmp is focused. Use the Mac companion for global shortcuts.</p></details>
       </div>}
       {!view && status && <p className="song-controls__status" role="status">{status}</p>}
       <ol id={queueId} hidden={!showQueue} className="player__queue" aria-label="Queue">

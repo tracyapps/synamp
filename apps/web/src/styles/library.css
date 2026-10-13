@@ -254,7 +254,25 @@
 .group-head--0 .group-head__label { font-weight: 700; }
 .group-head__count { color: var(--muted); font-size: 0.875rem; }
 /* Rows inside an open group sit a step in from their header. */
-.browse__results > .album:not(.browse__group) { padding-left: 10px; }
+/* One indent step (28px, as .group-head--1) per group level an item sits in, so
+   it reads as inside its group: level 0 headers, level 1 headers, then items. */
+.browse__results > .album:not(.browse__group) { padding-left: calc(10px + var(--item-depth, 0) * 28px); }
+.browse__results > .browse__chunk { padding-left: calc(var(--item-depth, 0) * 28px); }
+.browse__table tbody td.browse__pick-col { text-align: left; padding-left: calc(10px + var(--item-depth, 0) * 28px); padding-right: 0; }
+.browse__table thead th.browse__pick-col { text-align: left; padding-left: 10px; padding-right: 0; }
+
+/* The list's title bar, and the table's column headings: stay at the top while the results scroll. */
+.browse__listhead { position: sticky; top: calc(-1 * var(--main-pad-top, 0px)); z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; min-height: 48px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.browse__listhead .browse__open-tools { margin-left: auto; }
+.browse__listhead-count { font-size: 0.8125rem; }
+.browse__table thead { position: relative; z-index: 3; }
+.browse__table thead th { background: var(--surface); }
+.browse__table thead.is-stuck th { box-shadow: inset 0 -1px 0 var(--border-strong); }
+.browse__table tbody th, .browse__table tbody td { vertical-align: middle; }
+
+/* Row actions: one compact line of labelled icon buttons. */
+.album__actions--compact { flex-wrap: nowrap; gap: 4px; }
+.browse__table td[data-column="actions"] .album__actions--compact { flex-wrap: nowrap; }
 .browse__table tbody.browse__group > tr > td { padding: 0; }
 
 .browse__select-all { display: inline-flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; font-size: 0.875rem; color: var(--muted); cursor: pointer; }
@@ -291,3 +309,7 @@
 .selection-bar__dialog h3 { margin: 0; font: 400 1.1rem var(--font-display); }
 .selection-bar__dialog::backdrop { background: rgba(0, 0, 0, .55); }
 @media (forced-colors: active) { .selection-bar { border: 2px solid CanvasText; } }
+/* Keyboard focus never lands hidden under the sticky title bar (WCAG 2.4.11). */
+.app__main:has(.browse__listhead), .app__main:has(.browse__table) { scroll-padding-top: 64px; }
+/* Full screen: the table spreads to the full width (columns keep their set widths as a minimum). */
+.app--library-full .browse__table { min-width: 100%; }

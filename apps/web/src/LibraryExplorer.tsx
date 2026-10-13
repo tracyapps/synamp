@@ -5,7 +5,7 @@ import type { Ref } from "react";
 import { useLibraryWindow } from "./useLibraryWindow";
 import type { Request } from "./api";
 import type { PlaylistNode } from "./Playlists";
-import { AddToPlaylist, AlbumRow, AlbumSongs, albumMenu, ArtistLink, clock, openKey, PageLink, useDebounced } from "./LibraryParts";
+import { AlbumRow, AlbumSongs, albumMenu, ArtistLink, clock, openKey, PageLink, useDebounced } from "./LibraryParts";
 import { useContextMenu } from "./ui/ContextMenu";
 import { Heart, useFavourites } from "./favourites";
 import { Check, GroupHeader, SelectionBar } from "./LibrarySections";
@@ -48,7 +48,25 @@ const freshRule = (): Rule => ({ field: "artist", mode: "contains", value: "", n
 /** The Show buttons: one kind of thing at a time, or everything. */
 const SHOW: Array<[string, Kind[]]> = [["Artists", ["artist"]], ["Albums", ["album"]], ["Songs", ["song"]], ["Everything", ["artist", "album", "song"]]];
 
-export default function LibraryExplorer({ request, play, playlists, onPlaylistsChanged }: { request: Request; play: (body: Record<string, unknown>) => Promise<void>; playlists: PlaylistNode[]; onPlaylistsChanged?: () => Promise<unknown> }) {
+export default function LibraryExplorer({ request, play, playlists, onPlaylistsChanged, full = false, onFull }: {
+  request: Request; play: (body: Record<string, unknown>) => Promise<void>; playlists: PlaylistNode[]; onPlaylistsChanged?: () => Promise<unknown>;
+  /** Showing across the whole window, and how to change that (absent: no full-screen button). */
+  full?: boolean; onFull?: (full: boolean) => void;
+}) {
+  const fullButton = useRef<HTMLButtonElement>(null);
+  // Escape leaves full screen (unless it's closing something else first: a menu, a dialog, a drop-down).
+  useEffect(() => {
+    if (!full || !onFull) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, dialog, [role='menu'], details[open] > :not(summary)")) return;
+      onFull(false);
+      requestAnimationFrame(() => fullButton.current?.focus());
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [full, onFull]);
   const [initial] = useState(preferences);
   const { state, update, apply, restoreError, validationError } = useLibraryView(initial);
   const { view, q: query, mode, types, rules, logic, from, to, sort, direction, group, group_key: groupKey } = state;
@@ -91,8 +109,21 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
   const stale = settled !== params;
   /** Which groups are open: all closed (or all open, after Expand all), except the ones toggled. Starts closed. */
   const [opened, setOpened] = useState<{ all: boolean; toggled: ReadonlySet<string> }>(() => ({ all: false, toggled: new Set() }));
-  useEffect(() => { setOpened({ all: false, toggled: new Set() }); }, [group, group2]);
-  const toggleOpen = (path: string) => setOpened(current => { const toggled = new Set(current.toggled); if (toggled.has(path)) toggled.delete(path); else toggled.add(path); return { ...current, toggled }; });
+  useEffect(() => { setOpened({ all: false, toggled: new Set() }); keepAbove.current = undefined; }, [group, group2]);
+  /**
+   * Opening or closing a group only changes the list below its header. Remember
+   * where that header is, so the rows above it keep their places (and the header
+   * stays where it was clicked) instead of the whole list being laid out afresh.
+   */
+  const keepAbove = useRef<number | undefined>(undefined);
+  const toggleOpen = (path: string) => {
+    keepAbove.current = undefined;
+    for (const [number, rows] of pages) {
+      const at = rows.findIndex(row => row.type === "group" && row.key === path);
+      if (at >= 0) { keepAbove.current = number * PAGE_SIZE + at + 1; break; }
+    }
+    setOpened(current => { const toggled = new Set(current.toggled); if (toggled.has(path)) toggled.delete(path); else toggled.add(path); return { ...current, toggled }; });
+  };
   /** What's ticked; cleared when the filters or grouping change (it would mean something else). */
   const [sel, setSel] = useState<Selection>(emptySelection);
   useEffect(() => { setSel(emptySelection()); }, [settled]);
@@ -121,11 +152,26 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
     const id = ++ticket.current;
     pending.current = true; setBusy(true);
     const sameSearch = shown.current === settled;
+    // A group opened or closed: the rows above it are unchanged, so keep those
+    // pages and fetch the header's own page now, so nothing near it blinks to "Loading…".
+    const keep = sameSearch ? keepAbove.current : undefined;
+    const headerPage = keep !== undefined ? Math.floor((keep - 1) / PAGE_SIZE) : 0;
     try {
-      const result = await request<Page>(`/library/explore?${settled}&${layout}&offset=0&limit=${PAGE_SIZE}`);
+      const [result, around] = await Promise.all([
+        request<Page>(`/library/explore?${settled}&${layout}&offset=0&limit=${PAGE_SIZE}`),
+        headerPage > 0 ? request<Page>(`/library/explore?${settled}&${layout}&offset=${headerPage * PAGE_SIZE}&limit=${PAGE_SIZE}`) : Promise.resolve(null),
+      ]);
       if (id !== ticket.current) return;
-      asked.current = new Set([0]);
-      setPages(new Map([[0, result.rows]]));
+      asked.current = new Set([0, headerPage]);
+      setPages(current => {
+        const next = new Map<number, Element[]>([[0, result.rows]]);
+        for (let number = 1; number < headerPage; number++) {
+          const rows = current.get(number);
+          if (rows) { next.set(number, rows); asked.current.add(number); }
+        }
+        if (around) next.set(headerPage, around.rows);
+        return next;
+      });
       setPage(result);
       // Scrolled down into the old results: go back to the top of the new ones (not when a group just opened or closed).
       const box = listBox.current;
@@ -190,14 +236,28 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
     const href = pageOf(row);
     return { onContextMenu: (event: React.MouseEvent) => openMenu(event, row.title, menuFor(row)), ...(href ? { onKeyDown: (event: React.KeyboardEvent) => openKey(event, href) } : {}) };
   };
-  const actions = (row: Row) => <div className="album__actions">
-    {row.type !== "song" ? <><button className="btn btn--ghost btn--sm" disabled={!actionable} onClick={() => playRow(row)}><Icon name="play" size={14} />{row.type === "artist" ? "Play all" : "Play"}<span className="visually-hidden"> {row.title}</span></button>
-      <button className="btn btn--quiet btn--sm btn--icon" disabled={!actionable} onClick={() => playRow(row, true)} aria-label={`Shuffle ${row.title}`}><Icon name="shuffle" /></button></>
-      : <button className="btn btn--ghost btn--sm" disabled={!actionable} onClick={() => playRow(row)}><Icon name="play" size={14} />Play<span className="visually-hidden"> {row.title}</span></button>}
-    <Heart kind={row.type} refId={row.type === "artist" ? row.title : row.key} name={row.title} say={say} />
-    {row.type === "song" && actionable && <AddToPlaylist request={request} track={{ id: row.key, title: row.title, artist: row.artist }} playlists={playlists} onAdded={say} />}
-    {pageOf(row) && <PageLink href={pageOf(row)!} label={row.type === "artist" ? `Open the artist page for ${row.title}` : `Open the album page for ${row.type === "album" ? row.title : row.album ?? "this song’s album"}`}><Icon name="open" /></PageLink>}
-  </div>;
+  /** Add a song to a playlist: a small button that opens the playlists as a menu (keyboard and pointer). */
+  const addTo = (row: Row) => {
+    const lists = playlists.filter(node => node.type === "playlist");
+    if (!lists.length) return null;
+    const label = `Add “${row.title}” to a playlist`;
+    return <button type="button" className="btn btn--quiet btn--sm btn--icon" disabled={!actionable} aria-label={label} title={label} aria-haspopup="menu"
+      onClick={event => openMenu(event, `Add “${row.title}” to`, lists.map(node => ({ label: node.name, onSelect: () => {
+        request(`/playlists/${node.id}/tracks`, { method: "POST", body: JSON.stringify({ id: row.key, title: row.title, artist: row.artist }) })
+          .then(() => say(`Added “${row.title}” to ${node.name}.`), cause => say((cause as Error).message));
+      } })))}><Icon name="plus" /></button>;
+  };
+  /** One compact line of icon buttons; each says what it does (label and tooltip). */
+  const actions = (row: Row) => {
+    const playLabel = row.type === "artist" ? `Play all by ${row.title}` : `Play ${row.title}`;
+    return <div className="album__actions album__actions--compact">
+      <button type="button" className="btn btn--ghost btn--sm btn--icon" disabled={!actionable} onClick={() => playRow(row)} aria-label={playLabel} title={playLabel}><Icon name="play" size={16} /></button>
+      {row.type !== "song" && <button type="button" className="btn btn--quiet btn--sm btn--icon" disabled={!actionable} onClick={() => playRow(row, true)} aria-label={`Shuffle ${row.title}`} title={`Shuffle ${row.title}`}><Icon name="shuffle" /></button>}
+      <Heart kind={row.type} refId={row.type === "artist" ? row.title : row.key} name={row.title} say={say} />
+      {row.type === "song" && addTo(row)}
+      {pageOf(row) && <PageLink href={pageOf(row)!} label={row.type === "artist" ? `Open the artist page for ${row.title}` : `Open the album page for ${row.type === "album" ? row.title : row.album ?? "this song’s album"}`}><Icon name="open" /></PageLink>}
+    </div>;
+  };
   /** Table: the title cell. Albums open their songs underneath; artists link to their page. */
   const titleCell = (row: Row) => row.type === "album"
     ? <button type="button" className="album__toggle" aria-expanded={expanded.has(row.key)} aria-controls={`songs-${encodeURIComponent(row.key)}`} onClick={() => toggleAlbum(row.key)}><Icon name="chevron" size={16} className="album__chevron" />{row.title}</button>
@@ -229,7 +289,11 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
   }, [view]);
   const total = page?.total ?? 0;
   // The grid comes in rows of cards (chunks), so every view is one element per line.
-  const win = useLibraryWindow({ total, perLine: 1, estimate: ESTIMATE[view], gap: 0, reset: `${settled}|${layout}|${view}|${page?.library_version}` });
+  // A new search or view lays the list out afresh; opening a group keeps what's above it.
+  const resetKey = `${settled}|${view}|${page?.library_version}`;
+  const lastReset = useRef(resetKey);
+  if (lastReset.current !== resetKey) { lastReset.current = resetKey; keepAbove.current = undefined; }
+  const win = useLibraryWindow({ total, perLine: 1, estimate: ESTIMATE[view], gap: 0, reset: `${resetKey}|${layout}`, keep: keepAbove.current });
   useEffect(() => {
     if (!page || stale) return;
     for (const number of pagesFor(win.first, win.last, total)) if (!asked.current.has(number)) void fetchPage(number);
@@ -247,6 +311,8 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
     return <li className="album album--song" key={`song:${row.key}:${path}`} {...itemProps} {...rowEvents(row)}><div className="album__row">{pick(row, path)}<span className="album__art album__art--song" aria-hidden="true"><Icon name="note" size={18} /></span><div className="album__text"><p className="album__title">{row.title}</p><p className="album__meta"><ArtistLink name={row.artist} />{row.album ? <> · {row.album_key ? <PageLink href={albumHref(row.album_key)} label={`Open the album page for ${row.album}`} className="artist-link">{row.album}</PageLink> : row.album}</> : null}{row.year ? ` · ${row.year}` : ""}{row.duration_s ? ` · ${clock(row.duration_s)}` : ""}</p></div>{actions(row)}</div></li>;
   };
   const grouped = group !== "none";
+  /** How many group levels an item sits inside: each level steps it in once more, like the group headers. */
+  const depth = !grouped ? 0 : group2 !== "none" ? 2 : 1;
   const openTools = grouped && <div className="cluster browse__open-tools" role="group" aria-label="Groups">
     <button type="button" className="btn btn--ghost btn--sm" onClick={() => setOpened({ all: true, toggled: new Set() })}>Expand all</button>
     <button type="button" className="btn btn--ghost btn--sm" onClick={() => setOpened({ all: false, toggled: new Set() })}>Collapse all</button>
@@ -270,7 +336,8 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
   return <section className="section-card browse" aria-labelledby="browse-title">
     <div className="section-card__head"><div><h2 id="browse-title" className="section-card__title">Library</h2>
       <p className="section-card__meta" role="status">{busy ? "Updating…" : page ? `${(page.items_total ?? page.total).toLocaleString()} ${(page.items_total ?? page.total) === 1 ? "result" : "results"}${groupKey ? ` in ${groupKey}` : ""}` : "Loading…"}</p></div>
-      <div className="browse__views" role="group" aria-label="Library view">{(["list", "grid", "table"] as const).map(value => <button key={value} className={`btn btn--sm ${view === value ? "btn--primary" : "btn--ghost"}`} aria-pressed={view === value} onClick={() => setView(value)}>{value[0]!.toUpperCase() + value.slice(1)}</button>)}<SavedLibraryViews state={state} disabled={!!restoreError || !!validationError} apply={apply} /></div>
+      <div className="browse__views" role="group" aria-label="Library view">{(["list", "grid", "table"] as const).map(value => <button key={value} className={`btn btn--sm ${view === value ? "btn--primary" : "btn--ghost"}`} aria-pressed={view === value} onClick={() => setView(value)}>{value[0]!.toUpperCase() + value.slice(1)}</button>)}{onFull && <button ref={fullButton} type="button" className="btn btn--sm btn--ghost browse__full" onClick={() => { onFull(!full); requestAnimationFrame(() => fullButton.current?.focus()); }}
+          title={full ? "Back to the normal view (Esc)" : "Show the Library across the whole window"}><Icon name={full ? "shrink" : "expand"} size={16} />{full ? "Exit full screen" : "Full screen"}</button>}<SavedLibraryViews state={state} disabled={!!restoreError || !!validationError} apply={apply} /></div>
     </div>
     <div className="section-card__body">
       {restoreError && <p className="alert" role="alert">{restoreError} Saved data and the link have been preserved. <button className="btn btn--quiet btn--sm" onClick={reset}>Reset filters</button></p>}
@@ -304,7 +371,6 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
       </div>
       <div className="browse__pivot"><label>Group by <select className="select select--sm" value={group} onChange={event => { setGroup(event.target.value as LibraryViewState["group"]); if (event.target.value === state.group2) update("group2", undefined); setGroupKey(""); }}>{Object.entries(GROUPINGS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         {grouped && <label>then by <select className="select select--sm" value={group2} onChange={event => { update("group2", event.target.value === "none" ? undefined : event.target.value as LibraryViewState["group"]); setGroupKey(""); }}>{Object.entries(GROUPINGS).filter(([value]) => value !== group).map(([value, label]) => <option key={value} value={value}>{value === "none" ? "Nothing" : label}</option>)}</select></label>}
-        {view !== "table" && openTools}
         {groupKey && <button type="button" className="chip" onClick={() => setGroupKey("")} aria-label={`Showing only ${groupKey}. Show every group`}>Only {groupKey} <Icon name="close" size={14} /></button>}
         <FilterPlaylistDialog request={request} params={params} disabled={!actionable || !types.length} onCreated={(playlist, count) => {
           say(`Created ${playlist.name} with ${count.toLocaleString()} songs.`);
@@ -316,10 +382,15 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
       {error && <p className="alert" role="alert">{error} <button className="btn btn--quiet btn--sm" onClick={() => load()}>Retry</button></p>}
       <div aria-busy={busy} className={busy || error ? "browse__updating" : ""} ref={listBox}>
         {page?.total === 0 && <p className="muted">{!types.length ? "Choose Artists, Albums, Songs or Everything above." : onlyFavourites ? "Nothing here is a favourite yet. Press the heart on an artist, album or song to add it." : "No results match these filters."}</p>}
-        {view !== "table" && page && page.total > 0 && <label className="browse__select-all">{everything}<span aria-hidden="true">Select everything</span></label>}
+        {/* The list's own title bar: stays at the top while you scroll the results. */}
+        {view !== "table" && page && page.total > 0 && <div className="browse__listhead">
+          <label className="browse__select-all">{everything}<span aria-hidden="true">Select everything</span></label>
+          <span className="browse__listhead-count muted" aria-hidden="true">{(page.items_total ?? page.total).toLocaleString()} {(page.items_total ?? page.total) === 1 ? "result" : "results"}</span>
+          {openTools}
+        </div>}
         {view === "table" ? <LibraryTable pieces={win.pieces} rowAt={rowAt} total={total} body={win} columns={columns} order={order} widths={widths} sort={sort} direction={direction} setColumns={setColumns} setOrder={setOrder} setWidths={setWidths} cell={cell} actions={actions} titleCell={titleCell} detail={detail} rowEvents={rowEvents}
-            pick={(row, path) => pick(row, path)} groupCell={groupHead} selectAll={everything} tools={openTools} onSort={column => { setSort(column); setDirection(sort === column && direction === "asc" ? "desc" : "asc"); }} />
-          : <ul ref={win.containerRef as Ref<HTMLUListElement>} onFocus={win.onFocus} onBlur={win.onBlur} className={`albums browse__results ${view === "grid" ? "browse__grid-rows" : ""}`} aria-label={`Library results, ${total.toLocaleString()}`}>{win.pieces.map(listItem)}</ul>}
+            pick={(row, path) => pick(row, path)} depth={depth} groupCell={groupHead} selectAll={everything} tools={openTools} onSort={column => { setSort(column); setDirection(sort === column && direction === "asc" ? "desc" : "asc"); }} />
+          : <ul ref={win.containerRef as Ref<HTMLUListElement>} onFocus={win.onFocus} onBlur={win.onBlur} className={`albums browse__results ${view === "grid" ? "browse__grid-rows" : ""}`} style={{ ["--item-depth" as string]: depth }} aria-label={`Library results, ${total.toLocaleString()}`}>{win.pieces.map(listItem)}</ul>}
       </div>
       {!isEmpty(sel) && <SelectionBar request={request} picked={picked} counting={counting} playlists={playlists} play={play} onPlaylistsChanged={onPlaylistsChanged}
         onClear={() => setSel(emptySelection())} onDone={say} />}

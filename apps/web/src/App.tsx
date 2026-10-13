@@ -88,6 +88,13 @@ export default function App() {
   const shownScreen = useRef<ScreenId>(screen);
   const { call, download, upload } = useMemo(() => makeApi(token), [token]);
   const libraryRoute = useLibraryRoute();
+  /** The Library across the whole window: no side menu or page heading, just the list (remembered on this device). */
+  const [libraryFull, setLibraryFull] = useState(() => { try { return localStorage.getItem("synamp-library-full") === "1"; } catch { return false; } });
+  const changeLibraryFull = useCallback((full: boolean) => {
+    setLibraryFull(full);
+    try { localStorage.setItem("synamp-library-full", full ? "1" : "0"); } catch { /* private window: this visit only */ }
+  }, []);
+  const fullLibrary = libraryFull && screen === "library" && libraryRoute.kind === "list";
 
   // Follow the hash; move focus to the new screen's heading so keyboard and
   // screen-reader users land at the top of what changed.
@@ -149,15 +156,16 @@ export default function App() {
   switch (screen) {
     case "library":
       body = <div className="screen">
-        <ScreenHead id={headingId} eyebrow="Listen" title="Library"><p>Search, group, and explore the music you own.</p></ScreenHead>
-        <UpdateNotice request={call} />
-        <UpdateAvailable request={call} />
-        {libraryRoute.kind === "list" && <LibraryHealth request={call} />}
+        {/* Full screen keeps the heading for screen readers and page structure, just not on screen. */}
+        <div className={fullLibrary ? "visually-hidden" : undefined}><ScreenHead id={headingId} eyebrow="Listen" title="Library"><p>Search, group, and explore the music you own.</p></ScreenHead></div>
+        {!fullLibrary && <UpdateNotice request={call} />}
+        {!fullLibrary && <UpdateAvailable request={call} />}
+        {libraryRoute.kind === "list" && !fullLibrary && <LibraryHealth request={call} />}
         {libraryRoute.kind === "artist" && <ArtistPage name={libraryRoute.name} request={call} play={play} playlists={nodes} />}
         {libraryRoute.kind === "album" && <AlbumPage albumKey={libraryRoute.key} request={call} play={play} playlists={nodes} />}
         {/* The list stays put (hidden) while a page is open, so Back returns to the same place in it. */}
         <div className="library-list" hidden={libraryRoute.kind !== "list"}>
-          <Library request={call} play={play} playlists={nodes} onPlaylistsChanged={refreshNodes} />
+          <Library request={call} play={play} playlists={nodes} onPlaylistsChanged={refreshNodes} full={fullLibrary} onFull={changeLibraryFull} />
         </div>
       </div>;
       break;
@@ -209,7 +217,7 @@ export default function App() {
 
   return (
     <FavouritesProvider request={call}>
-    <div className={`app${screen === "galaxy" ? " app--galaxy" : ""}`}>
+    <div className={`app${screen === "galaxy" ? " app--galaxy" : ""}${fullLibrary ? " app--library-full" : ""}`}>
       <a className="skip-link" href="#main" onClick={(event) => { event.preventDefault(); document.getElementById("main")?.focus(); }}>Skip to content</a>
       <header className="app__bar">
         {screen === "galaxy" ? <>
@@ -222,7 +230,7 @@ export default function App() {
         </>}
       </header>
       <div className="app__layout">
-        {screen !== "galaxy" && <nav className="app__side" aria-label="SynAmp">
+        {screen !== "galaxy" && !fullLibrary && <nav className="app__side" aria-label="SynAmp">
           {NAV.map((group) => <div key={group.group} className="app__group" role="group" aria-labelledby={`nav-${group.group}`}>
             <p className="grp" id={`nav-${group.group}`}>{group.group}</p>
             {group.items.map((item) => (

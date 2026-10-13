@@ -55,6 +55,7 @@ With the repository's existing Puppeteer/Chromium available, run:
 node tools/player/check-actions.mjs /absolute/private/evidence/player
 node tools/player/check-library-finder.mjs /absolute/private/evidence/library-finder
 node tools/player/check-library-playback.mjs /absolute/private/evidence/library-playback
+node tools/player/check-library-layout.mjs /absolute/private/evidence/library-layout
 node tools/player/check-updates.mjs /absolute/private/evidence/updates
 ```
 
