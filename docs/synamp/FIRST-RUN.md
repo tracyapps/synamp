@@ -246,6 +246,13 @@ after the current track; **Start analysis** carries on where it left off. It
 updates the library list every hour along the way, so smart playlists get
 better as it goes. The strip shows progress and time left.
 
+**Want a first playlist sooner?** In the Library, tick a few artists or albums,
+then **More → Listen to these first**. Those songs go to the front of the line
+(analysis starts if it wasn't running), the Library strip shows how many are
+done, and the library list updates as soon as they're all listened to — so
+*Describe a playlist* can use them within the hour instead of days. **Forget my
+picks** goes back to the usual order.
+
 ---
 
 ## Updating SynAmp

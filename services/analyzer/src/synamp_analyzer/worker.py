@@ -117,6 +117,10 @@ class Worker:
         self.started_with = stamp()
         self.resume_analysis = False
         self.current: str | None = None  # the command being worked on
+        # "Listen to these first" from the web app: the brain sends the picks
+        # (library-relative paths) when its revision differs from ours.
+        self.first_rev = 0
+        self.first_new: list[Path] | None = None
 
     def activity(self, value: dict | None) -> None:
         """Tell the web app what the worker is busy with inside a command (None: finished).
@@ -146,7 +150,7 @@ class Worker:
             "version": __version__, "host": socket.gethostname(), "state": state,
             "library_path": str(self.cfg.library_path), "library_ok": self.library_ok(),
             "export_path": str(self.export_path), "journal": str(self.cfg.rename_journal or ""),
-            **self.allowance.info, "memory_now": self.allowance.now(),
+            **self.allowance.info, "memory_now": self.allowance.now(), "first_rev": self.first_rev,
             **({"problem": problem} if problem else {}),
         }
 
@@ -163,6 +167,34 @@ class Worker:
                 return None
         return (f"The music isn't reachable at {self.cfg.library_path}. "
                 f"{'Mount the music share in Finder (Go → Connect to Server).' if not share else f'Mounting {share} failed; mount it in Finder.'}")
+
+    # --- "Listen to these first" ------------------------------------------------------
+    def take_picks(self, answer: dict) -> None:
+        """Note new picks from a brain answer (claim or check). Paths outside the library are ignored."""
+        first = answer.get("first") if isinstance(answer, dict) else None
+        if not isinstance(first, dict) or not isinstance(first.get("rev"), int) or first["rev"] == self.first_rev:
+            return
+        root = Path(os.path.normpath(self.cfg.library_path))
+        paths: list[Path] = []
+        for item in first.get("paths") or []:
+            if not isinstance(item, str) or not item or item.startswith("/") or "\x00" in item:
+                continue
+            path = Path(os.path.normpath(root / item))
+            if root in path.parents:
+                paths.append(path)
+        self.first_rev = first["rev"]
+        self.first_new = paths
+
+    def pop_picks(self) -> list[Path] | None:
+        picks, self.first_new = self.first_new, None
+        return picks
+
+    def picks_done(self) -> None:
+        self.log("worker: your picked songs are listened to; updating the library list so playlists can use them")
+        try:
+            self.export()
+        except Exception as error:  # an export hiccup must not stop analysis
+            self.log(f"worker: export failed: {error}")
 
     # --- doing the work ---------------------------------------------------------------
     def export(self) -> str:
@@ -192,8 +224,9 @@ class Worker:
             if now - state["checked"] >= CHECK_EVERY_S:
                 state["checked"] = now
                 try:
-                    answer = self.brain.post(f"/api/v1/analyzer/commands/{command_id}/check", {"memory_now": self.allowance.now()})
+                    answer = self.brain.post(f"/api/v1/analyzer/commands/{command_id}/check", {"memory_now": self.allowance.now(), "first_rev": self.first_rev})
                     state["stop"] = bool(answer.get("stop"))
+                    self.take_picks(answer)
                     self.allowance.update(answer.get("memory"))
                 except BrainError as error:
                     self.log(f"worker: {error} (carrying on)")
@@ -212,7 +245,8 @@ class Worker:
 
         awake = self.keep_awake()
         try:
-            summary = run_analyze(self.cfg, progress=self.log, should_stop=should_stop, memory_gb=self.allowance.gb)
+            summary = run_analyze(self.cfg, progress=self.log, should_stop=should_stop, memory_gb=self.allowance.gb,
+                                  first=self.pop_picks, on_first_done=self.picks_done)
         finally:
             if awake is not None:
                 awake.terminate()
@@ -262,6 +296,7 @@ class Worker:
         problem = None if self.library_ok() else self.ensure_library()
         claimed = self.brain.post("/api/v1/analyzer/claim", {"worker": self.about("idle", problem)})
         self.allowance.update(claimed.get("memory"))
+        self.take_picks(claimed)
         command = claimed.get("command")
         if not command:
             return "idle"

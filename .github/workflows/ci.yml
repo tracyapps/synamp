@@ -95,6 +95,8 @@ jobs:
         run: node tools/player/check-library-layout.mjs "$RUNNER_TEMP/synamp-evidence/library-layout"
       - name: New-version notice, skip, remind and the off switch
         run: node tools/player/check-updates.mjs "$RUNNER_TEMP/synamp-evidence/updates"
+      - name: Listen to these first (picks, progress, forget)
+        run: node tools/player/check-first-picks.mjs "$RUNNER_TEMP/synamp-evidence/first-picks"
 
   macos-renames:
     name: macOS librarian rename and undo

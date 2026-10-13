@@ -364,3 +364,44 @@ def test_more_memory_during_a_busy_run_starts_more_songs_at_once(tmp_path: Path,
     assert started_when_made.get(2) == 0, "starts with two at a time"
     assert 4 in started_when_made and started_when_made[4] <= 4, (
         f"four at a time should start within the first few songs, not at the end (pools made after: {started_when_made})")
+
+
+def test_picked_songs_are_listened_to_first_and_then_exported(tmp_path: Path) -> None:
+    library = tmp_path / "music"
+    library.mkdir()
+    for name in ("a", "b", "c", "d"):
+        sine(library / f"{name}.flac", seconds=0.5)
+    config = config_for(library, tmp_path)
+    run_scan(config, progress=quiet)
+    order: list[str] = []
+    asked = {"n": 0}
+
+    def first():
+        asked["n"] += 1
+        return [library / "d.flac", library / "c.flac"] if asked["n"] == 1 else None
+
+    done_calls: list[int] = []
+
+    def progress(line: str, *_a: object, **_k: object) -> None:
+        if line.startswith("  ") and line.strip().endswith(".flac") and not line.startswith("    "):
+            order.append(line.strip())
+
+    summary = run_analyze(config, progress=progress, first=first,
+                          on_first_done=lambda: done_calls.append(len(order)), limit=None)
+    assert summary["completed"] == 4
+    assert summary["first"] == 2
+    assert set(order[:2]) == {"c.flac", "d.flac"}, order
+    assert done_calls == [2], "told once, as soon as the picks were done"
+
+
+def test_picks_already_listened_to_still_refresh_the_library_list(tmp_path: Path) -> None:
+    library = tmp_path / "music"
+    library.mkdir()
+    sine(library / "a.flac", seconds=0.5)
+    config = config_for(library, tmp_path)
+    run_scan(config, progress=quiet)
+    run_analyze(config, progress=quiet)
+    calls: list[str] = []
+    picks = iter([[library / "a.flac"]])
+    run_analyze(config, progress=quiet, first=lambda: next(picks, None), on_first_done=lambda: calls.append("export"))
+    assert calls == ["export"]

@@ -135,3 +135,28 @@ test("Open in Finder: the Mac that analyses the music opens the folder; each req
   assert.deepEqual(control.takeReveals(4000 + 61_000), [], "nobody asked in time: dropped, not opened later by surprise");
   assert.throws(() => control.reveal("library", "C", 4000 + 61_000 + 60_000), /isn’t connected/);
 });
+
+test("listen to these first: picks start analysis, reach the worker once, survive a restart, and can be forgotten", () => {
+  const dir = temp();
+  try {
+    const file = join(dir, "control.json");
+    const control = new AnalyzerControl(file);
+    const set = control.setFirst(["A/B/01.flac", "../escape.flac", "/abs.flac", "A/B/01.flac", "A/B/02.flac", "A/B/03.flac"], 2, 10);
+    assert.deepEqual(set, { count: 2, left_out: 1, started: true }, "unsafe paths dropped, duplicates once, capped");
+    assert.equal(control.view().queued[0]?.action, "analyze", "analysis starts so the picks get listened to");
+    const first = control.firstFor(undefined);
+    assert.deepEqual(first?.paths, ["A/B/01.flac", "A/B/02.flac"]);
+    assert.equal(control.firstFor(first!.rev), undefined, "a worker that has them isn't sent them again");
+
+    const command = control.claim({ host: "mac" }, 20)!;
+    assert.equal(control.check(command.id, { first_rev: first!.rev }, 21).first, undefined);
+    assert.equal(control.setFirst(["C/04.flac"], 10, 22).started, false, "a running analysis just picks them up");
+    assert.deepEqual(control.check(command.id, { first_rev: first!.rev }, 23).first?.paths, ["C/04.flac"]);
+
+    const reloaded = new AnalyzerControl(file);
+    assert.deepEqual(reloaded.view().first, { count: 1, at: 22 });
+    reloaded.setFirst([], 10, 30);
+    assert.equal(reloaded.view().first, null, "forgotten");
+    assert.deepEqual(reloaded.firstFor(0)?.paths, [], "the worker hears that they're gone");
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

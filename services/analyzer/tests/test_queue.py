@@ -142,3 +142,20 @@ def test_stats_counts_every_state(tmp_path: Path) -> None:
     assert stats["failed"] == 1
     assert stats["pending"] == 2
     db.close()
+
+
+def test_picked_songs_go_to_the_front_of_the_line(tmp_path: Path) -> None:
+    """"Listen to these first": waiting picks are claimed before older jobs; done ones don't move."""
+    db, queue = make_queue(tmp_path)
+    queue.enqueue_missing([Path(f"/a/{n}.flac") for n in range(1, 6)])
+    done = queue.claim()
+    assert done is not None and done.track_path == Path("/a/1.flac")
+    queue.complete(done)
+
+    moved = queue.prioritize(["/a/4.flac", "/a/1.flac", "/a/9.flac", "/a/4.flac"])
+    assert moved == ["/a/4.flac"], "only waiting jobs move; finished and unknown ones are left alone"
+    first = queue.claim()
+    assert first is not None and first.track_path == Path("/a/4.flac")
+    second = queue.claim()
+    assert second is not None and second.track_path == Path("/a/2.flac"), "then the usual order"
+    db.close()

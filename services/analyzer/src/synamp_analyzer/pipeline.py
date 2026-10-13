@@ -392,12 +392,20 @@ def run_analyze(
     reporter: ProgressReporter | None = None,
     should_stop=None,
     memory_gb=None,
+    first=None,
+    on_first_done=None,
 ) -> dict[str, int]:
     """Drain the queue. Returns a summary of what happened.
 
     `memory_gb` — the memory analysis may use, from the web app's Settings: a
     number, None (recommended for this Mac), or a function returning either,
     asked as the run goes so a change takes effect without restarting.
+
+    `first` (optional) is asked before each track for songs to listen to first:
+    a list of track paths (new picks) or None (no change). They go to the front
+    of the queue; when every one of them is finished, `on_first_done()` is
+    called once, so the worker can update the library list straight away
+    instead of at the next hourly export.
 
     `should_stop` (optional) is asked before each track; returning True ends the
     run cleanly, as if the queue were empty (the worker's Pause button). With
@@ -438,6 +446,27 @@ def run_analyze(
         # Songs finished before a stage existed (or while it couldn't run) get just that stage.
         summary["backfilled"] = queue.requeue_incomplete(stages)
 
+    picks: set[str] = set()
+
+    def take_first() -> None:
+        if first is None:
+            return
+        wanted = first()
+        if wanted is None:
+            return
+        moved = queue.prioritize([str(path) for path in wanted])
+        picks.clear()
+        picks.update(moved)
+        summary["first"] = summary.get("first", 0) + len(moved)
+        if moved:
+            progress(f"  listening to {len(moved):,} picked {'song' if len(moved) == 1 else 'songs'} first")
+        elif wanted and on_first_done is not None:
+            # Nothing left to do for them: they may have finished since the last
+            # library list, so send a fresh one rather than make you wait an hour.
+            on_first_done()
+
+    take_first()
+
     def run_state() -> dict:
         remaining = db.conn.execute(
             "SELECT COUNT(*) FROM jobs j JOIN tracks t ON t.path = j.track_path WHERE t.missing = 0 AND j.state IN ('pending', 'running')"
@@ -461,6 +490,11 @@ def run_analyze(
             summary["failed"] += 1
             progress(f"    ! failed ({job.track_path.name}): {outcome['error']}")
         clock.tick()
+        key = str(job.track_path)
+        if key in picks:
+            picks.discard(key)
+            if not picks and on_first_done is not None:
+                on_first_done()
 
     reporter.report(db, "analyzing", run_state(), force=True)
     fingerprints_filled = False
@@ -482,6 +516,8 @@ def run_analyze(
             stopping = should_stop is not None and should_stop()
             if stopping:
                 summary["stopped"] = 1
+            else:
+                take_first()
             # Chromaprint installed (now or mid-run): catch up the tracks done without it.
             if not stopping and not in_flight and not fingerprints_filled and summary["claimed"] % 50 == 0 and find_fpcalc():
                 fingerprints_filled = True

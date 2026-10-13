@@ -60,11 +60,14 @@ export type MemorySettings = {
   away_minutes: number;
 };
 export const DEFAULT_MEMORY: MemorySettings = { mode: "steady", normal_gb: null, more_gb: null, from: "22:00", to: "07:00", away_minutes: 10 };
+/** "Listen to these first": library-relative paths, and a revision so the worker knows when they change. */
+export type FirstPicks = { rev: number; paths: string[]; at: number };
 type State = {
   format: "synamp.analyzer-control/1";
   settings: { update_after_librarian: boolean; memory: MemorySettings };
   commands: Command[];
   worker?: WorkerSeen;
+  first?: FirstPicks;
 };
 
 /** A worker that hasn't asked for work in this long is shown as not running. */
@@ -113,6 +116,7 @@ export class AnalyzerControl {
       settings: { update_after_librarian: true, ...(loaded.settings ?? {}), memory: { ...DEFAULT_MEMORY, ...(loaded.settings?.memory ?? {}) } },
       commands: loaded.commands ?? [],
       ...(loaded.worker ? { worker: loaded.worker } : {}),
+      ...(validFirst(loaded.first) ? { first: loaded.first } : {}),
     };
   }
   private save(): void {
@@ -156,6 +160,33 @@ export class AnalyzerControl {
     this.save();
   }
 
+  /**
+   * "Listen to these first": replace the picks (an empty list forgets them).
+   * Analysis starts if it isn't going already; a running one picks them up
+   * within seconds. Paths are library-relative; anything unsafe is dropped.
+   */
+  setFirst(paths: readonly unknown[], max: number, now = Date.now()): { count: number; left_out: number; started: boolean } {
+    const clean = [...new Set(paths.filter((path): path is string => isSafeRelative(path)))];
+    const kept = clean.slice(0, max);
+    this.state.first = { rev: (this.state.first?.rev ?? 0) + 1, paths: kept, at: now };
+    this.save();
+    let started = false;
+    if (kept.length > 0 && !this.active().some((c) => c.action === "analyze")) {
+      this.request("analyze", "you", now);
+      started = true;
+    }
+    return { count: kept.length, left_out: clean.length - kept.length, started };
+  }
+
+  /** The picks, for the worker, when it has a different revision (or none). */
+  firstFor(rev: unknown): FirstPicks | undefined {
+    const first = this.state.first;
+    if (!first || rev === first.rev) return undefined;
+    return first;
+  }
+
+  firstPaths(): string[] { return this.state.first?.paths ?? []; }
+
   /** What the worker needs to decide how many songs to analyse at once. */
   memory(): MemorySettings { return this.state.settings.memory; }
 
@@ -191,14 +222,16 @@ export class AnalyzerControl {
   }
 
   /** Asked by the worker during a long analysis: stop? and the current memory setting. It says what it's using now. */
-  check(id: string, input: unknown = {}, now = Date.now()): { stop: boolean; memory: MemorySettings } {
+  check(id: string, input: unknown = {}, now = Date.now()): { stop: boolean; memory: MemorySettings; first?: FirstPicks } {
     const command = this.state.commands.find((c) => c.id === id);
+    const raw = input && typeof input === "object" ? input as Record<string, unknown> : {};
     if (this.state.worker) {
       this.state.worker.last_seen = now;
-      const reported = nowFrom((input && typeof input === "object" ? input as Record<string, unknown> : {}).memory_now, now);
+      const reported = nowFrom(raw.memory_now, now);
       if (reported) this.state.worker.memory_now = reported;
     }
-    return { stop: !command || command.status !== "running" || !!command.stop, memory: this.state.settings.memory };
+    const first = this.firstFor(raw.first_rev);
+    return { stop: !command || command.status !== "running" || !!command.stop, memory: this.state.settings.memory, ...(first ? { first } : {}) };
   }
 
   /**
@@ -260,8 +293,16 @@ export class AnalyzerControl {
       queued: this.state.commands.filter((c) => c.status === "queued"),
       recent: this.state.commands.filter((c) => c.status !== "queued" && c.status !== "running").slice(-8).reverse(),
       settings: this.state.settings,
+      first: this.state.first?.paths.length ? { count: this.state.first.paths.length, at: this.state.first.at } : null,
     };
   }
+}
+
+function validFirst(value: unknown): value is FirstPicks {
+  if (!value || typeof value !== "object") return false;
+  const raw = value as Record<string, unknown>;
+  return typeof raw.rev === "number" && Number.isInteger(raw.rev) && raw.rev >= 0 && typeof raw.at === "number"
+    && Array.isArray(raw.paths) && raw.paths.every((path) => isSafeRelative(path));
 }
 
 const gb = (value: unknown) => (typeof value === "number" && Number.isFinite(value) && value > 0 && value <= 4096 ? Math.round(value * 10) / 10 : undefined);

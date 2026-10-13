@@ -77,6 +77,7 @@ import { filesToRead, TagCache } from "./library/song-details.ts";
 import { AUDIO_EXTENSIONS, buildImport, COMPANION_EXTENSIONS, IncomingScanner, PART_SUFFIX, WEB_FOLDER } from "./library/import.ts";
 import { isSafeRelative } from "./library/naming.ts";
 import { AnalyzerControl, AnalyzerError } from "./library/analyzer.ts";
+import { firstProgress, MAX_FIRST_PICKS, pathsForIds } from "./library/first-picks.ts";
 import { artistStats, chooseArtist, DiscographyChecker, DiscographyError, discographyReport, DiscographyStore } from "./library/discography.ts";
 import type { ArtistStat } from "./library/discography.ts";
 import { open as openFile, mkdir, rename as renameFile, unlink, stat as statFile } from "node:fs/promises";
@@ -287,6 +288,11 @@ function measuredLibrary() { return overlay.apply(library.get()); }
 const lyricsStore = new LyricsStore(join(dataDir, "lyrics"));
 /** Measurements, then your tempo checks, then "lyrics mean words", then your own answers about words (they win). */
 function currentLibrary() { return wordChecks.apply(applyLyrics(spotChecks.apply(measuredLibrary()), lyricsStore)); }
+/** The analyzer's state for the web app, with how far the "listen to these first" picks have got. */
+function analyzerView() {
+  const view = analyzerControl.view();
+  return { ...view, first: view.first ? { ...view.first, ...firstProgress(currentLibrary(), analyzerControl.firstPaths()) } : null };
+}
 const lyrics = new LyricsWorker({ store: lyricsStore, root: config.libraryPath, library: () => currentLibrary(), lookup: lrclib("SynAmp (https://synamp.app)") });
 lyrics.start();
 /** The analyzer on the Mac takes its orders from here (Library strip buttons). */
@@ -1120,18 +1126,34 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   }
 
   // --- the analyzer on the Mac: buttons in the web app, a worker that asks for work ---
-  if (path === "/api/v1/analyzer" && req.method === "GET") return send(res, 200, analyzerControl.view());
+  if (path === "/api/v1/analyzer" && req.method === "GET") return send(res, 200, analyzerView());
+  if (path === "/api/v1/analyzer/first" && req.method === "POST") {
+    // "Listen to these first": the songs ticked in the Library jump the analyzer's line.
+    const input = await body(req);
+    if (input.clear === true) {
+      analyzerControl.setFirst([], MAX_FIRST_PICKS);
+      return send(res, 200, { ...analyzerView(), message: "Forgot your picks. Analysis carries on in the usual order." });
+    }
+    const ids = explorerSelections.get(input.selection_id).tracks.map((track) => track.id);
+    const paths = pathsForIds(currentLibrary(), ids);
+    if (paths.length === 0) throw new AnalyzerError("None of those songs has a file SynAmp can find yet. Scan for changes, then try again.", 409);
+    const result = analyzerControl.setFirst(paths, MAX_FIRST_PICKS);
+    const songs = `${result.count.toLocaleString("en-US")} ${result.count === 1 ? "song" : "songs"}`;
+    const message = `${songs} will be listened to first${result.started ? "; analysis is starting" : ""}.`
+      + (result.left_out ? ` The first ${MAX_FIRST_PICKS.toLocaleString("en-US")} picked are used; the rest wait their turn.` : "");
+    return send(res, 200, { ...analyzerView(), message });
+  }
   if (path === "/api/v1/analyzer/request" && req.method === "POST") {
     analyzerControl.request((await body(req)).action);
-    return send(res, 202, analyzerControl.view());
+    return send(res, 202, analyzerView());
   }
   if (path === "/api/v1/analyzer/stop" && req.method === "POST") {
     analyzerControl.stop();
-    return send(res, 200, analyzerControl.view());
+    return send(res, 200, analyzerView());
   }
   if (path === "/api/v1/analyzer/settings" && req.method === "POST") {
     analyzerControl.setSettings(await body(req));
-    return send(res, 200, analyzerControl.view());
+    return send(res, 200, analyzerView());
   }
   if (path === "/api/v1/analyzer/reveal" && req.method === "POST") {
     const input = await body(req);
@@ -1145,7 +1167,8 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (path === "/api/v1/analyzer/reveals" && req.method === "POST") return send(res, 200, { paths: analyzerControl.takeReveals() });
   if (path === "/api/v1/analyzer/claim" && req.method === "POST") {
     const input = await body(req);
-    return send(res, 200, { command: analyzerControl.claim(input.worker), memory: analyzerControl.memory() });
+    const first = analyzerControl.firstFor((input.worker as { first_rev?: unknown } | undefined)?.first_rev);
+    return send(res, 200, { command: analyzerControl.claim(input.worker), memory: analyzerControl.memory(), ...(first ? { first } : {}) });
   }
   const analyzerCheck = path.match(/^\/api\/v1\/analyzer\/commands\/(a_[0-9a-f]{12})\/check$/);
   if (analyzerCheck && req.method === "POST") return send(res, 200, analyzerControl.check(analyzerCheck[1]!, await body(req)));

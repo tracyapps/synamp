@@ -88,6 +88,7 @@ export function SelectionBar({ request, picked, counting, playlists, onClear, on
         <button type="button" className="btn btn--ghost btn--sm" disabled={!ready} onClick={() => act(async () => { const r = await post<{ changed: number }>("/favourites/bulk", { on: true }); return r.changed ? `${things(r.changed, "favourite")} added.` : "They were all favourites already."; })}><Icon name="heart" size={14} />Favourite</button>
         <button type="button" className="btn btn--ghost btn--sm" disabled={!ready} onClick={() => act(async () => { const r = await post<{ changed: number }>("/favourites/bulk", { on: false }); return r.changed ? `${things(r.changed, "favourite")} removed.` : "None of them were favourites."; })}>Unfavourite</button>
         <button type="button" className="btn btn--ghost btn--sm" disabled={!ready} onClick={() => act(async () => { await post("/organise/focus", {}); window.location.hash = "#/care?focus=1"; return "Opened Library care for these albums."; })}><Icon name="care" size={14} />Tidy their details</button>
+        <button type="button" className="btn btn--ghost btn--sm" disabled={!ready} onClick={() => act(async () => { const r = await post<{ message: string }>("/analyzer/first", {}); return `${r.message} Follow along under Library at the top of this page.`; })}>Listen to these first</button>
       </div>
       <dialog ref={dialog} className="selection-bar__dialog" aria-labelledby={`${nameId}-title`} onClose={() => setNaming(false)}>
         <form method="dialog" onSubmit={(event) => {

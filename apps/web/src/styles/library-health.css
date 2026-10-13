@@ -46,3 +46,10 @@
 .health__job-summary { display: block; color: var(--muted); font-size: 13px; }
 .health__list-bar { max-width: 40ch; margin: 4px 0 0; }
 .health__updating { color: var(--muted); font-size: 13px; }
+
+/* "Listen to these first" */
+.health__first { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 0 4px; font-size: 14px; border-top: 1px solid var(--hair); }
+.health__first-text { margin: 0; flex: 1 1 32ch; max-width: 80ch; }
+.health__first-bar { flex: 0 1 220px; min-width: 120px; }
+.health__tip { margin: 6px 0 0; padding-top: 10px; border-top: 1px solid var(--hair); font-size: 14px; color: var(--muted); max-width: 80ch; }
+.health__tip strong { color: var(--text); font-weight: 500; }

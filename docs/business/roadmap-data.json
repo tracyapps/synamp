@@ -1,48 +1,259 @@
 {
-  "title": "SynAmp business and development roadmap",
-  "start": "2026-10-11",
-  "end": "2027-01-09",
-  "capacity": "20–25 owner hours/week · one-time purchase · optional cloud later",
-  "scenarios": [
-    {"id":"working","label":"Working plan · Dec 1","date":"2026-12-01","detail":"Limited paid early access · all gates required · broader promotion after seven stable days"},
-    {"id":"stretch","label":"Stretch · Nov 24","date":"2026-11-24","detail":"Same gates · about 20.4 pre-release hours/week · small invited cohort before Thanksgiving"},
-    {"id":"fallback","label":"Fallback · Dec 15","date":"2026-12-15","detail":"Extra stabilization time · if gates remain open, move release to January"}
-  ],
-  "lanes": [
-    {"name":"Listening quality","kind":"dev","tasks":[
-      {"id":"B02","label":"Measure → repair → ten-library proof","start":"2026-10-11","end":"2026-11-17","detail":"12 frozen requests; two raters per library; measured coverage and strict shortages; ≥80% useful supported pairs; no observed hard-rule violation."},
-      {"id":"B02","label":"Workday listening and variety","start":"2026-11-18","end":"2027-01-09","detail":"Check continuous mixes, corrections, repeat cycling and restart on actual libraries; measure mature cohort return."}
-    ]},
-    {"name":"Install and recovery","kind":"dev","tasks":[
-      {"id":"B04","label":"Spike → guided first listen","start":"2026-10-11","end":"2026-10-25","detail":"One supported server/Mac combination, small-library first value, honest analysis wait, resumable setup."},
-      {"id":"B04/B05","label":"Cold installs · restore · updates","start":"2026-10-26","end":"2026-11-17","detail":"≥9/10 unassisted installs including ≥5 non-friends; preserve every failed attempt; test backup/restore and upgrade/data rollback."},
-      {"id":"B04/B05","label":"Candidate and lifecycle support","start":"2026-11-18","end":"2027-01-09","detail":"Versioned releases and running build identity; actual native-client/cellular/locked-phone evidence; storage migration if bounded file stores fail."}
-    ]},
-    {"name":"CI and release safety","kind":"dev","tasks":[
-      {"id":"B03/B05","label":"Fix known failure · required checks","start":"2026-10-11","end":"2026-11-08","detail":"Root-cause capitalization failure on case-insensitive filesystem; CI based on current scripts; no pass wrapper; real critical browser flows."},
-      {"id":"B03/B05","label":"Freeze scope · close blockers","start":"2026-11-09","end":"2027-01-09","detail":"No open supported-path release-blocking S1/S2; single writer, interrupted-state recovery, private access and bounded storage proven."}
-    ]},
-    {"name":"Testers and retention","kind":"business","tasks":[
-      {"id":"B07","label":"Five → ten supported testers","start":"2026-10-19","end":"2026-11-08","detail":"Wave 1; activation ≥6/10 completed installs aged 72h; blockers <20%; five interviews; install failures retained in separate funnel."},
-      {"id":"B07","label":"Five-person waves · mature W4","start":"2026-10-28","end":"2027-01-09","detail":"May start Oct 28 only if G2 passes early; ≤15 active testers. Nov 24 requires ten activations by Oct 27; Dec 1 requires ten by Nov 3. W4 ≥50% with n≥10 mature; missing replies remain unknown."}
-    ]},
-    {"name":"Messaging and demand","kind":"business","tasks":[
-      {"id":"B08","label":"Claims · consent · real-build clips","start":"2026-10-11","end":"2026-11-17","detail":"Collector/NAS audience; proposed all-surface copy sweep; keep launch-only email promise; two actual-build clips and overview; no fake DJ or mood claim."},
-      {"id":"B10","label":"Two small channel batches","start":"2026-12-02","end":"2027-01-09","detail":"Broad publicity only after G5; moments ≥3 days apart; ≥3 activated households in each batch; pause above 5 support hours/week."}
-    ]},
-    {"name":"Rights and paid offer","kind":"business","tasks":[
-      {"id":"B06","label":"Name · licenses · external services","start":"2026-10-11","end":"2026-11-23","detail":"Per-artifact rights decisions; preserve upstream notices; Last.fm commercial position, lyrics/AcoustID and name review; unresolved services excluded or release blocked."},
-      {"id":"B09","label":"Offer test → sandbox checkout","start":"2026-10-26","end":"2026-11-23","detail":"Proposed $39 launch/$49 standard Home convenience and bounded support; MIT source available; purchase/refund/fulfillment checks; future cloud not offered."},
-      {"id":"B09/B10","label":"Paid cohort → January review","start":"2026-12-01","end":"2027-01-09","detail":"Target ≥10 real paid customers; one-time sales separate from MRR; actual support cost and mature conversion; bottom-up market memo."}
-    ]}
-  ],
-  "gates": [
-    {"id":"G0","date":"2026-10-18","label":"Baseline","detail":"Supported scope and first listening path; quality/throughput baseline; external dependencies inventoried."},
-    {"id":"G1","date":"2026-10-25","label":"Safe beta","detail":"Trial copy or verified backup; optional small reviewed write/undo; five attempts recorded."},
-    {"id":"G2","date":"2026-11-08","label":"First value","detail":"≥10 installs aged 72h; activation ≥60%; blocker incidence <20%."},
-    {"id":"G3","date":"2026-11-17","label":"Cold installs","detail":"≥9/10 unassisted successes; ≥5 non-friends; ten real-library reviews; supported path verified."},
-    {"id":"G4","date":"2026-12-01","label":"Paid EA","detail":"All quality/install/safety/rights/checkout gates; W4 ≥50% with ≥10 mature users; no open release-blocking S1/S2. Target follows selected scenario."},
-    {"id":"G5","date":"2026-12-08","label":"Widen carefully","detail":"At least seven stable days after actual release, manageable support, small channel evidence and a try-without-signup path."},
-    {"id":"G6","date":"2027-01-09","label":"Review","detail":"25–40 cumulative testers; 100 qualified waitlist; activation ≥60%; W4 ≥50%; ≥10 paying; repeated channel; support ≤5h/week."}
-  ]
+ "title": "SynAmp business and development roadmap",
+ "start": "2026-10-11",
+ "end": "2027-01-09",
+ "capacity": "20–25 owner hours/week · one-time purchase · optional cloud later",
+ "scenarios": [
+  {
+   "id": "working",
+   "label": "Working plan · Dec 1",
+   "date": "2026-12-01",
+   "detail": "Limited paid early access · all gates required · broader promotion after seven stable days",
+   "status": "at_risk",
+   "note": "Needs ten people activated by Nov 3: about 17 installs, starting in the Oct 19–25 window."
+  },
+  {
+   "id": "stretch",
+   "label": "Stretch · Nov 24",
+   "date": "2026-11-24",
+   "detail": "Same gates · about 20.4 pre-release hours/week · small invited cohort before Thanksgiving",
+   "status": "off",
+   "note": "Needed ten people activated by Oct 27; no testers are lined up, so the four-week check cannot finish in time."
+  },
+  {
+   "id": "fallback",
+   "label": "Fallback · Dec 15",
+   "date": "2026-12-15",
+   "detail": "Extra stabilization time · if gates remain open, move release to January",
+   "status": "on_track",
+   "note": "Realistic if recruiting starts by Oct 26 (ten activated by Nov 17)."
+  }
+ ],
+ "lanes": [
+  {
+   "name": "Listening quality",
+   "kind": "dev",
+   "tasks": [
+    {
+     "id": "B02",
+     "label": "Measure → repair → ten-library proof",
+     "start": "2026-10-11",
+     "end": "2026-11-17",
+     "detail": "12 frozen requests; two raters per library; measured coverage and strict shortages; ≥80% useful supported pairs; no observed hard-rule violation.",
+     "status": "on_track",
+     "note": "Frozen suite and challenge-30 baseline captured; needs owner listening scores."
+    },
+    {
+     "id": "B02",
+     "label": "Workday listening and variety",
+     "start": "2026-11-18",
+     "end": "2027-01-09",
+     "detail": "Check continuous mixes, corrections, repeat cycling and restart on actual libraries; measure mature cohort return.",
+     "status": "not_started",
+     "note": "Starts Nov 18."
+    }
+   ]
+  },
+  {
+   "name": "Install and recovery",
+   "kind": "dev",
+   "tasks": [
+    {
+     "id": "B04",
+     "label": "Spike → guided first listen",
+     "start": "2026-10-11",
+     "end": "2026-10-25",
+     "detail": "One supported server/Mac combination, small-library first value, honest analysis wait, resumable setup.",
+     "status": "ahead",
+     "note": "Guided setup, releases, versions, update/roll-back and “Listen to these first” built; needs one real NAS install."
+    },
+    {
+     "id": "B04/B05",
+     "label": "Cold installs · restore · updates",
+     "start": "2026-10-26",
+     "end": "2026-11-17",
+     "detail": "≥9/10 unassisted installs including ≥5 non-friends; preserve every failed attempt; test backup/restore and upgrade/data rollback.",
+     "status": "not_started",
+     "note": "Starts Oct 26; depends on testers."
+    },
+    {
+     "id": "B04/B05",
+     "label": "Candidate and lifecycle support",
+     "start": "2026-11-18",
+     "end": "2027-01-09",
+     "detail": "Versioned releases and running build identity; actual native-client/cellular/locked-phone evidence; storage migration if bounded file stores fail.",
+     "status": "not_started",
+     "note": "Starts Nov 18."
+    }
+   ]
+  },
+  {
+   "name": "CI and release safety",
+   "kind": "dev",
+   "tasks": [
+    {
+     "id": "B03/B05",
+     "label": "Fix known failure · required checks",
+     "start": "2026-10-11",
+     "end": "2026-11-08",
+     "detail": "Root-cause capitalization failure on case-insensitive filesystem; CI based on current scripts; no pass wrapper; real critical browser flows.",
+     "status": "ahead",
+     "note": "Six release-check jobs pass on GitHub for main; making them required is an owner setting."
+    },
+    {
+     "id": "B03/B05",
+     "label": "Freeze scope · close blockers",
+     "start": "2026-11-09",
+     "end": "2027-01-09",
+     "detail": "No open supported-path release-blocking S1/S2; single writer, interrupted-state recovery, private access and bounded storage proven.",
+     "status": "not_started",
+     "note": "Starts Nov 9."
+    }
+   ]
+  },
+  {
+   "name": "Testers and retention",
+   "kind": "business",
+   "tasks": [
+    {
+     "id": "B07",
+     "label": "Five → ten supported testers",
+     "start": "2026-10-19",
+     "end": "2026-11-08",
+     "detail": "Wave 1; activation ≥6/10 completed installs aged 72h; blockers <20%; five interviews; install failures retained in separate funnel.",
+     "status": "at_risk",
+     "note": "Opens Oct 19; no testers, intake or support address yet."
+    },
+    {
+     "id": "B07",
+     "label": "Five-person waves · mature W4",
+     "start": "2026-10-28",
+     "end": "2027-01-09",
+     "detail": "May start Oct 28 only if G2 passes early; ≤15 active testers. Nov 24 requires ten activations by Oct 27; Dec 1 requires ten by Nov 3. W4 ≥50% with n≥10 mature; missing replies remain unknown.",
+     "status": "not_started",
+     "note": "Follows Wave 1."
+    }
+   ]
+  },
+  {
+   "name": "Messaging and demand",
+   "kind": "business",
+   "tasks": [
+    {
+     "id": "B08",
+     "label": "Claims · consent · real-build clips",
+     "start": "2026-10-11",
+     "end": "2026-11-17",
+     "detail": "Collector/NAS audience; proposed all-surface copy sweep; keep launch-only email promise; two actual-build clips and overview; no fake DJ or mood claim.",
+     "status": "on_track",
+     "note": "Drafts only: site copy sweep, consent opt-in and clips still to do."
+    },
+    {
+     "id": "B10",
+     "label": "Two small channel batches",
+     "start": "2026-12-02",
+     "end": "2027-01-09",
+     "detail": "Broad publicity only after G5; moments ≥3 days apart; ≥3 activated households in each batch; pause above 5 support hours/week.",
+     "status": "not_started",
+     "note": "After release."
+    }
+   ]
+  },
+  {
+   "name": "Rights and paid offer",
+   "kind": "business",
+   "tasks": [
+    {
+     "id": "B06",
+     "label": "Name · licenses · external services",
+     "start": "2026-10-11",
+     "end": "2026-11-23",
+     "detail": "Per-artifact rights decisions; preserve upstream notices; Last.fm commercial position, lyrics/AcoustID and name review; unresolved services excluded or release blocked.",
+     "status": "at_risk",
+     "note": "Inventory done; Last.fm, LRCLIB, PANNs and name questions not sent yet, and replies take weeks."
+    },
+    {
+     "id": "B09",
+     "label": "Offer test → sandbox checkout",
+     "start": "2026-10-26",
+     "end": "2026-11-23",
+     "detail": "Proposed $39 launch/$49 standard Home convenience and bounded support; MIT source available; purchase/refund/fulfillment checks; future cloud not offered.",
+     "status": "not_started",
+     "note": "Starts Oct 26."
+    },
+    {
+     "id": "B09/B10",
+     "label": "Paid cohort → January review",
+     "start": "2026-12-01",
+     "end": "2027-01-09",
+     "detail": "Target ≥10 real paid customers; one-time sales separate from MRR; actual support cost and mature conversion; bottom-up market memo.",
+     "status": "not_started",
+     "note": "After release."
+    }
+   ]
+  }
+ ],
+ "gates": [
+  {
+   "id": "G0",
+   "date": "2026-10-18",
+   "label": "Baseline",
+   "detail": "Supported scope and first listening path; quality/throughput baseline; external dependencies inventoried.",
+   "status": "at_risk",
+   "note": "Update the NAS to the current build, play music and try first-listen picks on the real library."
+  },
+  {
+   "id": "G1",
+   "date": "2026-10-25",
+   "label": "Safe beta",
+   "detail": "Trial copy or verified backup; optional small reviewed write/undo; five attempts recorded.",
+   "status": "at_risk",
+   "note": "Five tester attempts needed; none lined up."
+  },
+  {
+   "id": "G2",
+   "date": "2026-11-08",
+   "label": "First value",
+   "detail": "≥10 installs aged 72h; activation ≥60%; blocker incidence <20%.",
+   "status": "at_risk",
+   "note": "Follows G1."
+  },
+  {
+   "id": "G3",
+   "date": "2026-11-17",
+   "label": "Cold installs",
+   "detail": "≥9/10 unassisted successes; ≥5 non-friends; ten real-library reviews; supported path verified.",
+   "status": "not_started",
+   "note": ""
+  },
+  {
+   "id": "G4",
+   "date": "2026-12-01",
+   "label": "Paid EA",
+   "detail": "All quality/install/safety/rights/checkout gates; W4 ≥50% with ≥10 mature users; no open release-blocking S1/S2. Target follows selected scenario.",
+   "status": "at_risk",
+   "note": "Needs mature four-week retention with n ≥ 10, rights and checkout."
+  },
+  {
+   "id": "G5",
+   "date": "2026-12-08",
+   "label": "Widen carefully",
+   "detail": "At least seven stable days after actual release, manageable support, small channel evidence and a try-without-signup path.",
+   "status": "not_started",
+   "note": ""
+  },
+  {
+   "id": "G6",
+   "date": "2027-01-09",
+   "label": "Review",
+   "detail": "25–40 cumulative testers; 100 qualified waitlist; activation ≥60%; W4 ≥50%; ≥10 paying; repeated channel; support ≤5h/week.",
+   "status": "not_started",
+   "note": ""
+  }
+ ],
+ "as_of": "2026-10-12",
+ "verdict": {
+  "summary": "Building is ahead; proving it with real people hasn't started and is now the critical path. Nov 24 is out of reach, Dec 1 is at risk, Dec 15 is realistic if testers start by Oct 26.",
+  "status_doc": "status-2026-10-12.md"
+ }
 }
