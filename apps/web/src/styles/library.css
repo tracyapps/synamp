@@ -311,3 +311,5 @@
 @media (forced-colors: active) { .selection-bar { border: 2px solid CanvasText; } }
 /* Keyboard focus never lands hidden under the sticky title bar (WCAG 2.4.11). */
 .app__main:has(.browse__listhead), .app__main:has(.browse__table) { scroll-padding-top: 64px; }
+/* Full screen: the table spreads to the full width (columns keep their set widths as a minimum). */
+.app--library-full .browse__table { min-width: 100%; }

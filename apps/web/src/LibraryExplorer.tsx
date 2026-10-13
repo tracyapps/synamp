@@ -48,7 +48,25 @@ const freshRule = (): Rule => ({ field: "artist", mode: "contains", value: "", n
 /** The Show buttons: one kind of thing at a time, or everything. */
 const SHOW: Array<[string, Kind[]]> = [["Artists", ["artist"]], ["Albums", ["album"]], ["Songs", ["song"]], ["Everything", ["artist", "album", "song"]]];
 
-export default function LibraryExplorer({ request, play, playlists, onPlaylistsChanged }: { request: Request; play: (body: Record<string, unknown>) => Promise<void>; playlists: PlaylistNode[]; onPlaylistsChanged?: () => Promise<unknown> }) {
+export default function LibraryExplorer({ request, play, playlists, onPlaylistsChanged, full = false, onFull }: {
+  request: Request; play: (body: Record<string, unknown>) => Promise<void>; playlists: PlaylistNode[]; onPlaylistsChanged?: () => Promise<unknown>;
+  /** Showing across the whole window, and how to change that (absent: no full-screen button). */
+  full?: boolean; onFull?: (full: boolean) => void;
+}) {
+  const fullButton = useRef<HTMLButtonElement>(null);
+  // Escape leaves full screen (unless it's closing something else first: a menu, a dialog, a drop-down).
+  useEffect(() => {
+    if (!full || !onFull) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, dialog, [role='menu'], details[open] > :not(summary)")) return;
+      onFull(false);
+      requestAnimationFrame(() => fullButton.current?.focus());
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [full, onFull]);
   const [initial] = useState(preferences);
   const { state, update, apply, restoreError, validationError } = useLibraryView(initial);
   const { view, q: query, mode, types, rules, logic, from, to, sort, direction, group, group_key: groupKey } = state;
@@ -318,7 +336,8 @@ export default function LibraryExplorer({ request, play, playlists, onPlaylistsC
   return <section className="section-card browse" aria-labelledby="browse-title">
     <div className="section-card__head"><div><h2 id="browse-title" className="section-card__title">Library</h2>
       <p className="section-card__meta" role="status">{busy ? "Updating…" : page ? `${(page.items_total ?? page.total).toLocaleString()} ${(page.items_total ?? page.total) === 1 ? "result" : "results"}${groupKey ? ` in ${groupKey}` : ""}` : "Loading…"}</p></div>
-      <div className="browse__views" role="group" aria-label="Library view">{(["list", "grid", "table"] as const).map(value => <button key={value} className={`btn btn--sm ${view === value ? "btn--primary" : "btn--ghost"}`} aria-pressed={view === value} onClick={() => setView(value)}>{value[0]!.toUpperCase() + value.slice(1)}</button>)}<SavedLibraryViews state={state} disabled={!!restoreError || !!validationError} apply={apply} /></div>
+      <div className="browse__views" role="group" aria-label="Library view">{(["list", "grid", "table"] as const).map(value => <button key={value} className={`btn btn--sm ${view === value ? "btn--primary" : "btn--ghost"}`} aria-pressed={view === value} onClick={() => setView(value)}>{value[0]!.toUpperCase() + value.slice(1)}</button>)}{onFull && <button ref={fullButton} type="button" className="btn btn--sm btn--ghost browse__full" onClick={() => { onFull(!full); requestAnimationFrame(() => fullButton.current?.focus()); }}
+          title={full ? "Back to the normal view (Esc)" : "Show the Library across the whole window"}><Icon name={full ? "shrink" : "expand"} size={16} />{full ? "Exit full screen" : "Full screen"}</button>}<SavedLibraryViews state={state} disabled={!!restoreError || !!validationError} apply={apply} /></div>
     </div>
     <div className="section-card__body">
       {restoreError && <p className="alert" role="alert">{restoreError} Saved data and the link have been preserved. <button className="btn btn--quiet btn--sm" onClick={reset}>Reset filters</button></p>}

@@ -206,3 +206,8 @@ label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) { letter-s
 .save-note__what { color: var(--fg); }
 @keyframes save-note-in { 0% { background: rgba(0, 230, 118, 0.32); } 100% { background: rgba(0, 230, 118, 0.1); } }
 @media (prefers-reduced-motion: reduce) { .save-note__text.is-saved { animation: none; } }
+
+/* The Library across the whole window: no side menu, slimmer margins (the top bar and player stay). */
+.app--library-full .app__layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.app--library-full .app__main { --main-pad-top: 12px; padding-inline: clamp(8px, 1.5vw, 20px); }
+.app--library-full .screen { max-width: none; }

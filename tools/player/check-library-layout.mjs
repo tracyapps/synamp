@@ -121,6 +121,29 @@ try {
   assert.ok(Math.abs(table.thead - table.main) <= 1, `column headings at the top (${JSON.stringify(table)})`);
   await page.screenshot({ path: path.join(output, 'table-sticky.png') });
   pass('Table: items step in under their group, and the column headings stay at the top');
+
+  // Full screen: no side menu or page heading on screen, the table across the window; Escape comes back.
+  const clickText = (text) => page.evaluate(t => [...document.querySelectorAll('button')].find(b => b.textContent.trim() === t).click(), text);
+  await clickText('Full screen');
+  await page.waitForFunction(() => document.querySelector('.app--library-full') && !document.querySelector('.app__side'));
+  const wide = await page.evaluate(() => {
+    const main = document.getElementById('main').getBoundingClientRect(), table = document.querySelector('.browse__table').getBoundingClientRect(), card = document.querySelector('.browse').getBoundingClientRect();
+    const h1 = document.querySelector('.screen__head h1');
+    return { mainLeft: main.left, mainWidth: main.width, table: table.width, cardRightGap: main.right - card.right, h1: !!h1 && h1.textContent, h1Visible: !!h1 && h1.getBoundingClientRect().width > 2, focus: document.activeElement?.textContent.trim() };
+  });
+  assert.equal(wide.mainLeft, 0, 'the Library starts at the window edge');
+  assert.ok(wide.table >= wide.mainWidth - 60, `the table spans the window (${JSON.stringify(wide)})`);
+  assert.ok(wide.cardRightGap <= 30, `the Library reaches the right edge too (${JSON.stringify(wide)})`);
+  assert.equal(wide.h1, 'Library', 'the page heading is still there for screen readers');
+  assert.equal(wide.h1Visible, false);
+  assert.equal(wide.focus, 'Exit full screen', 'focus stays on the button, now saying how to leave');
+  await page.screenshot({ path: path.join(output, 'full-screen.png') });
+  await page.reload({ waitUntil: 'networkidle0' });
+  await page.waitForFunction(() => document.querySelector('.app--library-full'));
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.querySelector('.app--library-full') && document.querySelector('.app__side'));
+  await page.waitForFunction(() => document.activeElement?.textContent.trim() === 'Full screen');
+  pass('Full screen shows the Library across the window, is remembered, and Escape comes back');
   assert.deepEqual(errors, []);
   await writeFile(path.join(output, 'results.json'), JSON.stringify({ passed, near, far, closed }, null, 2));
 } catch (error) { console.error(brainLog.slice(-1500)); throw error; }
