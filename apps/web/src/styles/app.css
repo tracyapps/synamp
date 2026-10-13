@@ -59,7 +59,8 @@ a:hover > .brand-mark, a:focus-visible > .brand-mark { transform: rotate(0deg); 
 .app__nav-link svg { flex: none; }
 .app__nav-link .badge { margin-left: auto; padding: 2px 7px; font-size: 0.6875rem; }
 
-.app__main { position: relative; padding: 28px clamp(16px, 3vw, 40px) 48px; min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; outline: none; }
+/* --main-pad-top: so sticky bars inside can sit flush with the top edge (top: calc(-1 * var(--main-pad-top))). */
+.app__main { --main-pad-top: 28px; position: relative; padding: var(--main-pad-top) clamp(16px, 3vw, 40px) 48px; min-width: 0; min-height: 0; overflow: auto; overscroll-behavior: contain; outline: none; }
 .screen { display: grid; gap: 18px; max-width: 1180px; }
 .screen__head { padding: 6px 0 8px; }
 .screen__head .eyebrow { display: inline-flex; align-items: center; gap: 10px; }
@@ -80,7 +81,7 @@ a:hover > .brand-mark, a:focus-visible > .brand-mark { transform: rotate(0deg); 
   .app__side .grp { display: none; }
   .app__nav-link { flex: none; min-height: 40px; border-radius: var(--r-pill); font-size: 0.875rem; }
   .app__nav-link .badge { display: none; }
-  .app__main { padding-top: 20px; }
+  .app__main { --main-pad-top: 20px; }
   .app__bar-right .badge--muted { display: none; }
 }
 

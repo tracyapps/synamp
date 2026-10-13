@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { FocusEvent, PointerEvent, ReactNode, Ref } from "react";
 import type { Piece } from "./library-window";
 import Icon from "./ui/Icon";
@@ -11,7 +11,9 @@ type Props = { pieces: Piece[]; rowAt: (index: number) => (LibraryRow & { path?:
   body: { containerRef: Ref<HTMLElement | null>; onFocus: (event: FocusEvent) => void; onBlur: (event: FocusEvent) => void; expected: (index: number) => number };
   columns: Column[]; order: Column[]; widths: Record<Column, number>; sort: string; direction: string;
   setColumns: (columns: Column[]) => void; setOrder: (order: Column[]) => void; setWidths: (widths: Record<Column, number>) => void;
-  onSort: (column: SortColumn) => void; cell: (row: LibraryRow, column: Exclude<Column, "actions">) => ReactNode; actions: (row: LibraryRow) => ReactNode;
+  onSort: (column: SortColumn) => void;
+  /** Group levels above each item: its tick box steps in to sit under its group's. */
+  depth?: number; cell: (row: LibraryRow, column: Exclude<Column, "actions">) => ReactNode; actions: (row: LibraryRow) => ReactNode;
   /** The title cell's content (an album's open/close button, an artist link). */
   titleCell: (row: LibraryRow) => ReactNode;
   /** Shown in a full-width row underneath (an open album's songs), or null. */
@@ -36,8 +38,45 @@ function PixelWidth({ column, width, change }: { column: Column; width: number; 
 }
 
 const PICK_WIDTH = 44;
+/** One step of indentation per group level (matches .group-head--1). */
+const INDENT = 28;
 
-export default function LibraryTable({ pieces, rowAt, total, body, columns, order, widths, sort, direction, setColumns, setOrder, setWidths, onSort, cell, actions, titleCell, detail, rowEvents, pick, groupCell, selectAll, tools }: Props) {
+/**
+ * Keep the column headings in view while the page scrolls past the table.
+ * CSS sticky can't do it here: the table scrolls sideways in its own box, and
+ * a sideways-scrolling box stops sticky from seeing the page's scroll. So the
+ * heading row is moved down by exactly the amount the table has scrolled out
+ * of view. It stays one table, so every cell keeps its column heading for
+ * screen readers.
+ */
+function useStickyHead(tableRef: { current: HTMLElement | null }) {
+  const head = useRef<HTMLTableSectionElement>(null);
+  useEffect(() => {
+    let frame = 0;
+    const place = () => {
+      frame = 0;
+      const table = tableRef.current, thead = head.current;
+      if (!table || !thead) return;
+      const scroller = table.closest<HTMLElement>(".app__main") ?? document.scrollingElement as HTMLElement;
+      const top = scroller === document.scrollingElement ? 0 : scroller.getBoundingClientRect().top;
+      const box = table.getBoundingClientRect();
+      const room = box.height - thead.offsetHeight * 2;
+      const shift = Math.max(0, Math.min(top - box.top, room));
+      thead.style.transform = shift > 0 ? `translateY(${shift}px)` : "";
+      thead.classList.toggle("is-stuck", shift > 0);
+    };
+    const later = () => { if (!frame) frame = requestAnimationFrame(place); };
+    place();
+    document.addEventListener("scroll", later, { passive: true, capture: true });
+    window.addEventListener("resize", later);
+    return () => { document.removeEventListener("scroll", later, { capture: true }); window.removeEventListener("resize", later); cancelAnimationFrame(frame); };
+  }, [tableRef]);
+  return head;
+}
+
+export default function LibraryTable({ pieces, rowAt, total, body, columns, order, widths, sort, direction, setColumns, setOrder, setWidths, onSort, cell, actions, titleCell, detail, rowEvents, pick, groupCell, selectAll, tools, depth = 0 }: Props) {
+  const pickWidth = PICK_WIDTH + depth * INDENT;
+  const head = useStickyHead(body.containerRef as { current: HTMLElement | null });
   const settings = useRef<HTMLDialogElement>(null);
   const settingsId = useId();
   const resize = useRef<{ pointer: number; column: Column; start: number; width: number } | null>(null);
@@ -79,9 +118,9 @@ export default function LibraryTable({ pieces, rowAt, total, body, columns, orde
       </li>)}</ol>
       <div className="browse__column-footer"><button className="btn btn--quiet btn--sm" onClick={() => { setOrder(Object.keys(columnNames) as Column[]); setWidths({ ...defaultWidths }); }}>Reset order and widths</button><button className="btn btn--primary btn--sm" onClick={() => settings.current?.close()}>Done</button></div>
     </dialog>
-    <div className="browse__table-wrap" tabIndex={0} role="region" aria-label="Library table, scroll horizontally for more columns"><table ref={body.containerRef as Ref<HTMLTableElement>} onFocus={body.onFocus} onBlur={body.onBlur} className="table browse__table" aria-rowcount={total + 1} style={{ width: PICK_WIDTH + visible.reduce((sum, column) => sum + widths[column], 0) }}><caption className="visually-hidden">Library results. Sort headings with Enter. Column move handles support left and right arrow keys; resize handles also support arrow keys.</caption>
-      <colgroup><col style={{ width: PICK_WIDTH }} />{visible.map(column => <col key={column} style={{ width: widths[column] }} />)}</colgroup>
-      <thead><tr aria-rowindex={1}><th scope="col" className="browse__pick-col">{selectAll}</th>{visible.map(column => <th key={column} scope="col" data-column={column} className={dropTarget === column ? "is-drop-target" : ""} aria-sort={column === "actions" ? undefined : sort === column ? direction === "asc" ? "ascending" : "descending" : "none"}
+    <div className="browse__table-wrap" tabIndex={0} role="region" aria-label="Library table, scroll horizontally for more columns"><table ref={body.containerRef as Ref<HTMLTableElement>} onFocus={body.onFocus} onBlur={body.onBlur} className="table browse__table" aria-rowcount={total + 1} style={{ width: pickWidth + visible.reduce((sum, column) => sum + widths[column], 0), ["--item-depth" as string]: depth }}><caption className="visually-hidden">Library results. Sort headings with Enter. Column move handles support left and right arrow keys; resize handles also support arrow keys.</caption>
+      <colgroup><col style={{ width: pickWidth }} />{visible.map(column => <col key={column} style={{ width: widths[column] }} />)}</colgroup>
+      <thead ref={head}><tr aria-rowindex={1}><th scope="col" className="browse__pick-col">{selectAll}</th>{visible.map(column => <th key={column} scope="col" data-column={column} className={dropTarget === column ? "is-drop-target" : ""} aria-sort={column === "actions" ? undefined : sort === column ? direction === "asc" ? "ascending" : "descending" : "none"}
         onDragOver={event => { if (dragged.current) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setDropTarget(column); } }}
         onDragLeave={() => setDropTarget(null)} onDrop={event => { event.preventDefault(); const source = dragged.current; if (source) setOrder(moveColumn(order, source, column)); dragged.current = null; setDropTarget(null); }}>
         <div className="browse__column-heading"><button className="browse__column-grip" draggable aria-label={`Move ${columnNames[column]} column`} title="Drag to reorder, or use left/right arrow keys"

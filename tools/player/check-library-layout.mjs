@@ -88,6 +88,39 @@ try {
   assert.equal(closed.opened, 'false');
   assert.ok(closed.worst <= 2, `Artist 220 header moved ${closed.worst}px after closing`);
   pass('Closing it again keeps it in place too');
+
+  // Indentation: what's inside a group steps in one level (as a second-level header does).
+  await openAndWatch('Artist 230');
+  const steps = await page.evaluate(() => {
+    const head = [...document.querySelectorAll('.group-head__toggle')].find(x => x.querySelector('.group-head__label')?.textContent === 'Artist 230').closest('.group-head');
+    const item = head.closest('li').nextElementSibling;
+    return { group: head.querySelector('.pick').getBoundingClientRect().left, item: item.querySelector('.pick').getBoundingClientRect().left };
+  });
+  assert.equal(Math.round(steps.item - steps.group), 28, `item steps in 28px from its group (${JSON.stringify(steps)})`);
+  // Row actions stay on one line.
+  const tallest = await page.evaluate(() => Math.max(...[...document.querySelectorAll('.album__actions--compact')].map(a => a.getBoundingClientRect().height)));
+  assert.ok(tallest <= 40, `actions fit on one line (${tallest}px)`);
+  // The list's title bar stays at the top of the scrolling area.
+  const stuck = await page.evaluate(() => ({ head: document.querySelector('.browse__listhead').getBoundingClientRect().top, main: document.getElementById('main').getBoundingClientRect().top }));
+  assert.ok(Math.abs(stuck.head - stuck.main) <= 1, `list title bar at the top (${JSON.stringify(stuck)})`);
+  pass('Items step in under their group, actions fit on one line, and the list title bar stays at the top');
+
+  // Table: same indentation, and the column headings stay at the top.
+  await page.evaluate(() => [...document.querySelectorAll('.browse__views button')].find(b => b.textContent.trim() === 'Table').click());
+  await page.waitForSelector('.browse__table thead');
+  await openAndWatch('Artist 240');
+  await page.evaluate(() => { document.getElementById('main').scrollTop += 300; });
+  await new Promise(r => setTimeout(r, 300));
+  const table = await page.evaluate(() => {
+    const head = [...document.querySelectorAll('.group-head__toggle')].find(x => x.querySelector('.group-head__label')?.textContent === 'Artist 240').closest('.group-head');
+    const item = head.closest('tbody').nextElementSibling;
+    return { group: head.querySelector('.pick').getBoundingClientRect().left, item: item.querySelector('.pick').getBoundingClientRect().left,
+      thead: document.querySelector('.browse__table thead').getBoundingClientRect().top, main: document.getElementById('main').getBoundingClientRect().top };
+  });
+  assert.equal(Math.round(table.item - table.group), 28, `table item steps in 28px (${JSON.stringify(table)})`);
+  assert.ok(Math.abs(table.thead - table.main) <= 1, `column headings at the top (${JSON.stringify(table)})`);
+  await page.screenshot({ path: path.join(output, 'table-sticky.png') });
+  pass('Table: items step in under their group, and the column headings stay at the top');
   assert.deepEqual(errors, []);
   await writeFile(path.join(output, 'results.json'), JSON.stringify({ passed, near, far, closed }, null, 2));
 } catch (error) { console.error(brainLog.slice(-1500)); throw error; }

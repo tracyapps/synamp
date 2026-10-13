@@ -143,9 +143,9 @@ export function AlbumRow({ album, request, play, playlists, say, disabled = fals
           </button>
           <p className="album__meta"><ArtistLink name={album.artist} />{album.year ? ` · ${album.year}` : ""} · {album.tracks} {album.tracks === 1 ? "song" : "songs"}{album.duration_s ? ` · ${clock(album.duration_s)}` : ""}</p>
         </div>
-        <div className="album__actions">
-          <button type="button" className="btn btn--ghost btn--sm" disabled={disabled} onClick={() => start({}, album.title)}><Icon name="play" size={16} />Play<span className="visually-hidden"> {album.title}</span></button>
-          <button type="button" className="btn btn--quiet btn--sm btn--icon" disabled={disabled} onClick={() => start({ shuffle: true }, `${album.title}, shuffled`)} aria-label={`Shuffle ${album.title}`}><Icon name="shuffle" /></button>
+        <div className="album__actions album__actions--compact">
+          <button type="button" className="btn btn--ghost btn--sm btn--icon" disabled={disabled} onClick={() => start({}, album.title)} aria-label={`Play ${album.title}`} title={`Play ${album.title}`}><Icon name="play" size={16} /></button>
+          <button type="button" className="btn btn--quiet btn--sm btn--icon" disabled={disabled} onClick={() => start({ shuffle: true }, `${album.title}, shuffled`)} aria-label={`Shuffle ${album.title}`} title={`Shuffle ${album.title}`}><Icon name="shuffle" /></button>
           <Heart kind="album" refId={album.key} name={album.title} say={say} />
           <PageLink href={href} label={`Open the album page for ${album.title}`}><Icon name="open" /></PageLink>
         </div>
