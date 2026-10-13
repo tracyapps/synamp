@@ -272,6 +272,27 @@ export function ResultView({ result, labels, onRestore, review }: { result: Eval
 
 type Pick = { id: string; title: string; artist?: string };
 
+const SEED_KEY = "synamp-describe-seed";
+const SEED_EVENT = "synamp:describe-seed";
+/**
+ * "Make a smart playlist from this": open Playlists with this song already in
+ * "Sounds like these songs". Kept for the moment Describe appears (or handed
+ * straight over if Playlists is already open).
+ */
+export function askForSmartPlaylist(song: Pick) {
+  try { sessionStorage.setItem(SEED_KEY, JSON.stringify(song)); } catch { /* private window: the event below still works if Playlists is open */ }
+  window.dispatchEvent(new CustomEvent(SEED_EVENT, { detail: song }));
+  if (!/^#\/?playlists\b/.test(window.location.hash)) window.location.hash = "#/playlists";
+}
+function takeSeed(): Pick | null {
+  try {
+    const raw = sessionStorage.getItem(SEED_KEY);
+    sessionStorage.removeItem(SEED_KEY);
+    const seed = raw ? JSON.parse(raw) as Partial<Pick> : null;
+    return seed && typeof seed.id === "string" && typeof seed.title === "string" ? { id: seed.id, title: seed.title, ...(typeof seed.artist === "string" ? { artist: seed.artist } : {}) } : null;
+  } catch { return null; }
+}
+
 /**
  * "Sounds like these songs": search the library and pick up to five. They go to
  * the brain as track IDs, so a title with "and" in it, or two songs with the
@@ -337,6 +358,25 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
   const promptId = useId();
   // A clip shouldn't outlive the preview it came from.
   useEffect(() => () => stopClip(), []);
+  // Arrived from "Make a smart playlist from this": start from that song, and say so.
+  const formRef = useRef<HTMLFormElement>(null);
+  const [started, setStarted] = useState("");
+  useEffect(() => {
+    const start = (seed: Pick | null) => {
+      if (!seed) return;
+      try { sessionStorage.removeItem(SEED_KEY); } catch { /* nothing kept */ }
+      setLike((now) => now.some((item) => item.id === seed.id) ? now : [seed, ...now].slice(0, 5));
+      setStarted(`Starting from “${seed.title}”. Add some words if you like, then press Preview.`);
+      requestAnimationFrame(() => {
+        formRef.current?.scrollIntoView({ block: "start" });
+        document.getElementById(promptId)?.focus({ preventScroll: true });
+      });
+    };
+    start(takeSeed());
+    const onSeed = (event: Event) => start((event as CustomEvent<Pick>).detail);
+    window.addEventListener(SEED_EVENT, onSeed);
+    return () => window.removeEventListener(SEED_EVENT, onSeed);
+  }, [promptId]);
 
   const leave = (id: string, reason: LeaveOutReason | null | undefined) => setLeftOut((now) => {
     const next = new Map(now);
@@ -405,12 +445,13 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
   return (
     <section className="panel describe" aria-labelledby={`${promptId}-title`}>
       <div className="panel__head"><div><p className="eyebrow">Smart playlist · draft parser</p><h2 id={`${promptId}-title`}>Describe what you want to hear</h2></div></div>
-      <form className="describe__form" onSubmit={preview}>
+      <form ref={formRef} className="describe__form" onSubmit={preview}>
         <label htmlFor={promptId}>In your own words</label>
         <textarea id={promptId} value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={2} maxLength={500}
           placeholder="e.g. I need to focus. no words, no piano, nothing too slow" aria-describedby={`${promptId}-hint`} />
         <p id={`${promptId}-hint`} className="muted">“No …” rules are strict: a track is only included when it has been measured and passes.</p>
         <SoundsLike request={request} picked={like} onChange={setLike} />
+        <p className="describe__started" role="status">{started}</p>
         <div className="describe__actions">
           <button className="btn btn--primary" disabled={busy || (!prompt.trim() && !like.length)}>{busy ? "Working…" : "Preview"}</button>
           <span className="muted">Try:</span>

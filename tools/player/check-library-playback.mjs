@@ -93,11 +93,29 @@ try {
  await page.evaluate(()=>{location.hash='#/library/artist/Fixture%20Artist';});
  await page.waitForFunction(()=>document.querySelector('#artist-songs')?.textContent.includes('Song A'));
  assert.equal(await page.evaluate(()=>window.__synampEngine.isPlaying()),false);
+ // Playing from the Library: no playlist to steer, so no playlist feedback (buttons or shortcuts);
+ // instead, start a smart playlist from this song.
+ const buttons=()=>page.evaluate(()=>[...document.querySelectorAll('.player__feedback button, .player__feedback summary')].map(b=>b.textContent.trim()));
+ const shown=await buttons();
+ for(const gone of ['More like this','Not for this','Reason…']) assert.ok(!shown.includes(gone),`${gone} is hidden for Library playback`);
+ assert.ok(!shown.some(t=>t.startsWith('Remove from')));
+ assert.ok(shown.includes('Love'),'Love (favourites) stays');
+ const indexBefore=(await (await fetch(`${api}/api/v1/session`)).json()).session.index;
+ await page.keyboard.down('Alt');await page.keyboard.down('Shift');await page.keyboard.press('KeyN');await page.keyboard.up('Shift');await page.keyboard.up('Alt');
+ await new Promise(r=>setTimeout(r,400));
+ assert.equal((await (await fetch(`${api}/api/v1/session`)).json()).session.index,indexBefore,'Alt+Shift+N does nothing from the Library');
+ const make=await page.evaluateHandle(()=>[...document.querySelectorAll('.player__feedback button')].find(b=>b.textContent.trim()==='Make a smart playlist from this'));
+ assert.ok(make.asElement(),'Make a smart playlist from this');
+ const playingTitle=await page.$eval('.player__title',el=>el.textContent);
+ await make.asElement().click();
+ await page.waitForFunction(t=>location.hash.startsWith('#/playlists') && [...document.querySelectorAll('.describe__picked li')].some(li=>li.textContent.includes(t)),{},playingTitle);
+ await page.waitForFunction(t=>document.querySelector('.describe__started')?.textContent.includes(t),{},playingTitle);
+ assert.equal(await page.evaluate(()=>document.activeElement?.tagName),'TEXTAREA','focus lands on the words box');
  // Restoring an existing queue on load doesn't count as an explicit Play click.
  await page.reload({waitUntil:'networkidle0'});
  assert.equal(await page.evaluate(()=>!!window.__synampEngine),false);
  assert.deepEqual(errors,[]);
- console.log(JSON.stringify({passed:['first Library song click starts audio after switching artists','Library click resumes paused playback','actual generated waveform output','switch artist while playing','pause while the next song loads wins','navigation preserves pause','reload restores queue without autoplay'],rms,errors},null,2));
+ console.log(JSON.stringify({passed:['first Library song click starts audio after switching artists','Library click resumes paused playback','actual generated waveform output','switch artist while playing','pause while the next song loads wins','Library playback hides playlist feedback and offers a smart playlist from the song','navigation preserves pause','reload restores queue without autoplay'],rms,errors},null,2));
 
  await writeFile(path.join(output,'results.json'),JSON.stringify({result,rms,errors,limitations:'Isolated App/Brain with generated WAV audio. No NAS deployment or owner audio playback.'},null,2));
  assert.equal(result.playing,true,'Library song click starts sound');assert.equal(result.engineCreated,true,'Library play creates the audio engine');
