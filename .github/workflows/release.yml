@@ -24,7 +24,7 @@ jobs:
     name: Publish images and draft release
     needs: checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 45
     permissions:
       contents: write   # the draft release
       packages: write   # ghcr.io images
@@ -36,6 +36,13 @@ jobs:
         with:
           node-version: '22.x'
           package-manager-cache: false
+      - name: Build for ARM as well as Intel/AMD
+        # QEMU runs the few ARM build steps (the brain's ffmpeg install) on this
+        # Intel runner; the web build and fingerprint run natively for both.
+        run: |
+          docker run --privileged --rm tonistiigi/binfmt:qemu-v10.0.4@sha256:8f58e6214f4cc9dc83ce8f5acad1ece508eb6b20e696a8c1e9f274481982c541 --install arm64
+          docker buildx create --name synamp --driver docker-container --use
+          docker buildx inspect --bootstrap | grep -q 'linux/arm64'
       - name: Sign in to GitHub's container registry
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -59,7 +66,7 @@ jobs:
             echo
             echo "Updating or going back: back up your SynAmp data folder, unzip this release over the same folder (your settings and data are kept), then Container Manager → Project → synamp → Action → Build."
             echo
-            echo "Images in this release (x86-64):"
+            echo "Images in this release (each works on Intel/AMD and ARM servers):"
             echo '```'
             tail -n 2 dist-images.txt
             echo '```'

@@ -154,3 +154,29 @@ jobs:
         env:
           UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/synamp-analyzer-venv
         run: uv run --no-sync --project services/analyzer python -m pytest services/analyzer/tests -q
+
+  images:
+    name: Images build and start on Intel/AMD and ARM
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Build for ARM as well as Intel/AMD (QEMU)
+        run: |
+          docker run --privileged --rm tonistiigi/binfmt:qemu-v10.0.4@sha256:8f58e6214f4cc9dc83ce8f5acad1ece508eb6b20e696a8c1e9f274481982c541 --install arm64
+          docker buildx create --name synamp --driver docker-container --use
+          docker buildx inspect --bootstrap | grep -q 'linux/arm64'
+      - name: Both images build for both chips
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 -f apps/brain/Dockerfile apps
+          docker buildx build --platform linux/amd64,linux/arm64 -f apps/web/Dockerfile apps/web
+      - name: The ARM brain starts and answers, with ffmpeg
+        run: |
+          docker buildx build --platform linux/arm64 --load -t synamp-brain:arm64 -f apps/brain/Dockerfile apps
+          docker run --platform linux/arm64 --rm synamp-brain:arm64 sh -c 'uname -m; ffmpeg -version | head -n 1'
+          docker run --platform linux/arm64 -d --name brain-arm64 -p 3001:3001 synamp-brain:arm64
+          for i in $(seq 1 60); do curl -fsS http://127.0.0.1:3001/health && break; sleep 2; done
+          curl -fsS http://127.0.0.1:3001/health | grep -Eq '"status": *"ok"'
+          docker rm -f brain-arm64

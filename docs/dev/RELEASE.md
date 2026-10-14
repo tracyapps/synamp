@@ -105,8 +105,9 @@ git tag v0.1.0 && git push origin v0.1.0
 
 [`release.yml`](../../.github/workflows/release.yml) runs every release check
 again; only if all pass does [`tools/release/publish.sh`](../../tools/release/publish.sh)
-build the brain and web images for x86-64 (with the version in About this
-install), push them to `ghcr.io/tracyapps/synamp-brain` and `synamp-web`, and
+build the brain and web images for both kinds of server chip, Intel/AMD
+(`linux/amd64`) and ARM (`linux/arm64`), under one name each (with the version in
+About this install), push them to `ghcr.io/tracyapps/synamp-brain` and `synamp-web`, and
 make `synamp-<version>.zip` pinned to their digests. The GitHub Release is a
 **draft**: read it, then press **Publish release**. A tag with a suffix
 (`v0.2.0-beta.1`) becomes a pre-release.
@@ -121,6 +122,17 @@ licence; never `.env` or data, so unzipping a release over an install keeps
 both. Updating and going back are the same move: back up DATA_DIR, unzip the
 release you want, then Container Manager → Project → synamp → Action → Build.
 Going back after an update that changed stored data needs that backup.
+
+Both chips (October 13): the web build and the fingerprint run on the build
+machine's own chip (`--platform=$BUILDPLATFORM`; their output is the same for
+every chip), so only the brain's `apk add ffmpeg` runs under QEMU for ARM. The
+pinned base images (node, nginx, Navidrome, Caddy, pgvector) are all multi-chip
+lists that include arm64. The **Images** job in CI builds both chips on every
+push and starts the ARM brain under QEMU. Rehearsed in the cloud sandbox with
+`SYNAMP_PLATFORMS=linux/amd64` (no QEMU there): publish → the recorded digest is
+the registry's image list → pulled by that digest → healthy, ffmpeg present.
+ARM images help ARM NAS models that offer Docker (check the maker's list for
+Container Manager or its equivalent) and small Linux servers.
 
 Rehearsed October 12 with a private registry on Linux x86-64 Docker (stand-in
 base image; Alpine's package server is blocked in that sandbox): v0.1.0

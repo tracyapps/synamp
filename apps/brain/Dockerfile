@@ -7,7 +7,9 @@
 
 # 1. Fingerprint the code these images are built from. Docker re-runs this only
 #    when that code changed, so build.json always matches what's inside.
-FROM node:22.23.3-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS fingerprint
+#    It runs on the build machine's own chip ($BUILDPLATFORM): the result is
+#    the same for every chip, and release builds for ARM stay fast.
+FROM --platform=$BUILDPLATFORM node:22.23.3-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS fingerprint
 WORKDIR /apps
 COPY brain/src ./brain/src
 COPY web/src ./web/src
