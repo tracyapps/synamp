@@ -123,11 +123,26 @@ def onnx_path(download: bool = True) -> Path | None:
     """The ONNX model, when there is a checked one. None otherwise.
 
     Checked means: it matches the published SHA-256, or it was made on this
-    computer by model_export.py, which compared it with PyTorch and noted the
-    file's SHA-256 beside it (cnn14-0.431.json)."""
+    computer (model_build.py from the checkpoint, or model_export.py with
+    PyTorch), checked against PyTorch's numbers, with the file's SHA-256 noted
+    beside it (cnn14-0.431.json).
+
+    With nothing here and no published copy, it's made here: the checkpoint
+    comes from Zenodo (once, ~330 MB) and model_build turns it into the ONNX
+    file in about 10 seconds. That needs the small `onnx` package (in the
+    `listen` extra); without it, None."""
     path = model_dir() / ONNX_NAME
     if path.is_file() and _trusted(path):
         return path
+    if download and not (ONNX_URL and ONNX_SHA256):
+        try:
+            from . import model_build
+            return model_build.build(log=lambda line: print(line, flush=True))
+        except ImportError:
+            return None
+        except (OSError, RuntimeError, ValueError) as error:
+            print(f"model: couldn't make the listening model here ({error})", flush=True)
+            return None
     if not (download and ONNX_URL and ONNX_SHA256):
         return None
     path.parent.mkdir(parents=True, exist_ok=True)

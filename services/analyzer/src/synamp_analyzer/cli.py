@@ -9,7 +9,8 @@
     synamp-analyze install-agent         # macOS: start the worker now and at every login
     synamp-analyze uninstall-agent       # macOS: stop it and remove it from login
     synamp-analyze model status          # is the singing/instruments model ready here?
-    synamp-analyze model convert         # make it from the PyTorch checkpoint (needs --extra convert)
+    synamp-analyze model build           # make it from the checkpoint, no PyTorch needed
+    synamp-analyze model convert         # make it with PyTorch (needs --extra convert)
 
 Exit codes: 0 success, 1 something failed, 2 usage error.
 """
@@ -270,14 +271,27 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("uninstall-agent", help="macOS: stop the background worker and remove it from login")
 
     model = sub.add_parser("model", help="the singing/instruments model (voice stage)")
-    model.add_argument("action", choices=["status", "convert"],
-                       help="status: is it ready here? convert: make it from the PyTorch checkpoint (needs --extra convert)")
+    model.add_argument("action", choices=["status", "build", "convert"],
+                       help="status: is it ready here? build: make it from the checkpoint (no PyTorch); "
+                            "convert: make it with PyTorch (needs --extra convert)")
 
     return parser
 
 
 def _cmd_model(action: str) -> int:
     from . import listen
+    if action == "build":
+        try:
+            from .model_build import build
+        except ImportError:
+            print("model: building needs the onnx package: uv run --extra listen synamp-analyze model build")
+            return 2
+        try:
+            build()
+        except (ImportError, RuntimeError, OSError, ValueError) as error:
+            print(f"model: {error}")
+            return 1
+        return 0
     if action == "convert":
         try:
             from .model_export import convert
@@ -300,7 +314,7 @@ def _cmd_model(action: str) -> int:
         runtime = False
     path = listen.onnx_path(download=False)
     print(f"model: ONNX Runtime {'installed' if runtime else 'not installed (uv run --extra listen …)'}")
-    print(f"model: {'ready at ' + str(path) if path else 'not here yet — ' + ('it downloads on first use' if listen.ONNX_URL else 'make it with: uv run --extra convert synamp-analyze model convert')}")
+    print(f"model: {'ready at ' + str(path) if path else 'not here yet — ' + ('it downloads on first use' if listen.ONNX_URL else 'make it with: synamp-analyze model build')}")
     return 0 if runtime and path else 1
 
 
