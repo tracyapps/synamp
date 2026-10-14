@@ -638,6 +638,29 @@ efficiency core (~29 s a track).
   the 10th–90th percentile); the beat stage's own gate (insufficient pulse
   evidence on 91%); voice/instrument producer (next).
 
+### 2026-10-13 — voice stage runs on ONNX Runtime (no PyTorch at runtime)
+
+Step 2 of the simple-install plan (docs/business/plan-2027-simple-install.md).
+`model_export.py` exports the whole CNN14 (spectrogram included) to
+`~/panns_data/cnn14-0.431.onnx` (327 MB, opset 17) and keeps it only if it
+matches PyTorch on test sounds (probabilities within 1e-4; embeddings within
+1e-4 of their largest value); a note beside it (`cnn14-0.431.json`) records the
+SHA-256s and the check. The `listen` extra is now onnxruntime only (one locked
+version, 1.23.2, which still has Intel-Mac wheels); PyTorch moved to the
+`convert` extra: `uv run --extra convert synamp-analyze model convert`, once.
+`voice_method` is unchanged, so nothing is re-analysed. Checks: 4 generated
+files in the cloud, and 32 real songs from the owner's library on the Mac (12
+instrumental, 10 partly sung, 12 sung; 2 more were set-aside duplicates no longer
+on disk) — identical in every field: has-voice share, instruments and moods
+equal, voice_peak within 2e-6, sound vectors byte-identical. ONNX was 1.5× faster
+on the cloud CPU and 9% faster on the M4 Pro (with analysis stopped). Install:
+254 MB with the `listen` extra vs 1.3 GB with PyTorch. ONNX Runtime 1.31 on
+Apple Silicon/Windows/Linux (any Python 3.11–3.14), 1.23.2 on Intel Macs
+(macOS 13+, Python 3.11–3.13). The exported file isn't byte-identical between
+machines (the Mac's and the cloud's SHA-256s differ), so a published copy needs
+its own pinned SHA-256. `SYNAMP_MODEL_URL` + `SYNAMP_MODEL_SHA256` let a published copy
+download instead, once the weights licence allows publishing one.
+
 ### 2026-10-08 — voice stage (P4 first producer): singing/speech and instruments
 
 `services/analyzer/src/synamp_analyzer/listen.py`, stage `voice` (revision 1),
