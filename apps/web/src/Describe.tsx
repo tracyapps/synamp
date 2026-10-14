@@ -481,9 +481,12 @@ export default function Describe({ request, onSaved }: { request: Request; onSav
             <p className="muted describe__parser">{draft.parser}</p>
           </div>
           {draft.preview && <>
-            {draft.preview.strict.length > 0 && <p className="muted describe__review-hint">Check it before you save: hear a clip of any song, and mark the ones that don’t fit. They’ll stay out of this playlist.</p>}
-            <ResultView result={draft.preview} labels={labels} review={review} />
-            <p className="describe__said" role="status">{said}</p>
+            {/* One grid cell for the whole preview, so it always sits in the wide column. */}
+            <div className="describe__main">
+              {draft.preview.strict.length > 0 && <p className="muted describe__review-hint">Check it before you save: hear a clip of any song, and mark the ones that don’t fit. They’ll stay out of this playlist.</p>}
+              <ResultView result={draft.preview} labels={labels} review={review} />
+              <p className="describe__said" role="status">{said}</p>
+            </div>
             <div className="describe__save">
               <label>Playlist name<input value={name} onChange={(event) => setName(event.target.value)} maxLength={120} /></label>
               <button className="btn btn--primary" onClick={save} disabled={busy}>Save as smart playlist</button>
