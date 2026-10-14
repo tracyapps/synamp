@@ -104,6 +104,8 @@ services:
       PUBLIC_URL: ${PUBLIC_URL:-}
       # Contact (email or URL) for MusicBrainz's User-Agent; needed for the missing-tracks list.
       MUSICBRAINZ_CONTACT: ${MUSICBRAINZ_CONTACT:-}
+      # Where "Send feedback" offers to email (optional; the brain never sends it itself).
+      SUPPORT_EMAIL: ${SUPPORT_EMAIL:-}
       # The analyzer's export, written by the Mac into the share's .synamp/ folder.
       LIBRARY_SIGNALS_PATH: /shared/library-signals.json
       # New music waiting to be filed; web uploads land in incoming/_web/. Never the library.
