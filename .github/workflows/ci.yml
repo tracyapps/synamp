@@ -155,6 +155,18 @@ jobs:
           UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/synamp-analyzer-venv
         run: uv run --no-sync --project services/analyzer python -m pytest services/analyzer/tests -q
 
+  mac-app:
+    name: Mac app core (Swift)
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Build and test the app's core (paths, settings, pieces, supervisor)
+        working-directory: apps/mac
+        run: swift test
+
   images:
     name: Images build and start on Intel/AMD and ARM
     runs-on: ubuntu-24.04
