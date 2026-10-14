@@ -52,6 +52,21 @@ signs and notarizes too; without them it builds an ad-hoc test app:
 - `NOTARY_KEY_P8` (an App Store Connect API key, the .p8 file's text),
   `NOTARY_KEY_ID`, `NOTARY_ISSUER`
 
+## Updates (Sparkle)
+
+The app checks once a day for a newer version (its own feed per chip, on the
+newest GitHub release), shows what's new, and lets you install, skip it or be
+reminded later. Every update is signed; the app refuses one that isn't.
+
+Once, make the update-signing key (it lives in your login Keychain):
+
+    apps/mac/.build/artifacts/sparkle/Sparkle/bin/generate_keys
+
+It prints the public key: save it as the repository **variable**
+`SPARKLE_PUBLIC_KEY`. For GitHub to sign updates, export the private key
+(`generate_keys -x sparkle-private-key`) into the **secret** `SPARKLE_PRIVATE_KEY`,
+then delete that file. Builds without the public key never check for updates.
+
 ## Not inside yet
 
 - **ffmpeg** (needs an LGPL build): without it, lighter streams are off and

@@ -9,11 +9,15 @@ let package = Package(
     products: [
         .executable(name: "SynAmp", targets: ["SynAmp"]),
     ],
+    dependencies: [
+        // Updates (MIT): the standard Mac updater — what's new, skip, remind later.
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.0"),
+    ],
     targets: [
         // Everything that can be tested without a window: paths, settings,
         // what each piece is started with, ports, and the supervisor.
         .target(name: "SynAmpCore"),
-        .executableTarget(name: "SynAmp", dependencies: ["SynAmpCore"]),
+        .executableTarget(name: "SynAmp", dependencies: ["SynAmpCore", .product(name: "Sparkle", package: "Sparkle")]),
         .testTarget(name: "SynAmpCoreTests", dependencies: ["SynAmpCore"]),
     ]
 )
