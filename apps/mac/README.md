@@ -38,6 +38,20 @@ from appleid.apple.com → Sign-In and Security → App-Specific Passwords):
 The first real signing also asks "codesign wants to access key…": choose
 **Always Allow**.
 
+## On GitHub
+
+`.github/workflows/mac-app.yml` packages the app for **Apple Silicon and Intel**
+(macos-15 and macos-15-intel runners) whenever the Mac app changes, runs the
+Swift tests and `smoke-test.sh` (each bundled program starts; the server
+answers and serves the web app), and keeps the disk images for 14 days. For a
+version tag it adds them to the draft release. With these repository secrets it
+signs and notarizes too; without them it builds an ad-hoc test app:
+
+- `MACOS_CERT_P12` (base64 of your Developer ID Application certificate,
+  exported from Keychain Access as .p12) and `MACOS_CERT_PASSWORD`
+- `NOTARY_KEY_P8` (an App Store Connect API key, the .p8 file's text),
+  `NOTARY_KEY_ID`, `NOTARY_ISSUER`
+
 ## Not inside yet
 
 - **ffmpeg** (needs an LGPL build): without it, lighter streams are off and
@@ -46,8 +60,8 @@ The first real signing also asks "codesign wants to access key…": choose
   downloaded, singing/instruments/moods need the model made once with
   `uv run --extra convert synamp-analyze model convert` and placed in
   `~/Library/Application Support/SynAmp/models`.
-- **Intel build**: `bundle-runtime.sh` builds for the Mac it runs on; an Intel
-  build needs an Intel Mac (or a CI runner).
+- **Intel build** on your own Mac: `bundle-runtime.sh` builds for the Mac it
+  runs on, so Intel builds come from the GitHub workflow.
 
 ## Tests
 

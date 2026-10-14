@@ -1,0 +1,93 @@
+name: Mac app
+
+# Packages SynAmp for Mac for both kinds of Mac and checks the packaged app
+# works. Runs when the Mac app changes, by hand, and for a version tag (then
+# the disk images are added to that tag's draft GitHub Release).
+#
+# Signing and notarization happen only when these repository secrets exist
+# (otherwise the app is signed ad-hoc and labelled as a test build):
+#   MACOS_CERT_P12 (base64 of the Developer ID Application .p12), MACOS_CERT_PASSWORD
+#   NOTARY_KEY_P8 (App Store Connect API key, the .p8 text), NOTARY_KEY_ID, NOTARY_ISSUER
+
+on:
+  push:
+    tags: ['v[0-9]+.[0-9]+.[0-9]+', 'v[0-9]+.[0-9]+.[0-9]+-*']
+  pull_request:
+    paths: ['apps/mac/**', 'services/analyzer/pyproject.toml', 'services/analyzer/uv.lock', '.github/workflows/mac-app.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mac-app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Package for ${{ matrix.chip }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-15, chip: Apple Silicon }
+          - { runner: macos-15-intel, chip: Intel }
+    permissions:
+      contents: write   # attaching the disk image to a tag's draft release
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6, resolved 2026-10-11
+        with:
+          node-version: '22.x'
+          package-manager-cache: false
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          version: '0.12.1'
+      - name: Swift tests
+        working-directory: apps/mac
+        run: swift test
+      - name: Signing certificate (only with the secrets)
+        id: sign
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+        run: |
+          if [ -n "$MACOS_CERT_P12" ]; then
+            echo "identity=$(apps/mac/scripts/ci-keychain.sh)" >> "$GITHUB_OUTPUT"
+          else
+            echo "No signing secrets: building a test app signed ad-hoc."
+          fi
+      - name: Package
+        env:
+          SIGN_IDENTITY: ${{ steps.sign.outputs.identity }}
+        run: |
+          case "$GITHUB_REF" in refs/tags/v*) export VERSION="${GITHUB_REF_NAME#v}" ;; *) export VERSION="test-${GITHUB_SHA::7}" ;; esac
+          [ -n "$SIGN_IDENTITY" ] || unset SIGN_IDENTITY
+          apps/mac/scripts/package-app.sh | tee package.log
+          echo "DMG=$(tail -n 1 package.log)" >> "$GITHUB_ENV"
+      - name: The packaged app works
+        run: apps/mac/scripts/smoke-test.sh
+      - name: Notarize (only with the secrets and a signed app)
+        if: steps.sign.outputs.identity != ''
+        env:
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+        run: |
+          if [ -z "$NOTARY_KEY_P8" ]; then echo "No notarization secrets: skipped."; exit 0; fi
+          printf '%s' "$NOTARY_KEY_P8" > "$RUNNER_TEMP/notary.p8"
+          NOTARY_KEY="$RUNNER_TEMP/notary.p8" apps/mac/scripts/notarize.sh "$DMG"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: SynAmp-${{ matrix.runner }}
+          path: ${{ env.DMG }}
+          retention-days: 14
+      - name: Add to the tag's draft release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "$GITHUB_REF_NAME" "$DMG" --clobber || echo "No draft release for $GITHUB_REF_NAME yet (release.yml makes it)."
