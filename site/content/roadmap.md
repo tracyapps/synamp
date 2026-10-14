@@ -61,6 +61,7 @@ goal: Make SynAmp something you can set up, trust and keep up to date on your ow
 - [~] Hear a first playlist from part of your library, without waiting for all of it to be listened to
 - [~] See which version you're running, update safely, and go back if an update goes wrong
 - [~] Backups of your playlists, history and settings that have been tested by actually restoring them
+- [x] Send feedback from inside the app, reading every word before it goes
 - [ ] A public report of how well playlists work on real libraries, with every miss counted
 
 ## Playlists that scale
@@ -128,6 +129,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-10-13 — Send feedback: tell us what went wrong, what was confusing or what worked, right from the app. You choose which details go with your note (song and folder names stay out unless you tick them), read every word, then email it from your own mail app, copy it, or save it as a file. SynAmp never sends it by itself, and it still works when the server is down
 - 2026-10-13 — Fixed: a playlist preview sometimes dropped under the “What I understood” notes on the left instead of sitting in the main column
 - 2026-10-13 — Listen to these first: tick some artists, albums or songs in the Library and SynAmp listens to them before the rest of your library, so your first playlist can come from them in an hour instead of days. The Library strip shows how many are ready, and you can forget your picks at any time
 - 2026-10-13 — Library: opening an artist or album group no longer jumps the page, what’s inside a group is indented under it, the title bar and table headings stay at the top as you scroll, row buttons fit on one line, and a Full screen view spreads the Library across the whole window. Playing from the Library shows only the buttons that apply, plus “Make a smart playlist from this”

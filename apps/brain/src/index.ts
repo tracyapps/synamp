@@ -78,15 +78,20 @@ import { AUDIO_EXTENSIONS, buildImport, COMPANION_EXTENSIONS, IncomingScanner, P
 import { isSafeRelative } from "./library/naming.ts";
 import { AnalyzerControl, AnalyzerError } from "./library/analyzer.ts";
 import { firstProgress, MAX_FIRST_PICKS, pathsForIds } from "./library/first-picks.ts";
+import { DEFAULT_SUPPORT_EMAIL, installSections, problemSection, RecentProblems } from "./support/report.ts";
+import type { Facts } from "./support/report.ts";
 import { artistStats, chooseArtist, DiscographyChecker, DiscographyError, discographyReport, DiscographyStore } from "./library/discography.ts";
 import type { ArtistStat } from "./library/discography.ts";
 import { open as openFile, mkdir, rename as renameFile, unlink, stat as statFile } from "node:fs/promises";
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, statfsSync, writeFileSync } from "node:fs";
 import { randomBytes, randomUUID } from "node:crypto";
 import { posix } from "node:path";
 import type { Decision } from "./library/organise.ts";
 
 const STARTED_AT = Date.now();
+/** "Send feedback": the brain's own recent errors, in memory only, for a tester to choose to attach. */
+const recentProblems = new RecentProblems();
+recentProblems.watchConsole();
 const library = new LibrarySource(config.librarySignalsPath);
 const dataDir = dirname(config.playlistDataPath);
 const events = new EventLog(config.eventsPath || join(dataDir, "events.jsonl"));
@@ -844,7 +849,7 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // Streams are not here: <audio> cannot send a bearer token, so they carry a signed, expiring URL instead.
   const protectedPath = ["/api/v1/playlists", "/api/v1/plans", "/api/v1/library", "/api/v1/session", "/api/v1/feedback", "/api/v1/events",
     "/api/v1/lastfm", "/api/v1/listening", "/api/v1/analysis", "/api/v1/missing", "/api/v1/albums",
-    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/moodcheck", "/api/v1/lyrics", "/api/v1/favourites", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain", "/api/v1/visuals"]
+    "/api/v1/organise", "/api/v1/librarian", "/api/v1/import", "/api/v1/discography", "/api/v1/analyzer", "/api/v1/settings", "/api/v1/system", "/api/v1/spotcheck", "/api/v1/moodcheck", "/api/v1/lyrics", "/api/v1/favourites", "/api/v1/setup", "/api/v1/phone-playlists", "/api/v1/radio", "/api/v1/party-host", "/api/v1/brain", "/api/v1/visuals", "/api/v1/support"]
     .some((prefix) => path.startsWith(prefix));
   if (protectedPath && config.playlistApiToken &&
       req.headers.authorization !== `Bearer ${config.playlistApiToken}`) {
@@ -1229,6 +1234,11 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // --- this install: version, and whether an update is waiting for Build -------
   if (path === "/api/v1/system" && req.method === "GET") {
     return send(res, 200, { version: versionCheck.view(Date.now(), url.searchParams.has("fresh") ? 0 : 60_000) });
+  }
+
+  // --- "Send feedback": details a tester can read, then choose to attach -------------
+  if (path === "/api/v1/support/report" && req.method === "GET") {
+    return send(res, 200, await supportReport(url.searchParams.get("names") === "1"));
   }
 
   // --- a newer SynAmp release: check, skip a version, remind later -------------------
@@ -1704,6 +1714,56 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     default:
       return send(res, 404, { error: "not_found", path });
   }
+}
+
+/**
+ * "Send feedback": what this install is and how it's doing, in plain lines, for the
+ * tester to read before choosing to attach it. The brain never sends it anywhere.
+ * Every part is optional: one that can't be read says so instead of failing the report.
+ */
+async function supportReport(names: boolean) {
+  const now = Date.now();
+  const redaction = { musicRoots: [config.libraryPath, config.incomingPath, config.coreMusicPath], names };
+  const attempt = <T,>(read: () => T, fallback: T): T => { try { return read(); } catch { return fallback; } };
+  const disk = (label: string, folder: string) => attempt<Facts["disks"][number]>(() => {
+    const stat = statfsSync(folder);
+    const gb = (blocks: number) => Math.round((blocks * stat.bsize) / 1e8) / 10;
+    return { label, free_gb: gb(stat.bavail), total_gb: gb(stat.blocks) };
+  }, { label, free_gb: null, total_gb: null });
+  const version = versionCheck.view(now);
+  const lib = attempt(() => libraryStats(currentLibrary()), null);
+  const analysis = analysisStatus.view(now) as Record<string, unknown> & { reported: boolean; state?: string; stale?: boolean; age_ms?: number };
+  const first = attempt(() => analyzerView().first, null);
+  const facts: Facts = {
+    version: version.running ? { release: version.running.version, short: version.running.short, built_at: version.running.built_at, update_waiting: version.copy === "waiting" } : null,
+    server: { node: process.versions.node, platform: process.platform, arch: process.arch, uptime_ms: now - STARTED_AT, memory_mb: Math.round(process.memoryUsage().rss / 1e6) },
+    disks: [disk("SynAmp data folder", dataDir), disk("Music folder", config.libraryPath)],
+    navidrome: await pingCore(config.coreUrl),
+    library: lib && { tracks: lib.tracks, artists: lib.artists, albums: lib.albums, with_measurements: lib.with_measurements },
+    analysis: analysis.reported ? {
+      reported: true, state: analysis.state, stale: analysis.stale, age_ms: analysis.age_ms,
+      analyzer_version: String(analysis.analyzer_version ?? ""), host: String(analysis.host ?? ""),
+      queue: analysis.queue as Facts["analysis"]["queue"], fully_analysed: Number(analysis.fully_analysed ?? 0),
+      recent_failures: (analysis.recent_failures as Array<{ path: string; error: string }> | undefined) ?? [],
+    } : { reported: false },
+    features: {
+      access_token: !!config.playlistApiToken,
+      lyrics_lookup: attempt(() => lyricsStore.state.lookup, false),
+      lastfm: !!runtime.lastfmApiKey,
+      phone_playlists: attempt(() => phonePlaylists.view().signed_in, false),
+      update_checks: runtime.updateChecks,
+      party: !!party.party,
+      import: !!config.incomingPath,
+    },
+    first_picks: first ? { count: Number(first.count ?? 0), listened: Number(first.listened ?? 0) } : null,
+  };
+  return {
+    support_email: config.supportEmail || DEFAULT_SUPPORT_EMAIL,
+    generated_at: now,
+    names,
+    install: installSections(facts, { ...redaction, now }),
+    problems: problemSection(recentProblems.list(redaction), now),
+  };
 }
 
 const server = createServer((req, res) => {

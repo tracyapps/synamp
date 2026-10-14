@@ -14,7 +14,7 @@ acceptance evidence still required. The backlog uses the
 | B04 | Guided setup (plan first), release downloads with versions, update/roll-back rehearsal, new-version notice; "Listen to these first" puts picked songs at the front of analysis for a first playlist from part of a library | Real cold-install/resume/upgrade attempts on candidate hardware; measured time from picks to first playlist on the owner's NAS |
 | B05 | Playback fixes; browse worker; offline state backup/restore rehearsal; critical-store read/parse failures stop startup | NAS/device retest, full-system recovery, full disk/power loss, second writer and remaining optional-store audit |
 | B06 | External-service/write inventory and explicit unresolved rights | Per-artifact distribution evidence, provider/counsel/owner decisions |
-| B07 | Offline install/activation/W4 scorecard and private-record guide | Consented testers, working support route, actual attempts/check-ins and mature windows |
+| B07 | Offline install/activation/W4 scorecard and private-record guide; in-app "Send feedback" (tester reads the full report first; names opt-in; email via their own mail app, copy or save; `SUPPORT_EMAIL` sets the address) | Consented testers, working support route, actual attempts/check-ins and mature windows |
 | B08 | Draft messaging/surface map and evidence boundaries | Reviewed copy/consent implementation, actual clips and visual audit |
 | B09/B10 | Proposed offer, economics and gated distribution plan | Approved rights/offer/provider, sandbox flow and later real cohorts/channels |
 

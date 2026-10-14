@@ -97,6 +97,8 @@ jobs:
         run: node tools/player/check-updates.mjs "$RUNNER_TEMP/synamp-evidence/updates"
       - name: Listen to these first (picks, progress, forget)
         run: node tools/player/check-first-picks.mjs "$RUNNER_TEMP/synamp-evidence/first-picks"
+      - name: Send feedback (names left out, exact copy, server down)
+        run: node tools/player/check-feedback.mjs "$RUNNER_TEMP/synamp-evidence/feedback"
       - name: Playlist preview stays in the wide column
         run: node tools/player/check-describe-layout.mjs "$RUNNER_TEMP/synamp-evidence/describe-layout"
 

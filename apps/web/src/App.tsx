@@ -14,6 +14,7 @@ import MissingTracks from "./MissingTracks";
 import OrganiseLibrary from "./OrganiseLibrary";
 import DiscographyGaps from "./DiscographyGaps";
 import Settings from "./Settings";
+import Feedback from "./Feedback";
 import { UpdateAvailable, UpdateNotice, VersionBadge } from "./Updates";
 import SpotCheck from "./SpotCheck";
 import MoodCheck from "./MoodCheck";
@@ -44,7 +45,7 @@ const Galaxy = lazy(() => import("./Galaxy"));
  * so the browser's Back button and bookmarks work.
  */
 
-type ScreenId = "library" | "galaxy" | "playlists" | "radio" | "party" | "care" | "brain" | "anywhere" | "settings";
+type ScreenId = "library" | "galaxy" | "playlists" | "radio" | "party" | "care" | "brain" | "anywhere" | "settings" | "feedback";
 const NAV: Array<{ group: string; items: Array<{ id: ScreenId; label: string; icon: IconName }> }> = [
   { group: "Listen", items: [
     { id: "library", label: "Library", icon: "library" },
@@ -60,6 +61,7 @@ const NAV: Array<{ group: string; items: Array<{ id: ScreenId; label: string; ic
   { group: "System", items: [
     { id: "anywhere", label: "Listen anywhere", icon: "anywhere" },
     { id: "settings", label: "Settings", icon: "settings" },
+    { id: "feedback", label: "Send feedback", icon: "message" },
   ] },
 ];
 const SCREENS = NAV.flatMap((group) => group.items);
@@ -86,6 +88,8 @@ export default function App() {
   const openVisuals = canShowVisuals ? () => setVisuals(true) : undefined;
   const headingId = "screen-title";
   const shownScreen = useRef<ScreenId>(screen);
+  /** The screen before "Send feedback", so a report can say where the tester was. */
+  const cameFrom = useRef<ScreenId | undefined>(undefined);
   const { call, download, upload } = useMemo(() => makeApi(token), [token]);
   const libraryRoute = useLibraryRoute();
   /** The Library across the whole window: no side menu or page heading, just the list (remembered on this device). */
@@ -107,6 +111,7 @@ export default function App() {
     document.title = `${TITLES[screen]} — SynAmp`;
     // Only when the screen actually changes (not on first load, and not on React's dev-mode double run).
     if (shownScreen.current === screen) return;
+    if (screen === "feedback") cameFrom.current = shownScreen.current;
     shownScreen.current = screen;
     document.getElementById("main")?.scrollTo(0, 0);
     document.getElementById(headingId)?.focus();
@@ -211,6 +216,12 @@ export default function App() {
         <AnalysisMemory request={call} />
         <Lyrics request={call} />
         <Settings request={call} startOpen />
+      </div>;
+      break;
+    case "feedback":
+      body = <div className="screen">
+        <ScreenHead id={headingId} eyebrow="System" title="Send feedback"><p>Tell us what went wrong, what was confusing, or what worked. You choose what goes with it.</p></ScreenHead>
+        <Feedback request={call} cameFrom={cameFrom.current ? TITLES[cameFrom.current] : undefined} />
       </div>;
       break;
   }

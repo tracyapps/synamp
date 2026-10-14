@@ -64,6 +64,11 @@ export const config = {
   updateFeedUrl: env("UPDATE_FEED_URL", "https://api.github.com/repos/tracyapps/synamp/releases?per_page=30"),
   /** Largest single file accepted from the web app. */
   uploadMaxBytes: Number(env("UPLOAD_MAX_MB", "2048")) * 1024 * 1024,
+  /**
+   * Where testers' feedback goes ("Send feedback" → Email it). Empty: the app
+   * offers Copy and Save instead. Never used by the brain itself to send anything.
+   */
+  supportEmail: env("SUPPORT_EMAIL", ""),
   /** Required by the deployed app profile; optional for localhost development. */
   playlistApiToken: env("PLAYLIST_API_TOKEN", ""),
 } as const;

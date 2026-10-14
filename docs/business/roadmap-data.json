@@ -122,7 +122,7 @@
      "end": "2026-11-08",
      "detail": "Wave 1; activation ≥6/10 completed installs aged 72h; blockers <20%; five interviews; install failures retained in separate funnel.",
      "status": "at_risk",
-     "note": "Opens Oct 19; no testers, intake or support address yet."
+     "note": "Opens Oct 19; in-app Send feedback built (needs SUPPORT_EMAIL set). No testers, intake or support address yet."
     },
     {
      "id": "B07",
