@@ -1,6 +1,9 @@
 """The `voice` stage: does a song have singing or speech, and which instruments play.
 
-Model: PANNs CNN14 (Kong et al., 2020), an AudioSet sound-event tagger.
+Model: PANNs CNN14 (Kong et al., 2020), an AudioSet sound-event tagger, run
+with ONNX Runtime (small, and it runs on Apple Silicon and Intel Macs, Windows
+and Linux). The ONNX file is made once from the PyTorch checkpoint and checked
+against PyTorch before it is used (model_export.py); PyTorch isn't needed after.
 Code: the network below follows qiuqiangkong/audioset_tagging_cnn (MIT licence).
 Weights: "Cnn14_mAP=0.431.pth" from Zenodo record 3987831 (Creative Commons
 Attribution 4.0, checked 2026-10-09), downloaded once to ~/panns_data and
@@ -47,6 +50,12 @@ from .metrics import decode_mono
 CHECKPOINT_URL = "https://zenodo.org/record/3987831/files/Cnn14_mAP%3D0.431.pth?download=1"
 CHECKPOINT_NAME = "Cnn14_mAP=0.431.pth"
 CHECKPOINT_SHA256 = "0dc499e40e9761ef5ea061ffc77697697f277f6a960894903df3ada000e34b31"
+# The ONNX file the stage runs. Made from the checkpoint above by model_export.py.
+ONNX_NAME = "cnn14-0.431.onnx"
+# A published copy, once one is (SYNAMP_MODEL_URL overrides). Until then the file
+# is made on this computer: `uv run --extra convert synamp-analyze model convert`.
+ONNX_URL = os.environ.get("SYNAMP_MODEL_URL", "")
+ONNX_SHA256 = os.environ.get("SYNAMP_MODEL_SHA256", "")
 MODEL_SAMPLE_RATE = 32000
 WINDOW_S = 10.0
 MAX_WINDOWS = 30
@@ -110,7 +119,47 @@ def checkpoint_path(download: bool = True) -> Path | None:
     return path
 
 
-def _sha256(path: Path) -> str:
+def onnx_path(download: bool = True) -> Path | None:
+    """The ONNX model, when there is a checked one. None otherwise.
+
+    Checked means: it matches the published SHA-256, or it was made on this
+    computer by model_export.py, which compared it with PyTorch and noted the
+    file's SHA-256 beside it (cnn14-0.431.json)."""
+    path = model_dir() / ONNX_NAME
+    if path.is_file() and _trusted(path):
+        return path
+    if not (download and ONNX_URL and ONNX_SHA256):
+        return None
+    path.parent.mkdir(parents=True, exist_ok=True)
+    partial = path.with_name(path.name + ".part")
+    try:
+        with urllib.request.urlopen(ONNX_URL, timeout=60) as response, open(partial, "wb") as out:
+            while chunk := response.read(1 << 20):
+                out.write(chunk)
+    except OSError:
+        partial.unlink(missing_ok=True)
+        return None
+    if sha256_of(partial) != ONNX_SHA256:
+        partial.unlink(missing_ok=True)
+        return None
+    partial.replace(path)
+    return path
+
+
+def _trusted(path: Path) -> bool:
+    digest = sha256_of(path)
+    if ONNX_SHA256 and digest == ONNX_SHA256:
+        return True
+    import json
+    try:
+        note = json.loads(path.with_suffix(".json").read_text())
+    except (OSError, ValueError):
+        return False
+    return (note.get("onnx_sha256") == digest and note.get("checkpoint_sha256") == CHECKPOINT_SHA256
+            and max(note.get("checked", {}).values() or [1.0]) <= note.get("tolerance", 0))
+
+
+def sha256_of(path: Path) -> str:
     digest = hashlib.sha256()
     with open(path, "rb") as handle:
         while chunk := handle.read(1 << 20):
@@ -118,38 +167,48 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+_sha256 = sha256_of
+
+
 _AVAILABLE: bool | None = None
 
 
 def available() -> bool:
-    """Can the voice stage run here (libraries installed, weights present or downloadable)?
-    Decided once per process, so an offline Mac tries the download only once."""
+    """Can the voice stage run here (ONNX Runtime installed, a checked model present or downloadable)?
+    Decided once per process, so an offline computer tries the download only once."""
     global _AVAILABLE
     if _AVAILABLE is None:
         try:
-            import torch  # noqa: F401
-            import torchlibrosa  # noqa: F401
-            _AVAILABLE = checkpoint_path() is not None
+            import onnxruntime  # noqa: F401
+            _AVAILABLE = onnx_path() is not None
         except ImportError:
             _AVAILABLE = False
     return _AVAILABLE
 
 
-_MODEL = None
+_SESSION = None
 
 
-def _model():
-    """Load CNN14 once per process (about 330 MB)."""
-    global _MODEL
-    if _MODEL is None:
-        import torch
-        torch.set_num_threads(max(1, min(2, os.cpu_count() or 1)))  # several processes share the Mac
-        model = _cnn14()
-        state = torch.load(str(checkpoint_path()), map_location="cpu", weights_only=False)
-        model.load_state_dict(state["model"])
-        model.eval()
-        _MODEL = model
-    return _MODEL
+def _session():
+    """Load the ONNX model once per process (about 330 MB)."""
+    global _SESSION
+    if _SESSION is None:
+        import onnxruntime as ort
+        options = ort.SessionOptions()
+        options.intra_op_num_threads = max(1, min(2, os.cpu_count() or 1))  # several processes share the computer
+        options.inter_op_num_threads = 1
+        _SESSION = ort.InferenceSession(str(onnx_path()), options, providers=["CPUExecutionProvider"])
+    return _SESSION
+
+
+def torch_model():
+    """CNN14 in PyTorch from the checkpoint: only for making and checking the ONNX file."""
+    import torch
+    model = _cnn14()
+    state = torch.load(str(checkpoint_path()), map_location="cpu", weights_only=False)
+    model.load_state_dict(state["model"])
+    model.eval()
+    return model
 
 
 def _cnn14():
@@ -232,10 +291,8 @@ def summarise(clipwise: np.ndarray) -> dict[str, object]:
 
 def _infer(batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """CNN14 on a batch of windows → (windows × 527) probabilities and (windows × 2048) embeddings."""
-    import torch
-    with torch.no_grad():
-        clipwise, embedding = _model()(torch.from_numpy(batch))
-        return clipwise.numpy(), embedding.numpy()
+    clipwise, embedding = _session().run(None, {"audio": np.ascontiguousarray(batch, dtype=np.float32)})
+    return clipwise, embedding
 
 
 def _projection() -> np.ndarray:

@@ -25,11 +25,17 @@ dependencies = [
 
 # Model-backed stages are opt-in extras, so the default install stays inside D6:
 #   listen (voice stage: singing/speech + instruments, listen.py)
+#     onnxruntime ... MIT. Runs the model on Apple Silicon and Intel Macs,
+#                     Windows and Linux. Intel Macs: the last build for them is
+#                     1.23.x (macOS 13 or newer, Python 3.11–3.13), so it's
+#                     pinned there; everywhere else gets a current one.
+#     weights ....... PANNs CNN14 (Zenodo 3987831), as an ONNX file in
+#                     ~/panns_data made by `model convert` (below). Weights
+#                     licence and AudioSet terms NOT yet confirmed: private,
+#                     owner-only use until they are; not redistributed yet.
+#   convert (makes that ONNX file once from the PyTorch checkpoint, model_export.py)
 #     torch ......... BSD-3-Clause      torchlibrosa .. MIT      librosa .. ISC
-#     weights ....... PANNs CNN14 (Zenodo 3987831), downloaded at first use to
-#                     ~/panns_data and checked by SHA-256. Weights licence and
-#                     AudioSet terms NOT yet confirmed: private, owner-only use
-#                     until they are; never bundled or redistributed.
+#     onnx .......... Apache-2.0
 # Still to triage:
 #   audio embeddings .... a permissively-licensed encoder (non-commercial
 #                         weights like MERT/MuQ may only ever be a private,
@@ -42,8 +48,15 @@ dev = [
     "pytest>=8.0",
 ]
 listen = [
+    "onnxruntime>=1.23,<1.24; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "onnxruntime>=1.24; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+]
+convert = [
     "torch>=2.4",
     "torchlibrosa>=0.1.0",
+    "onnx>=1.17",
+    "onnxruntime>=1.23,<1.24; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "onnxruntime>=1.24; sys_platform != 'darwin' or platform_machine != 'x86_64'",
 ]
 
 [project.scripts]
