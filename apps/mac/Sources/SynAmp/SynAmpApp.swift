@@ -209,7 +209,10 @@ final class AppModel: ObservableObject {
         settings = engine.settings
         loginItem = LoginItem.apply(startAtLogin)
         await engine.start()
-        if case .running = engine.status { open() }
+        if case .running = engine.status {
+            open()
+            await engine.startListening()  // a new library: start listening to it straight away
+        }
     }
 
     func restart() async {

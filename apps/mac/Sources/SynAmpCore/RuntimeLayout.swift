@@ -28,15 +28,19 @@ public struct RuntimeLayout: Sendable, Equatable {
     }
 
     /// Inside the finished app.
-    public static func bundled(resources: URL) -> RuntimeLayout {
+    public static func bundled(resources: URL, fileManager: FileManager = .default) -> RuntimeLayout {
         let runtime = resources.appendingPathComponent("runtime", isDirectory: true)
+        // ffmpeg isn't bundled yet (it needs an LGPL build): without it, lighter
+        // streams are off and phone apps get the original files.
+        let ffmpeg = runtime.appendingPathComponent("ffmpeg", isDirectory: true)
+        let hasFfmpeg = fileManager.isExecutableFile(atPath: ffmpeg.appendingPathComponent("ffmpeg").path)
         return RuntimeLayout(
             node: runtime.appendingPathComponent("node/bin/node"),
             brain: runtime.appendingPathComponent("brain", isDirectory: true),
             web: runtime.appendingPathComponent("web", isDirectory: true),
             navidrome: runtime.appendingPathComponent("navidrome/navidrome"),
             python: runtime.appendingPathComponent("python/bin/python3"),
-            ffmpegFolder: runtime.appendingPathComponent("ffmpeg", isDirectory: true),
+            ffmpegFolder: hasFfmpeg ? ffmpeg : nil,
             buildInfo: runtime.appendingPathComponent("build.json")
         )
     }

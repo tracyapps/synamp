@@ -130,6 +130,22 @@ public final class Engine: @unchecked Sendable {
         }
     }
 
+    /// Start listening to the whole library (after the first run): find the
+    /// songs, then listen to them. The same as "Start analysis" in the app.
+    public func startListening() async {
+        guard let plan else { return }
+        for action in ["update", "analyze"] {
+            var request = URLRequest(url: plan.localURL.appendingPathComponent("api/v1/analyzer/request"))
+            request.httpMethod = "POST"
+            request.timeoutInterval = 10
+            request.setValue("Bearer \(plan.token)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try? JSONSerialization.data(withJSONObject: ["action": action])
+            let code = ((try? await URLSession.shared.data(for: request))?.1 as? HTTPURLResponse)?.statusCode
+            note("asked listening to \(action): \(code.map(String.init) ?? "no answer")")
+        }
+    }
+
     /// Stop every piece (Quit, or before changing the music folder).
     public func stop() async {
         guard let supervisor = lock.withLock({ self.supervisor }) else {

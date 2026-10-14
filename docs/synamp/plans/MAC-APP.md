@@ -125,6 +125,15 @@ behaviour as the NAS notice: skip a version, remind later, turn checks off.
    running after a force quit or crash are stopped at the next start (only
    if they're still the same program). Done October 14.
 5. **Packaging**: bundled runtimes, signing, notarization, a DMG.
+   Scripts done October 14 (`apps/mac/README.md`): Node 22.23.3, Python 3.12.15
+   (python-build-standalone 20261003) with the locked analyzer requirements,
+   Navidrome 0.64.2, the built web app and build.json; app 439 MB, DMG 139 MB
+   (Apple Silicon). Tried ad-hoc signed on the owner's Mac: every piece ran
+   from inside the app (no Homebrew Node, no repo), listening ran all five
+   stages including ONNX voice, Quit left nothing running. Developer ID
+   signing and notarization need the owner at the keyboard once (Keychain
+   prompt; `notarytool store-credentials`). After the first run, listening
+   starts by itself (update + analyze).
 6. **First run, menu bar, start at login, sleep, updates** (G2). Start at
    login (SMAppService, the menu's "Start at login", with a link to System
    Settings when macOS wants approval) and keep-awake done October 14: the
