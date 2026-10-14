@@ -23,6 +23,9 @@ public final class Engine: @unchecked Sendable {
     private var _status: Status
     private var _settings: AppSettings
     private var _plan: LaunchPlan?
+    private var watcher: ActivityWatcher?
+    /// Keeps the Mac awake while SynAmp is busy (when the setting allows).
+    public let keepAwake: KeepAwake
 
     /// Told about every status change (on a background queue).
     public var onStatus: (@Sendable (Status) -> Void)?
@@ -30,7 +33,8 @@ public final class Engine: @unchecked Sendable {
     public var onPiece: (@Sendable (String, Supervisor.State) -> Void)?
 
     public init(paths: AppPaths, layout: RuntimeLayout, tokens: TokenStore,
-                isFree: @escaping (Int) -> Bool = { Ports.isFree($0) }) {
+                isFree: @escaping (Int) -> Bool = { Ports.isFree($0) }, keepAwake: KeepAwake = KeepAwake()) {
+        self.keepAwake = keepAwake
         self.paths = paths
         self.layout = layout
         self.tokens = tokens
@@ -71,6 +75,9 @@ public final class Engine: @unchecked Sendable {
         try paths.create()
         try next.save(to: paths.settingsFile)
         lock.withLock { _settings = next }
+        // Turning "keep awake" off lets the Mac sleep straight away.
+        if !next.preventSleep { keepAwake.update(busy: false, allowed: false) }
+        else if let watcher = lock.withLock({ self.watcher }) { Task { await watcher.check() } }
         if case .needsSetup = status, next.isSetUp { set(.stopped) }
     }
 
@@ -114,6 +121,10 @@ public final class Engine: @unchecked Sendable {
             lock.withLock { self.supervisor = supervisor }
             try await supervisor.start()
             set(.running(plan.localURL))
+            let watcher = ActivityWatcher(fetch: ActivityWatcher.http(base: plan.localURL, token: plan.token),
+                                          keepAwake: keepAwake, allowed: { [weak self] in self?.settings.preventSleep ?? false })
+            lock.withLock { self.watcher = watcher }
+            watcher.start()
         } catch {
             set(.problem(String(describing: error)))
         }
@@ -126,6 +137,8 @@ public final class Engine: @unchecked Sendable {
             return
         }
         set(.stopping)
+        lock.withLock { self.watcher }?.stop()
+        lock.withLock { self.watcher = nil }
         await supervisor.stop()
         LeftoverProcesses(file: paths.runningFile).clear()
         lock.withLock { self.supervisor = nil }

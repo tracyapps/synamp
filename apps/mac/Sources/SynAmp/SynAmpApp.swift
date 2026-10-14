@@ -81,6 +81,8 @@ final class AppModel: ObservableObject {
     let engine: Engine
     @Published var status: Engine.Status
     @Published var pieces: [String: Supervisor.State] = [:]
+    @Published var loginItem: LoginItem.State = LoginItem.state
+    @Published var settings: AppSettings
     private var firstRunWindow: NSWindow?
     private var mainWindow: MainWindowController?
 
@@ -103,6 +105,7 @@ final class AppModel: ObservableObject {
             ? KeychainTokenStore() : FileTokenStore(file: paths.support.appendingPathComponent("dev-token"))
         engine = Engine(paths: paths, layout: layout, tokens: tokens)
         status = engine.status
+        settings = engine.settings
         engine.onStatus = { status in Task { @MainActor in AppModel.shared.status = status } }
         engine.onPiece = { name, state in Task { @MainActor in AppModel.shared.pieces[name] = state } }
     }
@@ -126,7 +129,22 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// Start at login / keep awake, from the menu.
+    func setStartAtLogin(_ on: Bool) {
+        try? engine.update { $0.startAtLogin = on }
+        settings = engine.settings
+        loginItem = LoginItem.apply(on)
+        engine.note("start at login: \(loginItem)")
+    }
+
+    func setKeepAwake(_ on: Bool) {
+        try? engine.update { $0.preventSleep = on }
+        settings = engine.settings
+    }
+
     func launch() async {
+        // Keep the login item matching the setting (it can be changed in System Settings too).
+        if engine.settings.isSetUp { loginItem = LoginItem.apply(engine.settings.startAtLogin) }
         if case .needsSetup = engine.status {
             showFirstRun()
             return
@@ -188,6 +206,8 @@ final class AppModel: ObservableObject {
             return
         }
         closeFirstRun()
+        settings = engine.settings
+        loginItem = LoginItem.apply(startAtLogin)
         await engine.start()
         if case .running = engine.status { open() }
     }
@@ -216,6 +236,14 @@ struct MenuContent: View {
         if case .problem = model.status {
             Button("Try again") { Task { await model.restart() } }
         }
+        Divider()
+        Toggle("Start at login", isOn: Binding(get: { model.settings.startAtLogin }, set: { model.setStartAtLogin($0) }))
+        if case .needsApproval = model.loginItem {
+            Button("Allow in System Settings…") {
+                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension")!)
+            }
+        }
+        Toggle("Keep this Mac awake while SynAmp works", isOn: Binding(get: { model.settings.preventSleep }, set: { model.setKeepAwake($0) }))
         Divider()
         Button("Show logs") {
             NSWorkspace.shared.open(model.engine.paths.logs)

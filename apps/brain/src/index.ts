@@ -79,6 +79,7 @@ import { isSafeRelative } from "./library/naming.ts";
 import { AnalyzerControl, AnalyzerError } from "./library/analyzer.ts";
 import { firstProgress, MAX_FIRST_PICKS, pathsForIds } from "./library/first-picks.ts";
 import { serveWeb } from "./web-files.ts";
+import { activity, isStreamRequest } from "./system/activity.ts";
 import { DEFAULT_SUPPORT_EMAIL, installSections, problemSection, RecentProblems } from "./support/report.ts";
 import type { Facts } from "./support/report.ts";
 import { artistStats, chooseArtist, DiscographyChecker, DiscographyError, discographyReport, DiscographyStore } from "./library/discography.ts";
@@ -388,6 +389,8 @@ function recordCaptured(plays: CapturedPlay[]): void {
   }
   afterEvents(added);
 }
+/** When a phone app last asked for audio through SynAmp (for /system/activity). */
+let lastStreamAt: number | null = null;
 const subsonic = createSubsonicProxy({ coreUrl: config.coreUrl, onPlays: recordCaptured });
 
 function callbackBase(req: IncomingMessage): string {
@@ -834,7 +837,10 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const path = url.pathname.replace(/\/+$/, "") || "/";
 
   // Subsonic apps: forwarded to the library core as-is; Navidrome does the auth.
-  if (url.pathname.startsWith("/rest/")) return subsonic(req, res);
+  if (url.pathname.startsWith("/rest/")) {
+    if (isStreamRequest(url.pathname)) lastStreamAt = Date.now();
+    return subsonic(req, res);
+  }
 
   // The Last.fm sign-in callback is a browser navigation, so it carries no bearer token.
   // The one-time state nonce issued by /lastfm/connect is what authorises it.
@@ -1240,6 +1246,13 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   // --- "Send feedback": details a tester can read, then choose to attach -------------
   if (path === "/api/v1/support/report" && req.method === "GET") {
     return send(res, 200, await supportReport(url.searchParams.get("names") === "1"));
+  }
+
+  // --- busy right now? (the Mac app keeps the computer awake while it is) ----------
+  if (path === "/api/v1/system/activity" && req.method === "GET") {
+    const session = sessions.get();
+    const analyzer = analyzerControl.view();
+    return send(res, 200, activity({ now: Date.now(), session: { state: session.state, updated_at: session.updated_at }, lastStreamAt, analyzer }));
   }
 
   // --- a newer SynAmp release: check, skip a version, remind later -------------------
