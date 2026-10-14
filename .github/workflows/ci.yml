@@ -157,7 +157,9 @@ jobs:
 
   mac-app:
     name: Mac app core (Swift)
-    runs-on: macos-14
+    # macos-15: Xcode 16's SDK (WebKit's delegate signatures changed after Xcode 15).
+    # The app itself still runs on macOS 14.
+    runs-on: macos-15
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

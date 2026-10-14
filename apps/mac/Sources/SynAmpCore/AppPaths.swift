@@ -22,6 +22,8 @@ public struct AppPaths: Sendable, Equatable {
     }
 
     public var settingsFile: URL { support.appendingPathComponent("settings.json") }
+    /// Which programs SynAmp has running (to stop leftovers after a crash).
+    public var runningFile: URL { support.appendingPathComponent("running.json") }
     public var brain: URL { support.appendingPathComponent("brain", isDirectory: true) }
     public var librarian: URL { support.appendingPathComponent("librarian", isDirectory: true) }
     public var navidrome: URL { support.appendingPathComponent("navidrome", isDirectory: true) }

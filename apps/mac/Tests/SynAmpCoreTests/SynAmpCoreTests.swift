@@ -277,6 +277,69 @@ final class EngineTests: XCTestCase {
     }
 }
 
+final class FileTokenTests: XCTestCase {
+    func testKeptInAPrivateFile() throws {
+        let file = try temporaryFolder().appendingPathComponent("support/dev-token")
+        let store = FileTokenStore(file: file)
+        XCTAssertNil(store.read())
+        let token = try store.tokenCreatingIfNeeded()
+        XCTAssertEqual(store.read(), token)
+        let mode = try FileManager.default.attributesOfItem(atPath: file.path)[.posixPermissions] as? NSNumber
+        XCTAssertEqual(mode?.intValue, 0o600)
+    }
+}
+
+final class LeftoverTests: XCTestCase {
+    func testStopsOnlyTheSameProgramStillRunning() throws {
+        let file = try temporaryFolder().appendingPathComponent("running.json")
+        var alive: [Int32: String] = [101: "/app/node", 102: "/usr/bin/other", 103: "/app/navidrome"]
+        var signals: [(Int32, Int32)] = []
+        let store = LeftoverProcesses(file: file, pathOf: { alive[$0] }, signal: { pid, sig in
+            signals.append((pid, sig))
+            if sig == SIGTERM && pid != 103 { alive[pid] = nil }  // navidrome ignores the polite request
+        })
+        store.record(["brain": .init(pid: 101, path: "/app/node"),
+                      "listening": .init(pid: 102, path: "/app/python"),  // that ID is now another program
+                      "navidrome": .init(pid: 103, path: "/app/navidrome"),
+                      "librarian": .init(pid: 104, path: "/app/node")])  // already gone
+        XCTAssertEqual(store.stopLeftovers(wait: 0.3), ["brain", "navidrome"])
+        XCTAssertFalse(signals.contains { $0.0 == 102 }, "never touches a program that isn't SynAmp's")
+        XCTAssertTrue(signals.contains { $0 == (103, SIGKILL) }, "insists after the wait")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+        XCTAssertEqual(store.stopLeftovers(), [], "nothing recorded: nothing to do")
+    }
+
+    func testARealLeftoverIsStopped() throws {
+        let file = try temporaryFolder().appendingPathComponent("running.json")
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/bin/sleep")
+        process.arguments = ["30"]
+        try process.run()
+        let store = LeftoverProcesses(file: file)
+        store.record(["sleepy": .init(pid: process.processIdentifier, path: LeftoverProcesses.programPath(process.processIdentifier) ?? "")])
+        XCTAssertEqual(store.stopLeftovers(), ["sleepy"])
+        process.waitUntilExit()
+        XCTAssertFalse(process.isRunning)
+    }
+}
+
+final class DownloadNameTests: XCTestCase {
+    func testNeverOverwrites() {
+        let folder = URL(fileURLWithPath: "/Users/x/Downloads")
+        let taken: Set<String> = ["/Users/x/Downloads/report.txt", "/Users/x/Downloads/report 2.txt"]
+        XCTAssertEqual(DownloadNames.free(for: "report.txt", in: folder, exists: { taken.contains($0) }).lastPathComponent, "report 3.txt")
+        XCTAssertEqual(DownloadNames.free(for: "new.csv", in: folder, exists: { taken.contains($0) }).lastPathComponent, "new.csv")
+    }
+
+    func testOnlyAFileName() {
+        let folder = URL(fileURLWithPath: "/Users/x/Downloads")
+        let none: (String) -> Bool = { _ in false }
+        XCTAssertEqual(DownloadNames.free(for: "../../etc/passwd", in: folder, exists: none).deletingLastPathComponent().path, "/Users/x/Downloads")
+        XCTAssertEqual(DownloadNames.free(for: ".hidden", in: folder, exists: none).lastPathComponent, "hidden")
+        XCTAssertEqual(DownloadNames.free(for: "  ", in: folder, exists: none).lastPathComponent, "SynAmp download")
+    }
+}
+
 // MARK: - helpers
 
 func temporaryFolder() throws -> URL {

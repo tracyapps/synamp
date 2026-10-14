@@ -67,6 +67,16 @@ public final class Supervisor: @unchecked Sendable {
 
     public func state(of name: String) -> State { queue.sync { states[name] ?? .stopped } }
     public var allStates: [String: State] { queue.sync { states } }
+    /// The programs running now: name → (process ID, program path).
+    public var runningProcesses: [String: LeftoverProcesses.Entry] {
+        queue.sync {
+            running.compactMapValues { item in
+                item.process.isRunning
+                    ? LeftoverProcesses.Entry(pid: item.process.processIdentifier, path: item.process.executableURL?.path ?? "")
+                    : nil
+            }
+        }
+    }
 
     /// Start every piece in order, each one ready before the next. Throws (and
     /// stops what did start) if one can't be started or never answers.

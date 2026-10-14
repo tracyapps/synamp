@@ -100,11 +100,15 @@ public final class Engine: @unchecked Sendable {
         }
         guard settings.isSetUp else { set(.needsSetup); return }
         set(.starting)
+        let leftovers = LeftoverProcesses(file: paths.runningFile)
+        let stopped = leftovers.stopLeftovers()
+        if !stopped.isEmpty { note("stopped leftovers from last time: \(stopped.joined(separator: ", "))") }
         do {
             let plan = try prepare()
             let supervisor = Supervisor(specs: try plan.services(), logURL: { [paths] in paths.log(for: $0.name) })
-            supervisor.onChange = { [weak self] name, state in
+            supervisor.onChange = { [weak self, weak supervisor] name, state in
                 self?.note("\(name): \(state)")
+                if state == .running, let supervisor { leftovers.record(supervisor.runningProcesses) }
                 self?.onPiece?(name, state)
             }
             lock.withLock { self.supervisor = supervisor }
@@ -117,9 +121,13 @@ public final class Engine: @unchecked Sendable {
 
     /// Stop every piece (Quit, or before changing the music folder).
     public func stop() async {
-        guard let supervisor = lock.withLock({ self.supervisor }) else { return }
+        guard let supervisor = lock.withLock({ self.supervisor }) else {
+            note("stop: nothing running")
+            return
+        }
         set(.stopping)
         await supervisor.stop()
+        LeftoverProcesses(file: paths.runningFile).clear()
         lock.withLock { self.supervisor = nil }
         set(.stopped)
     }
