@@ -38,6 +38,14 @@ if [ -d "$runtime" ]; then
   done
   count=$(find "$runtime" -type f \( -name '*.so' -o -name '*.dylib' -o -perm -u+x \) | wc -l | tr -d ' ')
 fi
+# Sparkle's own programs, then the framework.
+fw="$app/Contents/Frameworks/Sparkle.framework"
+if [ -d "$fw" ]; then
+  for part in "$fw/Versions/B/Autoupdate" "$fw/Versions/B/Updater.app"; do
+    [ -e "$part" ] && sign "$part"
+  done
+  sign "$fw"
+fi
 sign "$app"
 codesign --verify --deep --strict "$app"
 echo "signed $app ($count files inside) as ${identity}"

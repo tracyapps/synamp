@@ -85,6 +85,7 @@ final class AppModel: ObservableObject {
     @Published var settings: AppSettings
     private var firstRunWindow: NSWindow?
     private var mainWindow: MainWindowController?
+    let updates = Updates()
 
     private init() {
         let layout: RuntimeLayout
@@ -248,6 +249,9 @@ struct MenuContent: View {
         }
         Toggle("Keep this Mac awake while SynAmp works", isOn: Binding(get: { model.settings.preventSleep }, set: { model.setKeepAwake($0) }))
         Divider()
+        if model.updates.available {
+            Button("Check for updates…") { model.updates.checkNow() }
+        }
         Button("Show logs") {
             NSWorkspace.shared.open(model.engine.paths.logs)
         }

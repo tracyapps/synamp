@@ -143,6 +143,12 @@ behaviour as the NAS notice: skip a version, remind later, turn checks off.
    PreventUserIdleSystemSleep assertion only then (the display may still sleep).
    Seen on the owner's Mac: "SynAmp is listening to your library" in
    `pmset -g assertions` while analysing, gone after Quit.
+   Updates done October 14: Sparkle 2.10.0 (SwiftPM; framework in
+   Contents/Frameworks, XPC helpers removed as the app isn't sandboxed), a feed
+   per chip at releases/latest/download/appcast-<chip>.xml, made and signed by
+   scripts/make-appcast.sh (CI does it for a tag when SPARKLE_PRIVATE_KEY
+   exists). The app checks daily only when it carries a valid public key, and
+   the menu offers "Check for updates…" then.
 
 ## Open questions
 
