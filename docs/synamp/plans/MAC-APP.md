@@ -125,7 +125,15 @@ behaviour as the NAS notice: skip a version, remind later, turn checks off.
    running after a force quit or crash are stopped at the next start (only
    if they're still the same program). Done October 14.
 5. **Packaging**: bundled runtimes, signing, notarization, a DMG.
-6. **First run, menu bar, start at login, sleep, updates** (G2).
+6. **First run, menu bar, start at login, sleep, updates** (G2). Start at
+   login (SMAppService, the menu's "Start at login", with a link to System
+   Settings when macOS wants approval) and keep-awake done October 14: the
+   brain's `GET /api/v1/system/activity` says whether SynAmp is playing,
+   streaming to a phone (a /rest/stream in the last 10 min) or listening to the
+   library; the app asks every minute and holds an IOKit
+   PreventUserIdleSystemSleep assertion only then (the display may still sleep).
+   Seen on the owner's Mac: "SynAmp is listening to your library" in
+   `pmset -g assertions` while analysing, gone after Quit.
 
 ## Open questions
 
