@@ -47,6 +47,24 @@ public enum KeychainError: Error, Equatable {
     case status(OSStatus)
 }
 
+/// For trying the app from a checkout: the token in a file only this user can
+/// read. (An unsigned development build gets a new identity each time it's
+/// built, so the Keychain would ask "allow access?" after every build.)
+public struct FileTokenStore: TokenStore {
+    public let file: URL
+    public init(file: URL) { self.file = file }
+
+    public func read() -> String? {
+        (try? String(contentsOf: file, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    public func write(_ token: String) throws {
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(token.utf8).write(to: file, options: [.atomic])
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+    }
+}
+
 /// For tests and previews: a token kept in memory.
 public final class MemoryTokenStore: TokenStore, @unchecked Sendable {
     private var token: String?

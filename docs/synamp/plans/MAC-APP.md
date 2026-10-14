@@ -118,8 +118,14 @@ behaviour as the NAS notice: skip a version, remind later, turn checks off.
    order in 2 s, the web app loaded from the brain, Navidrome scanned the folder
    in 16 s, listening ran every stage including singing/instruments (ONNX), and
    Quit stopped everything newest-first in about a second.
-4. **Packaging**: bundled runtimes, signing, notarization, a DMG.
-5. **First run, menu bar, start at login, sleep, updates** (G2).
+4. **SynAmp's own window** (a WebKit view): music keeps playing when it's
+   closed; links to other sites open in the browser; file pickers and
+   downloads work; the token goes into the page before its scripts run.
+   Quit (menu, ⌘Q, logout or `kill`) stops every piece first; programs left
+   running after a force quit or crash are stopped at the next start (only
+   if they're still the same program). Done October 14.
+5. **Packaging**: bundled runtimes, signing, notarization, a DMG.
+6. **First run, menu bar, start at login, sleep, updates** (G2).
 
 ## Open questions
 
@@ -135,6 +141,6 @@ behaviour as the NAS notice: skip a version, remind later, turn checks off.
 - **Where new music lands** (`incoming/`): on the NAS it's a folder beside
   `library/`. In the app, likely `SynAmp Incoming` beside the chosen folder;
   decide with the first-run design.
-- **One window or the browser:** the plan is the app's own window (a WebKit
-  view of the web app) with "Open in browser" in the menu. Check that audio
-  keeps playing with the window closed.
+- **One window or the browser:** decided — the app's own window, with "Open in
+  browser" in the menu. Still to check by ear: audio keeps playing with the
+  window closed (the page stays loaded, so it should).

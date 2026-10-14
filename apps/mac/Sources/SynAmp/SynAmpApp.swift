@@ -22,17 +22,55 @@ struct SynAmpApp: App {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var signalSources: [DispatchSourceSignal] = []
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // `kill` or a logout's stop request: quit properly, so every piece stops too.
+        for sig in [SIGTERM, SIGINT, SIGHUP] {
+            // An empty handler, not "ignore": an ignored signal would be passed on to
+            // every program SynAmp starts, and they'd then ignore Quit's stop request too.
+            signal(sig) { _ in }
+            let source = DispatchSource.makeSignalSource(signal: sig, queue: .main)
+            source.setEventHandler {
+                AppModel.shared.engine.note("asked to quit (signal \(sig))")
+                NSApp.terminate(nil)
+            }
+            source.resume()
+            signalSources.append(source)
+        }
         Task { await AppModel.shared.launch() }
     }
 
+    /// Clicking SynAmp in the Dock (or opening it again) brings the window back.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        Task { @MainActor in AppModel.shared.open() }
+        return true
+    }
+
     /// Quit stops every piece first (the librarian may need a moment to finish).
+    /// Set once every piece has stopped, so the second request goes through.
+    private var piecesStopped = false
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        Task {
-            await AppModel.shared.engine.stop()
-            await MainActor.run { NSApp.reply(toApplicationShouldTerminate: true) }
+        if piecesStopped { return .terminateNow }
+        let engine = AppModel.shared.engine
+        engine.note("quitting: stopping every piece")
+        // Stop on a thread of its own (the librarian may need a while to finish a
+        // batch), then quit for real. Waiting here instead would freeze the menu.
+        Thread.detachNewThread { [weak self] in
+            let done = DispatchSemaphore(value: 0)
+            Task.detached {
+                await engine.stop()
+                done.signal()
+            }
+            done.wait()
+            engine.note("quitting: all stopped")
+            DispatchQueue.main.async {
+                self?.piecesStopped = true
+                NSApp.terminate(nil)
+            }
         }
-        return .terminateLater
+        return .terminateCancel
     }
 }
 
@@ -44,6 +82,7 @@ final class AppModel: ObservableObject {
     @Published var status: Engine.Status
     @Published var pieces: [String: Supervisor.State] = [:]
     private var firstRunWindow: NSWindow?
+    private var mainWindow: MainWindowController?
 
     private init() {
         let layout: RuntimeLayout
@@ -61,7 +100,7 @@ final class AppModel: ObservableObject {
             paths = .standard()
         }
         let tokens: TokenStore = ProcessInfo.processInfo.environment["SYNAMP_DEV_SUPPORT"] == nil
-            ? KeychainTokenStore() : KeychainTokenStore(account: "access-token-dev")
+            ? KeychainTokenStore() : FileTokenStore(file: paths.support.appendingPathComponent("dev-token"))
         engine = Engine(paths: paths, layout: layout, tokens: tokens)
         status = engine.status
         engine.onStatus = { status in Task { @MainActor in AppModel.shared.status = status } }
@@ -114,8 +153,15 @@ final class AppModel: ObservableObject {
         firstRunWindow?.close()
     }
 
-    /// Open SynAmp in the browser (the app's own window comes next).
+    /// Show SynAmp in its own window.
     func open() {
+        guard let url = engine.openURL(), let token = engine.plan?.token else { return }
+        if mainWindow == nil { mainWindow = MainWindowController(note: { [engine] in engine.note($0) }) }
+        mainWindow?.show(url, token: token)
+    }
+
+    /// The same SynAmp in the default browser (it asks for nothing: the token goes along).
+    func openInBrowser() {
         guard let url = engine.openURL() else { return }
         NSWorkspace.shared.open(url)
     }
@@ -149,6 +195,8 @@ final class AppModel: ObservableObject {
     func restart() async {
         await engine.stop()
         await engine.start()
+        // The port may have changed: point the window at the new address.
+        if case .running = engine.status, let url = engine.openURL(), let token = engine.plan?.token { mainWindow?.reload(url, token: token) }
     }
 }
 
@@ -160,6 +208,7 @@ struct MenuContent: View {
         if case .running = model.status {
             Button("Open SynAmp") { model.open() }
                 .keyboardShortcut("o")
+            Button("Open in browser") { model.openInBrowser() }
         }
         if case .needsSetup = model.status {
             Button("Choose music folder…") { model.showFirstRun() }
