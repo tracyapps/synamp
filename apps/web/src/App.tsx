@@ -27,6 +27,7 @@ import ListenAnywhere from "./ListenAnywhere";
 import PlaybackSettings from "./PlaybackSettings";
 import AnalysisMemory from "./AnalysisMemory";
 import { newId } from "./ids";
+import { adoptHandedOverToken } from "./access-handoff";
 import { AccessError, makeApi } from "./api";
 import Icon from "./ui/Icon";
 import type { IconName } from "./ui/Icon";
@@ -71,6 +72,9 @@ function screenFromHash(): ScreenId {
   const id = window.location.hash.replace(/^#\/?/, "").split(/[/?]/)[0];
   return SCREENS.some((item) => item.id === id) ? (id as ScreenId) : "library";
 }
+
+// The Mac app hands the access token over in the address (see access-handoff.ts).
+adoptHandedOverToken("synamp-playlist-token");
 
 export default function App() {
   const [token, setToken] = useState(() => sessionStorage.getItem("synamp-playlist-token") ?? "");

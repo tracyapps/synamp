@@ -69,9 +69,9 @@ id: simple-install
 number: ✦
 short: Simple install
 goal: Download SynAmp, open it, and point it at your music. No Docker, no command line, and it works on whatever computer you have.
-- [~] Works on any modern computer or NAS, whatever chip is inside
-- [~] A lighter listening engine: a much smaller download, and it runs on older Intel Macs too
-- [ ] SynAmp for Mac: one app that carries everything it needs
+- [x] Works on any modern computer or NAS, whatever chip is inside
+- [x] A lighter listening engine: a much smaller download, and it runs on older Intel Macs too
+- [~] SynAmp for Mac: one app that carries everything it needs
 - [ ] A first run that asks where your music is and plays a first playlist the same day
 - [ ] Starts by itself, updates itself, and lives quietly in the menu bar
 - [ ] SynAmp for Windows
@@ -141,6 +141,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-10-14 — From the next release, SynAmp's server runs on ARM-based servers and NAS models as well as Intel and AMD ones, with nothing to choose: each server picks the right version itself
 - 2026-10-13 — A lighter listening engine: SynAmp now listens for singing and instruments without the big PyTorch download (about a fifth of the size), gives exactly the same answers, and runs on Intel Macs as well as newer ones
 - 2026-10-13 — Send feedback: tell us what went wrong, what was confusing or what worked, right from the app. You choose which details go with your note (song and folder names stay out unless you tick them), read every word, then email it from your own mail app, copy it, or save it as a file. SynAmp never sends it by itself, and it still works when the server is down
 - 2026-10-13 — Fixed: a playlist preview sometimes dropped under the “What I understood” notes on the left instead of sitting in the main column

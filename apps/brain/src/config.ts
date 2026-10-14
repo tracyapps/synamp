@@ -69,6 +69,11 @@ export const config = {
    * offers Copy and Save instead. Never used by the brain itself to send anything.
    */
   supportEmail: env("SUPPORT_EMAIL", ""),
+  /**
+   * The built web app (apps/web/dist). Set in the desktop app, where the brain is
+   * the only server; empty on the NAS, where Caddy and nginx serve it instead.
+   */
+  webRoot: env("WEB_ROOT", ""),
   /** Required by the deployed app profile; optional for localhost development. */
   playlistApiToken: env("PLAYLIST_API_TOKEN", ""),
 } as const;

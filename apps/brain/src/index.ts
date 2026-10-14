@@ -78,6 +78,7 @@ import { AUDIO_EXTENSIONS, buildImport, COMPANION_EXTENSIONS, IncomingScanner, P
 import { isSafeRelative } from "./library/naming.ts";
 import { AnalyzerControl, AnalyzerError } from "./library/analyzer.ts";
 import { firstProgress, MAX_FIRST_PICKS, pathsForIds } from "./library/first-picks.ts";
+import { serveWeb } from "./web-files.ts";
 import { DEFAULT_SUPPORT_EMAIL, installSections, problemSection, RecentProblems } from "./support/report.ts";
 import type { Facts } from "./support/report.ts";
 import { artistStats, chooseArtist, DiscographyChecker, DiscographyError, discographyReport, DiscographyStore } from "./library/discography.ts";
@@ -1712,6 +1713,8 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
       });
 
     default:
+      // The desktop app has no separate web server: the brain serves the web app too (WEB_ROOT).
+      if (serveWeb(req, res, config.webRoot, url.pathname)) return;
       return send(res, 404, { error: "not_found", path });
   }
 }
