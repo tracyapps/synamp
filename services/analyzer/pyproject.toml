@@ -33,7 +33,10 @@ dependencies = [
 #                     ~/panns_data made by `model convert` (below). Weights
 #                     licence and AudioSet terms NOT yet confirmed: private,
 #                     owner-only use until they are; not redistributed yet.
-#   convert (makes that ONNX file once from the PyTorch checkpoint, model_export.py)
+#     onnx .......... Apache-2.0. Builds that file here from the checkpoint,
+#                     without PyTorch (model_build.py), checked against
+#                     PyTorch's numbers (cnn14-reference.json).
+#   convert (the PyTorch way to make it, model_export.py; for checking)
 #     torch ......... BSD-3-Clause      torchlibrosa .. MIT      librosa .. ISC
 #     onnx .......... Apache-2.0
 # Still to triage:
@@ -50,6 +53,8 @@ dev = [
 listen = [
     "onnxruntime>=1.23,<1.24; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     "onnxruntime>=1.24; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+    # Builds the model from the checkpoint without PyTorch (model_build.py).
+    "onnx>=1.17",
 ]
 convert = [
     "torch>=2.4",
@@ -65,6 +70,10 @@ synamp-analyze = "synamp_analyzer.cli:main"
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+# PyTorch's numbers for the test sounds, to check a model built without it.
+synamp_analyzer = ["cnn14-reference.json"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

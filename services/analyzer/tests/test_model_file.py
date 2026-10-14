@@ -15,6 +15,8 @@ def model_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("SYNAMP_MODEL_DIR", str(tmp_path))
     monkeypatch.setattr(listen, "ONNX_URL", "")
     monkeypatch.setattr(listen, "ONNX_SHA256", "")
+    # Never download the 330 MB checkpoint in tests.
+    monkeypatch.setattr(listen, "checkpoint_path", lambda download=True: None)
     return tmp_path
 
 
@@ -61,4 +63,4 @@ def test_model_status_says_what_to_do(model_dir: Path, capsys: pytest.CaptureFix
     from synamp_analyzer.cli import main
     assert main(["model", "status"]) == 1
     out = capsys.readouterr().out
-    assert "model convert" in out
+    assert "model build" in out

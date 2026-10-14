@@ -130,8 +130,10 @@ behaviour as the NAS notice: skip a version, remind later, turn checks off.
   credits link its source. Confirm with the B06 rights review.
 - **The PANNs model:** bundle it, or download on first run? Depends on the
   weights licence answer (B06). Until then, the app downloads the checkpoint
-  from Zenodo and converts it — which needs PyTorch, so a published ONNX copy
-  is the realistic route once the licence allows.
+  from Zenodo and builds the ONNX model itself, without PyTorch
+  (`synamp-analyze model build`, about 10 s; checked against PyTorch's own
+  answers, largest difference 1.7e-05). A published ONNX copy would only save
+  the download size.
 - **Where new music lands** (`incoming/`): on the NAS it's a folder beside
   `library/`. In the app, likely `SynAmp Incoming` beside the chosen folder;
   decide with the first-run design.
