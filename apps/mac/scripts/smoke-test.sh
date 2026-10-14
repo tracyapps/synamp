@@ -10,9 +10,12 @@ rt="${APP:-$here/build/SynAmp.app}/Contents/Resources/runtime"
 "$rt/python/bin/python3" -c "import synamp_analyzer.cli, onnxruntime, numpy, scipy, soundfile; print('python: listening ready, onnxruntime', onnxruntime.__version__)"
 tmp=$(mktemp -d)
 mkdir -p "$tmp/music" "$tmp/data"
-( cd "$rt/brain" && WEB_ROOT="$rt/web" LIBRARY_PATH="$tmp/music" PLAYLIST_DATA_PATH="$tmp/data/playlists.json" \
-  LIBRARY_SIGNALS_PATH="$tmp/data/library-signals.json" BRAIN_PORT=38380 CORE_URL=http://127.0.0.1:1 UPDATE_CHECKS=off \
-  BUILD_INFO_PATH="$rt/build.json" "$rt/node/bin/node" --experimental-strip-types src/index.ts > "$tmp/brain.log" 2>&1 & echo $! > "$tmp/pid" )
+# exec: the background process IS node, so stopping it below leaves nothing behind.
+( cd "$rt/brain" || exit 1
+  exec env WEB_ROOT="$rt/web" LIBRARY_PATH="$tmp/music" PLAYLIST_DATA_PATH="$tmp/data/playlists.json" \
+    LIBRARY_SIGNALS_PATH="$tmp/data/library-signals.json" BRAIN_PORT=38380 CORE_URL=http://127.0.0.1:1 UPDATE_CHECKS=off \
+    BUILD_INFO_PATH="$rt/build.json" "$rt/node/bin/node" --experimental-strip-types src/index.ts > "$tmp/brain.log" 2>&1 ) &
+echo $! > "$tmp/pid"
 ok=0
 for i in $(seq 1 40); do curl -fsS http://127.0.0.1:38380/health >/dev/null 2>&1 && { ok=1; break; }; sleep 0.5; done
 web=$(curl -s -o /dev/null -w '%{http_code} %{content_type}' http://127.0.0.1:38380/ || true)
