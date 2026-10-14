@@ -4,6 +4,11 @@ October 11, 2026–January 9, 2027. Owner capacity: 20–25 hours per week acros
 development, support and business work. Commercial direction: one-time purchase
 with optional cloud services considered later.
 
+> **Plan change, October 13, 2026:** the owner chose a simple install before
+> testing with real people, and a 2027 launch. Dates below are replaced by
+> [plan-2027-simple-install.md](plan-2027-simple-install.md); gates, the quality
+> bar and the "no date moves a gate" rule still apply.
+
 ## Schedule check (October 12)
 
 Building is **ahead**; proving it with real people has **not started** and is

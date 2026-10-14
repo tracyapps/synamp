@@ -64,6 +64,18 @@ goal: Make SynAmp something you can set up, trust and keep up to date on your ow
 - [x] Send feedback from inside the app, reading every word before it goes
 - [ ] A public report of how well playlists work on real libraries, with every miss counted
 
+## One simple install
+id: simple-install
+number: ✦
+short: Simple install
+goal: Download SynAmp, open it, and point it at your music. No Docker, no command line, and it works on whatever computer you have.
+- [~] Works on any modern computer or NAS, whatever chip is inside
+- [~] A lighter listening engine: a much smaller download, and it runs on older Intel Macs too
+- [ ] SynAmp for Mac: one app that carries everything it needs
+- [ ] A first run that asks where your music is and plays a first playlist the same day
+- [ ] Starts by itself, updates itself, and lives quietly in the menu bar
+- [ ] SynAmp for Windows
+
 ## Playlists that scale
 id: playlists
 number: 2

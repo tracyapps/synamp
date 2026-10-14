@@ -22,6 +22,27 @@ Existing capabilities are inputs to the work, not proof that a launch gate is
 complete. One implementer owns each shared contract/persistence file at a time.
 The user will review/push local commits and update/test the NAS separately.
 
+## B11 Any chip, lighter listening (added Oct 13)
+
+Owner: release/analyzer lead. Oct 13–25. Feeds G0.
+
+- Release images for linux/amd64 and linux/arm64 from one tag.
+- The voice stage runs CNN14 on ONNX Runtime; PyTorch becomes a development
+  extra used only to export and compare. Accept when the exported model matches
+  PyTorch on real songs (same "has singing" answer, embeddings within tolerance)
+  and the analyzer installs on Apple Silicon, Intel macOS, Linux and Windows.
+
+## B12 SynAmp desktop app (added Oct 13)
+
+Owner: product/technical lead. Mac Oct 26 – Jan 10, Windows Jan 25 – Mar 7.
+
+- One signed app carrying the brain, Navidrome, ffmpeg and the listener; music
+  from a local folder or a mounted share; no Docker or terminal.
+- First run: choose music, plain progress, first playlist from picks; menu bar,
+  start at login, sleep handling while listening, automatic updates.
+- Accept with G1/G2 in [the 2027 plan](plan-2027-simple-install.md) and the
+  wave 1/2 install bar (≥9/10 without live help, at least half non-technical).
+
 ## B01 Establish the baseline and supported scope
 
 Owner: product/technical lead. First review October 18. No dependencies.

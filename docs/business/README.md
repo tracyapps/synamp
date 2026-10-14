@@ -11,6 +11,12 @@ commitment. The original report's December 15 window remains the fallback.
 
 ## Working documents
 
+> **Plan change, October 13, 2026:** the owner chose a simple install before
+> testing with real people, and a 2027 launch. The dates here are replaced by
+> [plan-2027-simple-install.md](plan-2027-simple-install.md); gates, the quality
+> bar and the "no date moves a gate" rule still apply.
+
+- **[The 2027 plan: a simple install first](plan-2027-simple-install.md): current schedule, gates and owner actions.**
 - **[Schedule check, October 12](status-2026-10-12.md): are we on schedule? Gate by gate, lane by lane.**
 - [Current baseline](baseline.md): candidate scope, reads/writes and evidence gaps.
 - [October 11 execution](execution-2026-10-11.md): implementation, fresh checks and next steps.
