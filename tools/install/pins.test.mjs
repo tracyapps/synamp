@@ -15,7 +15,8 @@ test('Compose images are pinned by version and fingerprint', () => {
 
 test('Dockerfile base images are pinned by version and fingerprint', () => {
   for (const file of ['apps/brain/Dockerfile', 'apps/web/Dockerfile']) {
-    const bases = [...read(file).matchAll(/^FROM\s+(\S+)/gm)].map((m) => m[1]);
+    // `--platform=$BUILDPLATFORM` (build on the build machine's chip) comes before the image.
+    const bases = [...read(file).matchAll(/^FROM\s+(?:--platform=\S+\s+)?(\S+)/gm)].map((m) => m[1]);
     assert.ok(bases.length > 0, `${file} has no FROM`);
     for (const base of bases) assert.match(base, pinned, `${file}: ${base} is not pinned`);
   }

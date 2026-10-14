@@ -178,5 +178,5 @@ jobs:
           docker run --platform linux/arm64 --rm synamp-brain:arm64 sh -c 'uname -m; ffmpeg -version | head -n 1'
           docker run --platform linux/arm64 -d --name brain-arm64 -p 3001:3001 synamp-brain:arm64
           for i in $(seq 1 60); do curl -fsS http://127.0.0.1:3001/health && break; sleep 2; done
-          curl -fsS http://127.0.0.1:3001/health | grep -q '"status":"ok"'
+          curl -fsS http://127.0.0.1:3001/health | grep -Eq '"status": *"ok"'
           docker rm -f brain-arm64
