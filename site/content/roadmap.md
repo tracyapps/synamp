@@ -141,6 +141,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-10-22 — Fixed: a song could stop partway through while the player still said Playing, and the next song never came. Now SynAmp notices within a few seconds, tries the song once more, and if it still won’t play, tells you which song and why, then moves on to the next one. If several songs in a row won’t play, it stops and asks you to check your music library instead of running through the whole playlist
 - 2026-10-14 — From the next release, SynAmp's server runs on ARM-based servers and NAS models as well as Intel and AMD ones, with nothing to choose: each server picks the right version itself
 - 2026-10-13 — A lighter listening engine: SynAmp now listens for singing and instruments without the big PyTorch download (about a fifth of the size), gives exactly the same answers, and runs on Intel Macs as well as newer ones
 - 2026-10-13 — Send feedback: tell us what went wrong, what was confusing or what worked, right from the app. You choose which details go with your note (song and folder names stay out unless you tick them), read every word, then email it from your own mail app, copy it, or save it as a file. SynAmp never sends it by itself, and it still works when the server is down

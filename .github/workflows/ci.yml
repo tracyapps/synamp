@@ -91,6 +91,8 @@ jobs:
         run: node tools/player/check-library-finder.mjs "$RUNNER_TEMP/synamp-evidence/library-finder"
       - name: Full App Library playback after artist changes
         run: node tools/player/check-library-playback.mjs "$RUNNER_TEMP/synamp-evidence/library-playback"
+      - name: A song that stops partway is reported and skipped, not stuck on "Playing"
+        run: node tools/player/check-stuck-song.mjs "$RUNNER_TEMP/synamp-evidence/stuck-song"
       - name: Library layout with the real styles (groups stay put)
         run: node tools/player/check-library-layout.mjs "$RUNNER_TEMP/synamp-evidence/library-layout"
       - name: New-version notice, skip, remind and the off switch
