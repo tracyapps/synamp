@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { galaxy, galaxyArtist, galaxyRandom } from "./galaxy.ts";
+import { galaxy, galaxyArtist, galaxyMap, galaxyRandom } from "./galaxy.ts";
 import type { Library, LibraryTrack } from "../query/evaluate.ts";
 
 const song = (id: string, artist: string, path = `${artist}/Album/${id}.mp3`, extra: Partial<LibraryTrack> = {}): LibraryTrack => ({ id, title: id, artist, path, ...extra });
@@ -44,6 +44,65 @@ test("Galaxy sort count, finite bounds and same-version independent library isol
   const other = { version: fixture.version, tracks: [song("other", "Björk")] };
   assert.equal(galaxy(other, { q: "bjork" }).nodes[0]?.name, "Björk");
   assert.throws(() => galaxyArtist(other, "missing"), { status: 404 });
+});
+
+test("Galaxy map aggregates grouping facets, averages signals, and keeps band names whole", () => {
+  const lib: Library = { version: "map-fixture", tracks: [
+    song("a1", "Astral Crew", "Astral Crew/Set/01.mp3", { genre: ["rock"], year: 1991, signals: { bpm: 100, valence: .2, arousal: .3 } }),
+    song("a2", "Astral Crew", "Astral Crew/Set/02.mp3", { genre: ["rock", "live"], year: 1993, signals: { bpm: 110, valence: .4, arousal: .5 } }),
+    song("a3", "Astral Crew", "Astral Crew/Set/03.mp3", { genre: ["rock"], year: 1993 }),
+    song("b1", "Beacon", "Beacon/Set/01.mp3", { genre: ["jazz"], year: 2004 }),
+    song("z1", "50 Blessings", "50 Blessings/Set/01.mp3", { year: 1985 }),
+    song("u1", "Untitled", "Loose.mp3"),
+  ] };
+  const map = galaxyMap(lib);
+  assert.equal(map.total_tracks, 6); assert.equal(map.version, "map-fixture");
+  const astral = map.artists.find(node => node.name === "Astral Crew")!;
+  assert.equal(astral.tracks, 3); assert.equal(astral.albums, 1);
+  assert.deepEqual(astral.genres, ["rock", "live"]);
+  assert.equal(astral.decade, 1990); assert.equal(astral.year_first, 1991); assert.equal(astral.year_last, 1993);
+  assert.equal(astral.letter, "A");
+  assert.deepEqual(astral.signals, { bpm: 105, valence: .3, arousal: .4 });
+  assert.equal(map.artists.find(node => node.name === "50 Blessings")!.letter, "#");
+  const untitled = map.artists.find(node => node.name === "Untitled")!;
+  assert.equal(untitled.decade, undefined); assert.equal(untitled.genres.length, 0); assert.equal(untitled.signals, undefined);
+});
+
+test("Galaxy map builds collaboration edges from featured credits and promotes repeat guests only", () => {
+  const lib: Library = { version: "web-fixture", tracks: [
+    song("v1", "Vela Nine", "Vela Nine/Set/01.mp3"),
+    song("c1", "Beacon feat. Vela Nine", "Beacon/Set/01.mp3"),
+    song("c2", "Beacon ft. Vela Nine & Ilo Karu", "Beacon/Set/02.mp3"),
+    song("c3", "Beacon feat. Ilo Karu", "Beacon/Set/03.mp3"),
+    song("c4", "Beacon feat. One-Hit Guest", "Beacon/Set/04.mp3"),
+    song("c5", "Beacon featuring Vela Nine (Remix)", "Beacon/Set/05.mp3"),
+    song("d1", "Deputy feat. Ilo Karu", "Deputy/Set/01.mp3"),
+  ] };
+  const map = galaxyMap(lib);
+  const beacon = map.artists.find(node => node.name === "Beacon")!;
+  const vela = map.artists.find(node => node.name === "Vela Nine")!;
+  const ilo = map.artists.find(node => node.name === "Ilo Karu");
+  const pair = (a: string, b: string) => map.edges.find(edge => (edge.a === a && edge.b === b) || (edge.a === b && edge.b === a));
+  assert.equal(pair(beacon.key, vela.key)?.tracks, 3);
+  assert.ok(ilo?.guest); assert.equal(ilo?.appearances, 3);
+  assert.equal(pair(beacon.key, ilo!.key)?.tracks, 2);
+  assert.equal(pair(map.artists.find(node => node.name === "Deputy")!.key, ilo!.key)?.tracks, 1);
+  assert.equal(map.artists.some(node => node.name === "One-Hit Guest"), false);
+  assert.equal(map.edges.some(edge => edge.a === ilo!.key && edge.b === ilo!.key), false);
+  // The planet list still reports the raw credits without inventing artists.
+  assert.equal(galaxy(lib, { q: "vela" }).nodes[0]?.name, "Beacon");
+});
+
+test("Galaxy map credits keep whole band names when the guest matches a lead artist exactly", () => {
+  const lib: Library = { version: "band-guest", tracks: [
+    song("e1", "Earth, Wind & Fire", "Earth, Wind & Fire/Set/01.mp3"),
+    song("e2", "Benson feat. Earth, Wind & Fire", "Benson/Set/01.mp3"),
+  ] };
+  const map = galaxyMap(lib);
+  const benson = map.artists.find(node => node.name === "Benson")!;
+  const ewf = map.artists.find(node => node.name === "Earth, Wind & Fire")!;
+  assert.ok(map.edges.some(edge => (edge.a === benson.key && edge.b === ewf.key) || (edge.a === ewf.key && edge.b === benson.key)));
+  assert.equal(map.artists.some(node => node.name === "Earth" || node.name === "Fire"), false);
 });
 
 test("Galaxy caps detail track payload and reports truncation while retaining full file counts", () => {

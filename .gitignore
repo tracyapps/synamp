@@ -22,6 +22,7 @@ apps/brain/data/
 design/
 # Files Claude hands over in chat (previews, renders) — kept locally, not in the repo
 Claude outputs/
+brag-output/
 
 # SynAmp for Mac (Swift package builds)
 apps/mac/.build/

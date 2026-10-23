@@ -51,6 +51,7 @@ for (const [artist, genre, base] of ARTISTS) {
       title: `${pick(WORDS)} ${pick(WORDS)}`,
       artist,
       album: albums[i < 3 ? 0 : 1],
+      path: `${artist}/${albums[i < 3 ? 0 : 1]}/${String(i + 1).padStart(2, "0")}.mp3`,
       ...(genre.length && rand() > 0.15 ? { genre } : {}),
       year: 1995 + Math.floor(rand() * 30),
       duration_s: Math.round(between(150, 420)),
@@ -80,6 +81,38 @@ for (const [artist, genre, base] of ARTISTS) {
       embedding: centre.map((value) => round(value + between(-0.35, 0.35), 3)),
     });
   }
+}
+
+// Cross-artist "feat." credits so the Galaxy web view has links to travel.
+// Two guests (Ida Marlowe, Juno Park) never lead a track of their own: repeat
+// featured credits like these join the map as small guest nodes.
+const COLLABS = [
+  ["Paper Satellites feat. Vera Okonkwo", ["indie", "jazz"]],
+  ["Marigold Unit ft. Kite Theory", ["electronic"]],
+  ["Kite Theory featuring Vera Okonkwo", ["electronic", "jazz"]],
+  ["Static Orchard feat. Northbound Choir", ["punk", "gospel"]],
+  ["The Low Fences feat. Copper Lanterns", ["folk", "lo-fi"]],
+  ["Lumen Atlas feat. Ida Marlowe", ["ambient"]],
+  ["Quiet Harbor feat. Ida Marlowe", ["ambient"]],
+  ["Glass Canal feat. Ida Marlowe & Juno Park", ["soundtrack"]],
+  ["Halftone Weather ft. Juno Park", []],
+];
+for (const [artist, genre] of COLLABS) {
+  n++;
+  tracks.push({
+    id: `sample-${String(n).padStart(3, "0")}`,
+    title: `${pick(WORDS)} ${pick(WORDS)}`,
+    artist,
+    album: "Shared Sessions",
+    path: `Collaborations/Shared Sessions/${String(n).padStart(2, "0")}.mp3`,
+    ...(genre.length ? { genre } : {}),
+    year: 1998 + Math.floor(rand() * 25),
+    duration_s: Math.round(between(160, 400)),
+    beat_status: rand() > 0.3 ? "tracked" : "insufficient_pulse_evidence",
+    timing_status: "no_reliable_grid",
+    signals: { bpm: round(between(70, 170), 1), tempo_confidence: round(between(0.4, 0.9)) },
+    embedding: Array.from({ length: 8 }, () => round(between(-1, 1), 3)),
+  });
 }
 
 const out = new URL("./library.sample.json", import.meta.url);

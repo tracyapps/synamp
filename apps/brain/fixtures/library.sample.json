@@ -6,6 +6,7 @@
    "title": "Glass Lattice",
    "artist": "Lumen Atlas",
    "album": "Morning Glass",
+   "path": "Lumen Atlas/Morning Glass/01.mp3",
    "genre": [
     "ambient",
     "electronic"
@@ -48,6 +49,7 @@
    "title": "Velvet Engine",
    "artist": "Lumen Atlas",
    "album": "Morning Glass",
+   "path": "Lumen Atlas/Morning Glass/02.mp3",
    "year": 2020,
    "duration_s": 358,
    "beat_status": "tracked",
@@ -80,6 +82,7 @@
    "title": "Engine Meridian",
    "artist": "Lumen Atlas",
    "album": "Morning Glass",
+   "path": "Lumen Atlas/Morning Glass/03.mp3",
    "genre": [
     "ambient",
     "electronic"
@@ -123,6 +126,7 @@
    "title": "Field Echo",
    "artist": "Lumen Atlas",
    "album": "Copper Sessions",
+   "path": "Lumen Atlas/Copper Sessions/04.mp3",
    "genre": [
     "ambient",
     "electronic"
@@ -166,6 +170,7 @@
    "title": "Engine Paper",
    "artist": "Lumen Atlas",
    "album": "Copper Sessions",
+   "path": "Lumen Atlas/Copper Sessions/05.mp3",
    "genre": [
     "ambient",
     "electronic"
@@ -208,6 +213,7 @@
    "title": "Echo Northern",
    "artist": "Quiet Harbor",
    "album": "Quiet Echo",
+   "path": "Quiet Harbor/Quiet Echo/01.mp3",
    "genre": [
     "ambient"
    ],
@@ -250,6 +256,7 @@
    "title": "Circuit Static",
    "artist": "Quiet Harbor",
    "album": "Quiet Echo",
+   "path": "Quiet Harbor/Quiet Echo/02.mp3",
    "year": 2005,
    "duration_s": 263,
    "beat_status": "tracked",
@@ -289,6 +296,7 @@
    "title": "Echo Signal",
    "artist": "Quiet Harbor",
    "album": "Quiet Echo",
+   "path": "Quiet Harbor/Quiet Echo/03.mp3",
    "year": 2010,
    "duration_s": 323,
    "beat_status": "insufficient_pulse_evidence",
@@ -328,6 +336,7 @@
    "title": "Engine Drift",
    "artist": "Quiet Harbor",
    "album": "Harbor Sessions",
+   "path": "Quiet Harbor/Harbor Sessions/04.mp3",
    "genre": [
     "ambient"
    ],
@@ -363,6 +372,7 @@
    "title": "Hollow Drift",
    "artist": "Quiet Harbor",
    "album": "Harbor Sessions",
+   "path": "Quiet Harbor/Harbor Sessions/05.mp3",
    "year": 2021,
    "duration_s": 171,
    "beat_status": "tracked",
@@ -401,6 +411,7 @@
    "title": "Lattice Thread",
    "artist": "Paper Satellites",
    "album": "Velvet Quiet",
+   "path": "Paper Satellites/Velvet Quiet/01.mp3",
    "genre": [
     "indie",
     "rock"
@@ -444,6 +455,7 @@
    "title": "Meridian Lanterns",
    "artist": "Paper Satellites",
    "album": "Velvet Quiet",
+   "path": "Paper Satellites/Velvet Quiet/02.mp3",
    "genre": [
     "indie",
     "rock"
@@ -487,6 +499,7 @@
    "title": "Meridian Northern",
    "artist": "Paper Satellites",
    "album": "Velvet Quiet",
+   "path": "Paper Satellites/Velvet Quiet/03.mp3",
    "genre": [
     "indie",
     "rock"
@@ -529,6 +542,7 @@
    "title": "Northern Engine",
    "artist": "Paper Satellites",
    "album": "Harbor Sessions",
+   "path": "Paper Satellites/Harbor Sessions/04.mp3",
    "genre": [
     "indie",
     "rock"
@@ -572,6 +586,7 @@
    "title": "Signal Circuit",
    "artist": "Paper Satellites",
    "album": "Harbor Sessions",
+   "path": "Paper Satellites/Harbor Sessions/05.mp3",
    "genre": [
     "indie",
     "rock"
@@ -608,6 +623,7 @@
    "title": "Circuit Glass",
    "artist": "Marigold Unit",
    "album": "Velvet Drift",
+   "path": "Marigold Unit/Velvet Drift/01.mp3",
    "genre": [
     "electronic",
     "techno"
@@ -651,6 +667,7 @@
    "title": "Engine Lattice",
    "artist": "Marigold Unit",
    "album": "Velvet Drift",
+   "path": "Marigold Unit/Velvet Drift/02.mp3",
    "genre": [
     "electronic",
     "techno"
@@ -687,6 +704,7 @@
    "title": "Orbit Velvet",
    "artist": "Marigold Unit",
    "album": "Velvet Drift",
+   "path": "Marigold Unit/Velvet Drift/03.mp3",
    "year": 2007,
    "duration_s": 274,
    "beat_status": "insufficient_pulse_evidence",
@@ -719,6 +737,7 @@
    "title": "Morning Thread",
    "artist": "Marigold Unit",
    "album": "Glass Sessions",
+   "path": "Marigold Unit/Glass Sessions/04.mp3",
    "genre": [
     "electronic",
     "techno"
@@ -761,6 +780,7 @@
    "title": "Engine Drift",
    "artist": "Marigold Unit",
    "album": "Glass Sessions",
+   "path": "Marigold Unit/Glass Sessions/05.mp3",
    "genre": [
     "electronic",
     "techno"
@@ -803,6 +823,7 @@
    "title": "Lanterns Ember",
    "artist": "The Low Fences",
    "album": "Engine Morning",
+   "path": "The Low Fences/Engine Morning/01.mp3",
    "genre": [
     "country",
     "folk"
@@ -839,6 +860,7 @@
    "title": "Static Lanterns",
    "artist": "The Low Fences",
    "album": "Engine Morning",
+   "path": "The Low Fences/Engine Morning/02.mp3",
    "genre": [
     "country",
     "folk"
@@ -881,6 +903,7 @@
    "title": "Glass Ember",
    "artist": "The Low Fences",
    "album": "Engine Morning",
+   "path": "The Low Fences/Engine Morning/03.mp3",
    "genre": [
     "country",
     "folk"
@@ -923,6 +946,7 @@
    "title": "Orbit Velvet",
    "artist": "The Low Fences",
    "album": "Drift Sessions",
+   "path": "The Low Fences/Drift Sessions/04.mp3",
    "year": 1999,
    "duration_s": 241,
    "beat_status": "tracked",
@@ -961,6 +985,7 @@
    "title": "Quiet Window",
    "artist": "The Low Fences",
    "album": "Drift Sessions",
+   "path": "The Low Fences/Drift Sessions/05.mp3",
    "genre": [
     "country",
     "folk"
@@ -1004,6 +1029,7 @@
    "title": "Lanterns Field",
    "artist": "Static Orchard",
    "album": "Meridian Harbor",
+   "path": "Static Orchard/Meridian Harbor/01.mp3",
    "genre": [
     "punk"
    ],
@@ -1046,6 +1072,7 @@
    "title": "Ember Velvet",
    "artist": "Static Orchard",
    "album": "Meridian Harbor",
+   "path": "Static Orchard/Meridian Harbor/02.mp3",
    "year": 2019,
    "duration_s": 391,
    "beat_status": "tracked",
@@ -1078,6 +1105,7 @@
    "title": "Lanterns Morning",
    "artist": "Static Orchard",
    "album": "Meridian Harbor",
+   "path": "Static Orchard/Meridian Harbor/03.mp3",
    "genre": [
     "punk"
    ],
@@ -1119,6 +1147,7 @@
    "title": "Quiet Hollow",
    "artist": "Static Orchard",
    "album": "Hollow Sessions",
+   "path": "Static Orchard/Hollow Sessions/04.mp3",
    "genre": [
     "punk"
    ],
@@ -1160,6 +1189,7 @@
    "title": "Tide Quiet",
    "artist": "Static Orchard",
    "album": "Hollow Sessions",
+   "path": "Static Orchard/Hollow Sessions/05.mp3",
    "genre": [
     "punk"
    ],
@@ -1195,6 +1225,7 @@
    "title": "Lanterns Signal",
    "artist": "Vera Okonkwo Trio",
    "album": "Tide Meridian",
+   "path": "Vera Okonkwo Trio/Tide Meridian/01.mp3",
    "genre": [
     "jazz"
    ],
@@ -1236,6 +1267,7 @@
    "title": "Hollow Signal",
    "artist": "Vera Okonkwo Trio",
    "album": "Tide Meridian",
+   "path": "Vera Okonkwo Trio/Tide Meridian/02.mp3",
    "genre": [
     "jazz"
    ],
@@ -1277,6 +1309,7 @@
    "title": "Morning Meridian",
    "artist": "Vera Okonkwo Trio",
    "album": "Tide Meridian",
+   "path": "Vera Okonkwo Trio/Tide Meridian/03.mp3",
    "genre": [
     "jazz"
    ],
@@ -1318,6 +1351,7 @@
    "title": "Circuit Velvet",
    "artist": "Vera Okonkwo Trio",
    "album": "Orbit Sessions",
+   "path": "Vera Okonkwo Trio/Orbit Sessions/04.mp3",
    "genre": [
     "jazz"
    ],
@@ -1359,6 +1393,7 @@
    "title": "Paper Window",
    "artist": "Vera Okonkwo Trio",
    "album": "Orbit Sessions",
+   "path": "Vera Okonkwo Trio/Orbit Sessions/05.mp3",
    "genre": [
     "jazz"
    ],
@@ -1401,6 +1436,7 @@
    "title": "Velvet Meridian",
    "artist": "Halftone Weather",
    "album": "Northern Signal",
+   "path": "Halftone Weather/Northern Signal/01.mp3",
    "year": 2014,
    "duration_s": 350,
    "beat_status": "insufficient_pulse_evidence",
@@ -1440,6 +1476,7 @@
    "title": "Lattice Glass",
    "artist": "Halftone Weather",
    "album": "Northern Signal",
+   "path": "Halftone Weather/Northern Signal/02.mp3",
    "year": 2005,
    "duration_s": 311,
    "beat_status": "tracked",
@@ -1472,6 +1509,7 @@
    "title": "Engine Circuit",
    "artist": "Halftone Weather",
    "album": "Northern Signal",
+   "path": "Halftone Weather/Northern Signal/03.mp3",
    "year": 2016,
    "duration_s": 324,
    "beat_status": "tracked",
@@ -1510,6 +1548,7 @@
    "title": "Morning Lanterns",
    "artist": "Halftone Weather",
    "album": "Orbit Sessions",
+   "path": "Halftone Weather/Orbit Sessions/04.mp3",
    "year": 1996,
    "duration_s": 392,
    "beat_status": "tracked",
@@ -1548,6 +1587,7 @@
    "title": "Quiet Paper",
    "artist": "Halftone Weather",
    "album": "Orbit Sessions",
+   "path": "Halftone Weather/Orbit Sessions/05.mp3",
    "year": 2022,
    "duration_s": 400,
    "beat_status": "tracked",
@@ -1587,6 +1627,7 @@
    "title": "Drift Lattice",
    "artist": "Glass Canal",
    "album": "Signal Tide",
+   "path": "Glass Canal/Signal Tide/01.mp3",
    "genre": [
     "soundtrack"
    ],
@@ -1628,6 +1669,7 @@
    "title": "Echo Engine",
    "artist": "Glass Canal",
    "album": "Signal Tide",
+   "path": "Glass Canal/Signal Tide/02.mp3",
    "genre": [
     "soundtrack"
    ],
@@ -1670,6 +1712,7 @@
    "title": "Copper Lattice",
    "artist": "Glass Canal",
    "album": "Signal Tide",
+   "path": "Glass Canal/Signal Tide/03.mp3",
    "genre": [
     "soundtrack"
    ],
@@ -1711,6 +1754,7 @@
    "title": "Paper Paper",
    "artist": "Glass Canal",
    "album": "Glass Sessions",
+   "path": "Glass Canal/Glass Sessions/04.mp3",
    "year": 2007,
    "duration_s": 364,
    "beat_status": "tracked",
@@ -1743,6 +1787,7 @@
    "title": "Hollow Glass",
    "artist": "Glass Canal",
    "album": "Glass Sessions",
+   "path": "Glass Canal/Glass Sessions/05.mp3",
    "year": 2012,
    "duration_s": 261,
    "beat_status": "tracked",
@@ -1781,6 +1826,7 @@
    "title": "Signal Northern",
    "artist": "Northbound Choir",
    "album": "Window Lanterns",
+   "path": "Northbound Choir/Window Lanterns/01.mp3",
    "genre": [
     "gospel"
    ],
@@ -1822,6 +1868,7 @@
    "title": "Morning Harbor",
    "artist": "Northbound Choir",
    "album": "Window Lanterns",
+   "path": "Northbound Choir/Window Lanterns/02.mp3",
    "genre": [
     "gospel"
    ],
@@ -1864,6 +1911,7 @@
    "title": "Circuit Circuit",
    "artist": "Northbound Choir",
    "album": "Window Lanterns",
+   "path": "Northbound Choir/Window Lanterns/03.mp3",
    "year": 2001,
    "duration_s": 157,
    "beat_status": "tracked",
@@ -1902,6 +1950,7 @@
    "title": "Northern Northern",
    "artist": "Northbound Choir",
    "album": "Meridian Sessions",
+   "path": "Northbound Choir/Meridian Sessions/04.mp3",
    "genre": [
     "gospel"
    ],
@@ -1944,6 +1993,7 @@
    "title": "Ember Hollow",
    "artist": "Northbound Choir",
    "album": "Meridian Sessions",
+   "path": "Northbound Choir/Meridian Sessions/05.mp3",
    "genre": [
     "gospel"
    ],
@@ -1986,6 +2036,7 @@
    "title": "Northern Lattice",
    "artist": "Copper Lanterns",
    "album": "Drift Northern",
+   "path": "Copper Lanterns/Drift Northern/01.mp3",
    "genre": [
     "lo-fi"
    ],
@@ -2027,6 +2078,7 @@
    "title": "Quiet Velvet",
    "artist": "Copper Lanterns",
    "album": "Drift Northern",
+   "path": "Copper Lanterns/Drift Northern/02.mp3",
    "genre": [
     "lo-fi"
    ],
@@ -2068,6 +2120,7 @@
    "title": "Hollow Thread",
    "artist": "Copper Lanterns",
    "album": "Drift Northern",
+   "path": "Copper Lanterns/Drift Northern/03.mp3",
    "genre": [
     "lo-fi"
    ],
@@ -2110,6 +2163,7 @@
    "title": "Quiet Paper",
    "artist": "Copper Lanterns",
    "album": "Harbor Sessions",
+   "path": "Copper Lanterns/Harbor Sessions/04.mp3",
    "genre": [
     "lo-fi"
    ],
@@ -2151,6 +2205,7 @@
    "title": "Northern Ember",
    "artist": "Copper Lanterns",
    "album": "Harbor Sessions",
+   "path": "Copper Lanterns/Harbor Sessions/05.mp3",
    "genre": [
     "lo-fi"
    ],
@@ -2192,6 +2247,7 @@
    "title": "Thread Hollow",
    "artist": "Kite Theory",
    "album": "Morning Static",
+   "path": "Kite Theory/Morning Static/01.mp3",
    "genre": [
     "electronic"
    ],
@@ -2227,6 +2283,7 @@
    "title": "Thread Window",
    "artist": "Kite Theory",
    "album": "Morning Static",
+   "path": "Kite Theory/Morning Static/02.mp3",
    "genre": [
     "electronic"
    ],
@@ -2268,6 +2325,7 @@
    "title": "Drift Field",
    "artist": "Kite Theory",
    "album": "Morning Static",
+   "path": "Kite Theory/Morning Static/03.mp3",
    "genre": [
     "electronic"
    ],
@@ -2309,6 +2367,7 @@
    "title": "Circuit Hollow",
    "artist": "Kite Theory",
    "album": "Window Sessions",
+   "path": "Kite Theory/Window Sessions/04.mp3",
    "year": 2007,
    "duration_s": 344,
    "beat_status": "tracked",
@@ -2348,6 +2407,7 @@
    "title": "Quiet Northern",
    "artist": "Kite Theory",
    "album": "Window Sessions",
+   "path": "Kite Theory/Window Sessions/05.mp3",
    "genre": [
     "electronic"
    ],
@@ -2383,6 +2443,259 @@
     -0.154,
     0.166,
     0
+   ]
+  },
+  {
+   "id": "sample-061",
+   "title": "Circuit Circuit",
+   "artist": "Paper Satellites feat. Vera Okonkwo",
+   "album": "Shared Sessions",
+   "path": "Collaborations/Shared Sessions/61.mp3",
+   "genre": [
+    "indie",
+    "jazz"
+   ],
+   "year": 2016,
+   "duration_s": 262,
+   "beat_status": "tracked",
+   "timing_status": "no_reliable_grid",
+   "signals": {
+    "bpm": 105.8,
+    "tempo_confidence": 0.55
+   },
+   "embedding": [
+    0.487,
+    -0.629,
+    -0.162,
+    -0.536,
+    -0.212,
+    -0.017,
+    -0.239,
+    -0.724
+   ]
+  },
+  {
+   "id": "sample-062",
+   "title": "Hollow Glass",
+   "artist": "Marigold Unit ft. Kite Theory",
+   "album": "Shared Sessions",
+   "path": "Collaborations/Shared Sessions/62.mp3",
+   "genre": [
+    "electronic"
+   ],
+   "year": 2015,
+   "duration_s": 352,
+   "beat_status": "tracked",
+   "timing_status": "no_reliable_grid",
+   "signals": {
+    "bpm": 145.5,
+    "tempo_confidence": 0.53
+   },
+   "embedding": [
+    0.348,
+    0.796,
+    -0.605,
+    -0.582,
+    0.364,
+    -0.344,
+    0.962,
+    -0.586
+   ]
+  },
+  {
+   "id": "sample-063",
+   "title": "Echo Static",
+   "artist": "Kite Theory featuring Vera Okonkwo",
+   "album": "Shared Sessions",
+   "path": "Collaborations/Shared Sessions/63.mp3",
+   "genre": [
+    "electronic",
+    "jazz"
+   ],
+   "year": 2022,
+   "duration_s": 309,
+   "beat_status": "tracked",
+   "timing_status": "no_reliable_grid",
+   "signals": {
+    "bpm": 93.6,
+    "tempo_confidence": 0.46
+   },
+   "embedding": [
+    -0.568,
+    -0.22,
+    -0.633,
+    -0.33,
+    0.512,
+    0.889,
+    0.1,
+    -0.103
+   ]
+  },
+  {
+   "id": "sample-064",
+   "title": "Northern Orbit",
+   "artist": "Static Orchard feat. Northbound Choir",
+   "album": "Shared Sessions",
+   "path": "Collaborations/Shared Sessions/64.mp3",
+   "genre": [
+    "punk",
+    "gospel"
+   ],
+   "year": 2005,
+   "duration_s": 295,
+   "beat_status": "insufficient_pulse_evidence",
+   "timing_status": "no_reliable_grid",
+   "signals": {
+    "bpm": 146.3,
+    "tempo_confidence": 0.41
+   },
+   "embedding": [
+    0.708,
+    -0.33,
+    -0.556,
+    0.848,
+    0.179,
+    -0.989,
+    -0.938,
+    -0.101
+   ]
+  },
+  {
+   "id": "sample-065",
+   "title": "Lanterns Northern",
+   "artist": "The Low Fences feat. Copper Lanterns",
+   "album": "Shared Sessions",
+   "path": "Collaborations/Shared Sessions/65.mp3",
+   "genre": [
+    "folk",
+    "lo-fi"
+   ],
+   "year": 2011,
+   "duration_s": 256,
+   "beat_status": "tracked",
+   "timing_status": "no_reliable_grid",
+   "signals": {
+    "bpm": 158.2,
+    "tempo_confidence": 0.78
+   },
+   "embedding": [
+    0.098,
+    0.572,
+    -0.183,
+    -0.433,
+    -0.048,
+    0.742,
+    -0.298,
+    -0.491
+   ]
+  },
+  {
+   "id": "sample-066",
+   "title": "Lattice Drift",
+   "artist": "Lumen Atlas feat. Ida Marlowe",
+   "album": "Shared Sessions",
+   "path": "Collaborations/Shared Sessions/66.mp3",
+   "genre": [
+    "ambient"
+   ],
+   "year": 2006,
+   "duration_s": 334,
+   "beat_status": "tracked",
+   "timing_status": "no_reliable_grid",
+   "signals": {
+    "bpm": 155.2,
+    "tempo_confidence": 0.61
+   },
+   "embedding": [
+    -0.502,
+    0.242,
+    0.365,
+    -0.061,
+    -0.298,
+    -0.417,
+    0.645,
+    -0.614
+   ]
+  },
+  {
+   "id": "sample-067",
+   "title": "Tide Harbor",
+   "artist": "Quiet Harbor feat. Ida Marlowe",
+   "album": "Shared Sessions",
+   "path": "Collaborations/Shared Sessions/67.mp3",
+   "genre": [
+    "ambient"
+   ],
+   "year": 2012,
+   "duration_s": 270,
+   "beat_status": "tracked",
+   "timing_status": "no_reliable_grid",
+   "signals": {
+    "bpm": 96.2,
+    "tempo_confidence": 0.8
+   },
+   "embedding": [
+    -0.804,
+    0.607,
+    -0.903,
+    -0.965,
+    -0.285,
+    -0.652,
+    0.958,
+    0.259
+   ]
+  },
+  {
+   "id": "sample-068",
+   "title": "Field Ember",
+   "artist": "Glass Canal feat. Ida Marlowe & Juno Park",
+   "album": "Shared Sessions",
+   "path": "Collaborations/Shared Sessions/68.mp3",
+   "genre": [
+    "soundtrack"
+   ],
+   "year": 2018,
+   "duration_s": 180,
+   "beat_status": "tracked",
+   "timing_status": "no_reliable_grid",
+   "signals": {
+    "bpm": 121.6,
+    "tempo_confidence": 0.41
+   },
+   "embedding": [
+    0.584,
+    -0.928,
+    0.235,
+    0.449,
+    0.585,
+    -0.438,
+    0.575,
+    -0.268
+   ]
+  },
+  {
+   "id": "sample-069",
+   "title": "Lattice Static",
+   "artist": "Halftone Weather ft. Juno Park",
+   "album": "Shared Sessions",
+   "path": "Collaborations/Shared Sessions/69.mp3",
+   "year": 2022,
+   "duration_s": 332,
+   "beat_status": "tracked",
+   "timing_status": "no_reliable_grid",
+   "signals": {
+    "bpm": 71.7,
+    "tempo_confidence": 0.41
+   },
+   "embedding": [
+    -0.968,
+    0.513,
+    0.471,
+    0.541,
+    0.366,
+    -0.297,
+    -0.245,
+    0.652
    ]
   }
  ]

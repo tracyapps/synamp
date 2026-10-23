@@ -69,7 +69,7 @@ import { ExploreService } from "./library/explore-service.ts";
 import { djOrder } from "./session/dj.ts";
 import { gaplessInfo } from "./session/gapless.ts";
 import { ExplorerSelections } from "./library/explorer-selection.ts";
-import { galaxy, galaxyArtist, galaxyRandom } from "./library/galaxy.ts";
+import { galaxy, galaxyArtist, galaxyMap, galaxyRandom } from "./library/galaxy.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
 import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
 import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay, tagDecisions } from "./library/organise.ts";
@@ -1055,6 +1055,9 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
   }
   if (path === "/api/v1/library/galaxy/random" && req.method === "GET") {
     return send(res, 200, galaxyRandom(currentLibrary(), { q: url.searchParams.get("q") ?? "" }));
+  }
+  if (path === "/api/v1/library/galaxy/map" && req.method === "GET") {
+    return send(res, 200, galaxyMap(currentLibrary()));
   }
   if (path === "/api/v1/library/albums" && req.method === "GET") {
     const q = url.searchParams;
