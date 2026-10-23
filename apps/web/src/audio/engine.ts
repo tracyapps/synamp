@@ -45,6 +45,26 @@ export type EngineEvents = {
 /** Decoded songs longer than this are streamed instead (memory). */
 const MAX_DECODE_SECONDS = 20 * 60;
 const SWITCH_FADE = 0.12;
+/** A song that was playing and hasn't moved for this long is stuck. */
+const STALL_SECONDS = 12;
+/** A song that hasn't started this long after Play is stuck (decoding a big file can take a while). */
+const START_SECONDS = 30;
+/** The sound card stopped (another app, a change of speakers): try to get it back for this long, then pause. */
+const SILENT_SECONDS = 8;
+
+export type Watch = { position: number; since: number; retried: boolean };
+/**
+ * Is the current song stuck? Checked four times a second while Play is on.
+ * "wait": moving, or not stuck for long enough yet. "ended": stuck at its very
+ * end (the browser never said it finished). "retry": reload it once where it
+ * stopped. "failed": give up, so the player can say so and move on.
+ */
+export function stallVerdict(watch: Watch, now: number, position: number, duration: number, started: boolean): "moving" | "wait" | "ended" | "retry" | "failed" {
+  if (Math.abs(position - watch.position) > 0.05) return "moving";
+  if ((now - watch.since) / 1000 < (started ? STALL_SECONDS : START_SECONDS)) return "wait";
+  if (started && duration > 0 && position >= duration - 1.5) return "ended";
+  return watch.retried ? "failed" : "retry";
+}
 
 type Voice = {
   item: Item;
@@ -60,6 +80,8 @@ type Voice = {
   /** When the sound will end, in context time (decoded songs only, while playing). */
   endsAt(): number | null;
   dispose(): void;
+  /** Stuck: load it again and carry on from `at` seconds (streamed songs only). */
+  reload?(at: number): void;
   onended?: () => void;
   onerror?: (message: string) => void;
   onplaying?: () => void;
@@ -102,6 +124,10 @@ export class PlaybackEngine {
   private played = 0;
   private lastPosition = 0;
   private timer: number;
+  // Stuck-song watchdog (see watchdog()).
+  private watch: Watch & { voice: Voice | null; gaveUp: boolean; retriedAt: number } = { voice: null, position: 0, since: 0, retried: false, gaveUp: false, retriedAt: -1 };
+  private silentSince = 0;
+  private lastResume = 0;
 
   constructor(events: EngineEvents, ctx: AudioContext) {
     this.events = events;
@@ -223,9 +249,12 @@ export class PlaybackEngine {
         const fallback = this.elementVoice(item);
         this.current = fallback;
         this.wire(fallback);
+        voice.dispose();
         if (this.wantPlay) fallback.start(this.ctx.currentTime, 0);
         return;
       }
+      // Autoplay blocked: Play is off until it's pressed again (so the stuck-song watchdog leaves it alone).
+      if (message.startsWith("Press play") && voice === this.current) { this.wantPlay = false; this.events.paused(true); }
       this.events.error(item.id, message);
     };
     this.wire(voice);
@@ -337,7 +366,61 @@ export class PlaybackEngine {
 
   private finishFade(): void { /* fades run on the audio clock; nothing to cancel by hand */ }
 
+  /**
+   * Catches a song that has gone quiet without telling anyone: the player
+   * still says Playing but the position isn't moving and the next song never
+   * comes (a file the browser chokes on partway through, a dropped connection,
+   * a load that never finishes). Reload it once where it stopped; if that
+   * doesn't help, report an error so the player says so and moves on.
+   * If the sound card itself stopped, that isn't the song's fault: try to get
+   * it back, then pause and ask for Play, rather than skipping every song.
+   */
+  private watchdog(): void {
+    const voice = this.current;
+    const now = performance.now();
+    const reset = (position: number) => { this.watch = { voice, position, since: now, retried: false, gaveUp: false, retriedAt: -1 }; };
+    if (!voice || !this.wantPlay || this.fading || voice.item.live) { reset(0); this.silentSince = 0; return; }
+    const position = voice.position();
+    if (this.ctx.state !== "running") {
+      if (now - this.lastResume > 2000) { this.lastResume = now; this.ctx.resume().catch(() => undefined); }
+      if (!this.silentSince) this.silentSince = now;
+      else if (now - this.silentSince > SILENT_SECONDS * 1000) {
+        this.silentSince = 0;
+        this.pause();
+        this.events.loading(false);
+        this.events.error(voice.item.id, "Press play to carry on. The sound stopped, maybe because another app or a change of speakers took it over.");
+      }
+      reset(position);
+      return;
+    }
+    this.silentSince = 0;
+    if (this.watch.voice !== voice) { reset(position); return; }
+    if (this.watch.gaveUp) return;
+    const started = this.startedFor === voice.item.id;
+    const verdict = stallVerdict(this.watch, now, position, voice.duration(), started);
+    if (verdict === "moving") {
+      // After a reload it only counts as fixed once it gets well past where it stuck (a reload jumps back to 0 first).
+      const { retried, retriedAt } = this.watch;
+      reset(position);
+      if (retried && position < retriedAt + 5) { this.watch.retried = true; this.watch.retriedAt = retriedAt; }
+      return;
+    }
+    if (verdict === "wait") return;
+    if (verdict === "ended") { voice.pause(); voice.onended?.(); return; }
+    if (verdict === "retry") {
+      this.watch.retried = true; this.watch.retriedAt = position; this.watch.since = now;
+      if (voice.reload) voice.reload(position);
+      else voice.onerror?.("it took too long to load"); // a decoded song that won't load: stream it instead
+      return;
+    }
+    this.watch.gaveUp = true;
+    voice.pause();
+    this.events.loading(false);
+    this.events.error(voice.item.id, started ? "it stopped partway through and wouldn’t carry on" : "it never started playing");
+  }
+
   private tick(): void {
+    this.watchdog();
     const voice = this.current;
     if (!voice || !voice.playing()) return;
     const position = voice.position(), duration = voice.duration();
@@ -379,6 +462,16 @@ export class PlaybackEngine {
 
 // --- the two voices --------------------------------------------------------------------
 
+/** What went wrong with an <audio> element, in plain words (shown to the listener and kept in the brain's log). */
+function problem(error: MediaError | null): string {
+  switch (error?.code) {
+    case 2: return "the connection to your music dropped"; // MEDIA_ERR_NETWORK
+    case 3: return "the file looks damaged, or uses something this browser can’t decode"; // MEDIA_ERR_DECODE
+    case 4: return "this browser can’t play this file, or its link has expired"; // MEDIA_ERR_SRC_NOT_SUPPORTED
+    default: return "it couldn’t be played";
+  }
+}
+
 class ElementVoice implements Voice {
   readonly kind = "element" as const;
   readonly item: Item;
@@ -398,7 +491,7 @@ class ElementVoice implements Voice {
     this.gain.gain.cancelScheduledValues(0);
     this.gain.gain.value = 1;
     el.onended = () => { if (!this.disposed) this.onended?.(); };
-    el.onerror = () => { if (!this.disposed) this.onerror?.(el.error?.message || "playback failed"); };
+    el.onerror = () => { if (!this.disposed) this.onerror?.(problem(el.error)); };
     el.onplaying = () => { if (!this.disposed) this.onplaying?.(); };
     el.src = item.url;
     el.load();
@@ -418,13 +511,29 @@ class ElementVoice implements Voice {
       if (this.disposed) return;
       const el = this.slot.el;
       if (Math.abs(el.currentTime - offset) > 0.05) el.currentTime = offset;
-      el.play().catch((cause) => this.onerror?.((cause as Error).name === "NotAllowedError" ? "Press play to start — the browser blocked autoplay." : String(cause)));
+      el.play().catch((cause) => {
+        const name = (cause as Error).name;
+        // AbortError: a newer load (reload, dispose, the next song) took over this play; not a failure.
+        if (this.disposed || name === "AbortError") return;
+        this.onerror?.(name === "NotAllowedError" ? "Press play to start — the browser blocked autoplay." : el.error ? problem(el.error) : "it couldn’t start");
+      });
     };
     window.clearTimeout(this.timer);
     const wait = (when - this.ctx.currentTime) * 1000;
     if (wait > 15) this.timer = window.setTimeout(go, wait); else go();
   }
   seekPaused(seconds: number): void { this.slot.el.currentTime = seconds; }
+  reload(at: number): void {
+    if (this.disposed) return;
+    const el = this.slot.el;
+    window.clearTimeout(this.timer);
+    el.addEventListener("loadedmetadata", () => {
+      if (this.disposed) return;
+      el.currentTime = at;
+      this.start(this.ctx.currentTime, at);
+    }, { once: true });
+    el.load(); // asks the server again, from where it stopped
+  }
   pause(): void { window.clearTimeout(this.timer); this.slot.el.pause(); }
   dispose(): void {
     if (this.disposed) return;

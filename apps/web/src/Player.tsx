@@ -71,6 +71,8 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const heartbeat = useRef(0);
   const played = useRef(0);
   const resumeAfterClip = useRef(false);
+  const failures = useRef(0);   // songs in a row that wouldn't play
+  const failed = useRef(new Map<string, string>()); // songs that failed before the brain had moved on to them
   const prefs = usePrefs();
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -110,6 +112,26 @@ export default function Player({ request, session, onSession, playlistName, onCh
     report({ event_id: newId(), report: { type, entry_id: entryId, ...extra } });
   const ms = (seconds: number) => Math.round(seconds * 1000);
 
+  /**
+   * A song wouldn't play (a damaged file, a dropped connection, stuck partway).
+   * Say which one and why, and tell the brain, which logs it and moves to the
+   * next song. Several in a row usually means the library itself can't be
+   * reached, so stop instead of running through the whole queue.
+   */
+  function songFailed(id: string, reason: string) {
+    const entry = latest.current.session?.queue.find((e) => e.entry_id === id);
+    const name = entry ? `“${entry.title}”` : "This song";
+    failures.current += 1;
+    setLoading(false);
+    if (failures.current >= 3) {
+      engine.current?.pause();
+      setStatus(`${name} wouldn’t play: ${reason}. That’s ${failures.current} songs in a row, so SynAmp has stopped. Check that your music library is reachable, then press Play to try the next song.`);
+    } else {
+      setStatus(`${name} wouldn’t play: ${reason}. Skipped to the next song.`);
+    }
+    reportFor(id, "error", { message: reason });
+  }
+
   /** The engine is made on the first press of Play (browsers only allow sound after a click or tap). */
   function ensureEngine(): PlaybackEngine {
     if (engine.current) return engine.current;
@@ -118,6 +140,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
     if (session) try { session.type = "playback"; } catch { /* older Safari */ }
     const made = new PlaybackEngine({
       started: (id, length) => {
+        failures.current = 0;
         setDuration(length); setLoading(false); setPaused(false);
         played.current = 0; heartbeat.current = 0;
         setActiveAudio(made.output());
@@ -131,11 +154,18 @@ export default function Player({ request, session, onSession, playlistName, onCh
         if (played.current - heartbeat.current >= 10) { heartbeat.current = played.current; reportFor(id, "progress", { played_ms: ms(played.current) }); }
       },
       error: (id, message) => {
-        if (id !== latest.current.current?.entry_id) return;
-        setLoading(false);
-        setStatus(message);
-        if (message.startsWith("Press play")) { setStatus(message); setPaused(true); return; }
-        if (id === latest.current.current?.entry_id) reportFor(id, "error", { message });
+        if (message.startsWith("Press play")) {
+          if (id === latest.current.current?.entry_id) { setLoading(false); setStatus(message); setPaused(true); }
+          return;
+        }
+        // The engine can be a moment ahead of the brain (a crossfade into a song that won't load):
+        // hold on to it until the brain says that song is current.
+        if (id !== latest.current.current?.entry_id) {
+          if (failed.current.size > 20) failed.current.clear();
+          failed.current.set(id, message);
+          return;
+        }
+        songFailed(id, message);
       },
       paused: (now) => setPaused(now),
       loading: (now) => setLoading(now),
@@ -164,6 +194,15 @@ export default function Player({ request, session, onSession, playlistName, onCh
     : null);
   const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
   const plan = transitionFor(current, upNext, prefs, session?.mix, lighter, memory);
+  // A song that failed while the engine was ahead of the brain: now that it's current, skip it.
+  // (Before the plan effect below, so the engine hasn't been handed a fresh copy of it yet.)
+  useEffect(() => {
+    const id = current?.entry_id;
+    const reason = id ? failed.current.get(id) : undefined;
+    if (!id || reason === undefined) return;
+    failed.current.delete(id);
+    if (engine.current?.currentId() === id && engine.current.isActive()) songFailed(id, reason);
+  }, [current?.entry_id]); // eslint-disable-line react-hooks/exhaustive-deps
   const planKey = JSON.stringify([current?.entry_id, current?.playable, upNext?.entry_id, upNext?.playable, plan, lighter]);
   useEffect(() => {
     engine.current?.setPlan(item(current), item(upNext), plan.transition, plan.decode);
@@ -259,6 +298,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
     resumeAfterClip.current = false;
     stopClip();
     setStatus("");
+    failures.current = 0;
     if (!sound.currentId()) sound.setPlan(item(current), item(upNext), plan.transition, plan.decode);
     sound.play();
     if (started.current === current.entry_id) report(entryBody("resume"));
