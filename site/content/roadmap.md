@@ -74,6 +74,7 @@ goal: Download SynAmp, open it, and point it at your music. No Docker, no comman
 - [~] SynAmp for Mac: one app that carries everything it needs
 - [ ] A first run that asks where your music is and plays a first playlist the same day
 - [~] Starts by itself, updates itself, and lives quietly in the menu bar
+- [~] One app either way: SynAmp on this computer, or the same app connected to a SynAmp already running on your NAS, with a “connect remotely?” offer when you’re away from home
 - [ ] SynAmp for Windows
 
 ## Playlists that scale
@@ -141,6 +142,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-11-13 — SynAmp for Mac can now connect to a SynAmp that’s already running on your NAS or another computer. When you’re away from home it offers to connect remotely, the way your laptop offers a Wi-Fi network, and you can choose to always connect, always ask, or stay offline
 - 2026-11-13 — Fixed: with your music on a NAS, taking your laptop away from home made a “problem connecting to the server” window pop up every five minutes. Now SynAmp checks quietly, waits while you’re away, and reconnects by itself when you’re back
 - 2026-10-22 — Fixed: a song could stop partway through while the player still said Playing, and the next song never came. Now SynAmp notices within a few seconds, tries the song once more, and if it still won’t play, tells you which song and why, then moves on to the next one. If several songs in a row won’t play, it stops and asks you to check your music library instead of running through the whole playlist
 - 2026-10-14 — From the next release, SynAmp's server runs on ARM-based servers and NAS models as well as Intel and AMD ones, with nothing to choose: each server picks the right version itself

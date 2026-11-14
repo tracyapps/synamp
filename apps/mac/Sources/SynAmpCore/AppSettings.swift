@@ -13,20 +13,24 @@ public struct AppSettings: Codable, Sendable, Equatable {
     public var startAtLogin: Bool
     /// Keep the Mac awake while SynAmp is listening to the library or playing.
     public var preventSleep: Bool
+    /// Set when SynAmp runs somewhere else (a NAS, another computer) and this
+    /// Mac only shows it. Nil: SynAmp runs on this Mac, from `musicFolder`.
+    public var connection: Connection?
 
     public static let defaultPort = 8380
 
     public init(musicFolder: String? = nil, incomingFolder: String? = nil, port: Int = AppSettings.defaultPort,
-                startAtLogin: Bool = true, preventSleep: Bool = true) {
+                startAtLogin: Bool = true, preventSleep: Bool = true, connection: Connection? = nil) {
         self.musicFolder = musicFolder
         self.incomingFolder = incomingFolder
         self.port = port
         self.startAtLogin = startAtLogin
         self.preventSleep = preventSleep
+        self.connection = connection
     }
 
-    /// Has the first run finished (a music folder chosen)?
-    public var isSetUp: Bool { !(musicFolder ?? "").isEmpty }
+    /// Has the first run finished (a music folder chosen, or a SynAmp to connect to)?
+    public var isSetUp: Bool { !(musicFolder ?? "").isEmpty || connection != nil }
 
     /// Read the saved settings. A missing file is a first run; a damaged one is
     /// set aside (never deleted) and the defaults are used.
