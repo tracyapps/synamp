@@ -27,21 +27,35 @@ public struct Connection: Codable, Sendable, Equatable {
     /// The address that works away from home (Listen anywhere), if there is one.
     public var remote: String?
     public var whenAway: WhenAway
+    /// The music folder as this Mac sees it (e.g. /Volumes/music/library), when
+    /// this Mac does the listening for that SynAmp. A NAS is usually too slow to
+    /// listen to songs itself. Nil: this Mac doesn't listen.
+    public var listenFolder: String?
+    /// The share that folder is on (smb://Syd.local/music), so listening can
+    /// reconnect it by itself at home. Nil: a folder on this Mac or a plain drive.
+    public var shareURL: String?
 
-    public init(home: String, remote: String? = nil, whenAway: WhenAway = .ask) {
+    public init(home: String, remote: String? = nil, whenAway: WhenAway = .ask, listenFolder: String? = nil, shareURL: String? = nil) {
         self.home = home
         self.remote = remote
         self.whenAway = whenAway
+        self.listenFolder = listenFolder
+        self.shareURL = shareURL
     }
 
-    private enum CodingKeys: String, CodingKey { case home, remote, whenAway }
+    private enum CodingKeys: String, CodingKey { case home, remote, whenAway, listenFolder, shareURL }
 
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         home = try values.decode(String.self, forKey: .home)
         remote = try values.decodeIfPresent(String.self, forKey: .remote)
         whenAway = (try? values.decodeIfPresent(WhenAway.self, forKey: .whenAway)) ?? .ask
+        listenFolder = try values.decodeIfPresent(String.self, forKey: .listenFolder)
+        shareURL = try values.decodeIfPresent(String.self, forKey: .shareURL)
     }
+
+    /// Does this Mac listen to the library for that SynAmp?
+    public var listensHere: Bool { !(listenFolder ?? "").isEmpty }
 
     public var homeURL: URL? { Connection.address(home) }
     public var remoteURL: URL? { remote.flatMap { Connection.address($0) } }
@@ -270,5 +284,44 @@ public enum ConnectionCheck {
         parts.host = name
         parts.port = address.port
         return .ok(remote: parts.url?.absoluteString)
+    }
+}
+
+/// Checks on the folder this Mac listens to for a SynAmp that runs somewhere else.
+public enum ListenFolder {
+    /// The folder SynAmp and listening leave each other notes in: ".synamp",
+    /// beside the music folder (what listening learned, and files that moved).
+    public static func notes(beside folder: URL) -> URL {
+        folder.deletingLastPathComponent().appendingPathComponent(".synamp", isDirectory: true)
+    }
+
+    /// Is this the same music folder the SynAmp on the NAS uses? It is when the
+    /// notes folder is there. Otherwise listening would work on the wrong copy,
+    /// and SynAmp would never see what it learned.
+    public static func isShared(_ folder: URL, fileManager: FileManager = .default) -> Bool {
+        var isFolder: ObjCBool = false
+        return fileManager.fileExists(atPath: notes(beside: folder).path, isDirectory: &isFolder) && isFolder.boolValue
+    }
+
+    /// The share a folder is on, as an address listening can reconnect
+    /// (smb://Syd.local/music). Nil for a folder on this Mac or a plain drive.
+    public static func shareURL(for folder: URL) -> String? {
+        guard let remount = try? folder.resourceValues(forKeys: [.volumeURLForRemountingKey]).volumeURLForRemounting else { return nil }
+        return tidy(remount.absoluteString)
+    }
+
+    /// macOS may give the server by its Bonjour service name
+    /// (Syd._smb._tcp.local), which nothing can connect to directly, and adds
+    /// the account name. Listening needs the plain server name.
+    static func tidy(_ address: String) -> String? {
+        guard var parts = URLComponents(string: address), let host = parts.host, !host.isEmpty,
+              ["smb", "afp", "nfs", "cifs"].contains(parts.scheme?.lowercased() ?? "") else { return nil }
+        for service in ["._smb._tcp.local", "._afpovertcp._tcp.local", "._nfs._tcp.local"] where host.lowercased().hasSuffix(service) {
+            parts.host = String(host.dropLast(service.count)) + ".local"
+        }
+        parts.password = nil
+        var text = parts.string ?? address
+        while text.hasSuffix("/") { text.removeLast() }
+        return text
     }
 }

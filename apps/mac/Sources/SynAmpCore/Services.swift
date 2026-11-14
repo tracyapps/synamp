@@ -153,6 +153,45 @@ public struct LaunchPlan: Sendable {
     }
 }
 
+extension ServiceSpec {
+    /// Listening on this Mac for a SynAmp that runs somewhere else (a NAS is
+    /// usually too slow to listen itself). It reads the same music folder, asks
+    /// that SynAmp for work at its home address, and leaves what it learns in
+    /// the notes folder beside the music, where that SynAmp reads it. Away from
+    /// home it waits quietly.
+    public static func listeningForConnection(_ connection: Connection, token: String, paths: AppPaths, layout: RuntimeLayout) -> ServiceSpec? {
+        guard let folder = connection.listenFolder, !folder.isEmpty, let home = connection.homeURL else { return nil }
+        let notes = ListenFolder.notes(beside: URL(fileURLWithPath: folder, isDirectory: true))
+        var path = ["/usr/bin", "/bin", "/usr/sbin", "/sbin"]
+        if let ffmpeg = layout.ffmpegFolder { path.insert(ffmpeg.path, at: 0) }
+        var environment: [String: String] = [
+            "PATH": path.joined(separator: ":"),
+            "HOME": FileManager.default.homeDirectoryForCurrentUser.path,
+            "LANG": "en_US.UTF-8",
+            "LIBRARY_PATH": folder,
+            "ANALYZER_CACHE": paths.listening.path,
+            "ANALYZER_DB_PATH": paths.listening.appendingPathComponent("analyzer.sqlite3").path,
+            // Both live beside the music, shared with the SynAmp on the NAS.
+            "RENAME_JOURNAL_PATH": notes.appendingPathComponent("renames.jsonl").path,
+            "SYNAMP_EXPORT_PATH": notes.appendingPathComponent("library-signals.json").path,
+            "SYNAMP_MODEL_DIR": paths.models.path,
+            "SYNAMP_BRAIN_URL": home.absoluteString,
+            "SYNAMP_BRAIN_TOKEN": token,
+            "PYTHONUNBUFFERED": "1",
+        ]
+        if let share = connection.shareURL, !share.isEmpty { environment["SYNAMP_MUSIC_SHARE_URL"] = share }
+        if let ffmpeg = layout.ffmpegFolder {
+            environment["FFMPEG_PATH"] = ffmpeg.appendingPathComponent("ffmpeg").path
+            environment["FFPROBE_PATH"] = ffmpeg.appendingPathComponent("ffprobe").path
+        }
+        return ServiceSpec(
+            name: "listening", label: "Listening",
+            executable: layout.python, arguments: ["-m", "synamp_analyzer.cli", "worker"],
+            environment: environment, workingDirectory: paths.listening, stopGrace: 20, health: nil
+        )
+    }
+}
+
 public enum LaunchError: Error, Equatable, CustomStringConvertible {
     case noMusicFolder
     case missingPieces([String])
