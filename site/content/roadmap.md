@@ -73,7 +73,7 @@ goal: Download SynAmp, open it, and point it at your music. No Docker, no comman
 - [x] A lighter listening engine: a much smaller download, and it runs on older Intel Macs too
 - [~] SynAmp for Mac: one app that carries everything it needs
 - [ ] A first run that asks where your music is and plays a first playlist the same day
-- [ ] Starts by itself, updates itself, and lives quietly in the menu bar
+- [~] Starts by itself, updates itself, and lives quietly in the menu bar
 - [ ] SynAmp for Windows
 
 ## Playlists that scale

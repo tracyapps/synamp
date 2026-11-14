@@ -323,6 +323,61 @@ final class LeftoverTests: XCTestCase {
     }
 }
 
+final class KeepAwakeTests: XCTestCase {
+    final class FakeAssertion: @unchecked Sendable {
+        var calls: [(Bool, String)] = []
+        var refuse = false
+        func callAsFunction(_ on: Bool, _ reason: String) -> Bool { calls.append((on, reason)); return !refuse || !on }
+    }
+
+    func testHoldsOnlyWhileBusyAndAllowed() {
+        let fake = FakeAssertion()
+        let awake = KeepAwake(assertion: { fake($0, $1) })
+        awake.update(busy: true, allowed: true, reasons: ["playing music"])
+        XCTAssertTrue(awake.isHolding)
+        XCTAssertEqual(fake.calls.last?.1, "SynAmp is playing music")
+        awake.update(busy: true, allowed: true)
+        XCTAssertEqual(fake.calls.count, 1, "no repeat requests")
+        awake.update(busy: false, allowed: true)
+        XCTAssertFalse(awake.isHolding)
+        awake.update(busy: true, allowed: false)
+        XCTAssertFalse(awake.isHolding, "the setting is off")
+        XCTAssertEqual(fake.calls.map(\.0), [true, false])
+    }
+
+    func testARefusedRequestIsntCountedAsHeld() {
+        let fake = FakeAssertion()
+        fake.refuse = true
+        let awake = KeepAwake(assertion: { fake($0, $1) })
+        awake.update(busy: true, allowed: true)
+        XCTAssertFalse(awake.isHolding)
+    }
+
+    func testTheWatcherFollowsTheServer() async {
+        let fake = FakeAssertion()
+        let awake = KeepAwake(assertion: { fake($0, $1) })
+        let answers = AnswerQueue([.init(busy: true, reasons: ["listening"]), nil, .init(busy: false, reasons: [])])
+        let watcher = ActivityWatcher(fetch: { answers.next() }, keepAwake: awake, allowed: { true })
+        await watcher.check()
+        XCTAssertTrue(awake.isHolding)
+        XCTAssertEqual(fake.calls.last?.1, "SynAmp is listening to your library")
+        await watcher.check()
+        XCTAssertTrue(awake.isHolding, "no answer (restarting): change nothing")
+        await watcher.check()
+        XCTAssertFalse(awake.isHolding)
+        await watcher.check()
+        watcher.stop()
+        XCTAssertFalse(awake.isHolding)
+    }
+}
+
+final class AnswerQueue: @unchecked Sendable {
+    private var items: [ActivityWatcher.Activity?]
+    private let lock = NSLock()
+    init(_ items: [ActivityWatcher.Activity?]) { self.items = items }
+    func next() -> ActivityWatcher.Activity? { lock.withLock { items.isEmpty ? nil : items.removeFirst() } }
+}
+
 final class DownloadNameTests: XCTestCase {
     func testNeverOverwrites() {
         let folder = URL(fileURLWithPath: "/Users/x/Downloads")
