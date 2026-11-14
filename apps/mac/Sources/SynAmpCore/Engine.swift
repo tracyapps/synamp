@@ -32,6 +32,11 @@ public final class Engine: @unchecked Sendable {
     private let probe: ConnectionMonitor.Probe
     private let connectionCheckEvery: TimeInterval
     private var monitor: ConnectionMonitor?
+    private var statusWatcher: StatusWatcher?
+    private let statusFetch: StatusWatcher.Fetch?
+    /// Told what SynAmp is doing (playing, listening, the music, Listen anywhere)
+    /// whenever that changes; nil when it can't be asked.
+    public var onSystemStatus: (@Sendable (SystemStatus?) -> Void)?
     /// Keeps the Mac awake while SynAmp is busy (when the setting allows).
     public let keepAwake: KeepAwake
 
@@ -43,7 +48,8 @@ public final class Engine: @unchecked Sendable {
     public init(paths: AppPaths, layout: RuntimeLayout, tokens: TokenStore,
                 isFree: @escaping (Int) -> Bool = { Ports.isFree($0) }, keepAwake: KeepAwake = KeepAwake(),
                 connectionTokens: TokenStore = MemoryTokenStore(), probe: @escaping ConnectionMonitor.Probe = ConnectionMonitor.http(),
-                connectionCheckEvery: TimeInterval = 20) {
+                connectionCheckEvery: TimeInterval = 20, statusFetch: StatusWatcher.Fetch? = nil) {
+        self.statusFetch = statusFetch
         self.keepAwake = keepAwake
         self.connectionTokens = connectionTokens
         self.probe = probe
@@ -61,6 +67,38 @@ public final class Engine: @unchecked Sendable {
     public var plan: LaunchPlan? { lock.withLock { _plan } }
     /// Where things stand with a SynAmp that runs somewhere else (nil: it runs on this Mac).
     public var link: LinkState? { lock.withLock { self.monitor }?.link }
+    /// What SynAmp is doing right now, as last heard (nil: not known).
+    public var systemStatus: SystemStatus? { lock.withLock { self.statusWatcher }?.latest }
+
+    /// Where SynAmp answers right now, and the token for it (nil: nowhere).
+    private var target: (URL, String)? {
+        if settings.connection != nil {
+            guard let base = link?.url, let token = connectionTokens.read(), !token.isEmpty else { return nil }
+            return (base, token)
+        }
+        guard case .running(let base) = status, let token = plan?.token else { return nil }
+        return (base, token)
+    }
+
+    private func startStatusWatcher() {
+        let watcher = StatusWatcher(fetch: statusFetch ?? StatusWatcher.http(target: { [weak self] in self?.target }))
+        watcher.onChange = { [weak self] status in self?.onSystemStatus?(status) }
+        lock.withLock { self.statusWatcher }?.stop()
+        lock.withLock { self.statusWatcher = watcher }
+        watcher.start()
+    }
+
+    private func stopStatusWatcher() {
+        lock.withLock { self.statusWatcher }?.stop()
+        lock.withLock { self.statusWatcher = nil }
+    }
+
+    /// Ask again now (the menu was opened, or something just changed).
+    public func checkSystemStatusNow() async {
+        let watcher = lock.withLock { self.statusWatcher }
+        await watcher?.check()
+    }
+
     /// The token the window hands to the web app: this Mac's own, or the connection's.
     public var accessToken: String? { settings.connection != nil ? connectionTokens.read() : plan?.token }
     public var connectionToken: String? { connectionTokens.read() }
@@ -149,6 +187,7 @@ public final class Engine: @unchecked Sendable {
                                           keepAwake: keepAwake, allowed: { [weak self] in self?.settings.preventSleep ?? false })
             lock.withLock { self.watcher = watcher }
             watcher.start()
+            startStatusWatcher()
         } catch {
             set(.problem(String(describing: error)))
         }
@@ -169,11 +208,14 @@ public final class Engine: @unchecked Sendable {
             return
         }
         monitor.start(every: connectionCheckEvery)
+        startStatusWatcher()
     }
 
     private func linkChanged(_ link: LinkState) {
         note("connection: \(link)")
         if let url = link.url { set(.running(url)) } else { set(.away(link)) }
+        // Home, remote or out of reach: what the menu says about SynAmp follows at once.
+        Task { await self.checkSystemStatusNow() }
     }
 
     /// Save where SynAmp runs (from the first run or Connection settings).
@@ -212,6 +254,7 @@ public final class Engine: @unchecked Sendable {
 
     /// Stop every piece (Quit, or before changing the music folder).
     public func stop() async {
+        stopStatusWatcher()
         if let monitor = lock.withLock({ self.monitor }) {
             monitor.stop()
             lock.withLock { self.monitor = nil }
@@ -233,12 +276,12 @@ public final class Engine: @unchecked Sendable {
 
     /// The address to open SynAmp at, with the token handed over once in the
     /// fragment (never sent to the network; the web app keeps it for the tab).
-    public func openURL() -> URL? {
+    public func openURL(screen: String = "library") -> URL? {
         if settings.connection != nil {
             guard let base = link?.url, let token = connectionTokens.read(), !token.isEmpty else { return nil }
-            return URL(string: "\(base.absoluteString)/#/library?access=\(token)")
+            return URL(string: "\(base.absoluteString)/#/\(screen)?access=\(token)")
         }
         guard let plan else { return nil }
-        return URL(string: "\(plan.localURL.absoluteString)/#/library?access=\(plan.token)")
+        return URL(string: "\(plan.localURL.absoluteString)/#/\(screen)?access=\(plan.token)")
     }
 }

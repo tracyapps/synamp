@@ -38,6 +38,8 @@ export type Activity = { kind: "export"; done?: number; total?: number; at: numb
 export type WorkerSeen = {
   last_seen: number; host?: string; version?: string; state?: string;
   library_path?: string; library_ok?: boolean; export_path?: string; journal?: string; problem?: string;
+  /** The music is on a server that isn't answering on the worker's network (away from home, or it's off). */
+  away?: boolean;
   /** The Mac: total memory (GB) and cores, for the memory setting. */
   memory_gb?: number; cores?: number;
   /** What analysis is allowed right now, as the worker worked it out (it knows the clock and whether you're at the Mac). */
@@ -203,6 +205,7 @@ export class AnalyzerControl {
       ...(text(raw.export_path) ? { export_path: text(raw.export_path) } : {}),
       ...(text(raw.journal) !== undefined ? { journal: text(raw.journal) } : {}),
       ...(text(raw.problem) ? { problem: text(raw.problem) } : {}),
+      ...(raw.away === true ? { away: true } : {}),
       ...(gb(raw.memory_gb) !== undefined ? { memory_gb: gb(raw.memory_gb) } : {}),
       ...(typeof raw.cores === "number" && Number.isInteger(raw.cores) && raw.cores > 0 && raw.cores < 1024 ? { cores: raw.cores } : {}),
       ...(nowFrom(raw.memory_now, now) ? { memory_now: nowFrom(raw.memory_now, now)! } : {}),

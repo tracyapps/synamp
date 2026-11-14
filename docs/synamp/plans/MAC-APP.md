@@ -96,6 +96,24 @@ Not yet: listening (analysis) from this Mac for a SynAmp on a NAS still uses
 the development worker; turning Listen anywhere on from the app; a NAS install
 started from the app.
 
+## What the menu says
+
+Like a VPN's menu: one look says what SynAmp is doing. The first line is where
+things stand (Running, Connected to SynAmp at home, Away from home…). Under it,
+from `GET /api/v1/system/status` (asked every 10 seconds at wherever SynAmp
+answers, home or remote):
+
+- **Playing / Paused:** the song, and "Playing to a phone app".
+- **Music:** connected, not connected, or out of reach from this network.
+- **Listening to your library:** songs done of the total, and the time left
+  while it's running.
+- **Listen anywhere:** on (with the address) or not set up, with a button that
+  opens that screen.
+
+Lines appear only when there's something true to say; no answer clears them.
+Everything is words (`StatusWords`), so VoiceOver reads the same thing and
+nothing depends on the icon or a colour.
+
 ## First run (G2)
 
 A short native window, then the web app takes over:
