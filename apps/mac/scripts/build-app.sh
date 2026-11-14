@@ -58,6 +58,14 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <!-- A menu-bar app: no Dock icon. -->
   <key>LSUIElement</key><true/>
   <key>NSHumanReadableCopyright</key><string>SynAmp</string>
+  <!-- SynAmp on a NAS answers over plain http, at home (Syd.local:8080) and through
+       the person's own private network away from home (a Tailscale name). Only the
+       addresses the person typed in are ever loaded. -->
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsLocalNetworking</key><true/>
+    <key>NSAllowsArbitraryLoads</key><true/>
+  </dict>
   <key>NSLocalNetworkUsageDescription</key><string>SynAmp plays your music to phones and other computers at home, and reads music on your network drive.</string>
 </dict>
 </plist>

@@ -277,6 +277,148 @@ final class EngineTests: XCTestCase {
     }
 }
 
+/// Which addresses "answer", for tests: a pretend network.
+final class FakeNetwork: @unchecked Sendable {
+    private var hosts: Set<String>
+    private let lock = NSLock()
+    init(_ hosts: Set<String>) { self.hosts = hosts }
+    func set(_ hosts: Set<String>) { lock.withLock { self.hosts = hosts } }
+    var probe: ConnectionMonitor.Probe { { [self] url in lock.withLock { hosts.contains(url.host ?? "") } } }
+}
+
+final class ConnectionTests: XCTestCase {
+    let home = "http://Syd.local:8080"
+    let remote = "http://syd.tail1234.ts.net:8080"
+
+    func engine(_ connection: Connection, network: FakeNetwork) throws -> Engine {
+        let root = try temporaryFolder()
+        let paths = AppPaths(support: root.appendingPathComponent("support"), logs: root.appendingPathComponent("logs"))
+        let engine = Engine(paths: paths, layout: .development(repo: root), tokens: MemoryTokenStore(), isFree: { _ in true },
+                            connectionTokens: MemoryTokenStore(), probe: network.probe, connectionCheckEvery: 3600)
+        try engine.saveConnection(connection, token: "tok")
+        return engine
+    }
+
+    func testWhatPeopleTypeBecomesAnAddress() {
+        XCTAssertEqual(Connection.address("Syd.local:8080")?.absoluteString, "http://Syd.local:8080")
+        XCTAssertEqual(Connection.address("  http://syd.tail1234.ts.net:8080/#/library?x=1 ")?.absoluteString, "http://syd.tail1234.ts.net:8080")
+        XCTAssertEqual(Connection.address("https://music.example")?.absoluteString, "https://music.example")
+        XCTAssertNil(Connection.address(""))
+        XCTAssertNil(Connection.address("my nas"))
+        XCTAssertNil(Connection.address("smb://Syd.local/music"), "a file share isn't SynAmp's address")
+    }
+
+    func testOlderSettingsStillLoadAndAConnectionComesBack() throws {
+        let file = try temporaryFolder().appendingPathComponent("settings.json")
+        try Data(#"{"musicFolder":"/Music","port":8380,"startAtLogin":true,"preventSleep":true}"#.utf8).write(to: file)
+        XCTAssertNil(AppSettings.load(from: file).connection)
+        try AppSettings(connection: Connection(home: home, remote: remote, whenAway: .connect)).save(to: file)
+        let back = AppSettings.load(from: file)
+        XCTAssertEqual(back.connection, Connection(home: home, remote: remote, whenAway: .connect))
+        XCTAssertTrue(back.isSetUp, "a SynAmp to connect to counts as set up, with no music folder on this Mac")
+    }
+
+    func testAtHomeItUsesTheHomeAddressAndStartsNothing() async throws {
+        let engine = try engine(Connection(home: home, remote: remote), network: FakeNetwork(["Syd.local", "syd.tail1234.ts.net"]))
+        XCTAssertEqual(engine.status, .stopped)
+        await engine.start()
+        XCTAssertEqual(engine.status, .running(URL(string: home)!))
+        XCTAssertEqual(engine.link, .home(URL(string: home)!))
+        XCTAssertEqual(engine.openURL()?.absoluteString, "http://Syd.local:8080/#/library?access=tok")
+        XCTAssertNil(engine.plan, "none of SynAmp's own pieces are started on this Mac")
+        await engine.stop()
+        XCTAssertEqual(engine.status, .stopped)
+    }
+
+    func testAwayItAsksFirstThenConnectsRemotelyAndComesHomeByItself() async throws {
+        let network = FakeNetwork(["syd.tail1234.ts.net"])
+        let engine = try engine(Connection(home: home, remote: remote), network: network)
+        await engine.start()
+        XCTAssertEqual(engine.status, .away(.awayAsking(URL(string: remote)!)), "nothing connects until the person says so")
+        XCTAssertNil(engine.openURL())
+        await engine.chooseAway(.connect)
+        XCTAssertEqual(engine.status, .running(URL(string: remote)!))
+        XCTAssertEqual(engine.openURL()?.absoluteString, "http://syd.tail1234.ts.net:8080/#/library?access=tok")
+
+        network.set(["Syd.local", "syd.tail1234.ts.net"])
+        await engine.checkConnectionNow()
+        XCTAssertEqual(engine.status, .running(URL(string: home)!), "home wins as soon as it answers")
+
+        // Away again: the earlier yes was for that time only.
+        network.set(["syd.tail1234.ts.net"])
+        await engine.checkConnectionNow()
+        XCTAssertEqual(engine.status, .running(URL(string: home)!), "one missed answer at home isn't being away")
+        await engine.checkConnectionNow()
+        XCTAssertEqual(engine.status, .away(.awayAsking(URL(string: remote)!)))
+        await engine.chooseAway(.notNow)
+        XCTAssertEqual(engine.status, .away(.awayOffline(URL(string: remote)!)))
+        await engine.stop()
+    }
+
+    func testTheSettingDecidesWithoutAsking() async throws {
+        let auto = try engine(Connection(home: home, remote: remote, whenAway: .connect), network: FakeNetwork(["syd.tail1234.ts.net"]))
+        await auto.start()
+        XCTAssertEqual(auto.status, .running(URL(string: remote)!))
+        await auto.stop()
+
+        let offline = try engine(Connection(home: home, remote: remote, whenAway: .offline), network: FakeNetwork(["syd.tail1234.ts.net"]))
+        await offline.start()
+        XCTAssertEqual(offline.status, .away(.awayOffline(URL(string: remote)!)))
+        // The menu's "Connect remotely" still works this once.
+        await offline.chooseAway(.connect)
+        XCTAssertEqual(offline.status, .running(URL(string: remote)!))
+        await offline.stop()
+    }
+
+    func testChangingTheSettingWhileAwayCountsStraightAway() async throws {
+        let engine = try engine(Connection(home: home, remote: remote), network: FakeNetwork(["syd.tail1234.ts.net"]))
+        await engine.start()
+        XCTAssertEqual(engine.status, .away(.awayAsking(URL(string: remote)!)))
+        try engine.update { $0.connection?.whenAway = .connect }
+        await engine.checkConnectionNow()
+        XCTAssertEqual(engine.status, .running(URL(string: remote)!))
+        await engine.stop()
+    }
+
+    func testNothingAnswering() async throws {
+        let noRemote = try engine(Connection(home: home), network: FakeNetwork([]))
+        await noRemote.start()
+        XCTAssertEqual(noRemote.status, .away(.unreachable(hasRemote: false)))
+        await noRemote.stop()
+        let both = try engine(Connection(home: home, remote: remote), network: FakeNetwork([]))
+        await both.start()
+        XCTAssertEqual(both.status, .away(.unreachable(hasRemote: true)))
+        await both.stop()
+    }
+
+    func testCheckingAnAddressAndToken() async {
+        let address = URL(string: home)!
+        func fetch(health: (String, Int)?, setup: (String, Int)?) -> ConnectionCheck.Fetch {
+            { request in
+                let answer = request.url?.path == "/health" ? health : setup
+                if request.url?.path == "/api/v1/setup" {
+                    XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer tok")
+                }
+                return answer.map { (Data($0.0.utf8), $0.1) }
+            }
+        }
+        let brain = (#"{"status":"ok","service":"synamp-brain"}"#, 200)
+        var result = await ConnectionCheck.run(address: address, token: "tok", fetch: fetch(health: nil, setup: nil))
+        XCTAssertEqual(result, .noAnswer)
+        result = await ConnectionCheck.run(address: address, token: "tok", fetch: fetch(health: ("<html>router</html>", 200), setup: nil))
+        XCTAssertEqual(result, .notSynAmp)
+        result = await ConnectionCheck.run(address: address, token: "tok", fetch: fetch(health: brain, setup: (#"{"error":"unauthorized"}"#, 401)))
+        XCTAssertEqual(result, .wrongToken)
+        result = await ConnectionCheck.run(address: address, token: "tok", fetch: fetch(health: brain, setup: (#"{"done":{}}"#, 200)))
+        XCTAssertEqual(result, .ok(remote: nil))
+        result = await ConnectionCheck.run(address: address, token: "tok",
+                                           fetch: fetch(health: brain, setup: (#"{"done":{},"tailscale_name":"syd.tail1234.ts.net"}"#, 200)))
+        XCTAssertEqual(result, .ok(remote: "http://syd.tail1234.ts.net:8080"), "Listen anywhere's name, on the same port")
+        XCTAssertNil(result.words)
+        XCTAssertNotNil(ConnectionCheck.Result.wrongToken.words)
+    }
+}
+
 final class FileTokenTests: XCTestCase {
     func testKeptInAPrivateFile() throws {
         let file = try temporaryFolder().appendingPathComponent("support/dev-token")

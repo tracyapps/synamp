@@ -10,6 +10,9 @@ public final class Engine: @unchecked Sendable {
         case running(URL)
         case stopping
         case stopped
+        /// SynAmp runs somewhere else and can't be used from here right now
+        /// (away from home, or it's off). The link says which, and what's on offer.
+        case away(LinkState)
         /// Something's wrong, in words for the person.
         case problem(String)
     }
@@ -24,6 +27,11 @@ public final class Engine: @unchecked Sendable {
     private var _settings: AppSettings
     private var _plan: LaunchPlan?
     private var watcher: ActivityWatcher?
+    /// The access token for a SynAmp that runs somewhere else (kept apart from this Mac's own).
+    private let connectionTokens: TokenStore
+    private let probe: ConnectionMonitor.Probe
+    private let connectionCheckEvery: TimeInterval
+    private var monitor: ConnectionMonitor?
     /// Keeps the Mac awake while SynAmp is busy (when the setting allows).
     public let keepAwake: KeepAwake
 
@@ -33,8 +41,13 @@ public final class Engine: @unchecked Sendable {
     public var onPiece: (@Sendable (String, Supervisor.State) -> Void)?
 
     public init(paths: AppPaths, layout: RuntimeLayout, tokens: TokenStore,
-                isFree: @escaping (Int) -> Bool = { Ports.isFree($0) }, keepAwake: KeepAwake = KeepAwake()) {
+                isFree: @escaping (Int) -> Bool = { Ports.isFree($0) }, keepAwake: KeepAwake = KeepAwake(),
+                connectionTokens: TokenStore = MemoryTokenStore(), probe: @escaping ConnectionMonitor.Probe = ConnectionMonitor.http(),
+                connectionCheckEvery: TimeInterval = 20) {
         self.keepAwake = keepAwake
+        self.connectionTokens = connectionTokens
+        self.probe = probe
+        self.connectionCheckEvery = connectionCheckEvery
         self.paths = paths
         self.layout = layout
         self.tokens = tokens
@@ -46,6 +59,11 @@ public final class Engine: @unchecked Sendable {
     public var status: Status { lock.withLock { _status } }
     public var settings: AppSettings { lock.withLock { _settings } }
     public var plan: LaunchPlan? { lock.withLock { _plan } }
+    /// Where things stand with a SynAmp that runs somewhere else (nil: it runs on this Mac).
+    public var link: LinkState? { lock.withLock { self.monitor }?.link }
+    /// The token the window hands to the web app: this Mac's own, or the connection's.
+    public var accessToken: String? { settings.connection != nil ? connectionTokens.read() : plan?.token }
+    public var connectionToken: String? { connectionTokens.read() }
 
     private func set(_ status: Status) {
         lock.withLock { _status = status }
@@ -78,6 +96,8 @@ public final class Engine: @unchecked Sendable {
         // Turning "keep awake" off lets the Mac sleep straight away.
         if !next.preventSleep { keepAwake.update(busy: false, allowed: false) }
         else if let watcher = lock.withLock({ self.watcher }) { Task { await watcher.check() } }
+        // A changed address or "when I'm away" choice counts from now.
+        if let monitor = lock.withLock({ self.monitor }) { Task { await monitor.check() } }
         if case .needsSetup = status, next.isSetUp { set(.stopped) }
     }
 
@@ -102,10 +122,14 @@ public final class Engine: @unchecked Sendable {
     /// Start SynAmp. Status says how it went; nothing is thrown at the window.
     public func start() async {
         switch status {
-        case .starting, .running: return
+        case .starting, .running, .away: return
         default: break
         }
         guard settings.isSetUp else { set(.needsSetup); return }
+        if settings.connection != nil {
+            await startConnected()
+            return
+        }
         set(.starting)
         let leftovers = LeftoverProcesses(file: paths.runningFile)
         let stopped = leftovers.stopLeftovers()
@@ -130,6 +154,46 @@ public final class Engine: @unchecked Sendable {
         }
     }
 
+    // MARK: SynAmp somewhere else
+
+    /// SynAmp runs on a NAS or another computer: start nothing here, find out
+    /// whether it answers (at home, or remotely), and keep watching.
+    private func startConnected() async {
+        set(.starting)
+        let monitor = ConnectionMonitor(connection: { [weak self] in self?.settings.connection }, probe: probe)
+        monitor.onChange = { [weak self] link in self?.linkChanged(link) }
+        lock.withLock { self.monitor = monitor }
+        guard await monitor.check() != nil else {
+            lock.withLock { self.monitor = nil }
+            set(.problem("The address for SynAmp isn't one this Mac can use. Open Connection settings and check it."))
+            return
+        }
+        monitor.start(every: connectionCheckEvery)
+    }
+
+    private func linkChanged(_ link: LinkState) {
+        note("connection: \(link)")
+        if let url = link.url { set(.running(url)) } else { set(.away(link)) }
+    }
+
+    /// Save where SynAmp runs (from the first run or Connection settings).
+    public func saveConnection(_ connection: Connection, token: String) throws {
+        try connectionTokens.write(token)
+        try update { $0.connection = connection }
+    }
+
+    /// The person's answer to "Connect remotely?", for this time away.
+    public func chooseAway(_ choice: AwayChoice) async {
+        let monitor = lock.withLock { self.monitor }
+        await monitor?.choose(choice)
+    }
+
+    /// Look again now (the network changed, the Mac woke, or "Check again").
+    public func checkConnectionNow() async {
+        let monitor = lock.withLock { self.monitor }
+        await monitor?.check()
+    }
+
     /// Start listening to the whole library (after the first run): find the
     /// songs, then listen to them. The same as "Start analysis" in the app.
     public func startListening() async {
@@ -148,6 +212,12 @@ public final class Engine: @unchecked Sendable {
 
     /// Stop every piece (Quit, or before changing the music folder).
     public func stop() async {
+        if let monitor = lock.withLock({ self.monitor }) {
+            monitor.stop()
+            lock.withLock { self.monitor = nil }
+            set(.stopped)
+            return
+        }
         guard let supervisor = lock.withLock({ self.supervisor }) else {
             note("stop: nothing running")
             return
@@ -164,6 +234,10 @@ public final class Engine: @unchecked Sendable {
     /// The address to open SynAmp at, with the token handed over once in the
     /// fragment (never sent to the network; the web app keeps it for the tab).
     public func openURL() -> URL? {
+        if settings.connection != nil {
+            guard let base = link?.url, let token = connectionTokens.read(), !token.isEmpty else { return nil }
+            return URL(string: "\(base.absoluteString)/#/library?access=\(token)")
+        }
         guard let plan else { return nil }
         return URL(string: "\(plan.localURL.absoluteString)/#/library?access=\(plan.token)")
     }

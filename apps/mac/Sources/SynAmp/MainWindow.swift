@@ -76,6 +76,16 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         show(url, token: token)
     }
 
+    /// Is the window on screen right now?
+    var isShowing: Bool { window?.isVisible == true }
+
+    /// SynAmp moved to another address (home to remote, or back). An open window
+    /// follows; a hidden one stays hidden and loads the new address when opened.
+    func retarget(_ url: URL, token: String) {
+        guard isShowing else { return }
+        show(url, token: token)
+    }
+
     // MARK: window
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
@@ -104,7 +114,10 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     private func isSynAmp(_ url: URL?) -> Bool {
         guard let url, let origin else { return false }
-        return url.scheme == origin.scheme && url.host == origin.host && url.port == origin.port
+        // Names compare without regard to capitals: WebKit turns "Syd.local" into
+        // "syd.local", and SynAmp's own page must never be sent to the browser.
+        return url.scheme == origin.scheme && url.host?.lowercased() == origin.host?.lowercased()
+            && (url.port ?? 80) == (origin.port ?? 80)
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,

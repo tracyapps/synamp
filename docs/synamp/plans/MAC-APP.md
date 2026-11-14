@@ -61,6 +61,41 @@ SynAmp is listening to the library or something is playing through it, the app
 asks macOS not to sleep (an IOKit power assertion), and lets it sleep again
 otherwise. A Settings switch turns that off.
 
+## SynAmp somewhere else (connections)
+
+The same app covers the person whose SynAmp already runs on a NAS or another
+computer. In the first run (or **Connection settings…** in the menu) they pick
+"It's already running on my NAS or another computer" and give:
+
+- the **address at home** (`Syd.local:8080`), checked on the spot: does SynAmp
+  answer there, and does it accept the access token?
+- the **access token** (kept in the Keychain, apart from this Mac's own);
+- optionally the **address away from home**. If Listen anywhere is already set
+  up, the app reads the name from SynAmp and fills this in itself;
+- **When I'm away from home:** Ask me (default) / Connect automatically / Stay offline.
+
+In this mode the app starts none of SynAmp's pieces. `ConnectionMonitor` asks
+`/health` at home every 20 seconds, and straight away when the network changes
+(`NWPathMonitor`). Two missed answers in a row count as away (one is a restart
+or a Wi-Fi hiccup). Then, if the remote address answers:
+
+- **Ask me:** "You're away from home. Connect remotely?" as a sheet in the
+  window when it's open, otherwise as a notification; the menu has the same
+  two choices the whole time. The answer lasts until home answers again.
+- **Connect automatically:** the window moves to the remote address.
+- **Stay offline:** nothing connects; the menu still offers "Connect remotely".
+
+Home always wins: as soon as it answers, the window goes back to it. Nothing
+here ever asks Finder to mount anything, so nothing pops up uninvited.
+
+The first time the app talks to an address on the home network, macOS asks
+"Allow SynAmp to find devices on your local network?". Until that's allowed,
+home looks like it isn't answering; the setup check says so in its message.
+
+Not yet: listening (analysis) from this Mac for a SynAmp on a NAS still uses
+the development worker; turning Listen anywhere on from the app; a NAS install
+started from the app.
+
 ## First run (G2)
 
 A short native window, then the web app takes over:
