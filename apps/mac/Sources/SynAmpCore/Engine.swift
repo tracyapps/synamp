@@ -209,6 +209,47 @@ public final class Engine: @unchecked Sendable {
         }
         monitor.start(every: connectionCheckEvery)
         startStatusWatcher()
+        await startListeningForConnection()
+    }
+
+    /// This Mac listens to the library for the SynAmp on the NAS, when that's
+    /// been chosen. A problem here never stops the connection itself: playing
+    /// from the NAS doesn't need it.
+    private func startListeningForConnection() async {
+        guard let connection = settings.connection, connection.listensHere, let home = connection.homeURL else { return }
+        guard let token = connectionTokens.read(), !token.isEmpty,
+              let spec = ServiceSpec.listeningForConnection(connection, token: token, paths: paths, layout: layout) else { return }
+        guard FileManager.default.isExecutableFile(atPath: layout.python.path) else {
+            note("listening: not started; Python with SynAmp's listening is missing at \(layout.python.path)")
+            onPiece?("listening", .failed("Listening is missing from this copy of SynAmp."))
+            return
+        }
+        let leftovers = LeftoverProcesses(file: paths.runningFile)
+        let stopped = leftovers.stopLeftovers()
+        if !stopped.isEmpty { note("stopped leftovers from last time: \(stopped.joined(separator: ", "))") }
+        do {
+            try paths.create()
+            let supervisor = Supervisor(specs: [spec], logURL: { [paths] in paths.log(for: $0.name) })
+            supervisor.onChange = { [weak self, weak supervisor] name, state in
+                self?.note("\(name): \(state)")
+                if state == .running, let supervisor { leftovers.record(supervisor.runningProcesses) }
+                self?.onPiece?(name, state)
+            }
+            lock.withLock { self.supervisor = supervisor }
+            try await supervisor.start()
+            // Only this Mac's own work keeps it awake: music the NAS plays doesn't need this Mac.
+            let activity = ActivityWatcher.http(base: home, token: token)
+            let watcher = ActivityWatcher(fetch: {
+                guard let answer = await activity() else { return nil }
+                let listening = answer.reasons.filter { $0 == "listening" }
+                return ActivityWatcher.Activity(busy: !listening.isEmpty, reasons: listening)
+            }, keepAwake: keepAwake, allowed: { [weak self] in self?.settings.preventSleep ?? false })
+            lock.withLock { self.watcher = watcher }
+            watcher.start()
+        } catch {
+            note("listening: couldn't start (\(error))")
+            lock.withLock { self.supervisor = nil }
+        }
     }
 
     private func linkChanged(_ link: LinkState) {
@@ -258,6 +299,15 @@ public final class Engine: @unchecked Sendable {
         if let monitor = lock.withLock({ self.monitor }) {
             monitor.stop()
             lock.withLock { self.monitor = nil }
+            // This Mac's listening, if it was doing that for the SynAmp on the NAS.
+            if let supervisor = lock.withLock({ self.supervisor }) {
+                set(.stopping)
+                lock.withLock { self.watcher }?.stop()
+                lock.withLock { self.watcher = nil }
+                await supervisor.stop()
+                LeftoverProcesses(file: paths.runningFile).clear()
+                lock.withLock { self.supervisor = nil }
+            }
             set(.stopped)
             return
         }

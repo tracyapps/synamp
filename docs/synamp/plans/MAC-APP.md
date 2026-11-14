@@ -92,9 +92,25 @@ The first time the app talks to an address on the home network, macOS asks
 "Allow SynAmp to find devices on your local network?". Until that's allowed,
 home looks like it isn't answering; the setup check says so in its message.
 
-Not yet: listening (analysis) from this Mac for a SynAmp on a NAS still uses
-the development worker; turning Listen anywhere on from the app; a NAS install
-started from the app.
+**Listening from this Mac.** A NAS is usually too slow to listen to songs, and
+its install has no listening piece, so a computer does it. With "Use this Mac
+to listen to the library" on, the app runs the listening worker itself (no
+Terminal, no background agent to install), pointed at the home address:
+
+- the person chooses the music folder as this Mac sees it
+  (`/Volumes/music/library`). It must be the folder the NAS uses: the app checks
+  for the `.synamp` notes folder beside it and says so if it's missing;
+- the share's address is read from the folder (`ListenFolder.shareURL`), so
+  listening can reconnect it at home; away it waits quietly;
+- what it learns (`library-signals.json`) and the rename journal live in
+  `.synamp` beside the music, where the NAS reads them; its own working data
+  stays in Application Support on this Mac;
+- only this Mac's listening keeps it awake, not music the NAS is playing.
+
+If listening can't start, the connection still works and the menu says so.
+
+Not yet: turning Listen anywhere on from the app; a NAS install started from
+the app.
 
 ## What the menu says
 

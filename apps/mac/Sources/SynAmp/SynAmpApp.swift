@@ -248,7 +248,16 @@ final class AppModel: ObservableObject {
 
     /// Connect this Mac to a SynAmp that runs somewhere else. Returns what went
     /// wrong, in words, or nil when it's connected.
-    func finishConnection(home: String, token typed: String, remote: String, whenAway: WhenAway, startAtLogin: Bool) async -> String? {
+    func finishConnection(home: String, token typed: String, remote: String, whenAway: WhenAway, listenFolder: URL?, startAtLogin: Bool) async -> String? {
+        if let listenFolder {
+            var isFolder: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: listenFolder.path, isDirectory: &isFolder), isFolder.boolValue else {
+                return "The music folder for listening can't be found. If it's on your NAS, connect the share in Finder and choose it again."
+            }
+            guard ListenFolder.isShared(listenFolder) else {
+                return "That doesn't look like the music folder your SynAmp uses: there's no “.synamp” folder beside it. Choose the same folder SynAmp on your NAS was given (often called “library”)."
+            }
+        }
         guard let homeURL = Connection.address(home) else {
             return "That address doesn't look right. It's something like Syd.local:8080."
         }
@@ -268,7 +277,8 @@ final class AppModel: ObservableObject {
         }
         await engine.stop()
         do {
-            try engine.saveConnection(Connection(home: homeURL.absoluteString, remote: remoteURL?.absoluteString, whenAway: whenAway), token: token)
+            try engine.saveConnection(Connection(home: homeURL.absoluteString, remote: remoteURL?.absoluteString, whenAway: whenAway,
+                                                 listenFolder: listenFolder?.path, shareURL: listenFolder.flatMap { ListenFolder.shareURL(for: $0) }), token: token)
             try engine.update { $0.startAtLogin = startAtLogin }
         } catch {
             return "Couldn't save your choices: \(error.localizedDescription)"
@@ -434,6 +444,12 @@ struct MenuContent: View {
                 NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension")!)
             }
         }
+        if model.settings.connection?.listensHere == true {
+            Toggle("Keep this Mac awake while it listens to your library", isOn: Binding(get: { model.settings.preventSleep }, set: { model.setKeepAwake($0) }))
+            if case .failed = model.pieces["listening"] {
+                Text("Listening on this Mac has stopped. “Show logs” has the details")
+            }
+        }
         if model.settings.connection == nil {
             Toggle("Keep this Mac awake while SynAmp works", isOn: Binding(get: { model.settings.preventSleep }, set: { model.setKeepAwake($0) }))
             if model.settings.isSetUp {
@@ -462,6 +478,8 @@ struct FirstRunView: View {
     @State private var token = ""
     @State private var remote: String
     @State private var whenAway: WhenAway
+    @State private var listenHere: Bool
+    @State private var listenFolder: URL?
     @State private var startAtLogin: Bool
     @State private var working = false
     @State private var problem = ""
@@ -475,6 +493,8 @@ struct FirstRunView: View {
         _home = State(initialValue: settings.connection?.home ?? "")
         _remote = State(initialValue: settings.connection?.remote ?? "")
         _whenAway = State(initialValue: settings.connection?.whenAway ?? .ask)
+        _listenHere = State(initialValue: settings.connection?.listensHere ?? false)
+        _listenFolder = State(initialValue: settings.connection?.listenFolder.flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) })
         _startAtLogin = State(initialValue: settings.startAtLogin)
     }
 
@@ -508,7 +528,8 @@ struct FirstRunView: View {
                 Spacer()
                 Button(buttonTitle) { finish() }
                     .keyboardShortcut(.defaultAction)
-                    .disabled(working || (place == .thisMac ? folder == nil : home.isEmpty || (token.isEmpty && !hasSavedToken)))
+                    .disabled(working || (place == .thisMac ? folder == nil
+                                          : home.isEmpty || (token.isEmpty && !hasSavedToken) || (listenHere && listenFolder == nil)))
             }
         }
         .padding(24)
@@ -527,7 +548,8 @@ struct FirstRunView: View {
             if place == .thisMac, let folder {
                 await model.finishSetup(musicFolder: folder, startAtLogin: startAtLogin)
             } else if place == .elsewhere {
-                if let wrong = await model.finishConnection(home: home, token: token, remote: remote, whenAway: whenAway, startAtLogin: startAtLogin) {
+                if let wrong = await model.finishConnection(home: home, token: token, remote: remote, whenAway: whenAway,
+                                                            listenFolder: listenHere ? listenFolder : nil, startAtLogin: startAtLogin) {
                     problem = wrong
                     problemFocused = true  // VoiceOver goes to what went wrong
                 }
@@ -584,6 +606,31 @@ struct FirstRunView: View {
                     Text("The away-from-home address comes from Listen anywhere in SynAmp. If you've set that up already, leave it empty and SynAmp fills it in.")
                         .font(.callout).foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(4)
+            }
+
+            GroupBox {
+                VStack(alignment: .leading, spacing: 8) {
+                    Toggle("Use this Mac to listen to the library", isOn: $listenHere)
+                    Text("SynAmp learns your songs by listening to them, and a NAS is usually too slow for that. This Mac can do it whenever it's on your home network. Away from home it waits.")
+                        .font(.callout).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if listenHere {
+                        HStack {
+                            Text(listenFolder?.path ?? "No folder chosen yet")
+                                .foregroundStyle(listenFolder == nil ? .secondary : .primary)
+                                .lineLimit(2)
+                                .truncationMode(.middle)
+                            Spacer()
+                            Button(listenFolder == nil ? "Choose music folder…" : "Change…") {
+                                if let picked = model.chooseMusicFolder() { listenFolder = picked }
+                            }
+                        }
+                        Text("Choose the same music folder your SynAmp uses, as this Mac sees it: for example the “library” folder on your NAS share.")
+                            .font(.callout).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .padding(4)
             }

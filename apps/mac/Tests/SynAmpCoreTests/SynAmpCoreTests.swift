@@ -392,6 +392,49 @@ final class ConnectionTests: XCTestCase {
         await both.stop()
     }
 
+    func testThisMacListensForTheNas() async throws {
+        let root = try temporaryFolder()
+        let share = root.appendingPathComponent("music", isDirectory: true)
+        let library = share.appendingPathComponent("library", isDirectory: true)
+        try FileManager.default.createDirectory(at: library, withIntermediateDirectories: true)
+        XCTAssertFalse(ListenFolder.isShared(library), "no notes folder beside it: not the folder SynAmp uses")
+        try FileManager.default.createDirectory(at: share.appendingPathComponent(".synamp"), withIntermediateDirectories: true)
+        XCTAssertTrue(ListenFolder.isShared(library))
+
+        XCTAssertEqual(ListenFolder.tidy("smb://tapps@Syd._smb._tcp.local/music/"), "smb://tapps@Syd.local/music")
+        XCTAssertEqual(ListenFolder.tidy("smb://tapps:secret@Syd.local/music"), "smb://tapps@Syd.local/music", "a password never goes into settings")
+        XCTAssertNil(ListenFolder.tidy("file:///Volumes/Music"), "a plain drive isn't a share to reconnect")
+
+        let connection = Connection(home: home, remote: remote, listenFolder: library.path, shareURL: "smb://Syd.local/music")
+        let file = root.appendingPathComponent("settings.json")
+        try AppSettings(connection: connection).save(to: file)
+        XCTAssertEqual(AppSettings.load(from: file).connection, connection)
+        XCTAssertFalse(Connection(home: home).listensHere)
+
+        let paths = AppPaths(support: root.appendingPathComponent("support"), logs: root.appendingPathComponent("logs"))
+        let spec = try XCTUnwrap(ServiceSpec.listeningForConnection(connection, token: "tok", paths: paths, layout: .development(repo: root)))
+        XCTAssertEqual(spec.environment["LIBRARY_PATH"], library.path)
+        XCTAssertEqual(spec.environment["SYNAMP_BRAIN_URL"], home, "it asks SynAmp at home; away it waits")
+        XCTAssertEqual(spec.environment["SYNAMP_BRAIN_TOKEN"], "tok")
+        XCTAssertEqual(spec.environment["SYNAMP_MUSIC_SHARE_URL"], "smb://Syd.local/music")
+        XCTAssertEqual(spec.environment["SYNAMP_EXPORT_PATH"], share.appendingPathComponent(".synamp/library-signals.json").path,
+                       "what it learns goes beside the music, where the SynAmp on the NAS reads it")
+        XCTAssertEqual(spec.environment["RENAME_JOURNAL_PATH"], share.appendingPathComponent(".synamp/renames.jsonl").path)
+        XCTAssertEqual(spec.environment["ANALYZER_DB_PATH"], paths.listening.appendingPathComponent("analyzer.sqlite3").path,
+                       "its own working data stays on this Mac, never on the share")
+        XCTAssertNil(ServiceSpec.listeningForConnection(Connection(home: home), token: "tok", paths: paths, layout: .development(repo: root)))
+
+        // Listening that can't start (it's missing from this copy) never stops the connection.
+        let engine = try engine(connection, network: FakeNetwork(["Syd.local"]))
+        let pieces = PieceBox()
+        engine.onPiece = { name, state in pieces.set(name, state) }
+        await engine.start()
+        XCTAssertEqual(engine.status, .running(URL(string: home)!))
+        guard case .failed = pieces.state("listening") else { return XCTFail("the menu is told listening isn't running") }
+        await engine.stop()
+        XCTAssertEqual(engine.status, .stopped)
+    }
+
     func testCheckingAnAddressAndToken() async {
         let address = URL(string: home)!
         func fetch(health: (String, Int)?, setup: (String, Int)?) -> ConnectionCheck.Fetch {
@@ -465,6 +508,13 @@ final class SystemStatusTests: XCTestCase {
         XCTAssertNil(seen.next)
         XCTAssertEqual(changes.value, 2)
     }
+}
+
+final class PieceBox: @unchecked Sendable {
+    private var states: [String: Supervisor.State] = [:]
+    private let lock = NSLock()
+    func set(_ name: String, _ state: Supervisor.State) { lock.withLock { states[name] = state } }
+    func state(_ name: String) -> Supervisor.State? { lock.withLock { states[name] } }
 }
 
 final class AnswerBox: @unchecked Sendable {

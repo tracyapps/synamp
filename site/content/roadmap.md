@@ -142,6 +142,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-11-14 — With SynAmp on a NAS, the Mac app can now do the listening for it: tick “Use this Mac to listen to the library” and choose your music folder. Nothing to install or type in Terminal
 - 2026-11-13 — The SynAmp icon in the Mac menu bar now tells you what’s going on, in plain words: what’s playing, whether your music is connected, how far listening to your library has got, and whether Listen anywhere is on
 - 2026-11-13 — SynAmp for Mac can now connect to a SynAmp that’s already running on your NAS or another computer. When you’re away from home it offers to connect remotely, the way your laptop offers a Wi-Fi network, and you can choose to always connect, always ask, or stay offline
 - 2026-11-13 — Fixed: with your music on a NAS, taking your laptop away from home made a “problem connecting to the server” window pop up every five minutes. Now SynAmp checks quietly, waits while you’re away, and reconnects by itself when you’re back
