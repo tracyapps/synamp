@@ -141,6 +141,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-11-13 — Fixed: with your music on a NAS, taking your laptop away from home made a “problem connecting to the server” window pop up every five minutes. Now SynAmp checks quietly, waits while you’re away, and reconnects by itself when you’re back
 - 2026-10-22 — Fixed: a song could stop partway through while the player still said Playing, and the next song never came. Now SynAmp notices within a few seconds, tries the song once more, and if it still won’t play, tells you which song and why, then moves on to the next one. If several songs in a row won’t play, it stops and asks you to check your music library instead of running through the whole playlist
 - 2026-10-14 — From the next release, SynAmp's server runs on ARM-based servers and NAS models as well as Intel and AMD ones, with nothing to choose: each server picks the right version itself
 - 2026-10-13 — A lighter listening engine: SynAmp now listens for singing and instruments without the big PyTorch download (about a fifth of the size), gives exactly the same answers, and runs on Intel Macs as well as newer ones
