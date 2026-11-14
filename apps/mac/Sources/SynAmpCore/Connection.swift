@@ -143,6 +143,8 @@ public final class ConnectionMonitor: @unchecked Sendable {
     private var choice: AwayChoice?
     private var homeMisses = 0
     private var task: Task<Void, Never>?
+    /// The latest look, so the next one waits its turn.
+    private var lastCheck: Task<LinkState?, Never>?
 
     /// Told when the link changes (on a background queue).
     public var onChange: (@Sendable (LinkState) -> Void)?
@@ -155,8 +157,25 @@ public final class ConnectionMonitor: @unchecked Sendable {
     public var link: LinkState? { lock.withLock { _link } }
 
     /// Look once. Returns where things stand (nil: no usable home address).
+    ///
+    /// Looks take turns. The regular check, a network change and a changed
+    /// setting can all ask at the same moment; without turns, one could return
+    /// "nothing changed" before the other had told anyone what it found.
     @discardableResult
     public func check() async -> LinkState? {
+        let turn: Task<LinkState?, Never> = lock.withLock {
+            let before = lastCheck
+            let turn = Task { [weak self] () -> LinkState? in
+                _ = await before?.value
+                return await self?.checkOnce()
+            }
+            lastCheck = turn
+            return turn
+        }
+        return await turn.value
+    }
+
+    private func checkOnce() async -> LinkState? {
         guard let connection = connection(), let home = connection.homeURL else { return nil }
         let homeAnswers = await probe(home)
         let (previous, holdOn): (LinkState?, Bool) = lock.withLock {
