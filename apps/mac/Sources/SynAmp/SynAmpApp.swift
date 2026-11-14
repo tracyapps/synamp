@@ -1,4 +1,5 @@
 import AppKit
+import CoreImage.CIFilterBuiltins
 import Network
 import SwiftUI
 import SynAmpCore
@@ -90,6 +91,7 @@ final class AppModel: ObservableObject {
     /// What SynAmp is doing right now (playing, listening, the music, Listen anywhere); nil: not known.
     @Published var system: SystemStatus?
     private var firstRunWindow: NSWindow?
+    private var phoneWindow: NSWindow?
     private var mainWindow: MainWindowController?
     let updates = Updates()
     private let awayNotice = AwayNotice()
@@ -146,6 +148,23 @@ final class AppModel: ObservableObject {
     var systemLines: [String] {
         guard case .running = status, let system else { return [] }
         return StatusWords.lines(system)
+    }
+
+    /// "Open on your phone": QR codes for the addresses a phone uses.
+    func showPhoneLinks() {
+        let view = PhoneLinksView(links: engine.phoneLinks())
+        if phoneWindow == nil {
+            let window = NSWindow(contentViewController: NSHostingController(rootView: view))
+            window.title = "Open SynAmp on your phone"
+            window.styleMask = [.titled, .closable]
+            window.isReleasedWhenClosed = false
+            window.center()
+            phoneWindow = window
+        } else {
+            phoneWindow?.contentViewController = NSHostingController(rootView: view)
+        }
+        NSApp.activate(ignoringOtherApps: true)
+        phoneWindow?.makeKeyAndOrderFront(nil)
     }
 
     /// Open SynAmp's window on one screen (Listen anywhere, Settings).
@@ -408,6 +427,7 @@ struct MenuContent: View {
             Button("Open SynAmp") { model.open() }
                 .keyboardShortcut("o")
             Button("Open in browser") { model.openInBrowser() }
+            Button("Open on your phone…") { model.showPhoneLinks() }
             if model.system?.anywhere.ready == false {
                 Button("Set up Listen anywhere…") { model.open(screen: "anywhere") }
             }
@@ -700,5 +720,75 @@ final class AwayNotice: NSObject, UNUserNotificationCenterDelegate {
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                             withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .list])
+    }
+}
+
+/// QR codes for opening SynAmp on a phone, with the address in words beside
+/// each one and a Copy button for anyone who can't scan.
+struct PhoneLinksView: View {
+    let links: [PhoneLink]
+    @State private var copied: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Open SynAmp on your phone")
+                .font(.title)
+                .accessibilityAddTraits(.isHeader)
+            if links.isEmpty {
+                Text("SynAmp isn't running yet, or this Mac has no name on your network that a phone can use. Start SynAmp and try again.")
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text("Point your phone's camera at a code and tap the link. It opens SynAmp already signed in.")
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .top, spacing: 24) {
+                    ForEach(links) { link in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(link.title).font(.headline).accessibilityAddTraits(.isHeader)
+                            if let image = QRCode.image(for: link.url.absoluteString) {
+                                Image(nsImage: image)
+                                    .interpolation(.none)
+                                    .resizable()
+                                    .frame(width: 200, height: 200)
+                                    .padding(10)
+                                    .background(Color.white)  // codes scan best dark on white, in light or dark mode
+                                    .accessibilityLabel("QR code for \(link.address)")
+                            }
+                            Text(link.detail).font(.callout).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(link.address).font(.callout.monospaced()).textSelection(.enabled)
+                            HStack {
+                                Button("Copy link") {
+                                    NSPasteboard.general.clearContents()
+                                    NSPasteboard.general.setString(link.url.absoluteString, forType: .string)
+                                    copied = link.id
+                                }
+                                if copied == link.id { Text("Copied").font(.callout).foregroundStyle(.secondary) }
+                            }
+                        }
+                        .frame(width: 220, alignment: .leading)
+                    }
+                }
+                Label("Anyone who scans a code can use your SynAmp. Show it only to people you'd hand your music to.", systemImage: "lock")
+                    .font(.callout)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(24)
+        .frame(minWidth: 320, maxWidth: 560, alignment: .leading)
+    }
+}
+
+enum QRCode {
+    /// A QR code as sharp black squares (the view scales it without blurring).
+    static func image(for text: String) -> NSImage? {
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(text.utf8)
+        filter.correctionLevel = "M"
+        guard let output = filter.outputImage else { return nil }
+        let scaled = output.transformed(by: CGAffineTransform(scaleX: 8, y: 8))
+        let rep = NSCIImageRep(ciImage: scaled)
+        let image = NSImage(size: rep.size)
+        image.addRepresentation(rep)
+        return image
     }
 }
