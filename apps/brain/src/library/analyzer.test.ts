@@ -52,6 +52,9 @@ test("an interrupted command is marked as such; the librarian's batches trigger 
     assert.equal(next.action, "scan");
     assert.match(control.view(4).recent[0]!.summary!, /Interrupted/);
     assert.equal(control.view(4).worker!.problem, "The music isn't reachable");
+    assert.equal(control.view(4).worker!.away, undefined);
+    control.claim({ problem: "Away from the music", away: true }, 5);
+    assert.equal(control.view(5).worker!.away, true, "the worker says when the music's server is out of reach");
     control.complete(next.id, { status: "failed", summary: "The music isn't reachable" }, 5);
 
     assert.equal(control.afterLibrarian()!.requested_by, "the librarian");

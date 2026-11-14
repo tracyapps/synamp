@@ -294,7 +294,8 @@ final class ConnectionTests: XCTestCase {
         let root = try temporaryFolder()
         let paths = AppPaths(support: root.appendingPathComponent("support"), logs: root.appendingPathComponent("logs"))
         let engine = Engine(paths: paths, layout: .development(repo: root), tokens: MemoryTokenStore(), isFree: { _ in true },
-                            connectionTokens: MemoryTokenStore(), probe: network.probe, connectionCheckEvery: 3600)
+                            connectionTokens: MemoryTokenStore(), probe: network.probe, connectionCheckEvery: 3600,
+                            statusFetch: { nil })
         try engine.saveConnection(connection, token: "tok")
         return engine
     }
@@ -417,6 +418,61 @@ final class ConnectionTests: XCTestCase {
         XCTAssertNil(result.words)
         XCTAssertNotNil(ConnectionCheck.Result.wrongToken.words)
     }
+}
+
+final class SystemStatusTests: XCTestCase {
+    func testReadsTheServersAnswer() throws {
+        let json = #"{"player":{"state":"playing","title":"Monkey Wrench","artist":"Foo Fighters"},"phone":false,"listening":{"active":true,"done":120,"total":460,"eta_seconds":10800},"music":{"ok":true,"away":false},"anywhere":{"ready":true,"name":"syd.tail1234.ts.net"}}"#
+        let status = try JSONDecoder().decode(SystemStatus.self, from: Data(json.utf8))
+        XCTAssertEqual(StatusWords.lines(status), [
+            "Playing: Monkey Wrench, by Foo Fighters",
+            "Music: connected",
+            "Listening to your library: 120 of 460 songs, about 3 h left",
+            "Listen anywhere: on (syd.tail1234.ts.net)",
+        ])
+        let quiet = try JSONDecoder().decode(SystemStatus.self, from: Data(#"{"player":null,"phone":false,"listening":null,"music":null,"anywhere":{"ready":false}}"#.utf8))
+        XCTAssertEqual(StatusWords.lines(quiet), ["Listen anywhere: not set up"], "nothing is guessed")
+    }
+
+    func testEveryStateHasItsOwnWords() {
+        XCTAssertEqual(StatusWords.player(.init(state: "paused", title: "Untitled")), "Paused: Untitled")
+        XCTAssertEqual(StatusWords.music(.init(ok: false, away: true)), "Music: out of reach from this network, waiting")
+        XCTAssertEqual(StatusWords.music(.init(ok: false)), "Music: not connected")
+        XCTAssertEqual(StatusWords.listening(.init(active: false, done: 120, total: 460)), "Listened to 120 of 460 songs so far. Not listening right now")
+        XCTAssertEqual(StatusWords.listening(.init(active: true, done: 120, total: 460)), "Listening to your library: 120 of 460 songs")
+        XCTAssertEqual(StatusWords.listening(.init(active: false, done: 460, total: 460)), "Your whole library is listened to: 460 songs")
+        XCTAssertNil(StatusWords.listening(.init(active: false, done: 0, total: 0)), "no songs found yet: nothing to say")
+        XCTAssertEqual(StatusWords.lines(SystemStatus(phone: true)).first, "Playing to a phone app")
+        XCTAssertEqual(StatusWords.timeLeft(60), "about a minute")
+        XCTAssertEqual(StatusWords.timeLeft(45 * 60), "about 45 min")
+        XCTAssertEqual(StatusWords.timeLeft(3 * 3600 + 20 * 60), "about 3 h 20 min")
+        XCTAssertEqual(StatusWords.timeLeft(15 * 86_400), "about 15 days")
+    }
+
+    func testNoAnswerClearsWhatWasShown() async {
+        let answers = AnswerBox(SystemStatus(phone: true))
+        let watcher = StatusWatcher(fetch: { answers.next })
+        let seen = AnswerBox(nil)
+        let changes = Counter()
+        watcher.onChange = { status in seen.set(status); _ = changes.next() }
+        await watcher.check()
+        XCTAssertEqual(watcher.latest, SystemStatus(phone: true))
+        await watcher.check()
+        XCTAssertEqual(changes.value, 1, "the same answer again isn't a change")
+        answers.set(nil)  // SynAmp stopped, or this Mac left home
+        await watcher.check()
+        XCTAssertNil(watcher.latest)
+        XCTAssertNil(seen.next)
+        XCTAssertEqual(changes.value, 2)
+    }
+}
+
+final class AnswerBox: @unchecked Sendable {
+    private var value: SystemStatus?
+    private let lock = NSLock()
+    init(_ value: SystemStatus?) { self.value = value }
+    var next: SystemStatus? { lock.withLock { value } }
+    func set(_ value: SystemStatus?) { lock.withLock { self.value = value } }
 }
 
 final class FileTokenTests: XCTestCase {

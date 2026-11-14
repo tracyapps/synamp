@@ -76,6 +76,21 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         show(url, token: token)
     }
 
+    /// Go to one of SynAmp's screens ("anywhere", "settings") in the window
+    /// that's already showing SynAmp.
+    func go(to screen: String) {
+        let name = screen.filter { $0.isLetter || $0 == "-" }
+        let script = "location.hash = '#/\(name)'"
+        // A page that's still arriving would lose the change: wait for it.
+        if webView.isLoading {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak webView] in
+                webView?.evaluateJavaScript(script, completionHandler: nil)
+            }
+        } else {
+            webView.evaluateJavaScript(script, completionHandler: nil)
+        }
+    }
+
     /// Is the window on screen right now?
     var isShowing: Bool { window?.isVisible == true }
 

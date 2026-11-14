@@ -17,7 +17,7 @@ struct SynAmpApp: App {
             MenuContent(model: model)
         } label: {
             // The menu-bar icon; its words are what VoiceOver reads.
-            Label("SynAmp", systemImage: model.menuSymbol)
+            Label(model.menuLabel, systemImage: model.menuSymbol)
         }
 
     }
@@ -87,6 +87,8 @@ final class AppModel: ObservableObject {
     @Published var settings: AppSettings
     /// Where things stand with a SynAmp that runs somewhere else (nil: it runs on this Mac).
     @Published var link: LinkState?
+    /// What SynAmp is doing right now (playing, listening, the music, Listen anywhere); nil: not known.
+    @Published var system: SystemStatus?
     private var firstRunWindow: NSWindow?
     private var mainWindow: MainWindowController?
     let updates = Updates()
@@ -122,15 +124,41 @@ final class AppModel: ObservableObject {
         status = engine.status
         settings = engine.settings
         engine.onStatus = { status in Task { @MainActor in AppModel.shared.statusChanged(status) } }
+        engine.onSystemStatus = { system in Task { @MainActor in AppModel.shared.system = system } }
         engine.onPiece = { name, state in Task { @MainActor in AppModel.shared.pieces[name] = state } }
     }
 
+    /// The menu-bar icon: a hint only. The menu's first lines say everything in words.
     var menuSymbol: String {
         switch status {
-        case .running: return "waveform"
+        case .running:
+            if system?.player?.state == "playing" || system?.phone == true { return "waveform.circle.fill" }
+            return "waveform"
         case .problem: return "exclamationmark.triangle"
         default: return "waveform.slash"
         }
+    }
+
+    /// What VoiceOver says for the menu-bar icon: SynAmp and where things stand.
+    var menuLabel: String { "SynAmp: \(statusLine)" }
+
+    /// What SynAmp is doing, as lines for the menu (empty when it can't be asked).
+    var systemLines: [String] {
+        guard case .running = status, let system else { return [] }
+        return StatusWords.lines(system)
+    }
+
+    /// Open SynAmp's window on one screen (Listen anywhere, Settings).
+    func open(screen: String) {
+        let fresh = mainWindow == nil
+        if fresh, let url = engine.openURL(screen: screen), let token = engine.accessToken {
+            openWhenReady = false
+            mainWindow = MainWindowController(note: { [engine] in engine.note($0) })
+            mainWindow?.show(url, token: token)
+            return
+        }
+        open()
+        mainWindow?.go(to: screen)
     }
 
     /// The first line of the menu. The icon never carries the meaning alone:
@@ -364,10 +392,15 @@ struct MenuContent: View {
 
     var body: some View {
         Text(model.statusLine)
+        ForEach(model.systemLines, id: \.self) { Text($0) }
         if case .running = model.status {
+            Divider()
             Button("Open SynAmp") { model.open() }
                 .keyboardShortcut("o")
             Button("Open in browser") { model.openInBrowser() }
+            if model.system?.anywhere.ready == false {
+                Button("Set up Listen anywhere…") { model.open(screen: "anywhere") }
+            }
         }
         if case .needsSetup = model.status {
             Button("Choose music folder…") { model.showFirstRun() }

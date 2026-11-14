@@ -85,6 +85,7 @@ import { AnalyzerControl, AnalyzerError } from "./library/analyzer.ts";
 import { firstProgress, MAX_FIRST_PICKS, pathsForIds } from "./library/first-picks.ts";
 import { serveWeb } from "./web-files.ts";
 import { activity, isStreamRequest } from "./system/activity.ts";
+import { systemStatus } from "./system/status.ts";
 import { DEFAULT_SUPPORT_EMAIL, installSections, problemSection, RecentProblems } from "./support/report.ts";
 import type { Facts } from "./support/report.ts";
 import { artistStats, chooseArtist, DiscographyChecker, DiscographyError, discographyReport, DiscographyStore } from "./library/discography.ts";
@@ -1323,6 +1324,20 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const session = sessions.get();
     const analyzer = analyzerControl.view();
     return send(res, 200, activity({ now: Date.now(), session: { state: session.state, updated_at: session.updated_at }, lastStreamAt, analyzer }));
+  }
+
+  // --- what SynAmp is doing right now, in one answer (the menu-bar icon) -----------
+  if (path === "/api/v1/system/status" && req.method === "GET") {
+    const session = sessions.get();
+    const entry = session.current ? session.queue.find((item) => item.entry_id === session.current!.entry_id) : undefined;
+    return send(res, 200, systemStatus({
+      now: Date.now(),
+      session: { state: session.state, updated_at: session.updated_at, ...(entry ? { current: { title: entry.title, ...(entry.artist ? { artist: entry.artist } : {}) } } : {}) },
+      lastStreamAt,
+      analysis: analysisStatus.view(),
+      worker: analyzerControl.view().worker,
+      anywhere: setup.state,
+    }));
   }
 
   // --- a newer SynAmp release: check, skip a version, remind later -------------------
