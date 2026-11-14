@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from synamp_analyzer.config import AnalyzerConfig
-from synamp_analyzer.worker import ACTIONS, AGENT_LABEL, BrainError, Worker, agent_plist
+from synamp_analyzer.worker import ACTIONS, AGENT_LABEL, BrainError, Worker, agent_plist, share_answers, share_server
 
 from synth import sine
 
@@ -104,6 +104,70 @@ def test_unreachable_music_is_reported_in_plain_words(tmp_path: Path) -> None:
     assert "isn't reachable" in brain.reports["a_000000000004"]["summary"]
     assert "Finder" in brain.reports["a_000000000004"]["summary"]
     assert brain.hellos[0]["library_ok"] is False and "problem" in brain.hellos[0]
+    assert "away" not in brain.hellos[0], "no share address: nothing says this is a server that's out of reach"
+
+
+def away_worker(tmp_path: Path, monkeypatch, home: dict) -> tuple[Worker, list[str], list[str], FakeBrain]:
+    """A worker whose music is on a share; `home["here"]` says whether the server answers."""
+    monkeypatch.setenv("SYNAMP_MUSIC_SHARE_URL", "smb://Syd.local/music")
+    cfg = AnalyzerConfig(library_path=tmp_path / "not-mounted" / "library", database_url="x", cache_dir=tmp_path,
+                         db_path=tmp_path / "a.sqlite3", workers=1)
+    brain = FakeBrain([])
+    mounts: list[str] = []
+    lines: list[str] = []
+
+    def mount(url: str) -> bool:
+        mounts.append(url)
+        if home.get("mounts"):
+            (cfg.library_path / "Artist").mkdir(parents=True)
+        return True
+
+    worker = Worker(cfg, brain, log=lines.append, sleep=lambda _s: None, keep_awake=lambda: None, now=Clock(),
+                    mount=mount, reachable=lambda _url: home["here"])
+    return worker, lines, mounts, brain
+
+
+def test_away_from_home_finder_is_never_asked(tmp_path: Path, monkeypatch) -> None:
+    home = {"here": False}
+    worker, lines, mounts, brain = away_worker(tmp_path, monkeypatch, home)
+    for _ in range(40):  # twenty minutes of the clock: the old worker asked Finder four times
+        assert worker.once() == "idle"
+    assert mounts == [], "asking Finder for a server that isn't there puts a window on screen"
+    hello = brain.hellos[-1]
+    assert hello["away"] is True and hello["library_ok"] is False
+    assert hello["problem"].startswith("Away from the music: Syd.local isn't answering")
+    assert "Finder" not in hello["problem"], "nothing for the person to do"
+    assert sum("isn't answering" in line for line in lines) == 1, "said once, not every round"
+
+
+def test_back_home_the_share_connects_straight_away(tmp_path: Path, monkeypatch) -> None:
+    home = {"here": False, "mounts": True}
+    worker, lines, mounts, brain = away_worker(tmp_path, monkeypatch, home)
+    worker.once()
+    home["here"] = True
+    worker.once()
+    assert mounts == ["smb://Syd.local/music"], "one request, as soon as the server answers"
+    worker.once()
+    assert "away" not in brain.hellos[-1] and brain.hellos[-1]["library_ok"] is True and "problem" not in brain.hellos[-1]
+    assert any("answering again" in line for line in lines)
+
+
+def test_at_home_a_failed_connection_still_points_at_finder(tmp_path: Path, monkeypatch) -> None:
+    home = {"here": True}
+    worker, _lines, mounts, brain = away_worker(tmp_path, monkeypatch, home)
+    for _ in range(12):
+        worker.once()
+    assert 1 <= len(mounts) < 6, "retried every five minutes, not every round"
+    assert "Finder" in brain.hellos[-1]["problem"] and "away" not in brain.hellos[-1]
+
+
+def test_share_addresses() -> None:
+    assert share_server("smb://Syd.local/music") == ("Syd.local", 445), "the name as typed, for messages"
+    assert share_server("smb://tapps@nas.example:1445/music") == ("nas.example", 1445)
+    assert share_server("afp://nas/music") == ("nas", 548)
+    assert share_server("not an address") is None
+    assert share_answers("not an address") is True, "an address we can't read still gets its connection attempt"
+    assert share_answers("smb://127.0.0.1:1/music", timeout=0.5) is False
 
 
 def test_unknown_actions_and_a_missing_brain(tmp_path: Path) -> None:
