@@ -24,6 +24,7 @@ import { FavouritesProvider } from "./favourites";
 import Lyrics from "./Lyrics";
 import BrainSession from "./BrainSession";
 import ListenAnywhere from "./ListenAnywhere";
+import { SystemStatusButton } from "./SystemStatus";
 import PlaybackSettings from "./PlaybackSettings";
 import AnalysisMemory from "./AnalysisMemory";
 import { newId } from "./ids";
@@ -241,7 +242,7 @@ export default function App() {
           <details className="app__workspace-menu"><summary className="btn btn--ghost">Menu</summary><nav aria-label="Galaxy menu">{SCREENS.map(item => <a key={item.id} className="app__nav-link" href={`#/${item.id}`} aria-current={screen === item.id ? "page" : undefined} onClick={event => event.currentTarget.closest("details")?.removeAttribute("open")}><Icon name={item.icon} />{item.label}</a>)}</nav></details>
         </> : <>
           <a className="app__brand" href="#/library" aria-label="SynAmp, go to Library"><img className="brand-mark app__mark" src={mark} alt="" width={34} height={34} /><img className="app__wordmark" src={wordmark} alt="" width={81} height={22} /></a>
-          <div className="app__bar-right"><VersionBadge request={call} /></div>
+          <div className="app__bar-right"><SystemStatusButton request={call} /><VersionBadge request={call} /></div>
         </>}
       </header>
       <div className="app__layout">

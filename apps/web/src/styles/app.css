@@ -40,6 +40,25 @@ a:hover > .brand-mark, a:focus-visible > .brand-mark { transform: rotate(0deg); 
 .app__bar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .app__bar-right .badge { white-space: nowrap; }
 
+/* "SynAmp right now": a button in the top bar that opens the status lines. */
+.sys-status { position: relative; }
+.sys-status__button { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; list-style: none; color: var(--fg); }
+.sys-status__button::-webkit-details-marker { display: none; }
+/* On a narrow phone the words shorten with … rather than push the logo off the bar. */
+.sys-status__button { max-width: min(60vw, 280px); }
+.sys-status__words { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sys-status__button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.sys-status__panel {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 30;
+  width: min(360px, calc(100vw - 24px)); padding: 14px 16px;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+}
+.sys-status__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sys-status__list li { display: grid; grid-template-columns: 8px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 0.9375rem; line-height: 1.4; }
+.sys-status__list .status-dot { margin-top: 0.45em; }
+.sys-status__list a { white-space: nowrap; }
+
 .app__layout { display: grid; grid-template-columns: 228px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); min-height: 0; overflow: hidden; }
 .app__side {
   align-self: stretch; min-height: 0; max-height: 100%; overflow: auto; overscroll-behavior: contain;

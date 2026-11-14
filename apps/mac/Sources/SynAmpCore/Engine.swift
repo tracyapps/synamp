@@ -324,6 +324,17 @@ public final class Engine: @unchecked Sendable {
         set(.stopped)
     }
 
+    /// The addresses a phone opens SynAmp at (for the QR codes). Empty when
+    /// SynAmp isn't running, or this Mac has no name a phone could use.
+    public func phoneLinks() -> [PhoneLink] {
+        if let connection = settings.connection {
+            guard let token = connectionTokens.read() else { return [] }
+            return PhoneLinks.forConnection(connection, token: token)
+        }
+        guard case .running = status, let plan else { return [] }
+        return PhoneLinks.forThisMac(port: plan.port, token: plan.token)
+    }
+
     /// The address to open SynAmp at, with the token handed over once in the
     /// fragment (never sent to the network; the web app keeps it for the tab).
     public func openURL(screen: String = "library") -> URL? {

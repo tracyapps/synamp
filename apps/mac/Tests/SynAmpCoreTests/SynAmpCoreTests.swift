@@ -435,6 +435,24 @@ final class ConnectionTests: XCTestCase {
         XCTAssertEqual(engine.status, .stopped)
     }
 
+    func testLinksForAPhone() async throws {
+        // SynAmp on this Mac: this Mac's name on the network, and SynAmp's port.
+        let own = PhoneLinks.forThisMac(port: 8380, token: "tok", hostName: "tapps-MacBook.local")
+        XCTAssertEqual(own.map(\.url.absoluteString), ["http://tapps-MacBook.local:8380/#/library?access=tok"])
+        XCTAssertEqual(own.first?.address, "http://tapps-MacBook.local:8380", "what's shown and read aloud has no token in it")
+        XCTAssertTrue(PhoneLinks.forThisMac(port: 8380, token: "tok", hostName: "localhost").isEmpty, "a phone can't use localhost")
+        XCTAssertTrue(PhoneLinks.forThisMac(port: 8380, token: "", hostName: "tapps-MacBook.local").isEmpty)
+
+        // SynAmp on a NAS: the same two addresses this Mac uses.
+        let both = PhoneLinks.forConnection(Connection(home: home, remote: remote), token: "tok")
+        XCTAssertEqual(both.map(\.place), [.home, .away])
+        XCTAssertEqual(both.map(\.url.absoluteString), ["http://Syd.local:8080/#/library?access=tok", "http://syd.tail1234.ts.net:8080/#/library?access=tok"])
+        XCTAssertEqual(PhoneLinks.forConnection(Connection(home: home), token: "tok").count, 1)
+
+        let engine = try engine(Connection(home: home, remote: remote), network: FakeNetwork(["Syd.local"]))
+        XCTAssertEqual(engine.phoneLinks().map(\.address), [home, remote])
+    }
+
     func testCheckingAnAddressAndToken() async {
         let address = URL(string: home)!
         func fetch(health: (String, Int)?, setup: (String, Int)?) -> ConnectionCheck.Fetch {

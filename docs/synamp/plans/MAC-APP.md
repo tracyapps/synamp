@@ -130,6 +130,20 @@ Lines appear only when there's something true to say; no answer clears them.
 Everything is words (`StatusWords`), so VoiceOver reads the same thing and
 nothing depends on the icon or a colour.
 
+## Open on your phone
+
+**Open on your phone…** in the menu shows a QR code per address: "At home"
+(this Mac's `.local` name and port, or the NAS's home address) and, when Listen
+anywhere is set up for a SynAmp somewhere else, "Away from home". The code
+holds the address with the access token after the `#`, so the phone opens
+SynAmp already signed in; the web app takes the token out of the address at
+once (`access-handoff.ts`). The address is also shown in words without the
+token, with a Copy link button, and a line saying who to show the code to.
+
+The web app's top bar has the same status as the menu (`SystemStatus.tsx`,
+`system-status.ts`): a button with the one thing most worth knowing, opening
+to the full lines. That's the status on a phone.
+
 ## First run (G2)
 
 A short native window, then the web app takes over:
