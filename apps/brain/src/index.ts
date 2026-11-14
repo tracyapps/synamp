@@ -70,6 +70,11 @@ import { djOrder } from "./session/dj.ts";
 import { gaplessInfo } from "./session/gapless.ts";
 import { ExplorerSelections } from "./library/explorer-selection.ts";
 import { galaxy, galaxyArtist, galaxyMap, galaxyRandom } from "./library/galaxy.ts";
+import type { GalaxyPlays } from "./library/galaxy.ts";
+import { galaxyNameKeys } from "./library/galaxy.ts";
+import type { GalaxyEnrichment } from "./library/galaxy.ts";
+import { GalaxyEnricher, GalaxyMbStore, mbRelationEdges } from "./library/galaxy-mb.ts";
+import { artistKey } from "./library/naming.ts";
 import { AlbumMatches, chooseRelease, Matcher, MissingError, MissingNotes, missingCsv, missingList } from "./library/missing.ts";
 import { MusicBrainz, MusicBrainzError } from "./library/musicbrainz.ts";
 import { buildPlan, carryMatches, OrganiseError, OrganiseStore, PathOverlay, tagDecisions } from "./library/organise.ts";
@@ -312,7 +317,53 @@ function stats(): ArtistStat[] {
   if (statsCache?.key !== key) statsCache = { key, stats: artistStats(lib, events.all(), (id) => library.canonicalId(id)) };
   return statsCache.stats;
 }
+
+/** What "listening" means in Galaxy: full plays, external plays and repeats per canonical track id. */
+let playsCache: { key: string; plays: GalaxyPlays } | undefined;
+function playsByTrack(): GalaxyPlays {
+  const key = `${currentLibrary().version}|${events.all().length}`;
+  if (playsCache?.key === key) return playsCache.plays;
+  const plays: GalaxyPlays = new Map();
+  for (const event of events.all()) {
+    if (event.signal !== "full_play" && event.signal !== "external_play" && event.signal !== "repeat") continue;
+    const id = library.canonicalId(event.track_id);
+    const entry = plays.get(id) ?? { plays: 0, last: 0 };
+    entry.plays++;
+    if (event.ts > entry.last) entry.last = event.ts;
+    plays.set(id, entry);
+  }
+  playsCache = { key, plays };
+  return plays;
+}
 const discographyChecker = new DiscographyChecker(discography, mbClient, stats, () => albumMatches.records);
+
+/** Galaxy × MusicBrainz: a background pass that turns artist relationships into galaxy edges. */
+const galaxyMb = new GalaxyMbStore(join(dataDir, "galaxy-mb.json"));
+/** Web-connected artists first, then the biggest — enrichment is most useful where the web already is. */
+const galaxyEnricher = new GalaxyEnricher(
+  galaxyMb, mbClient,
+  () => {
+    const map = galaxyMap(currentLibrary(), playsByTrack());
+    const degree = new Map<string, number>();
+    for (const edge of map.edges) { degree.set(edge.a, (degree.get(edge.a) ?? 0) + 1); degree.set(edge.b, (degree.get(edge.b) ?? 0) + 1); }
+    const known = new Map(map.artists.map(artist => [artist.key, artist]));
+    return map.artists.filter(artist => !artist.guest).map(artist => ({ name: artist.name, priority: (degree.get(artist.key) ?? 0) * 1000 + artist.tracks }));
+  },
+  () => Object.values(discography.state.artists).filter(record => record.status === "matched" && record.mbid).map(record => ({ mbid: record.mbid!, name: record.name })),
+);
+let enrichmentViewCache: { key: string; view: GalaxyEnrichment } | undefined;
+function galaxyEnrichment(): GalaxyEnrichment {
+  const library = currentLibrary();
+  const key = `${library.version}|${galaxyMb.revision}`;
+  if (enrichmentViewCache?.key === key) return enrichmentViewCache.view;
+  const view = { revision: galaxyMb.revision, edges: mbRelationEdges(galaxyMb, galaxyNameKeys(library), artistKey) };
+  enrichmentViewCache = { key, view };
+  return view;
+}
+// Kick the enricher when there is work: on boot (contact permitting) and every ten minutes after.
+function nudgeGalaxyEnricher() { if (runtime.musicbrainzContact) galaxyEnricher.start()?.catch((error) => console.error("Galaxy enrichment stopped", error)); }
+setTimeout(nudgeGalaxyEnricher, 30_000).unref();
+setInterval(nudgeGalaxyEnricher, 10 * 60_000).unref();
 function discographyView() {
   return {
     ...discographyReport(currentLibrary(), stats(), discography, albumMatches.records),
@@ -1057,7 +1108,23 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
     return send(res, 200, galaxyRandom(currentLibrary(), { q: url.searchParams.get("q") ?? "" }));
   }
   if (path === "/api/v1/library/galaxy/map" && req.method === "GET") {
-    return send(res, 200, galaxyMap(currentLibrary()));
+    return send(res, 200, galaxyMap(currentLibrary(), playsByTrack(), galaxyEnrichment()));
+  }
+  if (path === "/api/v1/library/galaxy/enrichment" && req.method === "GET") {
+    const records = Object.values(galaxyMb.state.artists);
+    return send(res, 200, {
+      contact_set: !!runtime.musicbrainzContact,
+      checker: { state: galaxyEnricher.state, current: galaxyEnricher.current, done_this_run: galaxyEnricher.done, last_error: galaxyEnricher.lastError },
+      artists: { known: records.length, matched: records.filter(record => record.status === "matched").length, not_found: records.filter(record => record.status === "not_found").length, ambiguous: records.filter(record => record.status === "ambiguous").length, error: records.filter(record => record.status === "error").length },
+      library_edges: galaxyEnrichment().edges.length,
+    });
+  }
+  if (path === "/api/v1/library/galaxy/enrichment" && req.method === "POST") {
+    const input = await body(req);
+    if (input.action === "start") galaxyEnricher.start()?.catch((error) => console.error("Galaxy enrichment stopped", error));
+    else if (input.action === "pause") galaxyEnricher.pause();
+    else throw new BrowseError("action must be \"start\" or \"pause\"");
+    return send(res, 200, { state: galaxyEnricher.state });
   }
   if (path === "/api/v1/library/albums" && req.method === "GET") {
     const q = url.searchParams;

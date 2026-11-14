@@ -8,19 +8,22 @@ export type GalaxySignals = { bpm?: number; valence?: number; arousal?: number }
 export type GalaxyMapNode = {
   key: string; name: string; tracks: number; albums: number;
   genres: string[]; decade?: number; year_first?: number; year_last?: number; letter: string;
-  signals?: GalaxySignals; guest?: boolean; appearances?: number;
+  signals?: GalaxySignals; listening?: { plays: number; last_played?: number }; guest?: boolean; appearances?: number;
 };
-export type GalaxyMapEdge = { a: string; b: string; tracks: number };
+/** credit: parsed from "feat." tags (tracks = songs shared). mb: corroborated or added by MusicBrainz. */
+export type GalaxyMapEdge = { a: string; b: string; tracks: number; credit?: boolean; mb?: string };
 export type GalaxyMap = { version: string; total_tracks: number; artists: GalaxyMapNode[]; edges: GalaxyMapEdge[] };
 
 export type GalaxyView = "cluster" | "bubbles" | "tiles" | "web";
-export type GalaxyGrouping = "genre" | "decade" | "letter";
-export type GalaxyColorBy = "group" | "decade" | "mood" | "energy";
+export type GalaxyGrouping = "genre" | "decade" | "letter" | "listening";
+/** The second hierarchy level inside Bubbles and Tiles; "none" keeps one level. */
+export type GalaxySubgrouping = GalaxyGrouping | "none";
+export type GalaxyColorBy = "group" | "decade" | "mood" | "energy" | "listening";
 export type ThemeId = "nebula" | "aurora" | "spectrum" | "embers" | "ink";
 
 export const VIEW_LABELS: Record<GalaxyView, string> = { cluster: "Galaxy", bubbles: "Bubbles", tiles: "Tiles", web: "Web" };
-export const GROUPING_LABELS: Record<GalaxyGrouping, string> = { genre: "Genre", decade: "Decade", letter: "A–Z" };
-export const COLORBY_LABELS: Record<GalaxyColorBy, string> = { group: "Group", decade: "Era", mood: "Mood", energy: "Energy" };
+export const GROUPING_LABELS: Record<GalaxyGrouping, string> = { genre: "Genre", decade: "Decade", letter: "A–Z", listening: "Listening" };
+export const COLORBY_LABELS: Record<GalaxyColorBy, string> = { group: "Group", decade: "Era", mood: "Mood", energy: "Energy", listening: "Plays" };
 
 /** A node as the engine animates it: layout state added to the brain's facts. */
 export type EngineNode = GalaxyMapNode & {
@@ -37,6 +40,7 @@ export type EngineNode = GalaxyMapNode & {
 
 export type EngineGroup = {
   id: string; label: string; tracks: number; count: number; color: string; nodes: EngineNode[];
+  subgroups: EngineGroup[];
   x: number; y: number; r: number;            // cluster/bubbles centre + radius
   x0: number; y0: number; x1: number; y1: number; // tiles rect
   sx: number; sy: number; sr: number; tx: number; ty: number; tr: number;

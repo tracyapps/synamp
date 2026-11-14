@@ -8,13 +8,13 @@ import type { Collaborator } from "./galaxy/ArtistCard";
 import { groupOf, groupSort } from "./galaxy/layouts";
 import type { GroupLike } from "./galaxy/layouts";
 import { PALETTES } from "./galaxy/palettes";
-import type { GalaxyColorBy, GalaxyGrouping, GalaxyMap, GalaxyMapNode, GalaxyView, ThemeId } from "./galaxy/types";
+import type { GalaxyColorBy, GalaxyGrouping, GalaxyMap, GalaxyMapNode, GalaxySubgrouping, GalaxyView, ThemeId } from "./galaxy/types";
 import { COLORBY_LABELS, GROUPING_LABELS, VIEW_LABELS } from "./galaxy/types";
 import "./styles/galaxy.css";
 
-type Preferences = { view: GalaxyView; grouping: GalaxyGrouping; theme: ThemeId; colorBy: GalaxyColorBy };
+type Preferences = { view: GalaxyView; grouping: GalaxyGrouping; subgrouping: GalaxySubgrouping; theme: ThemeId; colorBy: GalaxyColorBy };
 const STORAGE = "synamp.galaxy.explorer.v1";
-const DEFAULTS: Preferences = { view: "cluster", grouping: "genre", theme: "nebula", colorBy: "group" };
+const DEFAULTS: Preferences = { view: "cluster", grouping: "genre", subgrouping: "none", theme: "nebula", colorBy: "group" };
 const LIST_CAP = 400;
 
 function loadPreferences(): Preferences {
@@ -24,6 +24,8 @@ function loadPreferences(): Preferences {
     return {
       view: value.view in VIEW_LABELS ? value.view : DEFAULTS.view,
       grouping: value.grouping in GROUPING_LABELS ? value.grouping : DEFAULTS.grouping,
+      subgrouping: value.subgrouping === undefined || value.subgrouping === value.grouping ? "none"
+        : value.subgrouping === "none" || value.subgrouping in GROUPING_LABELS ? value.subgrouping : "none",
       theme: value.theme in PALETTES ? value.theme : DEFAULTS.theme,
       colorBy: value.colorBy in COLORBY_LABELS ? value.colorBy : DEFAULTS.colorBy,
     };
@@ -55,6 +57,7 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
   const canvas = useRef<HTMLCanvasElement>(null);
   const engine = useRef<GalaxyEngine | null>(null);
   const { view, grouping, theme, colorBy } = prefs;
+  const subgrouping = prefs.subgrouping === grouping ? "none" : prefs.subgrouping;
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE, JSON.stringify(prefs)); } catch { /* this visit only */ }
@@ -85,8 +88,22 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
   }, []);
 
   useEffect(() => { if (map && engine.current) engine.current.setData(map); }, [map]);
+  useEffect(() => {
+    if (!map) return;
+    let active = true; const controller = new AbortController();
+    request<{ contact_set: boolean; checker: { state: string; done_this_run: number }; artists: { known: number; matched: number; ambiguous: number } }>("/library/galaxy/enrichment", { signal: controller.signal })
+      .then(status => {
+        if (!active || !status.contact_set) return;
+        if (status.artists.known === 0) say(`MusicBrainz enrichment starts in the background — first links appear as artists are matched.`);
+        else say(`MusicBrainz: ${status.artists.matched.toLocaleString()} of ${map.artists.length.toLocaleString()} artists matched${status.checker.state === "running" ? ", checking now…" : "."}`);
+      })
+      .catch(() => { /* enrichment status is optional context */ })
+      .finally(() => { if (active) controller.abort; });
+    return () => { active = false; controller.abort(); };
+  }, [map, request]);
   useEffect(() => { engine.current?.setView(view); }, [view]);
   useEffect(() => { engine.current?.setGrouping(grouping); }, [grouping]);
+  useEffect(() => { engine.current?.setSubgrouping(subgrouping); }, [subgrouping]);
   useEffect(() => { engine.current?.setTheme(theme); }, [theme]);
   useEffect(() => { engine.current?.setColorBy(colorBy); }, [colorBy]);
   useEffect(() => { engine.current?.setSearch(q); }, [q]);
@@ -98,8 +115,8 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
     if (!map || !selectedKey) return [];
     const partners: Collaborator[] = [];
     for (const edge of map.edges) {
-      if (edge.a === selectedKey) partners.push({ key: edge.b, name: byKey.get(edge.b)?.name ?? "?", tracks: edge.tracks, guest: !!byKey.get(edge.b)?.guest });
-      else if (edge.b === selectedKey) partners.push({ key: edge.a, name: byKey.get(edge.a)?.name ?? "?", tracks: edge.tracks, guest: !!byKey.get(edge.a)?.guest });
+      if (edge.a === selectedKey) partners.push({ key: edge.b, name: byKey.get(edge.b)?.name ?? "?", tracks: edge.tracks, guest: !!byKey.get(edge.b)?.guest, credit: !!edge.credit, ...(edge.mb ? { mb: edge.mb } : {}) });
+      else if (edge.b === selectedKey) partners.push({ key: edge.a, name: byKey.get(edge.a)?.name ?? "?", tracks: edge.tracks, guest: !!byKey.get(edge.a)?.guest, credit: !!edge.credit, ...(edge.mb ? { mb: edge.mb } : {}) });
     }
     return partners.sort((a, b) => b.tracks - a.tracks || a.name.localeCompare(b.name));
   }, [map, selectedKey, byKey]);
@@ -138,8 +155,9 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
   };
 
   const legend = useMemo(() => map ? legendEntries(map, grouping, theme) : [], [map, grouping, theme]);
+  const mbLinks = map?.edges.filter(edge => edge.mb).length ?? 0;
   const stats = map
-    ? `${map.artists.length.toLocaleString()} artists · ${map.total_tracks.toLocaleString()} songs${map.edges.length ? ` · ${map.edges.length.toLocaleString()} collaboration links` : ""}`
+    ? `${map.artists.length.toLocaleString()} artists · ${map.total_tracks.toLocaleString()} songs${map.edges.length ? ` · ${map.edges.length.toLocaleString()} links` : ""}${mbLinks ? ` (${mbLinks.toLocaleString()} verified by MusicBrainz)` : ""}`
     : "";
 
   const artists: GalaxyMapNode[] = useMemo(() => (map?.artists ?? []).slice(0, LIST_CAP), [map]);
@@ -164,6 +182,11 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
         <select className="select" aria-label="Group artists by" value={grouping} onChange={event => setPrefs(current => ({ ...current, grouping: event.target.value as GalaxyGrouping }))}>
           {(Object.keys(GROUPING_LABELS) as GalaxyGrouping[]).map(id => <option key={id} value={id}>{GROUPING_LABELS[id]}</option>)}
         </select></label>
+      {(view === "bubbles" || view === "tiles") && <label><span className="galaxy__arrange-label">Then by</span>
+        <select className="select" aria-label="Split each group by" value={subgrouping} onChange={event => setPrefs(current => ({ ...current, subgrouping: event.target.value as GalaxySubgrouping }))}>
+          <option value="none">Nothing</option>
+          {(Object.keys(GROUPING_LABELS) as GalaxyGrouping[]).filter(id => id !== grouping).map(id => <option key={id} value={id}>{GROUPING_LABELS[id]}</option>)}
+        </select></label>}
       <label><span className="galaxy__arrange-label">Colour</span>
         <select className="select" aria-label="Colour artists by" value={colorBy} onChange={event => setPrefs(current => ({ ...current, colorBy: event.target.value as GalaxyColorBy }))}>
           {(Object.keys(COLORBY_LABELS) as GalaxyColorBy[]).map(id => <option key={id} value={id}>{COLORBY_LABELS[id]}</option>)}
@@ -204,6 +227,7 @@ export default function Galaxy({ request, play, playlists }: { request: Request;
       </div>}
       {!!legend.length && colorBy === "decade" && <div className="galaxy__legend"><span className="galaxy__legend-chip">Colour runs old → new across your eras</span></div>}
       {(colorBy === "mood" || colorBy === "energy") && <div className="galaxy__legend"><span className="galaxy__legend-chip">Colour runs low → high {colorBy === "mood" ? "mood" : "energy"} · grey means not measured</span></div>}
+      {colorBy === "listening" && <div className="galaxy__legend"><span className="galaxy__legend-chip">Colour heats up with plays · grey means never played</span></div>}
       <ArtistCard request={request} play={play} playlists={playlists} node={selected} collaborators={collaborators}
         onJump={jump} onClose={() => { setSelectedKey(null); canvas.current?.focus(); }} onSay={say} />
       <details className="galaxy__list" open={listOpen && !selected} onToggle={event => setListOpen(event.currentTarget.open)}>

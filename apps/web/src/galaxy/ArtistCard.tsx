@@ -11,7 +11,7 @@ import { AddToPlaylist, clock } from "../LibraryParts";
 import type { TrackSummary } from "../LibraryParts";
 import type { GalaxyArtistDetails, GalaxyMapNode } from "./types";
 
-export type Collaborator = { key: string; name: string; tracks: number; guest: boolean };
+export type Collaborator = { key: string; name: string; tracks: number; guest: boolean; credit: boolean; mb?: string };
 
 const meter = (label: string, value: number | undefined, max: number, unit = "", decimals = 0) => {
   if (value === undefined || !Number.isFinite(value)) return null;
@@ -54,6 +54,13 @@ export default function ArtistCard({ request, play, playlists, node, collaborato
   const signals = node.signals;
   const playTracks = (tracks: TrackSummary[], what: string) => play({ track_ids: tracks.map(track => track.id) }).then(() => onSay(`Playing ${what}.`)).catch(cause => onSay((cause as Error).message));
   const songs = (count: number) => `${count.toLocaleString()} song${count === 1 ? "" : "s"}`;
+  /** How the link is known: shared feat. credits, MusicBrainz's word, or both agreeing. */
+  const partnerNote = (partner: Collaborator) => {
+    const shared = partner.credit && partner.tracks > 0 ? `${songs(partner.tracks)} together` : "";
+    const verified = partner.mb ? `MusicBrainz: ${partner.mb}` : "";
+    const note = [shared, verified].filter(Boolean).join(" · ") || "linked on MusicBrainz";
+    return partner.guest ? `guest · ${note}` : note;
+  };
 
   return <aside className="galaxy__card" aria-label={`${node.name} details`}>
     <div className="galaxy__card-controls">
@@ -71,6 +78,9 @@ export default function ArtistCard({ request, play, playlists, node, collaborato
 
     {!!node.genres.length && <div className="galaxy__chips">{node.genres.map(genre => <span className="galaxy__chip" key={genre}>{genre}</span>)}</div>}
     {era && <p className="galaxy__era">{era}</p>}
+    <p className="galaxy__era">{node.listening
+      ? `Played ${node.listening.plays.toLocaleString()} time${node.listening.plays === 1 ? "" : "s"} in SynAmp${node.listening.last_played ? ` · last ${new Date(node.listening.last_played).toLocaleDateString(undefined, { month: "short", year: "numeric" })}` : ""}`
+      : "Never played from this library"}</p>
     {signals && <div className="galaxy__meters">
       {meter("Tempo", signals.bpm, 200, " bpm", 0)}
       {meter("Mood", signals.valence, 1, "", 2)}
@@ -82,7 +92,7 @@ export default function ArtistCard({ request, play, playlists, node, collaborato
       ? <><p className="galaxy__hint">Featured-credit links found in your files. Follow one to travel there.</p>
         <div className="galaxy__chips">{collaborators.map(partner => (
           <button key={partner.key} className="galaxy__link-chip" onClick={() => onJump(partner.key)} aria-label={`Travel to ${partner.name}`}>
-            {partner.name}<span>{partner.guest ? "guest · " : ""}{songs(partner.tracks)}</span>
+            {partner.name}<span>{partnerNote(partner)}</span>
           </button>
         ))}</div></>
       : <p className="galaxy__hint">No featured-credit links from this artist's files.</p>}

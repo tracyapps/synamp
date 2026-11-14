@@ -12,6 +12,8 @@ const SPACING_MS = 1100;
 
 export type MbTrack = { position: number; number: string; title: string; length_ms?: number };
 export type MbMedium = { position: number; format?: string; tracks: MbTrack[] };
+/** An artist-to-artist relationship from MusicBrainz (inc=artist-rels). */
+export type MbRelation = { type: string; direction: "forward" | "backward"; mbid: string; name: string; disambiguation?: string; begin?: string; end?: string };
 export type MbRelease = {
   id: string;
   title: string;
@@ -142,6 +144,27 @@ export class MusicBrainz {
       ...(typeof raw.country === "string" ? { country: raw.country } : {}),
       ...(typeof raw.type === "string" ? { type: raw.type } : {}),
     }));
+  }
+
+  /** Artist-to-artist relationships: collaborations, band membership, support. */
+  async artistRelations(artistId: string): Promise<MbRelation[]> {
+    if (!/^[0-9a-f-]{36}$/.test(artistId)) throw new MusicBrainzError("Not a MusicBrainz artist ID", 400);
+    const raw = await this.get<{ relations?: Array<Record<string, unknown>> }>(`/artist/${artistId}?inc=artist-rels&fmt=json`);
+    const out: MbRelation[] = [];
+    for (const relation of raw.relations ?? []) {
+      const artist = relation.artist as { id?: unknown; name?: unknown; disambiguation?: unknown } | undefined;
+      if (relation["target-type"] !== "artist" || typeof artist?.id !== "string" || typeof artist.name !== "string") continue;
+      if (artist.id === artistId) continue;
+      out.push({
+        type: String(relation.type ?? ""),
+        direction: relation.direction === "backward" ? "backward" : "forward",
+        mbid: artist.id, name: artist.name,
+        ...(typeof artist.disambiguation === "string" && artist.disambiguation ? { disambiguation: artist.disambiguation } : {}),
+        ...(typeof relation.begin === "string" && relation.begin ? { begin: relation.begin } : {}),
+        ...(typeof relation.end === "string" && relation.end ? { end: relation.end } : {}),
+      });
+    }
+    return out;
   }
 
   /** Every release group credited to an artist (browsed 100 at a time, up to `max`), leaving out ones that only exist as bootlegs. */

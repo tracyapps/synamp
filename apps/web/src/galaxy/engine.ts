@@ -11,10 +11,10 @@ import type { Quadtree } from "d3-quadtree";
 import { clusterCenters, groupOf, groupSort, packPositions, tilePositions, WORLD } from "./layouts";
 import { PALETTES, rampColor, shade, withAlpha, blend } from "./palettes";
 import type { Palette } from "./palettes";
-import type { EngineGroup, EngineNode, GalaxyColorBy, GalaxyGrouping, GalaxyMap, GalaxyView, ThemeId } from "./types";
+import type { EngineGroup, EngineNode, GalaxyColorBy, GalaxyGrouping, GalaxyMap, GalaxySubgrouping, GalaxyView, ThemeId } from "./types";
 
 type Node = EngineNode & { br: number; culled: boolean };
-type Edge = { a: Node; b: Node; tracks: number; color: string };
+type Edge = { a: Node; b: Node; tracks: number; credit: boolean; mb?: string; color: string };
 type Link = SimulationLinkDatum<Node> & { tracks: number };
 export type EngineCallbacks = {
   select: (key: string | null) => void;
@@ -52,6 +52,7 @@ export class GalaxyEngine {
 
   private view: GalaxyView = "cluster";
   private grouping: GalaxyGrouping = "genre";
+  private subgrouping: GalaxySubgrouping = "none";
   private theme: ThemeId = "nebula";
   private colorBy: GalaxyColorBy = "group";
   private palette: Palette = PALETTES.nebula;
@@ -121,9 +122,10 @@ export class GalaxyEngine {
     for (const edge of map.edges) {
       const a = this.byKey.get(edge.a); const b = this.byKey.get(edge.b);
       if (!a || !b) continue;
-      this.edges.push({ a, b, tracks: edge.tracks, color: "#8b93aa" });
-      degree.set(a.key, (degree.get(a.key) ?? 0) + edge.tracks);
-      degree.set(b.key, (degree.get(b.key) ?? 0) + edge.tracks);
+      this.edges.push({ a, b, tracks: edge.tracks, credit: !!edge.credit, ...(edge.mb ? { mb: edge.mb } : {}), color: "#8b93aa" });
+      // Presence counts, not songs: a MusicBrainz-only link (0 shared songs) still connects two artists.
+      degree.set(a.key, (degree.get(a.key) ?? 0) + 1 + Math.min(4, edge.tracks));
+      degree.set(b.key, (degree.get(b.key) ?? 0) + 1 + Math.min(4, edge.tracks));
     }
     for (const node of this.nodes) node.degree = degree.get(node.key) ?? 0;
     const eras = this.nodes.map(node => node.decade).filter((value): value is number => value !== undefined);
@@ -145,6 +147,13 @@ export class GalaxyEngine {
     if (grouping === this.grouping || !this.nodes.length) return;
     this.grouping = grouping;
     this.relayout(true);
+  }
+
+  /** The second level inside Bubbles and Tiles: buckets within each group. */
+  setSubgrouping(subgrouping: GalaxySubgrouping) {
+    if (subgrouping === this.subgrouping || !this.nodes.length) return;
+    this.subgrouping = subgrouping;
+    if (this.view === "bubbles" || this.view === "tiles") this.relayout(true);
   }
 
   setTheme(theme: ThemeId) {
@@ -231,7 +240,7 @@ export class GalaxyEngine {
       const old = previous.get(id);
       const cx = old?.x ?? WORLD.width / 2; const cy = old?.y ?? WORLD.height / 2; const cr = old?.r ?? 180;
       const x0 = old?.x0 ?? cx - cr; const y0 = old?.y0 ?? cy - cr; const x1 = old?.x1 ?? cx + cr; const y1 = old?.y1 ?? cy + cr;
-      return { id, label: id, tracks: members.reduce((sum, node) => sum + node.tracks, 0), count: members.length, color: "#ffffff", nodes: members,
+      return { id, label: id, tracks: members.reduce((sum, node) => sum + node.tracks, 0), count: members.length, color: "#ffffff", nodes: members, subgroups: [],
         x: cx, y: cy, r: cr, x0, y0, x1, y1, sx: cx, sy: cy, sr: cr, tx: cx, ty: cy, tr: cr,
         sx0: x0, sy0: y0, sx1: x1, sy1: y1, tx0: x0, ty0: y0, tx1: x1, ty1: y1 };
     }).sort(groupSort(this.grouping));
@@ -295,14 +304,15 @@ export class GalaxyEngine {
         .on("tick", () => { this.hitsDirty = true; this.requestRender(); });
       if (this.reduced) { this.sim.stop(); this.sim.tick(80); this.sim.restart(); }
     } else {
-      if (this.view === "bubbles") packPositions(this.groups);
-      else tilePositions(this.groups);
+      if (this.view === "bubbles") packPositions(this.groups, this.subgrouping);
+      else tilePositions(this.groups, this.subgrouping);
+      const settle = (place: (group: EngineGroup) => void) => { for (const group of this.groups) { place(group); for (const bucket of group.subgroups) place(bucket); } };
       if (animate) {
         for (const node of active) { node.sx = node.x; node.sy = node.y; node.sr = node.r; }
-        for (const group of this.groups) {
+        settle(group => {
           group.sx = group.x; group.sy = group.y; group.sr = group.r;
           group.sx0 = group.x0; group.sy0 = group.y0; group.sx1 = group.x1; group.sy1 = group.y1;
-        }
+        });
         this.layoutTween = { start: performance.now(), duration: this.reduced ? 1 : 760 };
         this.callbacks.status(`Re-formed into ${this.groups.length} groups.`);
       } else {
@@ -310,10 +320,10 @@ export class GalaxyEngine {
           node.x = node.tx; node.y = node.ty; node.r = node.tr;
           node.x0 = node.tx0; node.y0 = node.ty0; node.x1 = node.tx1; node.y1 = node.ty1;
         }
-        for (const group of this.groups) {
+        settle(group => {
           group.x = group.tx; group.y = group.ty; group.r = group.tr;
           group.x0 = group.tx0; group.y0 = group.ty0; group.x1 = group.tx1; group.y1 = group.ty1;
-        }
+        });
         this.layoutTween = null;
       }
     }
@@ -331,6 +341,11 @@ export class GalaxyEngine {
       if (this.colorBy === "group") node.color = this.groupById.get(node.group)?.color ?? "#8b93aa";
       else if (this.colorBy === "decade") node.color = node.decade === undefined ? "#6b7186" : rampColor(this.palette.ramp, (node.decade - this.decades[0]) / span);
       else if (this.colorBy === "mood") node.color = node.signals?.valence === undefined ? "#6b7186" : rampColor(this.palette.mood, node.signals.valence);
+      else if (this.colorBy === "listening") {
+        const plays = node.listening?.plays ?? 0;
+        const hottest = Math.max(1, ...this.nodes.map(candidate => candidate.listening?.plays ?? 0));
+        node.color = plays === 0 ? "#6b7186" : rampColor(this.palette.plays, Math.log1p(plays) / Math.log1p(hottest));
+      }
       else node.color = node.signals?.arousal === undefined ? "#6b7186" : rampColor(this.palette.energy, node.signals.arousal);
     }
     for (const edge of this.edges) edge.color = blend(edge.a.color, edge.b.color);
@@ -580,9 +595,13 @@ export class GalaxyEngine {
   }
 
   private pickGroup(x: number, y: number): EngineGroup | null {
+    const inside = (group: EngineGroup) => {
+      if (this.view === "tiles") return x >= group.x0 && x <= group.x1 && y >= group.y0 && y <= group.y1;
+      return Math.hypot(group.x - x, group.y - y) <= group.r;
+    };
     for (const group of this.groups) {
-      if (this.view === "tiles") { if (x >= group.x0 && x <= group.x1 && y >= group.y0 && y <= group.y1) return group; }
-      else if (Math.hypot(group.x - x, group.y - y) <= group.r) return group;
+      for (const bucket of group.subgroups) if (inside(bucket)) return bucket;
+      if (inside(group)) return group;
     }
     return null;
   }
@@ -644,12 +663,13 @@ export class GalaxyEngine {
           node.y0 = node.ty0 - (node.ty - node.y); node.y1 = node.ty1 - (node.ty - node.y);
         }
       }
-      for (const group of this.groups) {
+      const place = (group: EngineGroup) => {
         group.x = group.sx + (group.tx - group.sx) * eased; group.y = group.sy + (group.ty - group.sy) * eased;
         group.r = group.sr + (group.tr - group.sr) * eased;
         group.x0 = group.sx0 + (group.tx0 - group.sx0) * eased; group.y0 = group.sy0 + (group.ty0 - group.sy0) * eased;
         group.x1 = group.sx1 + (group.tx1 - group.sx1) * eased; group.y1 = group.sy1 + (group.ty1 - group.sy1) * eased;
-      }
+      };
+      for (const group of this.groups) { place(group); for (const bucket of group.subgroups) place(bucket); }
       if (progress >= 1) this.layoutTween = null;
       this.hitsDirty = true;
     }
@@ -753,6 +773,16 @@ export class GalaxyEngine {
       ctx.lineWidth = 1.4 / camera.k;
       ctx.stroke();
       this.drawGroupLabel(ctx, camera, group, group.x, group.y - group.r * 0.66, clamp(group.r * 0.13, 12 / camera.k, 64));
+      for (const bucket of group.subgroups) {
+        ctx.fillStyle = withAlpha(group.color, 0.05);
+        ctx.beginPath(); ctx.arc(bucket.x, bucket.y, bucket.r, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = withAlpha(group.color, 0.22);
+        ctx.lineWidth = 1 / camera.k;
+        ctx.setLineDash([4 / camera.k, 5 / camera.k]);
+        ctx.beginPath(); ctx.arc(bucket.x, bucket.y, bucket.r, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        this.drawGroupLabel(ctx, camera, bucket, bucket.x, bucket.y - bucket.r * 0.62, clamp(bucket.r * 0.14, 10 / camera.k, 40));
+      }
     }
   }
 
@@ -770,6 +800,19 @@ export class GalaxyEngine {
       ctx.beginPath(); ctx.rect(group.x0, group.y0, width, height); ctx.clip();
       this.drawGroupLabel(ctx, camera, group, group.x0 + width / 2, group.y0 + 34, clamp(24, 13 / camera.k, 42));
       ctx.restore();
+      for (const bucket of group.subgroups) {
+        const bw = bucket.x1 - bucket.x0; const bh = bucket.y1 - bucket.y0;
+        if (bw < 1 || bh < 1) continue;
+        ctx.fillStyle = withAlpha(group.color, 0.05);
+        this.roundRect(ctx, bucket.x0, bucket.y0, bw, bh, 8); ctx.fill();
+        ctx.strokeStyle = withAlpha(group.color, 0.2);
+        ctx.lineWidth = 1 / camera.k;
+        this.roundRect(ctx, bucket.x0, bucket.y0, bw, bh, 8); ctx.stroke();
+        ctx.save();
+        ctx.beginPath(); ctx.rect(bucket.x0, bucket.y0, bw, bh); ctx.clip();
+        this.drawGroupLabel(ctx, camera, bucket, bucket.x0 + bw / 2, bucket.y0 + 22, clamp(18, 11 / camera.k, 30));
+        ctx.restore();
+      }
     }
   }
 
@@ -778,10 +821,19 @@ export class GalaxyEngine {
     for (const edge of this.edges) {
       if (edge.a.culled || edge.b.culled || edge.a.degree === 0 || edge.b.degree === 0) continue;
       if (edge.a.dim || edge.b.dim) continue;
+      // MusicBrainz-verified links: solid, bright, a touch thicker. Feat-credit candidates: softer.
       const strength = Math.min(1, 0.3 + edge.tracks * 0.25);
-      ctx.strokeStyle = withAlpha(edge.color, 0.42 * strength);
-      ctx.lineWidth = (0.9 + edge.tracks * 0.35) / Math.max(0.55, camera.k * 0.8);
+      const weight = 1 + Math.min(4, edge.tracks);
+      if (edge.mb) {
+        ctx.strokeStyle = withAlpha(edge.color, Math.max(0.6, 0.5 * strength + 0.25));
+        ctx.lineWidth = (1.1 + weight * 0.35) / Math.max(0.55, camera.k * 0.8);
+      } else {
+        ctx.strokeStyle = withAlpha(edge.color, 0.42 * strength);
+        ctx.lineWidth = (0.9 + weight * 0.35) / Math.max(0.55, camera.k * 0.8);
+        ctx.setLineDash([6 / camera.k, 4 / camera.k]);
+      }
       ctx.beginPath(); ctx.moveTo(edge.a.x, edge.a.y); ctx.lineTo(edge.b.x, edge.b.y); ctx.stroke();
+      ctx.setLineDash([]);
     }
   }
 

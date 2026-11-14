@@ -4,6 +4,7 @@ import type { Library, LibraryTrack } from "../query/evaluate.ts";
 import { albumFolder, groupAlbums } from "./albums.ts";
 import type { AlbumUnit } from "./albums.ts";
 import { BrowseError, trackSummary } from "./browse.ts";
+import { artistKey } from "./naming.ts";
 import type { TrackSummary } from "./browse.ts";
 
 export type GalaxyNode = { key: string; name: string; tracks: number; albums: number; parsed_credit: boolean; raw_credits: string[] };
@@ -76,11 +77,17 @@ export type GalaxyMapNode = {
   key: string; name: string; tracks: number; albums: number;
   genres: string[]; decade?: number; year_first?: number; year_last?: number; letter: string;
   signals?: { bpm?: number; valence?: number; arousal?: number };
+  listening?: { plays: number; last_played?: number };
   guest?: boolean; appearances?: number;
 };
-export type GalaxyMapEdge = { a: string; b: string; tracks: number };
+/** credit: parsed from "feat." in your files (tracks = songs shared). mb: corroborated or added by MusicBrainz. */
+export type GalaxyMapEdge = { a: string; b: string; tracks: number; credit?: true; mb?: string };
+/** Enrichment from the MusicBrainz cache: pair-normalised, library-only, keyed to galaxy artist keys. */
+export type GalaxyEnrichment = { revision: number; edges: Array<{ a: string; b: string; type: string }> };
 export type GalaxyMap = { version: string; total_tracks: number; artists: GalaxyMapNode[]; edges: GalaxyMapEdge[] };
-type MapCache = { library: Library; version: string; map: GalaxyMap };
+/** Play counts per (canonical) track id, folded into artists by galaxyMap. */
+export type GalaxyPlays = Map<string, { plays: number; last: number }>;
+type MapCache = { library: Library; version: string; plays: GalaxyPlays | undefined; enrichment: GalaxyEnrichment | undefined; map: GalaxyMap };
 let mapCached: MapCache | undefined;
 
 const letterOf = (name: string) => {
@@ -100,14 +107,15 @@ function featured(raw: string): { base: string; whole: string; guests: string[] 
 
 const average = (values: number[]) => values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 100) / 100 : undefined;
 
-export function galaxyMap(library: Library): GalaxyMap {
-  if (mapCached?.library === library && mapCached.version === library.version) return mapCached.map;
+export function galaxyMap(library: Library, playsByTrack?: GalaxyPlays, enrichment?: GalaxyEnrichment): GalaxyMap {
+  if (mapCached?.library === library && mapCached.version === library.version && mapCached.plays === playsByTrack && mapCached.enrichment === enrichment) return mapCached.map;
   const data = catalog(library);
   const byName = new Map(data.artists.map(item => [item.node.name, item]));
   const keyOf = (name: string) => `artist:${createHash("sha256").update(name).digest("hex").slice(0, 24)}`;
   const artists: GalaxyMapNode[] = data.artists.map(item => {
     const genres = new Map<string, number>(); const years: number[] = []; let first: number | undefined; let last: number | undefined;
     const bpm: number[] = []; const valence: number[] = []; const arousal: number[] = [];
+    let plays = 0; let lastPlayed = 0;
     for (const track of item.tracks) {
       for (const genre of track.genre ?? []) { const name = genre.trim(); if (name) genres.set(name, (genres.get(name) ?? 0) + 1); }
       if (Number.isFinite(track.year)) { const year = Math.trunc(track.year!); years.push(Math.floor(year / 10) * 10); first = Math.min(first ?? year, year); last = Math.max(last ?? year, year); }
@@ -116,6 +124,8 @@ export function galaxyMap(library: Library): GalaxyMap {
         const value = signals[name];
         if (typeof value === "number" && Number.isFinite(value)) bucket.push(value);
       }
+      const listen = playsByTrack?.get(track.id);
+      if (listen) { plays += listen.plays; if (listen.last > lastPlayed) lastPlayed = listen.last; }
     }
     const decades = new Map<number, number>(); for (const decade of years) decades.set(decade, (decades.get(decade) ?? 0) + 1);
     const decade = [...decades.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0];
@@ -123,7 +133,8 @@ export function galaxyMap(library: Library): GalaxyMap {
     return { key: item.node.key, name: item.node.name, tracks: item.tracks.length, albums: item.node.albums, letter: letterOf(item.node.name),
       genres: [...genres.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 4).map(([genre]) => genre),
       ...(decade !== undefined ? { decade } : {}), ...(first !== undefined ? { year_first: first, year_last: last } : {}),
-      ...(signals.bpm !== undefined || signals.valence !== undefined || signals.arousal !== undefined ? { signals } : {}) };
+      ...(signals.bpm !== undefined || signals.valence !== undefined || signals.arousal !== undefined ? { signals } : {}),
+      ...(plays > 0 ? { listening: { plays, ...(lastPlayed > 0 ? { last_played: lastPlayed } : {}) } } : {}) };
   });
   // Featured credits become links when the guest is a lead artist anywhere in
   // the library. Guests nobody leads still join as small "guest" nodes once
@@ -144,7 +155,19 @@ export function galaxyMap(library: Library): GalaxyMap {
       partners.set(item.node.key, (partners.get(item.node.key) ?? 0) + 1); guestEdges.set(guest, partners);
     }
   }
-  const edges: GalaxyMapEdge[] = [...edgeTotals.entries()].map(([pair, tracks]) => ({ a: pair.slice(0, pair.indexOf("|")), b: pair.slice(pair.indexOf("|") + 1), tracks }));
+  const byPair = new Map<string, GalaxyMapEdge>();
+  for (const [pair, tracks] of edgeTotals) {
+    const a = pair.slice(0, pair.indexOf("|")); const b = pair.slice(pair.indexOf("|") + 1);
+    byPair.set(`${a}|${b}`, { a, b, tracks, credit: true });
+  }
+  // MusicBrainz edges corroborate a credit pair or stand on their own (tracks 0).
+  for (const edge of enrichment?.edges ?? []) {
+    const pair = `${edge.a < edge.b ? edge.a : edge.b}|${edge.a < edge.b ? edge.b : edge.a}`;
+    const existing = byPair.get(pair);
+    if (existing) existing.mb = existing.mb && existing.mb !== edge.type ? `${existing.mb} + ${edge.type}` : existing.mb ?? edge.type;
+    else byPair.set(pair, { a: edge.a, b: edge.b, tracks: 0, mb: edge.type });
+  }
+  const edges: GalaxyMapEdge[] = [...byPair.values()];
   for (const [guest, appearances] of guestTotals) {
     if (appearances < 2) continue;
     const key = keyOf(guest);
@@ -154,7 +177,7 @@ export function galaxyMap(library: Library): GalaxyMap {
   artists.sort((a, b) => b.tracks - a.tracks || a.name.localeCompare(b.name));
   edges.sort((a, b) => b.tracks - a.tracks || a.a.localeCompare(b.a) || a.b.localeCompare(b.b));
   const map = { version: library.version, total_tracks: library.tracks.length, artists, edges };
-  mapCached = { library, version: library.version, map }; return map;
+  mapCached = { library, version: library.version, plays: playsByTrack, enrichment, map }; return map;
 }
 
 export function galaxyArtist(library: Library, key: string): {
@@ -179,4 +202,9 @@ export function galaxyArtist(library: Library, key: string): {
       total_tracks: album.tracks.length, matching_tracks: take(tracks) };
   });
   return { artist: artist.node, albums, loose_tracks: take(loose), truncated: artist.tracks.length > 2000 };
+}
+
+/** Normalised galaxy-artist name → galaxy key, for the MusicBrainz enrichment view. */
+export function galaxyNameKeys(library: Library): Map<string, string> {
+  return new Map(catalog(library).artists.map(item => [artistKey(item.node.name), item.node.key]));
 }

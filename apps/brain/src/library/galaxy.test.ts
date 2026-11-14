@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { galaxy, galaxyArtist, galaxyMap, galaxyRandom } from "./galaxy.ts";
+import type { GalaxyPlays } from "./galaxy.ts";
 import type { Library, LibraryTrack } from "../query/evaluate.ts";
 
 const song = (id: string, artist: string, path = `${artist}/Album/${id}.mp3`, extra: Partial<LibraryTrack> = {}): LibraryTrack => ({ id, title: id, artist, path, ...extra });
@@ -103,6 +104,33 @@ test("Galaxy map credits keep whole band names when the guest matches a lead art
   const ewf = map.artists.find(node => node.name === "Earth, Wind & Fire")!;
   assert.ok(map.edges.some(edge => (edge.a === benson.key && edge.b === ewf.key) || (edge.a === ewf.key && edge.b === benson.key)));
   assert.equal(map.artists.some(node => node.name === "Earth" || node.name === "Fire"), false);
+});
+
+test("Galaxy map folds listening plays into artists, ignores unknown tracks and unplayed artists", () => {
+  const lib: Library = { version: "listening-fixture", tracks: [
+    song("a1", "Astral Crew", "Astral Crew/Set/01.mp3"),
+    song("a2", "Astral Crew", "Astral Crew/Set/02.mp3"),
+    song("b1", "Beacon", "Beacon/Set/01.mp3"),
+    song("v1", "Beacon feat. Vela Nine", "Beacon/Set/02.mp3"),
+  ] };
+  const plays: GalaxyPlays = new Map([
+    ["a1", { plays: 7, last: 100 }],
+    ["a2", { plays: 3, last: 250 }],
+    ["b1", { plays: 1, last: 40 }],
+    ["gone-track", { plays: 9, last: 99 }],
+  ]);
+  const map = galaxyMap(lib, plays);
+  const astral = map.artists.find(node => node.name === "Astral Crew")!;
+  assert.deepEqual(astral.listening, { plays: 10, last_played: 250 });
+  const beacon = map.artists.find(node => node.name === "Beacon")!;
+  assert.deepEqual(beacon.listening, { plays: 1, last_played: 40 });
+  // No plays anywhere: the field stays absent rather than asserting a wrong zero.
+  const quiet = galaxyMap({ ...lib, version: "quiet" });
+  assert.equal(quiet.artists.every(node => node.listening === undefined), true);
+  // A new plays map invalidates the cache even when the library is unchanged.
+  const refreshed = new Map(plays);
+  refreshed.set("a1", { plays: 8, last: 100 });
+  assert.equal(galaxyMap(lib, refreshed).artists.find(node => node.name === "Astral Crew")!.listening?.plays, 11);
 });
 
 test("Galaxy caps detail track payload and reports truncation while retaining full file counts", () => {
