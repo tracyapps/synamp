@@ -15,8 +15,13 @@ the current track, exits, and launchd starts the new version 30 seconds later;
 an analysis that was running carries on by itself.
 
 It reports progress through the usual progress reports, keeps the Mac awake
-while analysing (macOS `caffeinate`), and tries to mount the music share if it
-isn't mounted (SYNAMP_MUSIC_SHARE_URL, e.g. smb://Syd.local/music).
+while analysing (macOS `caffeinate`), and reconnects the music share if it isn't
+connected (SYNAMP_MUSIC_SHARE_URL, e.g. smb://Syd.local/music).
+
+Away from home it waits quietly. Before asking Finder to connect the share it
+checks, without showing anything, that the server answers on this network.
+Asking Finder for a server that isn't there puts a "problem connecting" window
+on screen every time, which is what this used to do every five minutes.
 """
 
 from __future__ import annotations
@@ -31,6 +36,7 @@ import sys
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -45,6 +51,11 @@ ACTIONS = ("update", "scan", "export", "analyze")
 CHECK_EVERY_S = 10.0
 EXPORT_EVERY_S = 60 * 60.0
 MOUNT_RETRY_S = 5 * 60.0
+# How often to look (silently) for the music server while it isn't answering.
+AWAY_CHECK_S = 30.0
+# How long the silent look may take. A server at home answers in milliseconds.
+AWAY_CHECK_TIMEOUT_S = 2.0
+SHARE_PORTS = {"smb": 445, "cifs": 445, "afp": 548, "nfs": 2049}
 REVEAL_EVERY_S = 3.0
 AGENT_LABEL = "org.synamp.analyzer"
 
@@ -100,7 +111,7 @@ def default_export_path(cfg: AnalyzerConfig) -> Path:
 class Worker:
     def __init__(self, cfg: AnalyzerConfig, brain: Brain, export_path: Path | None = None,
                  log=print, sleep=time.sleep, now=time.time, mount=None, keep_awake=None, stamp=code_stamp,
-                 allowance: Allowance | None = None, reveal=None):
+                 allowance: Allowance | None = None, reveal=None, reachable=None):
         self.cfg = cfg
         # How much memory analysis may use now (Settings in the web app); decides songs at once.
         self.allowance = allowance or Allowance(cap=cfg.workers)
@@ -113,6 +124,11 @@ class Worker:
         self.keep_awake = keep_awake if keep_awake is not None else caffeinate
         self.reveal = reveal if reveal is not None else open_in_finder
         self.last_mount_try = -MOUNT_RETRY_S
+        # Is the music server on this network? Asked silently, before Finder is involved.
+        self.reachable = reachable if reachable is not None else share_answers
+        self.away = False
+        self.last_away_check = -AWAY_CHECK_S
+        self.brain_down = False
         self.stamp = stamp
         self.started_with = stamp()
         self.resume_analysis = False
@@ -152,21 +168,47 @@ class Worker:
             "export_path": str(self.export_path), "journal": str(self.cfg.rename_journal or ""),
             **self.allowance.info, "memory_now": self.allowance.now(), "first_rev": self.first_rev,
             **({"problem": problem} if problem else {}),
+            **({"away": True} if self.away else {}),
         }
 
     def ensure_library(self) -> str | None:
-        """None when the music is reachable; otherwise a plain-language problem."""
+        """None when the music is reachable; otherwise a plain-language problem.
+
+        Never shows anything on screen unless the music server is really there:
+        away from home this only looks, silently, every AWAY_CHECK_S.
+        """
         if self.library_ok():
+            if self.away:
+                self.log("worker: the music is back; carrying on")
+            self.away = False
             return None
         share = os.environ.get("SYNAMP_MUSIC_SHARE_URL")
-        if share and self.now() - self.last_mount_try >= MOUNT_RETRY_S:
+        if not share:
+            return (f"The music isn't reachable at {self.cfg.library_path}. "
+                    "Connect the drive it's on, or mount the music share in Finder (Go → Connect to Server).")
+        server = share_server(share)
+        name = server[0] if server else "the music server"
+        if self.away and self.now() - self.last_away_check < AWAY_CHECK_S:
+            return away_problem(name)
+        self.last_away_check = self.now()
+        if not self.reachable(share):
+            if not self.away:
+                self.log(f"worker: {name} isn't answering on this network (away from home, or it's off). "
+                         "Waiting quietly; nothing will pop up, and it reconnects by itself.")
+            self.away = True
+            return away_problem(name)
+        if self.away:
+            self.log(f"worker: {name} is answering again; connecting the music share")
+            self.away = False
+            self.last_mount_try = -MOUNT_RETRY_S  # connect now, not in five minutes
+        if self.now() - self.last_mount_try >= MOUNT_RETRY_S:
             self.last_mount_try = self.now()
             self.log(f"worker: the music isn't at {self.cfg.library_path}; trying to mount {share}")
             self.mount(share)
             if self.library_ok():
                 return None
         return (f"The music isn't reachable at {self.cfg.library_path}. "
-                f"{'Mount the music share in Finder (Go → Connect to Server).' if not share else f'Mounting {share} failed; mount it in Finder.'}")
+                f"{name} is answering, but connecting {share} didn't work; connect it in Finder (Go → Connect to Server).")
 
     # --- "Listen to these first" ------------------------------------------------------
     def take_picks(self, answer: dict) -> None:
@@ -347,8 +389,14 @@ class Worker:
         while True:
             try:
                 outcome = self.once()
+                if self.brain_down:
+                    self.log("worker: SynAmp is answering again")
+                self.brain_down = False
             except BrainError as error:
-                self.log(f"worker: {error}")
+                # Said once, not every 30 seconds for a whole day away from home.
+                if not self.brain_down:
+                    self.log(f"worker: {error}. Trying again every {poll * 6:.0f}s, quietly, until it answers.")
+                self.brain_down = True
                 outcome = "unreachable"
             if outcome == "restart" or self.code_changed():
                 # launchd (KeepAlive) starts the new version in 30 seconds.
@@ -393,6 +441,43 @@ def open_in_finder(folder: Path) -> bool:
         return True
     except (OSError, subprocess.SubprocessError):
         return False
+
+
+def share_server(share_url: str) -> tuple[str, int] | None:
+    """The server and port behind a share address like smb://Syd.local/music (None: can't tell)."""
+    try:
+        parts = urllib.parse.urlsplit(share_url)
+        host, port = parts.hostname, parts.port
+    except ValueError:
+        return None
+    if not host:
+        return None
+    # The name as it was typed ("Syd.local"), for messages; urlsplit lowercases it.
+    typed = parts.netloc.rpartition("@")[2]
+    if typed.lower().startswith(host):
+        host = typed[:len(host)]
+    return host, port or SHARE_PORTS.get(parts.scheme.lower(), 445)
+
+
+def share_answers(share_url: str, timeout: float = AWAY_CHECK_TIMEOUT_S) -> bool:
+    """Is the share's server on this network? A silent look: no window, no password prompt.
+
+    An address we can't read counts as "yes", so an unusual share still gets its
+    connection attempt, as before.
+    """
+    server = share_server(share_url)
+    if server is None:
+        return True
+    try:
+        with socket.create_connection(server, timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+def away_problem(name: str) -> str:
+    return (f"Away from the music: {name} isn't answering on this network. "
+            "Listening to your library waits, and carries on by itself when it's back.")
 
 
 def try_mount(share_url: str) -> bool:

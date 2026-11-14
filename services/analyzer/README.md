@@ -221,8 +221,10 @@ logs to `~/SynAmp-data/worker.log`. The worker exports to
 `<share>/.synamp/library-signals.json` (beside the library, where the brain
 reads it; `SYNAMP_EXPORT_PATH` overrides), keeps the Mac awake while
 analysing (`caffeinate`), exports hourly during long runs and at the end,
-and, if the music isn't mounted, tries `SYNAMP_MUSIC_SHARE_URL` (e.g.
-`smb://Syd.local/music`) through Finder with the Keychain password.
+and, if the music isn't mounted, connects `SYNAMP_MUSIC_SHARE_URL` (e.g.
+`smb://Syd.local/music`) through Finder with the Keychain password. It only asks
+Finder when the server answers on the current network. Away from home it waits
+quietly, shows nothing on screen, and reconnects by itself when you're back.
 
 ## Progress in the web app
 
