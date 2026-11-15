@@ -221,13 +221,31 @@ function UpdateSettings({ request }: { request: Request }) {
   );
 }
 
+/**
+ * The three buttons, in this order, every time. Building over the old
+ * containers makes Container Manager lose track of some of them, and from then
+ * on its Stop does nothing; Clean first means they're made fresh. Clean removes
+ * the running pieces only: music, playlists and settings live in folders on
+ * the NAS (checked on a real Synology, 2026-11-15).
+ */
+function ThreeButtons() {
+  return (
+    <>
+      <li><strong>Action</strong> → <strong>Stop</strong>. Wait until it shows as stopped; it can take a couple of minutes while SynAmp finishes what it’s doing.</li>
+      <li><strong>Action</strong> → <strong>Clean</strong>. This removes the running pieces only. Your music, playlists and settings are kept.</li>
+      <li><strong>Action</strong> → <strong>Build</strong>. SynAmp is back in a few minutes.</li>
+    </>
+  );
+}
+
 /** Installed from a release: updating (or going back) means choosing a release, not copying code. */
 function ReleaseSteps() {
   return (
     <ol className="update__steps">
       <li><a href={RELEASES} target="_blank" rel="noopener noreferrer">Open SynAmp’s releases<span className="visually-hidden"> (opens in a new tab)</span></a> and download the one you want (the newest, or an earlier one to go back).</li>
       <li>Unzip it over your SynAmp folder on the NAS. Your settings file (<code>.env</code>) and your data are kept.</li>
-      <li>In <a href={dsmUrl()} target="_blank" rel="noopener noreferrer">DSM<span className="visually-hidden"> (opens in a new tab)</span></a>: <strong>Container Manager</strong> → <strong>Project</strong> → <strong>synamp</strong> → <strong>Action</strong> → <strong>Build</strong>.</li>
+      <li>In <a href={dsmUrl()} target="_blank" rel="noopener noreferrer">DSM<span className="visually-hidden"> (opens in a new tab)</span></a>: <strong>Container Manager</strong> → <strong>Project</strong> → select <strong>synamp</strong>.</li>
+      <ThreeButtons />
     </ol>
   );
 }
@@ -236,7 +254,8 @@ function BuildSteps() {
   return (
     <ol className="update__steps">
       <li><a href={dsmUrl()} target="_blank" rel="noopener noreferrer">Open DSM<span className="visually-hidden"> (opens in a new tab)</span></a>, then <strong>Container Manager</strong> → <strong>Project</strong>.</li>
-      <li>Select <strong>synamp</strong>, then <strong>Action</strong> → <strong>Build</strong>.</li>
+      <li>Select <strong>synamp</strong>.</li>
+      <ThreeButtons />
     </ol>
   );
 }
