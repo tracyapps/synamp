@@ -17,6 +17,13 @@ test("ticks and the NAS's tailnet name are kept; pasted addresses are cleaned up
     assert.throws(() => store.update({ step: "fly", done: true }), /step must be/);
     assert.throws(() => store.update({ step: "away_test", done: "yes" }), /true or false/);
     assert.throws(() => store.update({ tailscale_name: "my nas!" }), /device name/);
+    // The network's own name, with no device in front: nothing answers there.
+    assert.throws(() => store.update({ tailscale_name: "halley-dory.ts.net" }), /whole Tailscale network.*your-nas\.halley-dory\.ts\.net/);
+    assert.throws(() => store.update({ tailscale_name: "https://tail1234.ts.net:8080/" }), /whole Tailscale network/);
+    assert.equal(store.state.tailscale_name, "syd.tail1234.ts.net", "a refused name leaves the saved one alone");
+    store.update({ tailscale_name: "syd" });
+    assert.equal(store.state.tailscale_name, "syd", "the short name is fine");
+    store.update({ tailscale_name: "syd.tail1234.ts.net" });
     const saved = new SetupStore(join(dir, "setup.json"));
     assert.equal(saved.state.done.navidrome_account, 5);
     saved.update({ step: "navidrome_account", done: false });

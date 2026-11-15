@@ -1804,6 +1804,10 @@ async function route(req: IncomingMessage, res: ServerResponse): Promise<void> {
 
   switch (path) {
     case "/health":
+      // Any page may read this (it says only "SynAmp is here"): the Listen
+      // anywhere screen asks it at the away-from-home address, which is a
+      // different address from the one the page came from.
+      res.setHeader("Access-Control-Allow-Origin", "*");
       return send(res, 200, {
         status: "ok",
         service: "synamp-brain",

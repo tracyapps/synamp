@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from "react";
+import { reach, reachWords, type Reach } from "./anywhere-test";
 import "./styles/listen-anywhere.css";
 
 /*
@@ -41,6 +42,8 @@ export default function ListenAnywhere({ request, startOpen = false }: { request
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [problem, setProblem] = useState("");
+  // The test of the away-from-home name, from this device: null = not run yet.
+  const [reached, setReached] = useState<{ name: string; result: Reach | "testing" } | null>(null);
   const id = useId();
 
   const show = (next: Setup) => { setSetup(next); setName(next.tailscale_name ?? ""); };
@@ -54,16 +57,28 @@ export default function ListenAnywhere({ request, startOpen = false }: { request
     return () => clearInterval(timer);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const host = window.location.hostname;
+  const port = window.location.port ? `:${window.location.port}` : "";
+
+  /** Ask SynAmp at the away-from-home name, from this device, and say what happened. */
+  async function testAway(tailscaleName: string) {
+    setReached({ name: tailscaleName, result: "testing" });
+    const result = await reach(`${window.location.protocol}//${tailscaleName}${port}`);
+    setReached({ name: tailscaleName, result });
+  }
+
   async function save(body: Record<string, unknown>, done?: string) {
     setProblem(""); setMessage("");
     try {
-      show(await request<Setup>("/setup", { method: "POST", body: JSON.stringify(body) }));
+      const next = await request<Setup>("/setup", { method: "POST", body: JSON.stringify(body) });
+      show(next);
       if (done) setMessage(done);
+      // A newly saved name is tested straight away: a wrong one should never wait
+      // to be found out away from home.
+      if ("tailscale_name" in body) { if (next.tailscale_name) void testAway(next.tailscale_name); else setReached(null); }
     } catch (cause) { setProblem((cause as Error).message); }
   }
 
-  const host = window.location.hostname;
-  const port = window.location.port ? `:${window.location.port}` : "";
   const here = window.location.origin;
   const away = setup?.tailscale_name ? `${window.location.protocol}//${setup.tailscale_name}${port}` : "";
 
@@ -120,8 +135,18 @@ export default function ListenAnywhere({ request, startOpen = false }: { request
                     onChange={(e) => setName(e.target.value)} aria-describedby={`${id}-ts-hint`} />
                   <button type="submit" className="btn btn--ghost btn--sm">Save</button>
                 </div>
-                <p className="muted" id={`${id}-ts-hint`}>It’s listed in the Tailscale app on any of your devices, and at <NewTab href="https://login.tailscale.com/admin/machines">login.tailscale.com/admin/machines</NewTab>. SynAmp uses it to show the address for when you’re away.</p>
+                <p className="muted" id={`${id}-ts-hint`}>It’s listed in the Tailscale app on any of your devices, and at <NewTab href="https://login.tailscale.com/admin/machines">login.tailscale.com/admin/machines</NewTab>. Use the NAS’s own name (<code>syd</code> or <code>syd.tail1234.ts.net</code>), not just the network’s (<code>tail1234.ts.net</code>). SynAmp uses it for the address when you’re away, and tests it from this device when you save.</p>
               </form>
+              {setup.tailscale_name && <div className="anywhere__reach">
+                <button type="button" className="btn btn--ghost btn--sm" disabled={reached?.result === "testing"}
+                  onClick={() => testAway(setup.tailscale_name!)}>{reached ? "Test again from this device" : "Test from this device"}</button>
+                <p className="anywhere__reach-result" role="status">{(() => {
+                  if (!reached || reached.name !== setup.tailscale_name) return "";
+                  if (reached.result === "testing") return "Testing from this device…";
+                  const words = reachWords(reached.result, reached.name, host === reached.name);
+                  return <><span aria-hidden="true">{words.ok ? "✓ " : "! "}</span><span className={words.ok ? "" : "anywhere__reach-problem"}>{words.ok ? "" : "Not reachable: "}{words.text}</span></>;
+                })()}</p>
+              </div>}
               {tick("tailscale_nas")}
             </li>
             <li>
