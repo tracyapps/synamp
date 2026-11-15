@@ -57,6 +57,11 @@ export class SetupStore {
       // People paste whole addresses: keep just the name.
       const name = input.tailscale_name.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/[:/].*$/, "");
       if (name && !HOST.test(name)) throw new SetupError("That doesn't look like a device name — it's something like syd or syd.tail1234.ts.net");
+      // "tail1234.ts.net" or "halley-dory.ts.net" is the whole Tailscale network: no
+      // device answers there. Easy to copy by mistake, and nothing would say so later.
+      if (/^[a-z0-9-]+\.ts\.net$/.test(name)) {
+        throw new SetupError(`“${name}” is the name of your whole Tailscale network, not the NAS. Put the NAS’s own name in front, like your-nas.${name}`);
+      }
       if (name) this.state.tailscale_name = name; else delete this.state.tailscale_name;
     }
     this.save();
