@@ -142,6 +142,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-11-15 — SynAmp for Mac has its icon: the SynAmp mark, in Finder, the installer, notifications and the update window
 - 2026-11-15 — Fixed for Synology: after some updates, the Stop button in Container Manager did nothing. We found why, and the update steps SynAmp shows you (Stop, Clean, Build) now avoid it
 - 2026-11-15 — SynAmp for Mac: change your music folder from the menu. If it’s the same music in a new place (say you moved it to an external drive), SynAmp carries over everything it has learned, so nothing is listened to again. And if the drive isn’t plugged in, SynAmp says so and waits, instead of treating your songs as gone
 - 2026-11-15 — Listen anywhere now tests itself: when you save your NAS’s Tailscale name, SynAmp checks from your device that it answers there and tells you plainly if it doesn’t. It also refuses a name that’s only your Tailscale network, with nothing naming the NAS

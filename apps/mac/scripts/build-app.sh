@@ -38,6 +38,9 @@ if [ -d "$sparkle" ]; then
   rm -rf "$app/Contents/Frameworks/Sparkle.framework/Versions/B/XPCServices" "$app/Contents/Frameworks/Sparkle.framework/XPCServices"
   install_name_tool -add_rpath "@executable_path/../Frameworks" "$app/Contents/MacOS/SynAmp" 2>/dev/null || true
 fi
+# The icon: in Finder, the installer window, notifications, login items and the
+# update window (the app itself lives in the menu bar and has no Dock icon).
+cp "$here/icon/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -47,6 +50,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleDisplayName</key><string>SynAmp</string>
   <key>CFBundleIdentifier</key><string>org.synamp.app</string>
   <key>CFBundleExecutable</key><string>SynAmp</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$version</string>
   <key>CFBundleVersion</key><string>$version</string>
