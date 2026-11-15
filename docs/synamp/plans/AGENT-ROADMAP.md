@@ -450,7 +450,7 @@ built from `apps/` and fingerprints the brain + web code at build time
 changed). At runtime it fingerprints the NAS copy (`../apps` mounted
 read-only at `/source`) and `GET /api/v1/system` says `same` / `waiting`. The
 web app shows **An update is ready to install** with the two DSM steps
-(Container Manager → Project → synamp → Action → Build) and **About this
+(Container Manager → Project → synamp → Action → Stop, Clean, Build) and **About this
 install** in Settings. Updating is now `synamp-sync` + one button. Brain
 102/102; compose config checked with and without the profile; live: notice
 appears after a copied change, Settings shows the version.

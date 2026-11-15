@@ -91,11 +91,21 @@ in the project (it ignores compose profiles), so don't use Navidrome or point
 apps at it until the library is organised — see `docs/synamp/FIRST-RUN.md`.
 
 **Updating:** copy the new `apps/` and `deploy/` over (`synamp-sync` on the
-Mac), then **Project → synamp → Action → Build**. The web app notices the new
-copy and says so at the top of the page until it's built; **Settings → About
-this install** shows the running version.
+Mac), then in **Project → synamp → Action**: **Stop**, then **Clean**, then
+**Build**, in that order every time. The web app notices the new copy and says
+so at the top of the page until it's built; **Settings → About this install**
+shows the running version.
 
-From a terminal instead: `sudo /usr/local/bin/docker compose --env-file .env up -d --build`.
+Why Clean: Build on its own replaces containers in place (Compose renames the
+old one for a moment), and Container Manager can file its record of the new
+container under that temporary name. Its Stop then does nothing, for the whole
+project and for that container. Clean removes the containers (it is `down`;
+all data is in bind-mounted folders, nothing is lost), so Build makes them
+fresh and the records come out right. See "If Stop does nothing" in
+`docs/synamp/FIRST-RUN.md`.
+
+From a terminal instead (same reason for `down` first):
+`sudo /usr/local/bin/docker compose --env-file .env down && sudo /usr/local/bin/docker compose --env-file .env up -d --build`.
 
 Then:
 

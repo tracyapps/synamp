@@ -261,18 +261,41 @@ Two steps, no Terminal on the NAS:
 
 1. On the Mac: `synamp-sync` (copies the new version to the NAS).
 2. The web app then shows **An update is ready to install** at the top. Do
-   what it says: DSM → Container Manager → **Project** → `synamp` →
-   **Stop**, then **Action** → **Build** (Build is greyed out while the
-   project runs). Stop takes a few seconds; the librarian finishes a batch
-   it's in the middle of first.
+   what it says: DSM → Container Manager → **Project** → select `synamp`,
+   then under **Action**, in this order every time:
+   - **Stop**. Wait until it shows as stopped. It can take a couple of
+     minutes; the librarian finishes a batch it's in the middle of first.
+   - **Clean**. This removes the running pieces only. Music, playlists and
+     settings live in folders on the NAS and are kept.
+   - **Build**.
 
-**If Stop fails in Container Manager** (it does on some DSM setups; the
-command-line Stop works and SynAmp itself is fine), rebuild from Terminal on
-the NAS instead — one step, no Stop needed:
+Don't skip Clean. Building over the old containers makes Container Manager
+lose track of some of them, and from then on its Stop does nothing (see
+below). With Clean first, they're made fresh each time.
+
+### If Stop does nothing
+
+The sign: you press Stop, Container Manager says "Stopped project synamp",
+and everything is still running. Stopping one container from the
+**Container** screen may say it doesn't exist.
+
+The cause is in Container Manager, not SynAmp. It keeps a small record per
+container. When a build replaces a container in place, Docker gives the old
+one a temporary name for a moment, and Container Manager sometimes files the
+new container's record under that temporary name. It then has no record under
+the real name, and refuses to stop the project. (DSM's own log says
+`project stop fail: container [synamp-edge-1]'s profile should exist!`.)
+
+The way out is to remove the containers once, so the next Build makes them
+all fresh. One line in Terminal on the NAS (it removes the running pieces
+only; your data stays where it is):
 
 ```bash
-sudo /usr/local/bin/docker compose -f /volume1/docker/synamp/deploy/docker-compose.yml --env-file /volume1/docker/synamp/deploy/.env up -d --build
+sudo /usr/local/bin/docker compose -f /volume1/docker/synamp/deploy/docker-compose.yml --env-file /volume1/docker/synamp/deploy/.env down
 ```
+
+Then Container Manager → **Project** → `synamp` → **Action** → **Build**.
+After that, Stop works again, and Stop → Clean → Build keeps it working.
 
 SynAmp is unavailable for a few minutes while it rebuilds. Let a batch in
 Organise finish first (or switch on **Pause file changes**); analysis on the

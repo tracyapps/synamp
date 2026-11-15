@@ -51,7 +51,7 @@ export function releaseCompose(text, { version, images }) {
     '# Every image is pinned to a version and its fingerprint: SynAmp\'s own come from',
     '# GitHub for this release, so nothing is built on the NAS. To update, or go back,',
     '# unzip another release over this folder (your .env and data are kept), then',
-    '# Container Manager: Project -> synamp -> Action -> Build. Back up DATA_DIR first.',
+    '# Container Manager: Project -> synamp -> Action -> Stop, then Clean, then Build. Back up DATA_DIR first.',
     '',
     result,
   ].join('\n');

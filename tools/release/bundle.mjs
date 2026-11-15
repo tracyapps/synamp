@@ -41,7 +41,8 @@ Update, or go back to an earlier version
   1. Back up your SynAmp data folder (DATA_DIR in deploy/.env).
   2. Unzip the release you want over the same folder.
      Your settings (deploy/.env) and data are not in this zip, so they're kept.
-  3. Container Manager: Project -> synamp -> Action -> Build.
+  3. Container Manager: Project -> synamp -> Action -> Stop, then Clean, then Build
+     (all three, in that order: Clean removes the running pieces only, never your data).
 
 Going back to an earlier version may need the data backup from before the
 update, if the newer version changed how it stores things.
