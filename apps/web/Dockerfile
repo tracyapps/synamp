@@ -8,7 +8,11 @@
 # The build runs on the build machine's own chip ($BUILDPLATFORM): its output is
 # plain files, the same for every chip, so ARM release images need no emulated
 # npm install. Only the small nginx stage below is per chip.
-FROM --platform=$BUILDPLATFORM node:22.23.3-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS build
+# Container Manager on a Synology builds with Docker's older builder, which
+# doesn't know $BUILDPLATFORM: an empty value there stops the build at this line
+# ("failed to parse platform"). ":-linux" means "this machine's own chip" when
+# the builder doesn't say.
+FROM --platform=${BUILDPLATFORM:-linux} node:22.23.3-alpine3.24@sha256:0a7108bf6c7bf5de370ffb1a3ed6be93d405b43ff159f681a8d18c0e2bc2e402 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund

@@ -21,3 +21,16 @@ test('Dockerfile base images are pinned by version and fingerprint', () => {
     for (const base of bases) assert.match(base, pinned, `${file}: ${base} is not pinned`);
   }
 });
+
+test("Dockerfiles build with the older builder Container Manager uses", () => {
+  // That builder doesn't set $BUILDPLATFORM. Used bare, it's empty there and the
+  // build stops at the first line ("failed to parse platform"), so every use
+  // needs a fallback: ${BUILDPLATFORM:-linux}. Same for the other automatic names.
+  for (const file of ['apps/brain/Dockerfile', 'apps/web/Dockerfile']) {
+    const froms = read(file).split('\n').filter((line) => /^FROM\s/.test(line));
+    for (const line of froms) {
+      const bare = line.match(/\$(?:\{)?(BUILDPLATFORM|TARGETPLATFORM|BUILDARCH|TARGETARCH|BUILDOS|TARGETOS)\b(?!:-)/);
+      assert.equal(bare, null, `${file}: "${line.slice(0, 60)}…" uses $${bare?.[1]} with no fallback`);
+    }
+  }
+});
