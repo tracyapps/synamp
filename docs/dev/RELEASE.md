@@ -124,7 +124,8 @@ release you want, then Container Manager → Project → synamp → Action → B
 Going back after an update that changed stored data needs that backup.
 
 Both chips (October 13): the web build and the fingerprint run on the build
-machine's own chip (`--platform=$BUILDPLATFORM`; their output is the same for
+machine's own chip (`--platform=${BUILDPLATFORM:-linux}`; the fallback is for
+Container Manager's older builder, which leaves it empty; their output is the same for
 every chip), so only the brain's `apk add ffmpeg` runs under QEMU for ARM. The
 pinned base images (node, nginx, Navidrome, Caddy, pgvector) are all multi-chip
 lists that include arm64. The **Images** job in CI builds both chips on every
