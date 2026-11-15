@@ -257,6 +257,84 @@ final class EngineTests: XCTestCase {
         XCTAssertTrue(why.contains("SynAmp's server code"), why)
     }
 
+    func testAMusicFolderThatIsntThereStartsNothingAndSaysSo() async throws {
+        let root = try temporaryFolder()
+        let paths = AppPaths(support: root.appendingPathComponent("support"), logs: root.appendingPathComponent("logs"))
+        let engine = Engine(paths: paths, layout: .development(repo: root), tokens: MemoryTokenStore(), isFree: { _ in true })
+        let drive = root.appendingPathComponent("Volumes/Music Drive/Music")
+        try engine.update { $0.musicFolder = drive.path }
+        await engine.start()
+        guard case .problem(let why) = engine.status else { return XCTFail("\(engine.status)") }
+        XCTAssertTrue(why.contains("can't find your music folder"), why)
+        XCTAssertTrue(why.contains(drive.path), why)
+        XCTAssertTrue(why.contains("Nothing has been changed or forgotten"), why)
+        XCTAssertNil(engine.plan, "none of SynAmp's pieces were started on a folder that isn't there")
+        // A file where the folder should be is no folder either; no folder chosen yet is not this problem.
+        try Data().write(to: root.appendingPathComponent("a-file"))
+        XCTAssertNotNil(Engine.musicFolderProblem(root.appendingPathComponent("a-file").path))
+        XCTAssertNil(Engine.musicFolderProblem(root.path))
+        XCTAssertNil(Engine.musicFolderProblem(""))
+    }
+
+    func testChangingTheMusicFolderAsksListeningFirstAndCarriesOverOnlyTheSameMusic() async throws {
+        let root = try temporaryFolder()
+        let paths = AppPaths(support: root.appendingPathComponent("support"), logs: root.appendingPathComponent("logs"))
+        let old = root.appendingPathComponent("Music"), new = root.appendingPathComponent("Drive/Music")
+        try FileManager.default.createDirectory(at: old, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: new, withIntermediateDirectories: true)
+        let calls = CallBox()
+        let engine = Engine(paths: paths, layout: .development(repo: root.appendingPathComponent("no-repo")), tokens: MemoryTokenStore(),
+                            isFree: { _ in true }, listeningTool: { arguments, folder in
+                                calls.add(arguments + ["@" + folder])
+                                if arguments.contains("--check") { return Data(#"{"known": 46039, "checked": 200, "found": 198}"#.utf8) }
+                                return calls.failNext ? nil : Data(#"{"moved": 46039, "replaced": 0, "kept": 0}"#.utf8)
+                            })
+        try engine.update { $0.musicFolder = old.path }
+
+        let check = await engine.checkMove(to: new)
+        XCTAssertEqual(check, MoveCheck(known: 46039, checked: 200, found: 198))
+        XCTAssertEqual(calls.all.last, ["reroot", "--from", old.path, "--to", new.path, "--check", "@" + new.path])
+        XCTAssertEqual(engine.settings.musicFolder, old.path, "asking changes nothing")
+
+        // Carrying over fails: the folder stays as it was.
+        calls.failNext = true
+        do { try await engine.changeMusicFolder(to: new, carryOver: true); XCTFail("should have refused") } catch {
+            XCTAssertEqual(error as? MusicFolderError, .couldNotCarryOver)
+        }
+        XCTAssertEqual(engine.settings.musicFolder, old.path)
+
+        calls.failNext = false
+        try await engine.changeMusicFolder(to: new, carryOver: true)
+        XCTAssertEqual(calls.all.last, ["reroot", "--from", old.path, "--to", new.path, "@" + new.path])
+        XCTAssertEqual(AppSettings.load(from: paths.settingsFile).musicFolder, new.path)
+
+        // Different music: nothing is carried over, the folder just changes.
+        let before = calls.all.count
+        try await engine.changeMusicFolder(to: old, carryOver: false)
+        XCTAssertEqual(calls.all.count, before)
+        XCTAssertEqual(engine.settings.musicFolder, old.path)
+    }
+
+    func testTheQuestionSaysWhatWillHappen() {
+        let same = MusicFolderQuestion(folderName: "Music", check: MoveCheck(known: 46039, checked: 200, found: 198))
+        XCTAssertEqual(same.title, "Same music, new place")
+        XCTAssertTrue(same.carryOver)
+        XCTAssertTrue(same.explanation.contains("nothing is listened to again"), same.explanation)
+        let different = MusicFolderQuestion(folderName: "Podcasts", check: MoveCheck(known: 46039, checked: 200, found: 3))
+        XCTAssertEqual(different.title, "This looks like different music")
+        XCTAssertFalse(different.carryOver)
+        XCTAssertTrue(different.explanation.contains("found only 3 of them in “Podcasts”"), different.explanation)
+        XCTAssertTrue(different.explanation.contains("in case you switch back"), different.explanation)
+        let first = MusicFolderQuestion(folderName: "Music", check: MoveCheck(known: 0, checked: 0, found: 0))
+        XCTAssertEqual(first.title, "Use “Music” as your music folder?")
+        XCTAssertFalse(first.carryOver)
+        let unknown = MusicFolderQuestion(folderName: "Music", check: nil)
+        XCTAssertFalse(unknown.carryOver, "never carry over on a guess")
+        XCTAssertTrue(unknown.explanation.contains("couldn't check"), unknown.explanation)
+        XCTAssertEqual(MoveCheck(known: 10, checked: 10, found: 8).kind, .sameMusic, "four in five is enough")
+        XCTAssertEqual(MoveCheck(known: 10, checked: 10, found: 7).kind, .differentMusic)
+    }
+
     func testTheOpenAddressHandsTheTokenOverInTheFragment() throws {
         let root = try temporaryFolder()
         let paths = AppPaths(support: root.appendingPathComponent("support"), logs: root.appendingPathComponent("logs"))
@@ -525,6 +603,18 @@ final class SystemStatusTests: XCTestCase {
         XCTAssertNil(watcher.latest)
         XCTAssertNil(seen.next)
         XCTAssertEqual(changes.value, 2)
+    }
+}
+
+final class CallBox: @unchecked Sendable {
+    private var calls: [[String]] = []
+    private var fail = false
+    private let lock = NSLock()
+    func add(_ call: [String]) { lock.withLock { calls.append(call) } }
+    var all: [[String]] { lock.withLock { calls } }
+    var failNext: Bool {
+        get { lock.withLock { fail } }
+        set { lock.withLock { fail = newValue } }
     }
 }
 

@@ -144,6 +144,34 @@ The web app's top bar has the same status as the menu (`SystemStatus.tsx`,
 `system-status.ts`): a button with the one thing most worth knowing, opening
 to the full lines. That's the status on a phone.
 
+## The music folder: missing, or moved
+
+**Missing.** If the music folder isn't there when SynAmp starts (a drive not
+plugged in, a share not connected), nothing is started and the menu says
+"SynAmp can't find your music folder (…). If it's on a drive or a NAS, connect
+it, then choose Try again." Started on a folder that isn't there, every song
+would look deleted.
+
+**Change music folder…** (menu, when SynAmp runs on this Mac). After the folder
+is chosen, listening is asked whether it's the same music in a new place
+(`synamp-analyze reroot --from <old> --to <new> --check`: an even spread of up
+to 200 known songs, looked for at the same place under the new folder). The
+person then sees one of:
+
+- **Same music, new place** (four in five or more are there): everything
+  learned is carried over with `reroot` before the restart. It rewrites the
+  paths in listening's database, including the "first known as" paths song IDs
+  are made from, so IDs, plays, playlists and feedback stay put and no song is
+  listened to again. If it fails, the folder is not changed.
+- **This looks like different music**: the folder changes and listening starts
+  from the beginning; what's known about the old folder stays in the database.
+- **Couldn't check**: nothing is carried over on a guess; songs are recognised
+  by their sound as they're read, which is slower.
+
+Not checked yet: what Navidrome keeps (its own play counts and stars) when its
+music folder changes. SynAmp's favourites are its own and are sent to Navidrome
+again.
+
 ## First run (G2)
 
 A short native window, then the web app takes over:
