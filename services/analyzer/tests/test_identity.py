@@ -229,3 +229,71 @@ def test_librarian_import_lines_are_not_mistaken_for_renames(tmp_path: Path) -> 
     counts = run_scan(config_for(library, tmp_path, journal), progress=quiet)
     assert counts["renamed"] == 0
     assert counts["new"] == 1
+
+
+def test_a_moved_music_folder_carries_everything_over_without_reading_a_file(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from synamp_analyzer.store import reroot, reroot_check
+
+    old_root = tmp_path / "Music"
+    tone(old_root / "Artist" / "Album" / "one.flac", freq=440.0)
+    tone(old_root / "Artist" / "Album" / "two.flac", freq=660.0)
+    config = config_for(old_root, tmp_path)
+    run_scan(config, progress=quiet)
+    run_analyze(config, progress=quiet)
+    with Database(config.db_path) as db:
+        before = by_path(build_export(db, old_root, read_file_tags=False))
+    assert set(before) == {"Artist/Album/one.flac", "Artist/Album/two.flac"}
+
+    # The person moves the whole folder to an external drive.
+    new_root = tmp_path / "Drive" / "My Music"
+    new_root.parent.mkdir()
+    old_root.rename(new_root)
+    elsewhere = tmp_path / "Podcasts"
+    tone(elsewhere / "show.flac")
+
+    with Database(config.db_path) as db:
+        assert reroot_check(db, old_root, new_root) == {"known": 2, "checked": 2, "found": 2}, "the same music, in a new place"
+        assert reroot_check(db, old_root, elsewhere) == {"known": 2, "checked": 2, "found": 0}, "different music"
+        assert reroot(db, old_root, new_root) == {"moved": 2, "replaced": 0, "kept": 0}
+        assert reroot(db, old_root, new_root) == {"moved": 0, "replaced": 0, "kept": 0}, "twice changes nothing more"
+
+    moved = config_for(new_root, tmp_path)
+    forbid_analysis(monkeypatch)  # nothing may be listened to again
+    run_scan(moved, progress=quiet)
+    run_analyze(moved, progress=quiet)
+    with Database(moved.db_path) as db:
+        after = by_path(build_export(db, new_root, read_file_tags=False))
+    assert set(after) == set(before)
+    for path, track in before.items():
+        assert after[path]["id"] == track["id"], "the same IDs, so plays, playlists and feedback still belong to the songs"
+        assert after[path]["signals"] == track["signals"]
+        assert after[path]["audio_hash"] == track["audio_hash"]
+
+
+
+def test_a_song_found_in_the_new_folder_first_gives_way_to_what_was_known(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from synamp_analyzer.store import reroot
+
+    old_root = tmp_path / "Music"
+    tone(old_root / "A" / "one.flac")
+    config = config_for(old_root, tmp_path)
+    run_scan(config, progress=quiet)
+    run_analyze(config, progress=quiet)
+    with Database(config.db_path) as db:
+        original = by_path(build_export(db, old_root, read_file_tags=False))["A/one.flac"]
+
+    # The folder moved, and a scan of the new place ran before anyone said so:
+    # the song is catalogued there too, with nothing measured yet.
+    new_root = tmp_path / "Drive"
+    old_root.rename(new_root)
+    moved = config_for(new_root, tmp_path)
+    run_scan(moved, progress=quiet)
+    with Database(moved.db_path) as db:
+        assert reroot(db, old_root, new_root) == {"moved": 1, "replaced": 1, "kept": 0}
+    forbid_analysis(monkeypatch)
+    run_scan(moved, progress=quiet)
+    run_analyze(moved, progress=quiet)
+    with Database(moved.db_path) as db:
+        after = by_path(build_export(db, new_root, read_file_tags=False))
+    assert after["A/one.flac"]["id"] == original["id"]
+    assert after["A/one.flac"]["signals"] == original["signals"]

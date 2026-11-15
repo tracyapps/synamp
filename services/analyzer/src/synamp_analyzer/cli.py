@@ -204,6 +204,16 @@ def _cmd_export(cfg: AnalyzerConfig, out: str | None, read_tags: bool = True) ->
     return 0
 
 
+def _cmd_reroot(cfg: AnalyzerConfig, old: Path, new: Path, check: bool) -> int:
+    from .store import Database, reroot, reroot_check
+    if not cfg.db_path.exists():
+        print(json.dumps({"known": 0, "checked": 0, "found": 0} if check else {"moved": 0, "replaced": 0, "kept": 0}))
+        return 0
+    with Database(cfg.db_path) as db:
+        print(json.dumps(reroot_check(db, old, new) if check else reroot(db, old, new)))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="synamp-analyze",
@@ -260,6 +270,13 @@ def build_parser() -> argparse.ArgumentParser:
     export = sub.add_parser("export", help="write analysed signals as JSON for the brain")
     export.add_argument("--out", default=None, help="destination file (default: cache dir)")
     export.add_argument("--no-tags", action="store_true", help="skip reading file tags (names come from folders)")
+
+    reroot = sub.add_parser(
+        "reroot", help="the music folder moved: carry over what's known about it (prints JSON)")
+    reroot.add_argument("--from", dest="old", required=True, help="where the music folder used to be")
+    reroot.add_argument("--to", dest="new", help="where it is now (default: LIBRARY_PATH)")
+    reroot.add_argument("--check", action="store_true",
+                        help="change nothing: say how many known songs are at the same place in the new folder")
 
     worker = sub.add_parser("worker", help="run in the background and take orders from the web app")
     worker.add_argument("--once", action="store_true", help="check once, run any waiting command, then exit")
@@ -352,6 +369,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cmd_inspect(cfg, args.limit)
     if args.command == "export":
         return _cmd_export(cfg, args.out, not args.no_tags)
+    if args.command == "reroot":
+        return _cmd_reroot(cfg, Path(args.old), Path(args.new) if args.new else cfg.library_path, args.check)
     if args.command == "worker":
         return _cmd_worker(cfg, args.once, args.poll)
     if args.command == "model":

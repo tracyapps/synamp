@@ -311,6 +311,86 @@ def find_donor(db: Database, audio_hash: str, exclude: Path) -> tuple[Path, bool
     return (Path(row["path"]), bool(row["missing"])) if row else None
 
 
+def _under(root: Path) -> str:
+    return str(root).rstrip("/") + "/"
+
+
+def reroot_check(db: Database, old_root: Path, new_root: Path, sample: int = 200) -> dict[str, int]:
+    """Is `new_root` the same music as `old_root`, in a new place?
+
+    Looks for an even spread of up to `sample` known songs at the same place
+    under the new folder. Reads nothing but whether each file is there.
+    Returns {"known", "checked", "found"}.
+    """
+    prefix = _under(old_root)
+    paths = [row["path"] for row in db.conn.execute(
+        "SELECT path FROM tracks WHERE missing = 0 AND substr(path, 1, ?) = ? ORDER BY path", (len(prefix), prefix))]
+    if not paths:
+        # Everything already marked missing (the old folder is gone): use those.
+        paths = [row["path"] for row in db.conn.execute(
+            "SELECT path FROM tracks WHERE substr(path, 1, ?) = ? ORDER BY path", (len(prefix), prefix))]
+    step = max(1, len(paths) // max(1, sample))
+    chosen = paths[::step][:sample]
+    found = sum(1 for path in chosen if (new_root / path[len(prefix):]).is_file())
+    return {"known": len(paths), "checked": len(chosen), "found": found}
+
+
+def reroot(db: Database, old_root: Path, new_root: Path) -> dict[str, int]:
+    """The music folder moved: carry everything known about it to the new place.
+
+    Pure bookkeeping: no file is read, so 50,000 songs take seconds, and nothing
+    has to be listened to again. Every catalogued path under `old_root` becomes
+    the same relative path under `new_root`, in every table, and so do the
+    "first known as" origins that song IDs are made from, so IDs (and with them
+    plays, playlists and feedback) stay the same.
+
+    A path that is already catalogued under the new folder is a song a scan found
+    there first. If nothing has been measured for it yet, the old record replaces
+    it; if something has, it is kept and the old record stays where it was.
+    Returns {"moved", "replaced", "kept"}. Running it twice changes nothing more.
+    """
+    old_prefix, new_prefix = _under(old_root), _under(new_root)
+    if old_prefix == new_prefix:
+        return {"moved": 0, "replaced": 0, "kept": 0}
+    conn = db.conn
+    moved = replaced = kept = 0
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        paths = [row["path"] for row in conn.execute(
+            "SELECT path FROM tracks WHERE substr(path, 1, ?) = ?", (len(old_prefix), old_prefix))]
+        for old in paths:
+            new = new_prefix + old[len(old_prefix):]
+            if conn.execute("SELECT 1 FROM tracks WHERE path = ?", (new,)).fetchone():
+                if conn.execute("SELECT 1 FROM results WHERE track_path = ?", (new,)).fetchone():
+                    kept += 1
+                    continue
+                for table, column in (("tracks", "path"), ("jobs", "track_path"), ("track_audio", "path"),
+                                      ("stage_updates", "track_path"), ("identity_links", "path")):
+                    conn.execute(f"DELETE FROM {table} WHERE {column} = ?", (new,))
+                replaced += 1
+            for table, column in (("tracks", "path"), ("jobs", "track_path"), ("results", "track_path"),
+                                  ("track_audio", "path"), ("stage_updates", "track_path"), ("identity_links", "path")):
+                conn.execute(f"UPDATE {table} SET {column} = ? WHERE {column} = ?", (new, old))
+            row = conn.execute("SELECT payload FROM results WHERE track_path = ?", (new,)).fetchone()
+            if row is not None:
+                payload = json.loads(row["payload"])
+                payload["track_path"] = new
+                conn.execute("UPDATE results SET payload = ? WHERE track_path = ?", (json.dumps(payload, sort_keys=True), new))
+            moved += 1
+        # Origins: the path a song was first known by. IDs are made from it, relative
+        # to the music folder, so it has to move with the folder.
+        conn.execute(
+            "UPDATE identity_links SET origin = ? || substr(origin, ?) WHERE substr(origin, 1, ?) = ?",
+            (new_prefix, len(old_prefix) + 1, len(old_prefix), old_prefix))
+        # A link from a path to itself says nothing.
+        conn.execute("DELETE FROM identity_links WHERE path = origin")
+        conn.execute("COMMIT")
+    except BaseException:
+        conn.execute("ROLLBACK")
+        raise
+    return {"moved": moved, "replaced": replaced, "kept": kept}
+
+
 def apply_rename(db: Database, old: Path, new: Path, reason: str) -> bool:
     """Carry a known track to its new path without re-reading the file.
 

@@ -408,6 +408,34 @@ final class AppModel: ObservableObject {
         }
     }
 
+    /// "Change music folder…": choose, hear what will happen, then switch.
+    func changeMusicFolder() {
+        guard let picked = chooseMusicFolder(), picked.path != settings.musicFolder else { return }
+        Task {
+            let question = MusicFolderQuestion(folderName: picked.lastPathComponent, check: await engine.checkMove(to: picked))
+            let alert = NSAlert()
+            alert.messageText = question.title
+            alert.informativeText = question.explanation
+            alert.addButton(withTitle: "Use This Folder")
+            alert.addButton(withTitle: "Cancel")
+            NSApp.activate(ignoringOtherApps: true)
+            guard alert.runModal() == .alertFirstButtonReturn else { return }
+            do {
+                try await engine.changeMusicFolder(to: picked, carryOver: question.carryOver)
+            } catch {
+                let failed = NSAlert()
+                failed.messageText = "The music folder wasn't changed"
+                failed.informativeText = String(describing: error)
+                failed.runModal()
+            }
+            settings = engine.settings
+            if case .running = engine.status {
+                open()
+                await engine.startListening()  // look through the folder straight away
+            }
+        }
+    }
+
     func restart() async {
         await engine.stop()
         await engine.start()
@@ -472,6 +500,10 @@ struct MenuContent: View {
         }
         if model.settings.connection == nil {
             Toggle("Keep this Mac awake while SynAmp works", isOn: Binding(get: { model.settings.preventSleep }, set: { model.setKeepAwake($0) }))
+            if let folder = model.settings.musicFolder, !folder.isEmpty {
+                Text("Music folder: \(URL(fileURLWithPath: folder).lastPathComponent)")
+                Button("Change music folder…") { model.changeMusicFolder() }
+            }
             if model.settings.isSetUp {
                 Button("Use a SynAmp on a NAS or another computer…") { model.showFirstRun() }
             }

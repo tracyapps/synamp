@@ -33,6 +33,10 @@ public final class Engine: @unchecked Sendable {
     private let connectionCheckEvery: TimeInterval
     private var monitor: ConnectionMonitor?
     private var statusWatcher: StatusWatcher?
+    private let injectedListeningTool: ListeningTool?
+    private var listeningTool: ListeningTool {
+        injectedListeningTool ?? ListeningTools.real(paths: paths, layout: layout, note: { [weak self] in self?.note($0) })
+    }
     private let statusFetch: StatusWatcher.Fetch?
     /// Told what SynAmp is doing (playing, listening, the music, Listen anywhere)
     /// whenever that changes; nil when it can't be asked.
@@ -48,8 +52,10 @@ public final class Engine: @unchecked Sendable {
     public init(paths: AppPaths, layout: RuntimeLayout, tokens: TokenStore,
                 isFree: @escaping (Int) -> Bool = { Ports.isFree($0) }, keepAwake: KeepAwake = KeepAwake(),
                 connectionTokens: TokenStore = MemoryTokenStore(), probe: @escaping ConnectionMonitor.Probe = ConnectionMonitor.http(),
-                connectionCheckEvery: TimeInterval = 20, statusFetch: StatusWatcher.Fetch? = nil) {
+                connectionCheckEvery: TimeInterval = 20, statusFetch: StatusWatcher.Fetch? = nil,
+                listeningTool: ListeningTool? = nil) {
         self.statusFetch = statusFetch
+        self.injectedListeningTool = listeningTool
         self.keepAwake = keepAwake
         self.connectionTokens = connectionTokens
         self.probe = probe
@@ -168,6 +174,14 @@ public final class Engine: @unchecked Sendable {
             await startConnected()
             return
         }
+        // A drive that's unplugged or a share that isn't connected: say so and
+        // start nothing. Started on a folder that isn't there, every song would
+        // look as if it had been deleted.
+        if let missing = Engine.musicFolderProblem(settings.musicFolder ?? "") {
+            note("not starting: \(missing)")
+            set(.problem(missing))
+            return
+        }
         set(.starting)
         let leftovers = LeftoverProcesses(file: paths.runningFile)
         let stopped = leftovers.stopLeftovers()
@@ -191,6 +205,46 @@ public final class Engine: @unchecked Sendable {
         } catch {
             set(.problem(String(describing: error)))
         }
+    }
+
+    // MARK: the music folder
+
+    /// Why SynAmp can't start from this folder, in words for the person (nil: it can).
+    public static func musicFolderProblem(_ path: String, fileManager: FileManager = .default) -> String? {
+        guard !path.isEmpty else { return nil }  // not chosen yet: the first run asks
+        var isFolder: ObjCBool = false
+        if fileManager.fileExists(atPath: path, isDirectory: &isFolder), isFolder.boolValue { return nil }
+        return "SynAmp can't find your music folder (\(path)). If it's on a drive or a NAS, connect it, then choose Try again. Nothing has been changed or forgotten."
+    }
+
+    /// Is `folder` the same music as the current folder, in a new place?
+    /// Nil when listening couldn't be asked. Changes nothing.
+    public func checkMove(to folder: URL) async -> MoveCheck? {
+        guard let old = settings.musicFolder, !old.isEmpty else { return MoveCheck(known: 0, checked: 0, found: 0) }
+        guard let printed = await listeningTool(["reroot", "--from", old, "--to", folder.path, "--check"], folder.path) else { return nil }
+        return try? JSONDecoder().decode(MoveCheck.self, from: printed)
+    }
+
+    /// Use another music folder. With `carryOver`, what SynAmp has learned moves
+    /// with it first (no song is listened to again). If that fails, the folder
+    /// is not changed and SynAmp starts again as it was.
+    public func changeMusicFolder(to folder: URL, carryOver: Bool) async throws {
+        let old = settings.musicFolder ?? ""
+        await stop()
+        if carryOver, !old.isEmpty, old != folder.path {
+            guard let printed = await listeningTool(["reroot", "--from", old, "--to", folder.path], folder.path) else {
+                note("music folder: couldn't carry over from \(old) to \(folder.path); keeping the old folder")
+                await start()
+                throw MusicFolderError.couldNotCarryOver
+            }
+            note("music folder: carried over from \(old) to \(folder.path): \(String(decoding: printed, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))")
+        }
+        try update {
+            $0.musicFolder = folder.path
+            $0.connection = nil
+        }
+        note("music folder: now \(folder.path)")
+        await start()
     }
 
     // MARK: SynAmp somewhere else
