@@ -209,6 +209,9 @@ function serve(port = Number(process.env.PORT) || 4321) {
   createServer((req, res) => {
     const url = new URL(req.url, "http://localhost");
     // The forms post to /api/*; locally there's no email to send, so say what would have gone out.
+    // The download buttons: locally, pretend there's a release so the buttons can be seen with a version.
+    if (url.pathname === "/api/release") { res.writeHead(200, { "content-type": "application/json" }); res.end(JSON.stringify({ version: "0.0.0", page: "https://github.com/tracyapps/synamp/releases/latest", preview: true })); return; }
+    if (/^\/download\/(apple-silicon|intel)$/.test(url.pathname)) { res.writeHead(302, { location: "https://github.com/tracyapps/synamp/releases/latest" }); res.end(); return; }
     if (url.pathname.startsWith("/api/")) {
       let body = "";
       req.on("data", (chunk) => { body += chunk; });

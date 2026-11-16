@@ -73,7 +73,8 @@ goal: Download SynAmp, open it, and point it at your music. No Docker, no comman
 - [x] A lighter listening engine: a much smaller download, and it runs on older Intel Macs too
 - [~] SynAmp for Mac: one app that carries everything it needs
 - [ ] A first run that asks where your music is and plays a first playlist the same day
-- [~] Starts by itself, updates itself, and lives quietly in the menu bar
+- [x] A download for Mac that installs by dragging it into Applications, checked by Apple
+- [x] Starts by itself, updates itself, and lives quietly in the menu bar
 - [~] One app either way: SynAmp on this computer, or the same app connected to a SynAmp already running on your NAS, with a “connect remotely?” offer when you’re away from home
 - [ ] SynAmp for Windows
 
@@ -96,7 +97,7 @@ goal: The part nobody else has: "make me a playlist that sounds like this."
 - [~] Listens to every song in your library: tempo, energy, loudness, rhythm
 - [x] Learns from what you skip, love and remove
 - [~] Smart mixes keep adding songs as you listen; play any saved playlist once or let it keep going
-- [~] Clear feedback beside the buttons, automatic next song after a rejection, and “more like this” for the next song
+- [x] Clear feedback beside the buttons, automatic next song after a rejection, and “more like this” for the next song
 - [x] Double-check the measurements yourself: tap along to the beat
 - [~] Knows which songs have words, and which have piano (or guitar, or horns)
 - [~] "Sounds like these two songs"
@@ -138,10 +139,12 @@ id: apps
 number: 7
 short: Apps
 goal: SynAmp in your menu bar, and maybe on other people's servers too.
-- [ ] A menu-bar player for your Mac
+- [x] A mini player for your Mac that can stay on top of your other windows
+- [~] A menu-bar player for your Mac: it shows the song today, with the buttons still to come
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-11-16 — SynAmp for Mac is out as an early test version. Download it from synamp.app: it’s free, checked by Apple, and it updates itself from here on
 - 2026-11-16 — Fixed: in SynAmp for Mac and in Safari, the menus behind the small arrows (and the right-click menus in the Library) stretched to the full height of the window. They’re the size of their choices again
 - 2026-11-16 — SynAmp for Mac: the mini player gets the same small arrows as the player bar (skip and say why, more like this next, remove or put back a song), and “Check for updates”, “Mini player” and “Keep mini player on top” are now in the menus at the top of the screen too. In the player bar, Skip and its arrow are one button shape
 - 2026-11-16 — SynAmp for Mac has a mini player: a small window with the song, Previous, Play or Pause, Skip and Love, that can stay on top of your other windows so the controls are always in reach. Open it from the menu-bar icon, or from More in the player bar

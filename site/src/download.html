@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- include:head title="Try SynAmp for Mac — SynAmp" path="/download" description="Download SynAmp for Mac: an early test version, free, with nothing to sign up for. It updates itself from here on." -->
+<style>
+  .hazard { height: 10px; background: repeating-linear-gradient(135deg, var(--gold) 0 14px, var(--ink) 14px 28px); }
+  .soon { position: relative; min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; background: var(--ink); overflow: hidden; }
+  .soon__viz { position: absolute; inset: 0; }
+  .soon__viz canvas { width: 100%; height: 100%; }
+  .soon__scrim { position: absolute; inset: 0; background: radial-gradient(90% 80% at 70% 25%, rgba(14,14,16,0.5), rgba(14,14,16,0.92) 70%); pointer-events: none; }
+  .soon__body { position: relative; z-index: 2; flex: 1; display: flex; align-items: center; padding-top: calc(var(--header-h) + 40px); padding-bottom: 48px; }
+  .soon__grid { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(320px,0.9fr); gap: clamp(32px,5vw,72px); align-items: center; width: 100%; }
+  .soon h1 { font-size: clamp(2.6rem, 1.8rem + 4vw, 5rem); max-width: 14ch; margin-top: 20px; }
+  .status-card { background: rgba(20,22,31,0.78); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid var(--border-strong); border-radius: var(--r-lg); padding: 24px; box-shadow: var(--shadow-lg); }
+  .status-card h3 { font-size: 1.15rem; margin-bottom: 4px; }
+  .stripe { display: grid; gap: 10px; margin-top: 18px; list-style: none; padding: 0; }
+  .stripe .item { display: grid; grid-template-columns: 14px 1fr auto; gap: 12px; align-items: center; font-size: 0.875rem; color: #d4d8e4; }
+  .soon__foot { position: relative; z-index: 2; }
+  .dl { display: grid; gap: 12px; margin-top: 30px; max-width: 520px; }
+  .dl .btn { justify-content: space-between; text-align: left; white-space: normal; flex-wrap: wrap; gap: 4px 16px; height: auto; min-height: 52px; padding-block: 10px; }
+  .dl small { font-weight: 400; opacity: 0.85; }
+  .steps { counter-reset: step; list-style: none; padding: 0; display: grid; gap: 14px; }
+  .steps li { counter-increment: step; display: grid; grid-template-columns: 32px 1fr; gap: 14px; align-items: start; }
+  .steps li::before { content: counter(step); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--ghost); border: 1px solid var(--border-strong); font: 600 0.875rem var(--font-mono); color: var(--gold); }
+  @media (max-width: 900px) { .soon__grid { grid-template-columns: minmax(0, 1fr); gap: 40px; } }
+</style>
+</head>
+<body>
+<div class="hazard" aria-hidden="true"></div>
+
+<!-- include:header active="none" over="hero" -->
+
+<main id="main">
+  <section class="soon" data-visualizer data-mode="layers" data-theme="spectrum" data-loop="partysynapse" aria-label="Download SynAmp">
+    <div class="soon__viz"><canvas aria-hidden="true"></canvas></div>
+    <div class="soon__scrim"></div>
+
+    <div class="soon__body">
+      <div class="wrap soon__grid">
+        <div>
+          <span class="badge badge--soon"><span class="status-dot status-dot--soon"></span>Early test version</span>
+          <h1>Try SynAmp<span data-release-version></span> for Mac.</h1>
+          <p class="lede" style="margin-top:22px">It's free, there's nothing to sign up for, and it updates itself from here on. It's also early: some parts are rough, and what you tell us decides what gets fixed first.</p>
+
+          <div class="dl">
+            <a class="btn btn--primary btn--lg" href="/download/apple-silicon"><span>Download for Macs from late 2020 on</span><small>Apple chip</small></a>
+            <a class="btn btn--ghost btn--lg" href="/download/intel"><span>Download for older Macs</span><small>Intel chip</small></a>
+          </div>
+          <p class="hint" style="margin-top:14px;max-width:520px">Not sure which Mac you have? Open the Apple menu and choose <strong>About This Mac</strong>. If it says “Chip: Apple M…”, take the first. If it says “Processor: Intel”, take the second. Needs macOS 14 or newer.</p>
+        </div>
+
+        <aside class="status-card">
+          <span class="metric__label">Where things stand</span>
+          <h2 class="h3" style="margin-top:8px">In early testing</h2>
+          <p class="muted" style="font-size:0.875rem">Tested every day on a real 46,000-song library. Updated {{roadmap.updated}}.</p>
+          <!-- roadmap:status -->
+          <div class="cluster" style="margin-top:22px">
+            <button class="btn btn--ghost btn--sm" type="button" data-viz="play" aria-pressed="false" aria-label="Play sound"><span data-viz-label>Play</span></button>
+            <div class="segmented" role="group" aria-label="Visualizer style"><button type="button" data-viz="mode" data-value="layers" aria-pressed="true">Layers</button><button type="button" data-viz="mode" data-value="radial" aria-pressed="false">Radial</button><button type="button" data-viz="mode" data-value="spectrum" aria-pressed="false">Bars</button></div>
+          </div>
+          <p class="vizbar__note" data-viz-note hidden style="font-size:0.75rem;color:var(--muted);margin-top:12px">The animation is resting because your device asked for less motion or less data. Press play to start it anyway.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--deep" aria-labelledby="install-title">
+    <div class="wrap">
+      <div class="section-head"><span class="eyebrow"><span class="amp amp--short"></span>Three steps</span><h2 id="install-title">Installing it.</h2></div>
+      <ol class="steps" style="max-width:62ch">
+        <li><div><strong>Open the download</strong> and drag SynAmp into Applications. Apple has checked the app, so it opens like any other.</div></li>
+        <li><div><strong>Open SynAmp</strong> and choose the folder your music is in: on the Mac, on a drive plugged into it, or on a NAS. Nothing in that folder is changed without asking you first.</div></li>
+        <li><div><strong>Look for the waveform in the menu bar.</strong> Its menu says in plain words what SynAmp is doing, and has “Check for updates…”. SynAmp listens to each song once before it can build playlists by sound, and that takes a while on a big library. You can play music straight away.</div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="expect-title">
+    <div class="wrap">
+      <div class="section-head"><span class="eyebrow"><span class="amp amp--short"></span>Before you install</span><h2 id="expect-title">What to expect from a test version.</h2></div>
+      <div class="grid grid--3">
+        <div class="card"><h3>What works today</h3><p>Playing your library, playlists described in plain words, library tidying with a preview and undo, radio, visuals, party mode and listening away from home. The <a href="/roadmap">roadmap</a> shows each piece.</p></div>
+        <div class="card"><h3>What's rough</h3><p>The very first run on a Mac that has never had SynAmp is the least tested part. The first listen-through downloads one extra piece. Windows isn't here yet.</p></div>
+        <div class="card"><h3>Your files are safe</h3><p>SynAmp never deletes music. Renames and tidy-ups show a preview first and can be undone. See <a href="/help#g-privacy">what leaves your house</a>.</p></div>
+      </div>
+      <p class="muted" style="margin-top:24px;max-width:70ch">Found something broken or confusing? In SynAmp, choose <strong>Send feedback</strong>, or <a href="/contact">write to us here</a>. Running SynAmp on a NAS or home server instead? The files for that are on the <a href="https://github.com/tracyapps/synamp/releases/latest">release page</a>, and the <a href="/help">help centre</a> walks through it.</p>
+    </div>
+  </section>
+
+  <section class="section section--deep" id="news" aria-labelledby="news-title">
+    <div class="wrap" style="max-width:720px">
+      <div class="section-head"><span class="eyebrow"><span class="amp amp--short"></span>Not on a Mac?</span><h2 id="news-title">Hear when there's more.</h2></div>
+      <p class="muted">Leave your email for news about SynAmp, such as when Windows is ready. Never shared, never sold.</p>
+      <form action="/api/subscribe" method="post" data-validate data-ajax novalidate style="margin-top:24px;max-width:520px">
+        <!-- include:signup-fields prefix="dl" source="download page" -->
+        <p class="form-status" data-form-status hidden role="status" style="margin-top:14px"></p>
+        <div class="cluster" style="margin-top:16px"><button class="btn btn--primary" type="submit">Send me news</button></div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<!-- include:footer -->
+
+<div class="hazard" aria-hidden="true"></div>
+<script src="/assets/synamp.js" defer></script>
+<script src="/assets/visualizer.js" defer></script>
+</body>
+</html>

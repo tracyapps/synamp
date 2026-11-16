@@ -131,3 +131,61 @@ test("forms: GET is refused", async () => {
   const r = await call(contact, {}, { method: "GET" });
   assert.equal(r.status, 405);
 });
+
+// ---- the download buttons
+
+import { latestRelease, shape, RELEASES_PAGE } from "../api/_lib/release.js";
+import { readFileSync, readdirSync } from "node:fs";
+
+const githubRelease = {
+  tag_name: "v0.2.0", published_at: "2026-11-16T18:12:27Z", html_url: "https://github.com/tracyapps/synamp/releases/tag/v0.2.0",
+  assets: ["appcast-apple-silicon.xml", "appcast-intel.xml", "SynAmp-0.2.0-apple-silicon.dmg", "SynAmp-0.2.0-intel.dmg", "synamp-0.2.0.zip", "synamp-0.2.0.zip.sha256"]
+    .map((name) => ({ name, browser_download_url: `https://github.com/tracyapps/synamp/releases/download/v0.2.0/${name}` })),
+};
+
+test("download: the newest release gives a version and a file for each kind of Mac", () => {
+  const release = shape(githubRelease);
+  assert.equal(release.version, "0.2.0");
+  assert.match(release.apple_silicon, /SynAmp-0\.2\.0-apple-silicon\.dmg$/);
+  assert.match(release.intel, /SynAmp-0\.2\.0-intel\.dmg$/);
+  assert.equal(shape({ tag_name: "nightly" }), null, "a tag that isn't a version is ignored");
+  assert.equal(shape({ tag_name: "v0.3.0", assets: [] }).apple_silicon, null);
+});
+
+test("download: when GitHub can't be reached, nothing breaks", async () => {
+  assert.equal(await latestRelease(async () => { throw new Error("offline"); }), null);
+  assert.equal(await latestRelease(async () => ({ ok: false, json: async () => ({}) })), null);
+  const release = await latestRelease(async () => ({ ok: true, json: async () => githubRelease }));
+  assert.equal(release.version, "0.2.0");
+});
+
+test("download: the buttons go to the newest file, or to the release page when it's missing", async () => {
+  const { default: download } = await import("../api/download.js");
+  const { default: releaseInfo } = await import("../api/release.js");
+  const original = globalThis.fetch;
+  const ask = async (handler, url, method = "GET") => {
+    const headers = {}; let body = "";
+    const res = { statusCode: 0, setHeader: (k, v) => { headers[k] = v; }, end: (text = "") => { body = text; } };
+    await handler({ method, url, headers: {} }, res);
+    return { status: res.statusCode, headers, body };
+  };
+  try {
+    globalThis.fetch = async () => ({ ok: true, json: async () => githubRelease });
+    assert.match((await ask(download, "/api/download?chip=apple-silicon")).headers.location, /apple-silicon\.dmg$/);
+    assert.match((await ask(download, "/api/download?chip=intel")).headers.location, /intel\.dmg$/);
+    assert.equal((await ask(download, "/api/download?chip=windows")).headers.location, githubRelease.html_url);
+    assert.deepEqual(JSON.parse((await ask(releaseInfo, "/api/release")).body), { version: "0.2.0", published: githubRelease.published_at, page: githubRelease.html_url });
+    assert.equal((await ask(download, "/api/download?chip=intel", "POST")).status, 405);
+    globalThis.fetch = async () => { throw new Error("offline"); };
+    const offline = await ask(download, "/api/download?chip=intel");
+    assert.equal(offline.status, 302);
+    assert.equal(offline.headers.location, RELEASES_PAGE);
+    assert.equal(JSON.parse((await ask(releaseInfo, "/api/release")).body).version, null);
+  } finally { globalThis.fetch = original; }
+});
+
+test("download: no page still points at the old early-access page", () => {
+  const src = new URL("../src/", import.meta.url);
+  const files = [...readdirSync(src).filter((f) => f.endsWith(".html")).map((f) => new URL(f, src)), ...readdirSync(new URL("partials/", src)).map((f) => new URL(`partials/${f}`, src))];
+  for (const file of files) assert.doesNotMatch(readFileSync(file, "utf8"), /\/coming-soon|Get early access/, `${file.pathname}`);
+});

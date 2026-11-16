@@ -1,6 +1,6 @@
 # synamp.app
 
-The SynAmp website: home, roadmap, help centre, contact, early access, the app
+The SynAmp website: home, roadmap, help centre, contact, download, the app
 tour and the design system. Plain HTML, CSS and a little JavaScript, built by
 one small Node script with no dependencies.
 
@@ -10,7 +10,8 @@ site/
     partials/          shared pieces: head, header, footer, the sign-up popup
   content/roadmap.md   the roadmap — the roadmap page, the homepage strip and
                        the early-access status card are all built from this
-  api/                 the two form endpoints (early access, contact)
+  api/                 the two form endpoints (news list, contact), and the
+                       download buttons' lookup of the newest release
   build.mjs            builds everything into dist/
   vercel.json          how Vercel builds and serves it
   tests/               checks for the roadmap and the forms

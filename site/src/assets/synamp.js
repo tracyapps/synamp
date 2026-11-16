@@ -123,6 +123,19 @@
 
   /* --- Dialog helpers ----------------------------------------------------- */
   function initDialogs() {
+    // "Try SynAmp 0.2.1": the buttons are written without a number, and get the
+    // newest version's from synamp.app itself. No answer: they stay as they are.
+    var versionSpots = $$("[data-release-version]");
+    if (versionSpots.length && window.fetch) {
+      fetch("/api/release", { headers: { Accept: "application/json" } })
+        .then(function (response) { return response.ok ? response.json() : null; })
+        .then(function (release) {
+          if (!release || !/^\d+\.\d+\.\d+/.test(release.version || "")) return;
+          versionSpots.forEach(function (spot) { spot.textContent = " " + release.version; });
+        })
+        .catch(function () {});
+    }
+
     $$("[data-open-dialog]").forEach(function (btn) {
       btn.addEventListener("click", function (e) {
         // Links still work without JavaScript (they go to a page with the same form).
