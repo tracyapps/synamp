@@ -142,6 +142,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-11-15 — SynAmp for Mac: the window you install from now shows what to do (drag SynAmp into Applications, then open it), with bigger icons and SynAmp’s own look
 - 2026-11-15 — SynAmp for Mac: the setup window and “Open on your phone” now look like the rest of SynAmp, and stay in the Dock and Command-Tab while they’re open so you can find them again. Both QR codes fit
 - 2026-11-15 — Connecting the Mac app to a SynAmp on a NAS no longer means copying an address and a token: in SynAmp’s Settings, press “Connect the Mac app” and it fills them in
 - 2026-11-15 — SynAmp for Mac has its icon: the SynAmp mark, in Finder, the installer, notifications and the update window

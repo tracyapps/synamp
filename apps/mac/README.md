@@ -25,7 +25,9 @@ In order, it:
 2. `build-app.sh` with `BUNDLE=1`: `build/SynAmp.app` with that runtime inside.
 3. `sign-app.sh`: signs every program and library inside, then the app, with
    the hardened runtime. Without `SIGN_IDENTITY` it signs ad-hoc (this Mac only).
-4. `make-dmg.sh`: `build/SynAmp-<version>-<chip>.dmg` (about 140 MB).
+4. `make-dmg.sh`: `build/SynAmp-<version>-<chip>.dmg` (about 140 MB). Needs `dmgbuild` (`pipx install dmgbuild`).
+   The window it opens is designed in `dmg/`: `background.html` is the picture (edit, then `node dmg/render.mjs`),
+   `settings.py` is the window size and where the icons sit.
 5. `notarize.sh` (with `NOTARIZE=1`): sends it to Apple and staples the ticket.
 
 ### Once, before the first notarized build

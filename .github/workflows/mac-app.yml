@@ -62,6 +62,8 @@ jobs:
           else
             echo "No signing secrets: building a test app signed ad-hoc."
           fi
+      - name: Disk image tool (lays out the drag-to-install window)
+        run: pipx install dmgbuild==2.0.0
       - name: Package
         env:
           SIGN_IDENTITY: ${{ steps.sign.outputs.identity }}
