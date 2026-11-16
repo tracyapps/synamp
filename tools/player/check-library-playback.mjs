@@ -97,13 +97,15 @@ try {
  // instead, start a smart playlist from this song.
  const buttons=()=>page.evaluate(()=>[...document.querySelectorAll('.player__feedback button, .player__feedback summary')].map(b=>b.textContent.trim()));
  const shown=await buttons();
- for(const gone of ['More like this','Not for this','Reason…']) assert.ok(!shown.includes(gone),`${gone} is hidden for Library playback`);
+ assert.ok(!shown.includes('Remove'),'Remove is hidden for Library playback');
+ assert.ok(!(await page.$('.player [aria-label="Skip, and say why"]')),'no reasons to skip with, from the Library');
  assert.ok(!shown.some(t=>t.startsWith('Remove from')));
  assert.ok(shown.includes('Love'),'Love (favourites) stays');
  const indexBefore=(await (await fetch(`${api}/api/v1/session`)).json()).session.index;
  await page.keyboard.down('Alt');await page.keyboard.down('Shift');await page.keyboard.press('KeyN');await page.keyboard.up('Shift');await page.keyboard.up('Alt');
  await new Promise(r=>setTimeout(r,400));
  assert.equal((await (await fetch(`${api}/api/v1/session`)).json()).session.index,indexBefore,'Alt+Shift+N does nothing from the Library');
+ await page.click('.player__feedback [aria-label="More like this, and more"]');await page.waitForSelector('[role=menu]');
  const make=await page.evaluateHandle(()=>[...document.querySelectorAll('.player__feedback button')].find(b=>b.textContent.trim()==='Make a smart playlist from this'));
  assert.ok(make.asElement(),'Make a smart playlist from this');
  const playingTitle=await page.$eval('.player__title',el=>el.textContent);
