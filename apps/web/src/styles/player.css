@@ -33,16 +33,23 @@
 .player__btn.player__play:hover:not(:disabled) { background: var(--gold-hi); border-color: var(--gold-hi); box-shadow: var(--shadow-glow); }
 .player__btn:disabled { opacity: 0.4; }
 
-.player__right { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; min-width: 0; }
+.player__right { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 12px; min-width: 0; }
 .player__seek { flex: 1; display: flex; align-items: center; gap: 10px; color: var(--muted); font: 0.75rem var(--font-mono); max-width: 360px; letter-spacing: 0; }
-.player__seek input { flex: 1; min-width: 60px; }
+.player__seek { min-width: 0; }
+.player__seek input { flex: 1 1 0; width: 0; min-width: 48px; }
 
-.player__feedback { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.player__feedback .chip, .player__why .chip { height: 32px; }
-.player__feedback .chip[aria-expanded="true"] { border-color: var(--gold); color: var(--gold); }
-.player__why { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.player__why .muted { font-size: 0.8125rem; }
-.player__status { margin: 0 0 0 auto; min-height: 1.2em; font-size: 0.8125rem; color: var(--muted); }
+.player__feedback { grid-column: 1 / -1; min-width: 0; }
+.player__more { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding-top: 8px; border-top: 1px solid var(--border); }
+.player__more[hidden] { display: none; }
+/* Visuals sits in the bar when there's room for it, and under More when there isn't. */
+.player__right .player__visuals { display: none; }
+@media (min-width: 1500px) {
+  .player__right .player__visuals { display: inline-flex; }
+  .player__more .player__more-visuals { display: none; }
+}
+.player__shortcuts { font-size: .8125rem; color: var(--muted); }
+.player__shortcuts p { max-width: 70ch; margin: 0; }
+.player__shortcuts strong { color: var(--fg); font-weight: 500; }
 
 .player__queue { grid-column: 1 / -1; list-style: none; margin: 0; padding: 4px 0 0; min-height: 0; max-height: 28vh; max-height: min(28dvh, 280px); overflow: auto; overscroll-behavior: contain; border-top: 1px solid var(--border); }
 .player__queue button { width: 100%; text-align: left; background: none; border: none; color: var(--fg); padding: 8px 6px; min-height: 44px; font-size: 0.9375rem; display: flex; gap: 12px; align-items: center; border-radius: var(--r-sm); }
@@ -56,30 +63,61 @@
   .player { grid-template-columns: minmax(0, 1fr) auto; padding: 10px 14px; }
   .player__right { grid-column: 1 / -1; }
   .player__seek { max-width: none; }
-  .player__status { margin-left: 0; flex-basis: 100%; }
 }
 .player__volume { width: 96px; flex: none; }
 .player__volume .range { display: block; }
-@media (max-width: 820px) { .player__volume { display: none; } }
-/* On phones the bar stays short: Love / Not for this appear with the queue. */
+/* Phones: three short rows (song and transport; seek, Up next and More; Love and Remove).
+   The phone's own buttons set the volume. */
 @media (max-width: 820px) {
-  .player__feedback { display: none; }
-  .player:has(.player__queue-toggle[aria-expanded="true"]) .player__feedback { display: flex; }
+  .player { gap: 6px 12px; padding: 8px 12px; }
+  .player__volume { display: none; }
+  .player__right { flex-wrap: nowrap; gap: 8px; }
+  .player__cover { width: 40px; height: 40px; }
+  .player__transport { gap: 6px; }
 }
-@media (max-height: 600px) { .player { padding-block: 6px; } }
+/* A short window (a phone on its side): Love and Remove wait behind More too. */
+@media (max-height: 520px) {
+  .player { padding-block: 6px; }
+  .player:not(:has(.player__more-toggle[aria-expanded="true"])) .player__feedback { display: none; }
+}
 
-/* Acknowledgement stays directly below the pressed controls, across the bar. */
-.song-controls { width: 100%; min-width: 0; }
-.song-controls__buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* Split buttons (ui/SplitButton.tsx): the action, and an arrow for other ways to do it. */
+.split { display: inline-flex; align-items: stretch; flex: none; min-width: 0; }
+.split > :first-child:not(:last-child) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.split__more {
+  display: grid; place-items: center; min-width: 32px; padding: 0 6px; margin-left: -1px;
+  background: var(--ghost); border: 1px solid var(--border); border-radius: 0 var(--r-pill) var(--r-pill) 0; color: var(--fg);
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+}
+.split__more:hover:not(:disabled) { background: var(--ghost-hi); }
+.split__more[aria-expanded="true"] { border-color: var(--gold); color: var(--gold); }
+.split__more:disabled { opacity: .45; }
+.split__arrow { transform: rotate(-90deg); }
+.split .btn + .split__more { border-color: var(--border-strong); }
+/* Beside the round Skip button, the arrow is a small round button of its own. */
+.split--round { align-items: center; gap: 2px; }
+.split--round > :first-child:not(:last-child) { border-radius: 50%; }
+.split--round .split__more { width: 28px; min-width: 28px; height: 28px; padding: 0; margin: 0; border-radius: 50%; border-color: var(--border-strong); }
+
+/* What you think of this song. The buttons keep their place; messages, and Undo
+   after a removal, go after them (to the right when there's room, underneath when not). */
+.song-controls { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-start; width: 100%; min-width: 0; }
+.song-controls__buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; min-width: 0; max-width: 100%; }
 .song-controls__buttons .chip { min-height: 36px; height: auto; padding-block: 6px; }
+.song-controls__love { min-width: 5.6em; }
 .song-controls__love.is-loved { color: var(--gold); border-color: var(--gold); background: rgba(255,205,0,.12); opacity: 1; }
 .song-controls__love.is-loved path { fill: currentColor; }
-.song-controls__status { grid-column: 1 / -1; margin: 8px 0 0; padding: 8px 12px; border-left: 3px solid var(--gold); background: var(--ghost); color: var(--fg); font-size: .875rem; overflow-wrap: anywhere; }
+.song-controls__remove { min-width: 0; }
+.song-controls__label { white-space: nowrap; }
+.song-controls__playlist { display: inline-block; max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.song-controls__note { flex: 1 1 280px; display: flex; gap: 10px; align-items: center; justify-content: flex-end; min-width: 0; min-height: 36px; }
+.song-controls__note:not(:has(.song-controls__undo)):has(.song-controls__status:empty) { display: none; }
+.song-controls__status { flex: 1 1 auto; margin: 0; padding: 6px 12px; border-left: 3px solid var(--gold); background: var(--ghost); color: var(--fg); font-size: .875rem; overflow-wrap: anywhere; }
 .song-controls__status:empty { display: none; }
-.song-controls__status.is-pending { border-left-color: var(--gold); background: rgba(255,205,0,.14); }
-.player__shortcuts { font-size: .75rem; color: var(--muted); }
-.player__shortcuts p { max-width: 640px; margin: 6px 0; }
-@media (max-width: 820px) { .player__feedback { display: flex; } }
-
-.song-controls__reason { font-size: .8rem; color: var(--muted); }
-.song-controls__reason .cluster { margin-top: 8px; }
+.song-controls__note.is-pending .song-controls__status { background: rgba(255,205,0,.14); }
+.song-controls__undo { flex: none; }
+@media (max-width: 820px) {
+  /* The song line above already says which playlist. */
+  .song-controls__from { display: none; }
+  .song-controls__note { flex-basis: 100%; }
+}

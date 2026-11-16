@@ -14,7 +14,11 @@ import type { MouseEvent as ReactMouseEvent } from "react";
  */
 
 export type MenuItem = { label: string; onSelect: () => void; disabled?: boolean };
-export type MenuAt = { x: number; y: number; items: MenuItem[]; label: string; returnTo: HTMLElement | null };
+export type MenuAt = {
+  x: number; y: number; items: MenuItem[]; label: string; returnTo: HTMLElement | null;
+  /** Opened from a button (a split button's arrow): sit just above it, or below when there's no room, lined up with its right edge. */
+  anchor?: DOMRect;
+};
 
 const popoverSupported = typeof HTMLElement !== "undefined" && "popover" in HTMLElement.prototype;
 
@@ -32,30 +36,40 @@ export default function ContextMenu({ at, onClose }: { at: MenuAt; onClose: () =
     if (!element) return;
     if (popoverSupported) { try { element.showPopover(); } catch { /* already open */ } }
     // Keep it inside the window.
+    // (A display window has its own document and size.)
+    const view = element.ownerDocument.defaultView ?? window;
     const { width, height } = element.getBoundingClientRect();
-    element.style.left = `${Math.max(8, Math.min(at.x, window.innerWidth - width - 8))}px`;
-    element.style.top = `${Math.max(8, Math.min(at.y, window.innerHeight - height - 8))}px`;
+    const x = at.anchor ? at.anchor.right - width : at.x;
+    const y = at.anchor ? (at.anchor.top - height - 6 >= 8 ? at.anchor.top - height - 6 : at.anchor.bottom + 6) : at.y;
+    element.style.left = `${Math.max(8, Math.min(x, view.innerWidth - width - 8))}px`;
+    element.style.top = `${Math.max(8, Math.min(y, view.innerHeight - height - 8))}px`;
     items()[0]?.focus({ preventScroll: true });
   }, [at]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const element = box.current;
     if (!element) return;
-    const outside = (event: PointerEvent) => { if (!element.contains(event.target as Node)) onClose(); };
+    // (The arrow that opened it closes it itself, on the click that follows.)
+    const outside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (element.contains(target) || (at.anchor && at.returnTo?.contains(target))) return;
+      onClose();
+    };
     // Scrolling the page closes it, as native menus do — but not the nudge from focusing it as it opens.
     const opened = performance.now();
     const scrolled = (event: Event) => { if (performance.now() - opened > 300 && !element.contains(event.target as Node)) onClose(); };
-    document.addEventListener("pointerdown", outside, true);
-    document.addEventListener("scroll", scrolled, { capture: true, passive: true });
+    const page = element.ownerDocument;
+    page.addEventListener("pointerdown", outside, true);
+    page.addEventListener("scroll", scrolled, { capture: true, passive: true });
     return () => {
-      document.removeEventListener("pointerdown", outside, true);
-      document.removeEventListener("scroll", scrolled, { capture: true });
+      page.removeEventListener("pointerdown", outside, true);
+      page.removeEventListener("scroll", scrolled, { capture: true });
     };
-  }, [onClose]);
+  }, [onClose, at.anchor, at.returnTo]);
 
   function onKeyDown(event: React.KeyboardEvent) {
     const list = items();
-    const index = list.indexOf(document.activeElement as HTMLButtonElement);
+    const index = list.indexOf((box.current?.ownerDocument ?? document).activeElement as HTMLButtonElement);
     const go = (next: number) => { event.preventDefault(); list[(next + list.length) % list.length]?.focus({ preventScroll: true }); };
     if (event.key === "ArrowDown") go(index + 1);
     else if (event.key === "ArrowUp") go(index - 1);

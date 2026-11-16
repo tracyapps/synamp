@@ -186,25 +186,6 @@
 .library-page__section .album__toggle { font: inherit; }
 .library-page__hint { margin: 0 0 8px; font-size: 0.8125rem; }
 
-/* The right-click menu */
-.context-menu {
-  position: fixed; inset: auto; margin: 0; min-width: 200px; max-width: min(320px, calc(100vw - 16px)); padding: 6px;
-  display: grid; gap: 2px; background: var(--surface-2); color: var(--fg);
-  border: 1px solid var(--border-strong); border-radius: var(--r-sm); box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
-}
-.context-menu__item {
-  min-height: 40px; padding: 8px 12px; text-align: left; font: inherit; font-size: 0.9375rem;
-  background: none; border: 0; border-radius: var(--r-xs); color: inherit; cursor: pointer;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.context-menu__item:hover, .context-menu__item:focus-visible { background: var(--ghost-hi); outline: none; }
-.context-menu__item:focus-visible { box-shadow: inset 0 0 0 2px var(--gold); }
-.context-menu__item:disabled { opacity: .5; cursor: default; }
-@media (forced-colors: active) {
-  .context-menu { border: 1px solid CanvasText; }
-  .context-menu__item:focus-visible { outline: 2px solid Highlight; }
-}
-
 @media (max-width: 640px) {
   /* Nothing is hidden on a phone: the artist or album link drops under the title instead. */
   .tracklist--wide li, .tracklist li:has(.tracklist__artist) { flex-wrap: wrap; }
