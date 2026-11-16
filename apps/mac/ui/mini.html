@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SynAmp mini player</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Momo+Trust+Display&family=Space+Grotesk:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/ui.css">
+  <link rel="stylesheet" href="panel.css">
+  <style>
+    /* The mini player: the song and four buttons, small enough to park in a corner.
+       (Plain on purpose. Artwork and other looks can come later.) */
+    .mini { display: grid; gap: 12px; padding: 4px 18px 16px; }
+    .mini__song { min-width: 0; }
+    .mini__title { margin: 0; font: 500 1rem/1.3 var(--font-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mini__artist { margin: 2px 0 0; min-height: 1.4em; color: var(--muted); font-size: 0.8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mini__controls { display: flex; align-items: center; gap: 10px; }
+    .mini__btn {
+      display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 50%;
+      border: 1px solid var(--border-strong); background: var(--ghost); color: var(--fg); cursor: pointer;
+      transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease);
+    }
+    .mini__btn:hover:not(:disabled) { background: var(--ghost-hi); }
+    .mini__btn:disabled { opacity: 0.4; cursor: default; }
+    .mini__btn--play { width: 46px; height: 46px; background: var(--gold); border-color: var(--gold); color: var(--on-gold); }
+    .mini__btn--play:hover:not(:disabled) { background: var(--gold-hi); border-color: var(--gold-hi); }
+    .mini__btn svg[hidden] { display: none; }
+    .mini__btn--love { margin-left: auto; }
+    .mini__btn--love[aria-pressed="true"] { color: var(--gold); border-color: var(--gold); background: var(--gold-wash); }
+    .mini__btn--love[aria-pressed="true"] path { fill: currentColor; }
+    .mini__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 0.8125rem; color: var(--muted); }
+    .mini__top { display: inline-flex; align-items: center; gap: 8px; min-height: 28px; cursor: pointer; }
+    .mini__top input { width: 16px; height: 16px; margin: 0; }
+    .mini__open { background: none; border: 0; padding: 4px 0; min-height: 28px; color: var(--gold); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+  </style>
+  <script src="bridge.js"></script>
+</head>
+<body>
+<main class="mini">
+  <h1 class="visually-hidden">SynAmp mini player</h1>
+  <div class="mini__song">
+    <p class="mini__title" id="title">Nothing playing</p>
+    <p class="mini__artist" id="artist"></p>
+  </div>
+  <div class="mini__controls" role="group" aria-label="Playback">
+    <button type="button" class="mini__btn" id="previous" aria-label="Previous track">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 20 9 12l10-8v16Z"/><path d="M5 19V5"/></svg>
+    </button>
+    <button type="button" class="mini__btn mini__btn--play" id="toggle" aria-label="Play">
+      <svg id="icon-play" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5Z"/></svg>
+      <svg id="icon-pause" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" hidden><rect x="7" y="5" width="4" height="14" rx="1.4" fill="currentColor"/><rect x="13" y="5" width="4" height="14" rx="1.4" fill="currentColor"/></svg>
+    </button>
+    <button type="button" class="mini__btn" id="next" aria-label="Skip to next track">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4l10 8-10 8V4Z"/><path d="M19 5v14"/></svg>
+    </button>
+    <button type="button" class="mini__btn mini__btn--love" id="love" aria-label="Love" aria-pressed="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-9.2-9A5 5 0 0 1 12 6a5 5 0 0 1 9.2 5C19 15.6 12 20 12 20Z"/></svg>
+    </button>
+  </div>
+  <div class="mini__foot">
+    <label class="mini__top"><input type="checkbox" id="top"> Stay on top</label>
+    <button type="button" class="mini__open" id="open">Open SynAmp</button>
+  </div>
+</main>
+<script>
+(function () {
+  const example = { view: { title: "An Ending (Ascent)", artist: "Brian Eno", paused: false, loved: false, busy: false }, stayOnTop: true };
+  const start = SynAmp.inApp ? SynAmp.state : Object.assign({}, example, SynAmp.state);
+  const $ = (id) => document.getElementById(id);
+  const buttons = ["previous", "toggle", "next", "love"];
+
+  function show(view) {
+    const playing = Boolean(view);
+    $("title").textContent = playing ? view.title : "Nothing playing";
+    $("artist").textContent = playing ? (view.artist || "") : "Open SynAmp and choose something to play.";
+    const paused = !playing || view.paused;
+    $("toggle").setAttribute("aria-label", paused ? "Play" : "Pause");
+    $("icon-play").toggleAttribute("hidden", !paused);
+    $("icon-pause").toggleAttribute("hidden", paused);
+    const loved = playing && view.loved;
+    $("love").setAttribute("aria-pressed", String(loved));
+    $("love").setAttribute("aria-label", loved ? "Loved" : "Love");
+    for (const id of buttons) $(id).disabled = !playing;
+    // Love can't be taken back from here, and one answer at a time is enough.
+    if (playing) { $("love").disabled = loved || view.busy; $("next").disabled = view.busy; }
+  }
+
+  for (const id of buttons) $(id).addEventListener("click", () => SynAmp.send("command", { name: id }));
+  $("open").addEventListener("click", () => SynAmp.send("open"));
+  $("top").checked = start.stayOnTop !== false;
+  $("top").addEventListener("change", (event) => SynAmp.send("stayOnTop", { on: event.target.checked }));
+  SynAmp.on("player", (message) => show(message.view));
+  show(start.view);
+})();
+</script>
+</body>
+</html>

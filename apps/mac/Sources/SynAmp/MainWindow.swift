@@ -15,6 +15,10 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     private var origin: URL?
     /// One line for SynAmp's own log (app.log): what the window loaded, or why it couldn't.
     private let note: (String) -> Void
+    /// The player in the page says what it's doing (song, playing or paused), every time that changes.
+    var onPlayer: (([String: Any]) -> Void)?
+    /// The page asks the app for something of its own (today: "miniPlayer").
+    var onAppAction: ((String) -> Void)?
 
     init(note: @escaping (String) -> Void = { _ in }) {
         self.note = note
@@ -44,7 +48,24 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
         window.delegate = self
         webView.navigationDelegate = self
         webView.uiDelegate = self
+        let controller = webView.configuration.userContentController
+        controller.add(PageMessages { [weak self] body in
+            if let view = body as? [String: Any] { self?.onPlayer?(view) }
+        }, name: "synampPlayer")
+        controller.add(PageMessages { [weak self] body in
+            if let message = body as? [String: Any], let action = message["action"] as? String { self?.onAppAction?(action) }
+        }, name: "synampApp")
     }
+
+    /// Ask the player in the page to do something (the mini player's buttons).
+    /// It works with the window hidden too: the page is still there, playing.
+    func playerCommand(_ command: String) {
+        guard let script = PlayerCommands.script(for: command) else { return }
+        webView.evaluateJavaScript(script, completionHandler: nil)
+    }
+
+    /// Has SynAmp's page been loaded in this window (so there is a player to ask)?
+    var hasPage: Bool { webView.url != nil }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError("not used") }
@@ -102,6 +123,16 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
     }
 
     // MARK: window
+
+    /// Messages from the page. Holds nothing but the closure, so the web view never keeps the window alive.
+    private final class PageMessages: NSObject, WKScriptMessageHandler {
+        let handle: @MainActor (Any) -> Void
+        init(_ handle: @escaping @MainActor (Any) -> Void) { self.handle = handle }
+        func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+            let body = message.body
+            MainActor.assumeIsolated { handle(body) }
+        }
+    }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         sender.orderOut(nil)                 // hide, keep playing

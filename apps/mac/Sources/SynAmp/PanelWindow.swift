@@ -86,7 +86,7 @@ final class PanelWindow: NSObject, NSWindowDelegate, WKScriptMessageHandler, WKN
     private func fit(height: CGFloat) {
         let room = (window.screen ?? NSScreen.main)?.visibleFrame.height ?? 800
         let title = window.frame.height - window.contentLayoutRect.height
-        let wanted = min(max(height, 200), room - title - 24)
+        let wanted = min(max(height, 120), room - title - 24)
         let top = window.frame.maxY
         var frame = window.frameRect(forContentRect: NSRect(x: 0, y: 0, width: width, height: wanted))
         frame.origin.x = window.frame.origin.x
