@@ -142,6 +142,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-11-16 — Fixed: in SynAmp for Mac and in Safari, the menus behind the small arrows (and the right-click menus in the Library) stretched to the full height of the window. They’re the size of their choices again
 - 2026-11-16 — SynAmp for Mac: the mini player gets the same small arrows as the player bar (skip and say why, more like this next, remove or put back a song), and “Check for updates”, “Mini player” and “Keep mini player on top” are now in the menus at the top of the screen too. In the player bar, Skip and its arrow are one button shape
 - 2026-11-16 — SynAmp for Mac has a mini player: a small window with the song, Previous, Play or Pause, Skip and Love, that can stay on top of your other windows so the controls are always in reach. Open it from the menu-bar icon, or from More in the player bar
 - 2026-11-16 — SynAmp for Mac: the menu always says what’s playing, and a new switch, “Show the song in the menu bar”, puts the song title right beside SynAmp’s icon if your menu bar has the room. It’s off until you turn it on

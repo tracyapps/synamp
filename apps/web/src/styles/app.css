@@ -234,6 +234,9 @@ label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) { letter-s
 /* Menus: the right-click menu, and the menu behind a split button's arrow (ui/ContextMenu.tsx). */
 .context-menu {
   position: fixed; inset: auto; margin: 0; min-width: 200px; max-width: min(320px, calc(100vw - 16px)); padding: 6px;
+  /* height: auto on purpose. Browsers give a popover "height: fit-content", and Safari (so SynAmp for Mac too)
+     works that out as the whole window's height for a grid: the menu filled the screen top to bottom. */
+  height: auto; grid-auto-rows: max-content; align-content: start;
   display: grid; gap: 2px; background: var(--surface-2); color: var(--fg);
   border: 1px solid var(--border-strong); border-radius: var(--r-sm); box-shadow: 0 12px 32px rgba(0, 0, 0, .45);
 }
