@@ -17,8 +17,18 @@ struct SynAmpApp: App {
         MenuBarExtra {
             MenuContent(model: model)
         } label: {
-            // The menu-bar icon; its words are what VoiceOver reads.
-            Label(model.menuLabel, systemImage: model.menuSymbol)
+            // The menu-bar icon, and the song beside it for those who asked for it.
+            // VoiceOver reads the same words either way.
+            if let song = model.menuBarSong {
+                HStack(spacing: 4) {
+                    Image(systemName: model.menuSymbol)
+                    Text(song)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(model.menuLabel)
+            } else {
+                Label(model.menuLabel, systemImage: model.menuSymbol)
+            }
         }
 
     }
@@ -147,6 +157,12 @@ final class AppModel: ObservableObject {
         case .problem: return "exclamationmark.triangle"
         default: return "waveform.slash"
         }
+    }
+
+    /// The song beside the icon in the menu bar: only when switched on, and something is playing or paused.
+    var menuBarSong: String? {
+        guard settings.songInMenuBar, case .running = status else { return nil }
+        return StatusWords.menuBarSong(system)
     }
 
     /// What VoiceOver says for the menu-bar icon: SynAmp and where things stand.
@@ -328,6 +344,11 @@ final class AppModel: ObservableObject {
         settings = engine.settings
         loginItem = LoginItem.apply(on)
         engine.note("start at login: \(loginItem)")
+    }
+
+    func setSongInMenuBar(_ on: Bool) {
+        try? engine.update { $0.songInMenuBar = on }
+        settings = engine.settings
     }
 
     func setKeepAwake(_ on: Bool) {
@@ -547,6 +568,7 @@ struct MenuContent: View {
         }
         Divider()
         Toggle("Start at login", isOn: Binding(get: { model.settings.startAtLogin }, set: { model.setStartAtLogin($0) }))
+        Toggle("Show the song in the menu bar", isOn: Binding(get: { model.settings.songInMenuBar }, set: { model.setSongInMenuBar($0) }))
         if case .needsApproval = model.loginItem {
             Button("Allow in System Settings…") {
                 NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.LoginItems-Settings.extension")!)

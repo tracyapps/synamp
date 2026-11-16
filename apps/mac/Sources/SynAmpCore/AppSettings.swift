@@ -13,6 +13,10 @@ public struct AppSettings: Codable, Sendable, Equatable {
     public var startAtLogin: Bool
     /// Keep the Mac awake while SynAmp is listening to the library or playing.
     public var preventSleep: Bool
+    /// Show the song that's playing beside SynAmp's icon in the menu bar.
+    /// Off unless asked for: the menu bar is short of room on many Macs, and
+    /// the menu itself always says what's playing.
+    public var songInMenuBar: Bool
     /// Set when SynAmp runs somewhere else (a NAS, another computer) and this
     /// Mac only shows it. Nil: SynAmp runs on this Mac, from `musicFolder`.
     public var connection: Connection?
@@ -20,13 +24,31 @@ public struct AppSettings: Codable, Sendable, Equatable {
     public static let defaultPort = 8380
 
     public init(musicFolder: String? = nil, incomingFolder: String? = nil, port: Int = AppSettings.defaultPort,
-                startAtLogin: Bool = true, preventSleep: Bool = true, connection: Connection? = nil) {
+                startAtLogin: Bool = true, preventSleep: Bool = true, songInMenuBar: Bool = false,
+                connection: Connection? = nil) {
         self.musicFolder = musicFolder
         self.incomingFolder = incomingFolder
         self.port = port
         self.startAtLogin = startAtLogin
         self.preventSleep = preventSleep
+        self.songInMenuBar = songInMenuBar
         self.connection = connection
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case musicFolder, incomingFolder, port, startAtLogin, preventSleep, songInMenuBar, connection
+    }
+
+    /// Settings saved by an earlier version have no `songInMenuBar`: that reads as off.
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        musicFolder = try values.decodeIfPresent(String.self, forKey: .musicFolder)
+        incomingFolder = try values.decodeIfPresent(String.self, forKey: .incomingFolder)
+        port = try values.decode(Int.self, forKey: .port)
+        startAtLogin = try values.decode(Bool.self, forKey: .startAtLogin)
+        preventSleep = try values.decode(Bool.self, forKey: .preventSleep)
+        songInMenuBar = try values.decodeIfPresent(Bool.self, forKey: .songInMenuBar) ?? false
+        connection = try values.decodeIfPresent(Connection.self, forKey: .connection)
     }
 
     /// Has the first run finished (a music folder chosen, or a SynAmp to connect to)?
