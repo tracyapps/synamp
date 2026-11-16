@@ -391,6 +391,9 @@ final class ConnectionTests: XCTestCase {
         let file = try temporaryFolder().appendingPathComponent("settings.json")
         try Data(#"{"musicFolder":"/Music","port":8380,"startAtLogin":true,"preventSleep":true}"#.utf8).write(to: file)
         XCTAssertNil(AppSettings.load(from: file).connection)
+        XCTAssertFalse(AppSettings.load(from: file).songInMenuBar, "the song stays in the menu unless asked for in the menu bar")
+        try AppSettings(musicFolder: "/Music", songInMenuBar: true).save(to: file)
+        XCTAssertTrue(AppSettings.load(from: file).songInMenuBar)
         try AppSettings(connection: Connection(home: home, remote: remote, whenAway: .connect)).save(to: file)
         let back = AppSettings.load(from: file)
         XCTAssertEqual(back.connection, Connection(home: home, remote: remote, whenAway: .connect))
@@ -593,6 +596,17 @@ final class SystemStatusTests: XCTestCase {
         ])
         let quiet = try JSONDecoder().decode(SystemStatus.self, from: Data(#"{"player":null,"phone":false,"listening":null,"music":null,"anywhere":{"ready":false}}"#.utf8))
         XCTAssertEqual(StatusWords.lines(quiet), ["Listen anywhere: not set up"], "nothing is guessed")
+    }
+
+    func testTheSongForTheMenuBarIsShortAndOnlyThereWhenSomethingPlays() {
+        XCTAssertNil(StatusWords.menuBarSong(nil))
+        XCTAssertNil(StatusWords.menuBarSong(SystemStatus()), "nothing playing: just the icon")
+        XCTAssertEqual(StatusWords.menuBarSong(SystemStatus(player: .init(state: "playing", title: "Himitsu", artist: "A"))), "Himitsu")
+        XCTAssertEqual(StatusWords.menuBarSong(SystemStatus(player: .init(state: "paused", title: "Himitsu"))), "Himitsu", "paused still says which song")
+        let long = StatusWords.menuBarSong(SystemStatus(player: .init(state: "playing", title: "An Ending (Ascent) [2019 Remaster] - Extended Version")))
+        XCTAssertEqual(long, "An Ending (Ascent) [2019 Re…")
+        XCTAssertEqual(long?.count, 28)
+        XCTAssertNil(StatusWords.menuBarSong(SystemStatus(player: .init(state: "playing", title: "  "))))
     }
 
     func testEveryStateHasItsOwnWords() {

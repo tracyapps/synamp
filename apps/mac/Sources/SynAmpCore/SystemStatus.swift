@@ -85,6 +85,15 @@ public enum StatusWords {
         return "\(player.state == "paused" ? "Paused" : "Playing"): \(song)"
     }
 
+    /// The song for the menu bar itself, beside the icon (only when the person
+    /// asked for it). Just the title, cut short: the menu bar has little room,
+    /// and the menu's first lines have the artist. Nil: nothing playing or paused.
+    public static func menuBarSong(_ status: SystemStatus?, limit: Int = 28) -> String? {
+        guard let title = status?.player?.title.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty else { return nil }
+        guard title.count > limit, limit > 1 else { return title }
+        return title.prefix(limit - 1).trimmingCharacters(in: .whitespaces) + "…"
+    }
+
     public static func listening(_ listening: SystemStatus.Listening) -> String? {
         guard listening.total > 0 else { return nil }
         if listening.done >= listening.total {

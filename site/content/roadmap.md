@@ -142,6 +142,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-11-16 — SynAmp for Mac: the menu always says what’s playing, and a new switch, “Show the song in the menu bar”, puts the song title right beside SynAmp’s icon if your menu bar has the room. It’s off until you turn it on
 - 2026-11-16 — The player bar is tidier and much shorter on phones. Skip, Love and Remove each have a small arrow for the less common choices (skip and say why, more like this next, put a removed song back). “Undo” after a removal now sits beside the message, out of the way of the buttons, and nothing moves under your pointer when it appears
 - 2026-11-15 — SynAmp for Mac: the window you install from now shows what to do (drag SynAmp into Applications, then open it), with bigger icons and SynAmp’s own look
 - 2026-11-15 — SynAmp for Mac: the setup window and “Open on your phone” now look like the rest of SynAmp, and stay in the Dock and Command-Tab while they’re open so you can find them again. Both QR codes fit
