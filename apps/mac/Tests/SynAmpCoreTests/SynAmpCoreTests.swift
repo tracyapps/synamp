@@ -531,6 +531,28 @@ final class ConnectionTests: XCTestCase {
         XCTAssertEqual(engine.phoneLinks().map(\.address), [home, remote])
     }
 
+    func testAConnectLinkFillsTheFormIn() {
+        let link = ConnectLink(URL(string: "synamp://connect?home=http%3A%2F%2FSyd.local%3A8080&token=tok%20en%2F%2B&away=syd.halley-dory.ts.net")!)
+        XCTAssertEqual(link, ConnectLink(home: "http://Syd.local:8080", token: "tok en/+", remote: "http://syd.halley-dory.ts.net:8080"),
+                       "the away-from-home name answers on the same port")
+        XCTAssertEqual(ConnectLink(URL(string: "synamp://connect?home=nas.local:8080&token=abc")!),
+                       ConnectLink(home: "http://nas.local:8080", token: "abc", remote: nil))
+        XCTAssertEqual(ConnectLink(URL(string: "SYNAMP://CONNECT?home=http://nas.local:8080&token=abc&away=http://nas.tail1.ts.net:9000")!)?.remote,
+                       "http://nas.tail1.ts.net:9000", "a full away address is used as given")
+        // Not a connect link, no usable address, or no token: nothing is filled in.
+        XCTAssertNil(ConnectLink(URL(string: "synamp://play?home=http://nas.local:8080&token=abc")!))
+        XCTAssertNil(ConnectLink(URL(string: "https://connect/?home=http://nas.local:8080&token=abc")!))
+        XCTAssertNil(ConnectLink(URL(string: "synamp://connect?home=smb%3A%2F%2Fnas%2Fmusic&token=abc")!))
+        XCTAssertNil(ConnectLink(URL(string: "synamp://connect?home=http://nas.local:8080")!))
+        XCTAssertNil(ConnectLink(URL(string: "synamp://connect?home=http://nas.local:8080&token=")!))
+    }
+
+    func testInTheDockOnlyWhileAWindowIsOpen() {
+        XCTAssertFalse(WindowPresence.shouldShowInDock(visible: []))
+        XCTAssertFalse(WindowPresence.shouldShowInDock(visible: [false, false]))
+        XCTAssertTrue(WindowPresence.shouldShowInDock(visible: [false, true]), "setup closed, SynAmp's window still open")
+    }
+
     func testCheckingAnAddressAndToken() async {
         let address = URL(string: home)!
         func fetch(health: (String, Int)?, setup: (String, Int)?) -> ConnectionCheck.Fetch {

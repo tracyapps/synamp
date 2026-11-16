@@ -44,8 +44,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { await AppModel.shared.launch() }
     }
 
+    /// A synamp:// link (SynAmp's web page: "Connect the Mac app").
+    func application(_ application: NSApplication, open urls: [URL]) {
+        guard let url = urls.first else { return }
+        Task { @MainActor in AppModel.shared.openLink(url) }
+    }
+
     /// Clicking SynAmp in the Dock (or opening it again) brings the window back.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // With a window already open (setup, say), just bring it forward.
+        if flag { return true }
         Task { @MainActor in AppModel.shared.open() }
         return true
     }
@@ -90,8 +98,8 @@ final class AppModel: ObservableObject {
     @Published var link: LinkState?
     /// What SynAmp is doing right now (playing, listening, the music, Listen anywhere); nil: not known.
     @Published var system: SystemStatus?
-    private var firstRunWindow: NSWindow?
-    private var phoneWindow: NSWindow?
+    private var setupPanel: PanelWindow?
+    private var phonePanel: PanelWindow?
     private var mainWindow: MainWindowController?
     let updates = Updates()
     private let awayNotice = AwayNotice()
@@ -152,19 +160,22 @@ final class AppModel: ObservableObject {
 
     /// "Open on your phone": QR codes for the addresses a phone uses.
     func showPhoneLinks() {
-        let view = PhoneLinksView(links: engine.phoneLinks())
-        if phoneWindow == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: view))
-            window.title = "Open SynAmp on your phone"
-            window.styleMask = [.titled, .closable]
-            window.isReleasedWhenClosed = false
-            window.center()
-            phoneWindow = window
-        } else {
-            phoneWindow?.contentViewController = NSHostingController(rootView: view)
+        let links = engine.phoneLinks()
+        let state: [String: Any] = ["links": links.map { link in
+            ["id": link.id, "title": link.title, "detail": link.detail, "address": link.address,
+             "qr": QRCode.dataURL(for: link.url.absoluteString) ?? ""]
+        }]
+        phonePanel?.close()
+        let panel = PanelWindow(title: "Open SynAmp on your phone", page: "phone.html", width: links.count > 1 ? 660 : 400, state: state)
+        panel.onMessage = { message in
+            guard message["action"] as? String == "copyLink", let id = message["id"] as? String,
+                  let link = links.first(where: { $0.id == id }) else { return }
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(link.url.absoluteString, forType: .string)
         }
-        NSApp.activate(ignoringOtherApps: true)
-        phoneWindow?.makeKeyAndOrderFront(nil)
+        panel.onClose = { [weak self, weak panel] in if self?.phonePanel === panel { self?.phonePanel = nil } }
+        phonePanel = panel
+        panel.show()
     }
 
     /// Open SynAmp's window on one screen (Listen anywhere, Settings).
@@ -340,25 +351,73 @@ final class AppModel: ObservableObject {
         if case .running = engine.status { open() } else if engine.settings.connection != nil { openWhenReady = true }
     }
 
-    /// The first-run window (AppKit-made, so it opens only when needed).
-    func showFirstRun() {
-        if firstRunWindow == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: FirstRunView(model: self)))
-            window.styleMask = [.titled, .closable]
-            window.isReleasedWhenClosed = false
-            window.center()
-            firstRunWindow = window
-        } else if firstRunWindow?.isVisible != true {
-            // Opened again later (Connection settings): start from what's saved now.
-            firstRunWindow?.contentViewController = NSHostingController(rootView: FirstRunView(model: self))
+    /// The setup window: the first run, "Connection settings…", or a
+    /// "Connect the Mac app" link from SynAmp's web page (`filled`).
+    func showFirstRun(filled: ConnectLink? = nil) {
+        let connection = settings.connection
+        var state: [String: Any] = [
+            "isSetUp": settings.isSetUp,
+            "place": filled != nil || connection != nil ? "elsewhere" : "thisMac",
+            "musicFolder": settings.musicFolder ?? "",
+            "home": filled?.home ?? connection?.home ?? "",
+            "remote": filled?.remote ?? connection?.remote ?? "",
+            "whenAway": (connection?.whenAway ?? .ask).rawValue,
+            "listenHere": connection?.listenFolder != nil,
+            "listenFolder": connection?.listenFolder ?? "",
+            "hasSavedToken": connection != nil && !(engine.connectionToken ?? "").isEmpty,
+            "startAtLogin": settings.startAtLogin,
+        ]
+        if let filled {
+            state["token"] = filled.token
+            state["filled"] = true
         }
-        firstRunWindow?.title = settings.isSetUp ? "Where SynAmp runs" : "Welcome to SynAmp"
-        NSApp.activate(ignoringOtherApps: true)
-        firstRunWindow?.makeKeyAndOrderFront(nil)
+        setupPanel?.close()
+        let panel = PanelWindow(title: settings.isSetUp ? "Where SynAmp runs" : "Welcome to SynAmp", page: "setup.html", width: 660, state: state)
+        panel.onMessage = { [weak self, weak panel] message in self?.setupMessage(message, from: panel) }
+        panel.onClose = { [weak self, weak panel] in if self?.setupPanel === panel { self?.setupPanel = nil } }
+        setupPanel = panel
+        panel.show()
+    }
+
+    private func setupMessage(_ message: [String: Any], from panel: PanelWindow?) {
+        func text(_ key: String) -> String { message[key] as? String ?? "" }
+        let startAtLogin = message["startAtLogin"] as? Bool ?? true
+        switch message["action"] as? String {
+        case "chooseFolder":
+            guard let picked = chooseMusicFolder() else { return }
+            panel?.send(["type": "folder", "for": text("for"), "path": picked.path])
+        case "startThisMac":
+            guard !text("musicFolder").isEmpty else { return }
+            Task {
+                await finishSetup(musicFolder: URL(fileURLWithPath: text("musicFolder")), startAtLogin: startAtLogin)
+                if case .problem(let why) = status { panel?.send(["type": "problem", "text": why]) }
+            }
+        case "connect":
+            let whenAway = WhenAway(rawValue: text("whenAway")) ?? .ask
+            let listen = text("listenFolder")
+            Task {
+                if let wrong = await finishConnection(home: text("home"), token: text("token"), remote: text("remote"), whenAway: whenAway,
+                                                      listenFolder: listen.isEmpty ? nil : URL(fileURLWithPath: listen), startAtLogin: startAtLogin) {
+                    panel?.send(["type": "problem", "text": wrong])
+                }
+            }
+        default:
+            break
+        }
     }
 
     func closeFirstRun() {
-        firstRunWindow?.close()
+        setupPanel?.close()
+    }
+
+    /// A "Connect the Mac app" link was opened (from SynAmp's web page).
+    func openLink(_ url: URL) {
+        guard let link = ConnectLink(url) else {
+            engine.note("a link SynAmp doesn't understand was opened")
+            return
+        }
+        engine.note("connect link opened for \(link.home)")
+        showFirstRun(filled: link)
     }
 
     /// Show SynAmp in its own window.
@@ -398,14 +457,15 @@ final class AppModel: ObservableObject {
             status = .problem("Couldn't save your choices: \(error.localizedDescription)")
             return
         }
-        closeFirstRun()
         settings = engine.settings
         loginItem = LoginItem.apply(startAtLogin)
         await engine.start()
         if case .running = engine.status {
+            closeFirstRun()
             open()
             await engine.startListening()  // a new library: start listening to it straight away
         }
+        // Otherwise the setup window stays and shows what went wrong.
     }
 
     /// "Change music folder…": choose, hear what will happen, then switch.
@@ -520,181 +580,6 @@ struct MenuContent: View {
     }
 }
 
-struct FirstRunView: View {
-    enum Place: Hashable { case thisMac, elsewhere }
-
-    @ObservedObject var model: AppModel
-    @State private var place: Place
-    @State private var folder: URL?
-    @State private var home: String
-    @State private var token = ""
-    @State private var remote: String
-    @State private var whenAway: WhenAway
-    @State private var listenHere: Bool
-    @State private var listenFolder: URL?
-    @State private var startAtLogin: Bool
-    @State private var working = false
-    @State private var problem = ""
-    @AccessibilityFocusState private var problemFocused: Bool
-
-    init(model: AppModel) {
-        self.model = model
-        let settings = model.settings
-        _place = State(initialValue: settings.connection == nil ? .thisMac : .elsewhere)
-        _folder = State(initialValue: settings.musicFolder.flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) })
-        _home = State(initialValue: settings.connection?.home ?? "")
-        _remote = State(initialValue: settings.connection?.remote ?? "")
-        _whenAway = State(initialValue: settings.connection?.whenAway ?? .ask)
-        _listenHere = State(initialValue: settings.connection?.listensHere ?? false)
-        _listenFolder = State(initialValue: settings.connection?.listenFolder.flatMap { $0.isEmpty ? nil : URL(fileURLWithPath: $0) })
-        _startAtLogin = State(initialValue: settings.startAtLogin)
-    }
-
-    private var hasSavedToken: Bool { model.settings.connection != nil && !(model.engine.connectionToken ?? "").isEmpty }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text(model.settings.isSetUp ? "Where SynAmp runs" : "Welcome to SynAmp")
-                .font(.largeTitle)
-                .accessibilityAddTraits(.isHeader)
-            Text("SynAmp listens to the music you own and makes playlists from it, on this Mac and your phone.")
-                .fixedSize(horizontal: false, vertical: true)
-
-            Picker("Where does SynAmp run?", selection: $place) {
-                Text("On this Mac").tag(Place.thisMac)
-                Text("It's already running on my NAS or another computer").tag(Place.elsewhere)
-            }
-            .pickerStyle(.radioGroup)
-
-            if place == .thisMac { thisMac } else { elsewhere }
-
-            Toggle("Start SynAmp when this Mac starts", isOn: $startAtLogin)
-
-            if !problem.isEmpty {
-                Label(problem, systemImage: "exclamationmark.triangle")
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityFocused($problemFocused)
-            }
-
-            HStack {
-                Spacer()
-                Button(buttonTitle) { finish() }
-                    .keyboardShortcut(.defaultAction)
-                    .disabled(working || (place == .thisMac ? folder == nil
-                                          : home.isEmpty || (token.isEmpty && !hasSavedToken) || (listenHere && listenFolder == nil)))
-            }
-        }
-        .padding(24)
-        .frame(width: 560)
-    }
-
-    private var buttonTitle: String {
-        if place == .thisMac { return working ? "Starting…" : "Start SynAmp" }
-        return working ? "Checking…" : "Connect"
-    }
-
-    private func finish() {
-        working = true
-        problem = ""
-        Task {
-            if place == .thisMac, let folder {
-                await model.finishSetup(musicFolder: folder, startAtLogin: startAtLogin)
-            } else if place == .elsewhere {
-                if let wrong = await model.finishConnection(home: home, token: token, remote: remote, whenAway: whenAway,
-                                                            listenFolder: listenHere ? listenFolder : nil, startAtLogin: startAtLogin) {
-                    problem = wrong
-                    problemFocused = true  // VoiceOver goes to what went wrong
-                }
-            }
-            working = false
-        }
-    }
-
-    private var thisMac: some View {
-        Group {
-            GroupBox {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Where's your music?").font(.headline).accessibilityAddTraits(.isHeader)
-                    HStack {
-                        Text(folder?.path ?? "No folder chosen yet")
-                            .foregroundStyle(folder == nil ? .secondary : .primary)
-                            .lineLimit(2)
-                            .truncationMode(.middle)
-                        Spacer()
-                        Button(folder == nil ? "Choose…" : "Change…") {
-                            if let picked = model.chooseMusicFolder() { folder = picked }
-                        }
-                    }
-                    if folder?.path.hasPrefix("/Volumes/") == true {
-                        Text("This folder is on another drive or a NAS. Keep it connected so SynAmp can play and listen.")
-                            .font(.callout).foregroundStyle(.secondary)
-                    }
-                }
-                .padding(4)
-            }
-
-            Text("Listening to your library takes a while the first time. A newer computer finishes sooner, and you can play music the whole time. This Mac and your music need to stay on for SynAmp's smart features.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-
-    private var elsewhere: some View {
-        Group {
-            GroupBox {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Connect to your SynAmp").font(.headline).accessibilityAddTraits(.isHeader)
-                    Text("Do this once while this Mac is on your home network.")
-                        .font(.callout).foregroundStyle(.secondary)
-                    Form {
-                        TextField("Address at home:", text: $home, prompt: Text("Syd.local:8080"))
-                        SecureField("Access token:", text: $token, prompt: Text(hasSavedToken ? "Saved. Type a new one to change it" : "The one SynAmp's web page asks for"))
-                        TextField("Address away from home:", text: $remote, prompt: Text("Optional, e.g. syd.tail1234.ts.net:8080"))
-                        Picker("When I'm away from home:", selection: $whenAway) {
-                            ForEach(WhenAway.allCases, id: \.self) { Text($0.label).tag($0) }
-                        }
-                    }
-                    Text("The away-from-home address comes from Listen anywhere in SynAmp. If you've set that up already, leave it empty and SynAmp fills it in.")
-                        .font(.callout).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(4)
-            }
-
-            GroupBox {
-                VStack(alignment: .leading, spacing: 8) {
-                    Toggle("Use this Mac to listen to the library", isOn: $listenHere)
-                    Text("SynAmp learns your songs by listening to them, and a NAS is usually too slow for that. This Mac can do it whenever it's on your home network. Away from home it waits.")
-                        .font(.callout).foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    if listenHere {
-                        HStack {
-                            Text(listenFolder?.path ?? "No folder chosen yet")
-                                .foregroundStyle(listenFolder == nil ? .secondary : .primary)
-                                .lineLimit(2)
-                                .truncationMode(.middle)
-                            Spacer()
-                            Button(listenFolder == nil ? "Choose music folder…" : "Change…") {
-                                if let picked = model.chooseMusicFolder() { listenFolder = picked }
-                            }
-                        }
-                        Text("Choose the same music folder your SynAmp uses, as this Mac sees it: for example the “library” folder on your NAS share.")
-                            .font(.callout).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .padding(4)
-            }
-
-            Text("This Mac shows and plays the SynAmp that's already running. Away from home it can connect remotely, and it asks first unless you choose otherwise.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-}
-
 /// The "You're away from home" notification, for when SynAmp's window isn't
 /// open. Shown once each time away; the menu has the same two choices.
 @MainActor
@@ -755,72 +640,16 @@ final class AwayNotice: NSObject, UNUserNotificationCenterDelegate {
     }
 }
 
-/// QR codes for opening SynAmp on a phone, with the address in words beside
-/// each one and a Copy button for anyone who can't scan.
-struct PhoneLinksView: View {
-    let links: [PhoneLink]
-    @State private var copied: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Open SynAmp on your phone")
-                .font(.title)
-                .accessibilityAddTraits(.isHeader)
-            if links.isEmpty {
-                Text("SynAmp isn't running yet, or this Mac has no name on your network that a phone can use. Start SynAmp and try again.")
-                    .fixedSize(horizontal: false, vertical: true)
-            } else {
-                Text("Point your phone's camera at a code and tap the link. It opens SynAmp already signed in.")
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack(alignment: .top, spacing: 24) {
-                    ForEach(links) { link in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(link.title).font(.headline).accessibilityAddTraits(.isHeader)
-                            if let image = QRCode.image(for: link.url.absoluteString) {
-                                Image(nsImage: image)
-                                    .interpolation(.none)
-                                    .resizable()
-                                    .frame(width: 200, height: 200)
-                                    .padding(10)
-                                    .background(Color.white)  // codes scan best dark on white, in light or dark mode
-                                    .accessibilityLabel("QR code for \(link.address)")
-                            }
-                            Text(link.detail).font(.callout).foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Text(link.address).font(.callout.monospaced()).textSelection(.enabled)
-                            HStack {
-                                Button("Copy link") {
-                                    NSPasteboard.general.clearContents()
-                                    NSPasteboard.general.setString(link.url.absoluteString, forType: .string)
-                                    copied = link.id
-                                }
-                                if copied == link.id { Text("Copied").font(.callout).foregroundStyle(.secondary) }
-                            }
-                        }
-                        .frame(width: 220, alignment: .leading)
-                    }
-                }
-                Label("Anyone who scans a code can use your SynAmp. Show it only to people you'd hand your music to.", systemImage: "lock")
-                    .font(.callout)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .padding(24)
-        .frame(minWidth: 320, maxWidth: 560, alignment: .leading)
-    }
-}
-
 enum QRCode {
-    /// A QR code as sharp black squares (the view scales it without blurring).
-    static func image(for text: String) -> NSImage? {
+    /// A QR code as a picture a web page can show (sharp black squares; the page scales it without blurring).
+    static func dataURL(for text: String) -> String? {
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(text.utf8)
         filter.correctionLevel = "M"
         guard let output = filter.outputImage else { return nil }
         let scaled = output.transformed(by: CGAffineTransform(scaleX: 8, y: 8))
-        let rep = NSCIImageRep(ciImage: scaled)
-        let image = NSImage(size: rep.size)
-        image.addRepresentation(rep)
-        return image
+        let rep = NSBitmapImageRep(ciImage: scaled)
+        guard let png = rep.representation(using: .png, properties: [:]) else { return nil }
+        return "data:image/png;base64," + png.base64EncodedString()
     }
 }

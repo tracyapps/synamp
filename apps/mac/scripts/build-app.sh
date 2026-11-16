@@ -41,6 +41,13 @@ fi
 # The icon: in Finder, the installer window, notifications, login items and the
 # update window (the app itself lives in the menu bar and has no Dock icon).
 cp "$here/icon/AppIcon.icns" "$app/Contents/Resources/AppIcon.icns"
+# The app's own small windows are web pages (apps/mac/ui). Their styles and
+# pictures are links to the web app's folders in the checkout: copy what they point at.
+rm -rf "$app/Contents/Resources/ui"
+cp -RL "$here/ui" "$app/Contents/Resources/ui"
+# Only the two style sheets and the mark the pages use, not the whole web app's.
+find "$app/Contents/Resources/ui/styles" -type f ! -name tokens.css ! -name ui.css -delete
+find "$app/Contents/Resources/ui/assets" -type f ! -name synamp-mark.svg -delete
 cat > "$app/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -51,6 +58,14 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <key>CFBundleIdentifier</key><string>org.synamp.app</string>
   <key>CFBundleExecutable</key><string>SynAmp</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
+  <!-- synamp://connect?… from SynAmp's web page fills the connection form in. -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key><string>org.synamp.app.connect</string>
+      <key>CFBundleURLSchemes</key><array><string>synamp</string></array>
+    </dict>
+  </array>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$version</string>
   <key>CFBundleVersion</key><string>$version</string>

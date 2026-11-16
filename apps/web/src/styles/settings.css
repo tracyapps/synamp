@@ -68,3 +68,8 @@
 .memory__help p { margin: 6px 0; }
 .memory__away, .memory__times label { font: 0.9375rem var(--font-sans); letter-spacing: normal; text-transform: none; color: var(--text); }
 .memory__away select { width: auto; }
+
+/* "Connect the Mac app" */
+.connect-mac__body { padding: 20px 24px; display: grid; gap: 10px; justify-items: start; }
+.connect-mac__body h2 { margin: 0; font-size: 1.15rem; }
+.connect-mac__body p { margin: 0; max-width: 62ch; }

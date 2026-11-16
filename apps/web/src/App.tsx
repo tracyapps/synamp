@@ -24,6 +24,7 @@ import { FavouritesProvider } from "./favourites";
 import Lyrics from "./Lyrics";
 import BrainSession from "./BrainSession";
 import ListenAnywhere from "./ListenAnywhere";
+import ConnectMacApp from "./ConnectMacApp";
 import { SystemStatusButton } from "./SystemStatus";
 import PlaybackSettings from "./PlaybackSettings";
 import AnalysisMemory from "./AnalysisMemory";
@@ -221,6 +222,7 @@ export default function App() {
         <AnalysisMemory request={call} />
         <Lyrics request={call} />
         <Settings request={call} startOpen />
+        <ConnectMacApp request={call} token={token} />
       </div>;
       break;
     case "feedback":

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Open SynAmp on your phone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Momo+Trust+Display&family=Space+Grotesk:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/ui.css">
+  <link rel="stylesheet" href="panel.css">
+  <script src="bridge.js"></script>
+</head>
+<body>
+<main class="macwin">
+  <header>
+    <h1 class="macwin__title">Open SynAmp on your phone</h1>
+    <p class="macwin__lead" id="lead">Point your phone’s camera at a code and tap the link. It opens SynAmp already signed in.</p>
+  </header>
+  <div class="codes" id="codes"></div>
+  <p class="lock" id="lock">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+    <span>Anyone who scans a code can use your SynAmp. Show it only to people you’d hand your music to.</span>
+  </p>
+</main>
+<script>
+(function () {
+  const blank = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9'%3E%3Cpath d='M0 0h3v3H0zM6 0h3v3H6zM0 6h3v3H0zM4 4h1v1H4zM6 6h1v1H6zM8 8h1v1H8z'/%3E%3C/svg%3E";
+  const example = { links: [
+    { id: "home", title: "At home", detail: "For a phone on the same Wi-Fi as SynAmp.", address: "http://Syd.local:8080", qr: blank },
+    { id: "away", title: "Away from home", detail: "For anywhere else, through Listen anywhere.", address: "http://syd.halley-dory.ts.net:8080", qr: blank },
+  ] };
+  const links = (SynAmp.inApp ? SynAmp.state.links : (SynAmp.state.links || example.links)) || [];
+  const codes = document.getElementById("codes");
+  if (!links.length) {
+    document.getElementById("lead").textContent = "SynAmp isn’t running yet, or this Mac has no name on your network that a phone can use. Start SynAmp and try again.";
+    document.getElementById("lock").hidden = true;
+  }
+  for (const link of links) {
+    const card = document.createElement("section");
+    card.className = "code";
+    card.setAttribute("aria-labelledby", `t-${link.id}`);
+    card.innerHTML = `<h2 class="code__title" id="t-${link.id}"></h2><img class="code__qr" alt=""><p class="code__what"></p><span class="code__address"></span>
+      <div class="code__copy"><button type="button" class="btn btn--ghost">Copy link</button><span class="fine" role="status"></span></div>`;
+    card.querySelector("h2").textContent = link.title;
+    const image = card.querySelector("img");
+    image.src = link.qr; image.alt = `QR code for ${link.address}`;
+    card.querySelector(".code__what").textContent = link.detail;
+    card.querySelector(".code__address").textContent = link.address;
+    const said = card.querySelector('[role="status"]');
+    card.querySelector("button").addEventListener("click", () => { SynAmp.send("copyLink", { id: link.id }); said.textContent = "Copied"; setTimeout(() => { said.textContent = ""; }, 2500); });
+    codes.append(card);
+  }
+})();
+</script>
+</body>
+</html>
