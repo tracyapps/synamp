@@ -105,4 +105,17 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$GITHUB_REF_NAME" "$DMG" ${FEED:+"$FEED"} --clobber || echo "No draft release for $GITHUB_REF_NAME yet (release.yml makes it)."
+        # release.yml makes the draft, and can take longer than this job
+        # (v0.1.0-test.2 went out without its Apple Silicon download that way).
+        # Wait for it, up to 30 minutes, and fail loudly rather than skip.
+        run: |
+          for try in $(seq 1 60); do
+            if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+              gh release upload "$GITHUB_REF_NAME" "$DMG" ${FEED:+"$FEED"} --clobber
+              exit 0
+            fi
+            echo "No draft release for $GITHUB_REF_NAME yet (release.yml makes it); waiting."
+            sleep 30
+          done
+          echo "::error::No draft release for $GITHUB_REF_NAME after 30 minutes: the download was not attached."
+          exit 1
