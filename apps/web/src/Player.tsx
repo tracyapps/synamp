@@ -1,6 +1,7 @@
 import { useEffect, useId, useImperativeHandle, useRef, useState, type Ref } from "react";
 import "./styles/player.css";
-import SongControls from "./SongControls";
+import SongControls, { skipReasons } from "./SongControls";
+import SplitButton from "./ui/SplitButton";
 import { PLAYER_COMMAND, PLAYLIST_ONLY, shortcut, type PlayerCommand, type PlayerView } from "./player-commands";
 import { askForSmartPlaylist } from "./Describe";
 import { newId } from "./ids";
@@ -80,12 +81,19 @@ export default function Player({ request, session, onSession, playlistName, onCh
   const [loading, setLoading] = useState(false);
   const [fading, setFading] = useState(false);
   const [status, setStatus] = useState("");
-  const [undo, setUndo] = useState<null | { track_id: string; playlist_id: string }>(null);
+  const [undo, setUndo] = useState<null | { track_id: string; playlist_id: string; title: string; at: number }>(null);
+  const [showMore, setShowMore] = useState(false);
+  const moreId = useId();
   const [showQueue, setShowQueue] = useState(false);
   const [busy, setBusy] = useState(false);
   const [action, setAction] = useState("");
   const [lovedTracks, setLovedTracks] = useState<Set<string>>(new Set());
   const actionLock = useRef(false);
+  // A message about one song ("Up next: …", "Skipped …") is old news once another song has started.
+  const statusAt = useRef(0);
+  useEffect(() => { statusAt.current = Date.now(); }, [status]);
+  const playingId = session ? session.queue[session.index]?.entry_id : undefined;
+  useEffect(() => { if (!actionLock.current && Date.now() - statusAt.current > 4000) setStatus(""); }, [playingId]);
   const actions = useRef<Partial<Record<PlayerCommand, () => void>>>({});
   const queueId = useId();
   const current = session ? session.queue[session.index] : undefined;
@@ -252,7 +260,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
 
   const from = current?.source ? playlistName(current.source.playlist_id) ?? "playlist" : undefined;
   const view: PlayerView | null = session?.queue.length && !away ? {
-    title: current?.title ?? (session?.continuation ? "No matching songs left" : "End of queue"), artist: current?.artist, available: !!current, canUndo: !!undo, loved: !!current?.loved || (!!current && lovedTracks.has(current.track_id)),
+    title: current?.title ?? (session?.continuation ? "No matching songs left" : "End of queue"), artist: current?.artist, available: !!current, canUndo: !!undo, ...(undo ? { undo: { title: undo.title, at: undo.at } } : {}), loved: !!current?.loved || (!!current && lovedTracks.has(current.track_id)),
     paused, busy, transitioning: fading, action, status: fading ? `Crossfading… ${status}` : status, playlist: from, ...(current?.live ? { live: true } : {}),
   } : null;
   const viewKey = JSON.stringify(view);
@@ -367,7 +375,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
       const where = playlist_id ? playlistName(playlist_id) ?? "this playlist" : "your library";
       if (signal === "love") { setLovedTracks(before => new Set([...before, target.track_id])); setStatus(`Loved “${target.title}”. ${session?.continuation ? "Guiding upcoming songs." : "More of this in future mixes."}`); }
       else {
-        if (signal === "remove" && playlist_id) { setUndo({ track_id: target.track_id, playlist_id }); onChanged(); }
+        if (signal === "remove" && playlist_id) { setUndo({ track_id: target.track_id, playlist_id, title: target.title, at: Date.now() }); onChanged(); }
         await advance(target);
         setStatus(signal === "remove" ? `Removed “${target.title}” from ${where}. Next song.` : `Noted: less of “${target.title}” in ${where}. Next song.`);
       }
@@ -391,13 +399,14 @@ export default function Player({ request, session, onSession, playlistName, onCh
     if (!undo || actionLock.current) return;
     actionLock.current = true; setBusy(true);
     await request<{ session?: SessionView }>("/feedback", { method: "POST", body: JSON.stringify({ event_id: newId(), signal: "restore", track_id: undo.track_id, scope: "playlist", playlist_id: undo.playlist_id }) })
-      .then(result => { if (result.session) onSession(result.session); setStatus("Restored."); setUndo(null); onChanged(); })
+      .then(result => { if (result.session) onSession(result.session); setStatus(`Put “${undo.title}” back in ${playlistName(undo.playlist_id) ?? "the playlist"}.`); setUndo(null); onChanged(); })
       .catch((cause) => setStatus((cause as Error).message))
       .finally(() => { actionLock.current = false; setBusy(false); });
   };
 
   actions.current = { toggle, next, previous, love: () => feedback("love"), "not-for-this": () => feedback("thumb_down"), remove: () => { if (current?.source) void feedback("remove"); }, "more-like-this": moreLikeThis, visuals: onVisuals, "undo-remove": restore,
-    "smart-from-this": () => { if (current && !current.live) askForSmartPlaylist({ id: current.track_id, title: current.title, ...(current.artist ? { artist: current.artist } : {}) }); }, "wrong-energy": () => feedback("thumb_down", "wrong_energy"), "wrong-vibe": () => feedback("thumb_down", "wrong_vibe") };
+    "smart-from-this": () => { if (current && !current.live) askForSmartPlaylist({ id: current.track_id, title: current.title, ...(current.artist ? { artist: current.artist } : {}) }); }, "wrong-energy": () => feedback("thumb_down", "wrong_energy"), "wrong-vibe": () => feedback("thumb_down", "wrong_vibe"),
+    "remove-wrong-energy": () => { if (current?.source) void feedback("remove", "wrong_energy"); }, "remove-wrong-vibe": () => { if (current?.source) void feedback("remove", "wrong_vibe"); } };
 
   const finished = session.index >= session.queue.length;
   return (
@@ -417,7 +426,9 @@ export default function Player({ request, session, onSession, playlistName, onCh
       <div className="player__transport">
         <button type="button" className="player__btn" onClick={previous} aria-label="Previous track" disabled={finished && session.index === 0}><Icon name="previous" /></button>
         <button type="button" className="player__btn player__play" onClick={toggle} aria-label={paused ? "Play" : "Pause"} disabled={!current?.playable}><Icon name={paused ? "play" : "pause"} size={20} /></button>
-        <button type="button" className="player__btn" onClick={next} aria-label={busy && action === "next" ? "Skipping…" : "Skip to next track"} title="Skip · Option/Alt + Shift + →" disabled={finished || busy}><Icon name="next" /></button>
+        <SplitButton label="Skip, and say why" items={view ? skipReasons(view) : []} disabled={finished || busy} className="split--round">
+          <button type="button" className="player__btn" onClick={next} aria-label={busy && action === "next" ? "Skipping…" : "Skip to next track"} title="Skip · Option/Alt + Shift + →" disabled={finished || busy}><Icon name="next" /></button>
+        </SplitButton>
       </div>
       <div className="player__right">
         {current?.live ? <span className="badge badge--live player__live"><span className="status-dot status-dot--live" aria-hidden="true" />Live radio</span> : (
@@ -432,16 +443,20 @@ export default function Player({ request, session, onSession, playlistName, onCh
         <label className="player__volume"><span className="visually-hidden">Volume</span>
           <input type="range" className="range" min={0} max={1} step={0.05} value={prefs.volume} style={{ ["--range-p" as string]: `${Math.round(prefs.volume * 100)}%` }}
             aria-valuetext={`${Math.round(prefs.volume * 100)}%`} onChange={(event) => writePrefs({ volume: Number(event.target.value) })} /></label>
-        {onVisuals && <button type="button" className="btn btn--quiet btn--sm" onClick={onVisuals}><Icon name="smart" />Visuals</button>}
+        {onVisuals && <button type="button" className="btn btn--quiet btn--sm player__visuals" onClick={onVisuals}><Icon name="smart" />Visuals</button>}
         <button type="button" className="btn btn--ghost btn--sm player__queue-toggle" aria-expanded={showQueue} aria-controls={queueId} onClick={() => setShowQueue(!showQueue)}>
-          <Icon name="queue" />{showQueue ? "Hide queue" : "Up next"}
+          <Icon name="queue" />Up next
         </button>
+        <button type="button" className="btn btn--ghost btn--sm player__more-toggle" aria-expanded={showMore} aria-controls={moreId} onClick={() => setShowMore(!showMore)}>More</button>
       </div>
       {current && !current.playable && !finished && <p className="player__note">No audio file for this track yet. It plays once the analyzer has listed it.</p>}
-      {view && <div className="player__feedback">
-        <SongControls view={view} />
-        <details className="player__shortcuts"><summary>Keyboard shortcuts</summary><p>Option/Alt + Shift: → skip · ← previous · Space play/pause · L love · V visuals. Playing from a playlist: N not for this · R remove · M more like this. Available while SynAmp is focused. Use the Mac companion for global shortcuts.</p></details>
-      </div>}
+      {view && <div className="player__feedback"><SongControls view={view} /></div>}
+      <div id={moreId} className="player__more" hidden={!showMore}>
+        {onVisuals && <button type="button" className="btn btn--quiet btn--sm player__more-visuals" onClick={onVisuals}><Icon name="smart" />Visuals</button>}
+        <div className="player__shortcuts">
+          <p><strong>Keyboard shortcuts.</strong> Hold Option (Alt) and Shift, then press: → skip · ← previous · Space play or pause · L love · V visuals. Playing from a playlist: N not for this · R remove · M more like this. These work while the SynAmp window is in front.</p>
+        </div>
+      </div>
       {!view && status && <p className="song-controls__status" role="status">{status}</p>}
       <ol id={queueId} hidden={!showQueue} className="player__queue" aria-label="Queue">
         {session.queue.map((entry, index) => (
