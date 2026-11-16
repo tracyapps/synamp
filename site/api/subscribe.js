@@ -12,9 +12,9 @@ export default async function handler(req, res) {
   try {
     const listed = await addToAudience(email).catch(() => false);
     await sendEmail({
-      subject: `SynAmp early access: ${email}`,
+      subject: `SynAmp news list: ${email}`,
       text: [
-        `${email} joined the early-access list.`,
+        `${email} asked for SynAmp news.`,
         `Has a NAS or home server: ${hasServer ? "yes" : "not ticked"}`,
         `Signed up from: ${source}`,
         process.env.RESEND_SEGMENT_ID || process.env.RESEND_AUDIENCE_ID
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       ].filter((line) => line !== null).join("\n"),
       replyTo: email,
     });
-    return reply(req, res, 200, "Thank you — you're on the list. One email when SynAmp is ready, nothing else.");
+    return reply(req, res, 200, "Thank you — you're on the list. News about SynAmp now and then, nothing else.");
   } catch (error) {
     console.error("subscribe:", error.message);
     return reply(req, res, 502, "That didn't send.", error.reason || "error");

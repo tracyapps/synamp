@@ -19,7 +19,12 @@
     },
     {
       "source": "/early-access",
-      "destination": "/coming-soon",
+      "destination": "/download",
+      "permanent": false
+    },
+    {
+      "source": "/coming-soon",
+      "destination": "/download",
       "permanent": false
     }
   ],
@@ -59,5 +64,11 @@
       ]
     }
   ],
-  "ignoreCommand": "bash scripts/skip-build.sh"
+  "ignoreCommand": "bash scripts/skip-build.sh",
+  "rewrites": [
+    {
+      "source": "/download/:chip(apple-silicon|intel)",
+      "destination": "/api/download?chip=:chip"
+    }
+  ]
 }
