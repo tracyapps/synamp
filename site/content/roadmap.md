@@ -142,6 +142,7 @@ goal: SynAmp in your menu bar, and maybe on other people's servers too.
 - [ ] A SynAmp phone app, if the existing apps leave a real gap
 
 ## Recently shipped
+- 2026-11-16 — SynAmp for Mac has a mini player: a small window with the song, Previous, Play or Pause, Skip and Love, that can stay on top of your other windows so the controls are always in reach. Open it from the menu-bar icon, or from More in the player bar
 - 2026-11-16 — SynAmp for Mac: the menu always says what’s playing, and a new switch, “Show the song in the menu bar”, puts the song title right beside SynAmp’s icon if your menu bar has the room. It’s off until you turn it on
 - 2026-11-16 — The player bar is tidier and much shorter on phones. Skip, Love and Remove each have a small arrow for the less common choices (skip and say why, more like this next, put a removed song back). “Undo” after a removal now sits beside the message, out of the way of the buttons, and nothing moves under your pointer when it appears
 - 2026-11-15 — SynAmp for Mac: the window you install from now shows what to do (drag SynAmp into Applications, then open it), with bigger icons and SynAmp’s own look

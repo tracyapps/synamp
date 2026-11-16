@@ -110,7 +110,10 @@ final class AppModel: ObservableObject {
     @Published var system: SystemStatus?
     private var setupPanel: PanelWindow?
     private var phonePanel: PanelWindow?
+    private var miniPanel: PanelWindow?
     private var mainWindow: MainWindowController?
+    /// What the player in SynAmp's window last said it's doing, for the mini player. Nil: nothing to control.
+    private var playerView: [String: Any]?
     let updates = Updates()
     private let awayNotice = AwayNotice()
     /// SynAmp was opened (or just connected) but wasn't reachable yet: show the
@@ -174,6 +177,53 @@ final class AppModel: ObservableObject {
         return StatusWords.lines(system)
     }
 
+    /// SynAmp's window, wired to the mini player: it hears what the player is doing.
+    private func makeMainWindow() -> MainWindowController {
+        let window = MainWindowController(note: { [engine] in engine.note($0) })
+        window.onPlayer = { [weak self] message in
+            guard let self else { return }
+            self.playerView = PlayerCommands.view(from: message)
+            self.miniPanel?.send(["type": "player", "view": self.playerView.map { $0 as Any } ?? NSNull()])
+        }
+        window.onAppAction = { [weak self] action in
+            if action == "miniPlayer" { self?.showMiniPlayer() }
+        }
+        return window
+    }
+
+    /// The mini player: the song and its buttons in a small window that can stay
+    /// in front of everything, so the controls are always in reach.
+    func showMiniPlayer() {
+        if let miniPanel { miniPanel.show(); return }
+        let panel = PanelWindow(title: "SynAmp mini player", page: "mini.html", width: 340, state: [
+            "view": playerView.map { $0 as Any } ?? NSNull(),
+            "stayOnTop": settings.miniPlayerOnTop,
+        ])
+        panel.window.level = settings.miniPlayerOnTop ? .floating : .normal
+        panel.window.setFrameAutosaveName("SynAmpMiniPlayer")  // comes back where you put it
+        panel.onMessage = { [weak self, weak panel] message in
+            guard let self, let action = message["action"] as? String else { return }
+            switch action {
+            case "command":
+                guard let name = message["name"] as? String else { return }
+                // Nothing loaded yet (SynAmp's window was never opened): open it, there's nothing to press.
+                if self.mainWindow?.hasPage == true { self.mainWindow?.playerCommand(name) } else { self.open() }
+            case "stayOnTop":
+                let on = message["on"] as? Bool ?? true
+                try? self.engine.update { $0.miniPlayerOnTop = on }
+                self.settings = self.engine.settings
+                panel?.window.level = on ? .floating : .normal
+            case "open":
+                self.open()
+            default:
+                break
+            }
+        }
+        panel.onClose = { [weak self, weak panel] in if self?.miniPanel === panel { self?.miniPanel = nil } }
+        miniPanel = panel
+        panel.show()
+    }
+
     /// "Open on your phone": QR codes for the addresses a phone uses.
     func showPhoneLinks() {
         let links = engine.phoneLinks()
@@ -199,7 +249,7 @@ final class AppModel: ObservableObject {
         let fresh = mainWindow == nil
         if fresh, let url = engine.openURL(screen: screen), let token = engine.accessToken {
             openWhenReady = false
-            mainWindow = MainWindowController(note: { [engine] in engine.note($0) })
+            mainWindow = makeMainWindow()
             mainWindow?.show(url, token: token)
             return
         }
@@ -445,7 +495,7 @@ final class AppModel: ObservableObject {
     func open() {
         guard let url = engine.openURL(), let token = engine.accessToken else { return }
         openWhenReady = false
-        if mainWindow == nil { mainWindow = MainWindowController(note: { [engine] in engine.note($0) }) }
+        if mainWindow == nil { mainWindow = makeMainWindow() }
         mainWindow?.show(url, token: token)
     }
 
@@ -535,6 +585,8 @@ struct MenuContent: View {
             Divider()
             Button("Open SynAmp") { model.open() }
                 .keyboardShortcut("o")
+            Button("Mini player") { model.showMiniPlayer() }
+                .keyboardShortcut("m")
             Button("Open in browser") { model.openInBrowser() }
             Button("Open on your phone…") { model.showPhoneLinks() }
             if model.system?.anywhere.ready == false {

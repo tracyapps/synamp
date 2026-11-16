@@ -17,6 +17,9 @@ public struct AppSettings: Codable, Sendable, Equatable {
     /// Off unless asked for: the menu bar is short of room on many Macs, and
     /// the menu itself always says what's playing.
     public var songInMenuBar: Bool
+    /// The mini player stays in front of other windows. On unless switched
+    /// off: staying where you can reach it is what the mini player is for.
+    public var miniPlayerOnTop: Bool
     /// Set when SynAmp runs somewhere else (a NAS, another computer) and this
     /// Mac only shows it. Nil: SynAmp runs on this Mac, from `musicFolder`.
     public var connection: Connection?
@@ -24,7 +27,7 @@ public struct AppSettings: Codable, Sendable, Equatable {
     public static let defaultPort = 8380
 
     public init(musicFolder: String? = nil, incomingFolder: String? = nil, port: Int = AppSettings.defaultPort,
-                startAtLogin: Bool = true, preventSleep: Bool = true, songInMenuBar: Bool = false,
+                startAtLogin: Bool = true, preventSleep: Bool = true, songInMenuBar: Bool = false, miniPlayerOnTop: Bool = true,
                 connection: Connection? = nil) {
         self.musicFolder = musicFolder
         self.incomingFolder = incomingFolder
@@ -32,14 +35,15 @@ public struct AppSettings: Codable, Sendable, Equatable {
         self.startAtLogin = startAtLogin
         self.preventSleep = preventSleep
         self.songInMenuBar = songInMenuBar
+        self.miniPlayerOnTop = miniPlayerOnTop
         self.connection = connection
     }
 
     private enum CodingKeys: String, CodingKey {
-        case musicFolder, incomingFolder, port, startAtLogin, preventSleep, songInMenuBar, connection
+        case musicFolder, incomingFolder, port, startAtLogin, preventSleep, songInMenuBar, miniPlayerOnTop, connection
     }
 
-    /// Settings saved by an earlier version have no `songInMenuBar`: that reads as off.
+    /// Settings saved by an earlier version lack the newer choices: each reads as its default.
     public init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         musicFolder = try values.decodeIfPresent(String.self, forKey: .musicFolder)
@@ -48,6 +52,7 @@ public struct AppSettings: Codable, Sendable, Equatable {
         startAtLogin = try values.decode(Bool.self, forKey: .startAtLogin)
         preventSleep = try values.decode(Bool.self, forKey: .preventSleep)
         songInMenuBar = try values.decodeIfPresent(Bool.self, forKey: .songInMenuBar) ?? false
+        miniPlayerOnTop = try values.decodeIfPresent(Bool.self, forKey: .miniPlayerOnTop) ?? true
         connection = try values.decodeIfPresent(Connection.self, forKey: .connection)
     }
 

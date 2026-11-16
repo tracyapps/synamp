@@ -408,6 +408,8 @@ export default function Player({ request, session, onSession, playlistName, onCh
     "smart-from-this": () => { if (current && !current.live) askForSmartPlaylist({ id: current.track_id, title: current.title, ...(current.artist ? { artist: current.artist } : {}) }); }, "wrong-energy": () => feedback("thumb_down", "wrong_energy"), "wrong-vibe": () => feedback("thumb_down", "wrong_vibe"),
     "remove-wrong-energy": () => { if (current?.source) void feedback("remove", "wrong_energy"); }, "remove-wrong-vibe": () => { if (current?.source) void feedback("remove", "wrong_vibe"); } };
 
+  // Inside SynAmp for Mac: the app can show a mini player that stays on top of other windows.
+  const macApp = (window as Window & { webkit?: { messageHandlers?: { synampApp?: { postMessage: (value: unknown) => void } } } }).webkit?.messageHandlers?.synampApp;
   const finished = session.index >= session.queue.length;
   return (
     <section className="player" aria-label="Player" hidden={away}>
@@ -453,6 +455,7 @@ export default function Player({ request, session, onSession, playlistName, onCh
       {view && <div className="player__feedback"><SongControls view={view} /></div>}
       <div id={moreId} className="player__more" hidden={!showMore}>
         {onVisuals && <button type="button" className="btn btn--quiet btn--sm player__more-visuals" onClick={onVisuals}><Icon name="smart" />Visuals</button>}
+        {macApp && <button type="button" className="btn btn--quiet btn--sm" onClick={() => macApp.postMessage({ action: "miniPlayer" })}><Icon name="open" />Mini player</button>}
         <div className="player__shortcuts">
           <p><strong>Keyboard shortcuts.</strong> Hold Option (Alt) and Shift, then press: → skip · ← previous · Space play or pause · L love · V visuals. Playing from a playlist: N not for this · R remove · M more like this. These work while the SynAmp window is in front.</p>
         </div>

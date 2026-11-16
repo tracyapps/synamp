@@ -392,6 +392,7 @@ final class ConnectionTests: XCTestCase {
         try Data(#"{"musicFolder":"/Music","port":8380,"startAtLogin":true,"preventSleep":true}"#.utf8).write(to: file)
         XCTAssertNil(AppSettings.load(from: file).connection)
         XCTAssertFalse(AppSettings.load(from: file).songInMenuBar, "the song stays in the menu unless asked for in the menu bar")
+        XCTAssertTrue(AppSettings.load(from: file).miniPlayerOnTop, "the mini player stays on top unless switched off")
         try AppSettings(musicFolder: "/Music", songInMenuBar: true).save(to: file)
         XCTAssertTrue(AppSettings.load(from: file).songInMenuBar)
         try AppSettings(connection: Connection(home: home, remote: remote, whenAway: .connect)).save(to: file)
@@ -596,6 +597,26 @@ final class SystemStatusTests: XCTestCase {
         ])
         let quiet = try JSONDecoder().decode(SystemStatus.self, from: Data(#"{"player":null,"phone":false,"listening":null,"music":null,"anywhere":{"ready":false}}"#.utf8))
         XCTAssertEqual(StatusWords.lines(quiet), ["Listen anywhere: not set up"], "nothing is guessed")
+    }
+
+    func testTheMiniPlayerOnlyAsksForItsOwnFewCommands() {
+        XCTAssertEqual(PlayerCommands.script(for: "toggle"), "window.dispatchEvent(new CustomEvent('synamp:player-command', { detail: 'toggle' }))")
+        for command in ["next", "previous", "love"] { XCTAssertNotNil(PlayerCommands.script(for: command)) }
+        XCTAssertNil(PlayerCommands.script(for: "remove"), "nothing that changes a playlist")
+        XCTAssertNil(PlayerCommands.script(for: "'); alert(1); ('"), "never anything but a known word")
+    }
+
+    func testTheMiniPlayerShowsTheSongOrNothing() {
+        let playing: [String: Any] = ["title": "Himitsu", "artist": "A", "available": true, "paused": false, "loved": true, "busy": false, "empty": false, "status": "", "playlist": "focus"]
+        let view = PlayerCommands.view(from: playing)
+        XCTAssertEqual(view?["title"] as? String, "Himitsu")
+        XCTAssertEqual(view?["artist"] as? String, "A")
+        XCTAssertEqual(view?["paused"] as? Bool, false)
+        XCTAssertEqual(view?["loved"] as? Bool, true)
+        XCTAssertNil(view?["status"], "only what the mini player shows is passed on")
+        XCTAssertNil(PlayerCommands.view(from: ["empty": true, "title": "Nothing playing"]))
+        XCTAssertNil(PlayerCommands.view(from: ["title": "End of queue", "available": false, "empty": true]))
+        XCTAssertNil(PlayerCommands.view(from: [:]))
     }
 
     func testTheSongForTheMenuBarIsShortAndOnlyThereWhenSomethingPlays() {
