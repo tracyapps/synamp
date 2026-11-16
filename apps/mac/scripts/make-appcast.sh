@@ -12,6 +12,7 @@ set -eu
 here=$(cd "$(dirname "$0")/.." && pwd)
 dmg="${1:?the .dmg}"
 version="${VERSION:?VERSION, e.g. 0.3.0}"
+build=$("$here/scripts/build-number.sh")
 chip=$(uname -m | sed 's/x86_64/intel/;s/arm64/apple-silicon/')
 tool=$(find "$here/.build/artifacts" -path '*Sparkle/bin/sign_update' -type f | head -n 1)
 [ -x "$tool" ] || { echo "Build the app first (Sparkle's tools come with it)"; exit 2; }
@@ -29,7 +30,7 @@ cat > "$out" <<XML
     <item>
       <title>SynAmp $version</title>
       <pubDate>$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')</pubDate>
-      <sparkle:version>$version</sparkle:version>
+      <sparkle:version>$build</sparkle:version>
       <sparkle:shortVersionString>$version</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
       <sparkle:releaseNotesLink>$notes</sparkle:releaseNotesLink>

@@ -25,6 +25,7 @@ if [ "${BUNDLE:-0}" = 1 ]; then
   cp -R "$here/build/bundle/runtime" "$app/Contents/Resources/runtime"
 fi
 version=${VERSION:-0.0.0}
+build=$("$here/scripts/build-number.sh")
 chip=$(uname -m | sed 's/x86_64/intel/;s/arm64/apple-silicon/')
 # Updates: one feed per chip, on the newest GitHub release. Without the public
 # key (SPARKLE_PUBLIC_KEY) the app doesn't check for updates at all.
@@ -68,7 +69,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
   </array>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$version</string>
-  <key>CFBundleVersion</key><string>$version</string>
+  <key>CFBundleVersion</key><string>$build</string>
   <key>SUFeedURL</key><string>$feed</string>
   <key>SUPublicEDKey</key><string>${SPARKLE_PUBLIC_KEY:-}</string>
   <key>SUEnableAutomaticChecks</key><true/>
