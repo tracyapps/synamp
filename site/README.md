@@ -125,4 +125,7 @@ Optional, later:
   The loops are written as step patterns at the top of
   `src/assets/visualizer.js`; change a pattern, save, and listen.
 - `og.png` is the picture link previews use (Facebook, Messages, Slack). It's
-  1200×630.
+  1200×630. To change its words, edit `scripts/og/og.html` (the headline over
+  `base.png`, the picture without one), open it in a browser at 1200×630 and
+  save a screenshot as `src/og.png`. Then raise the `?v=` number on the
+  `og:image` line in `src/partials/head.html`, so apps fetch the new picture.
