@@ -601,9 +601,25 @@ final class SystemStatusTests: XCTestCase {
 
     func testTheMiniPlayerOnlyAsksForItsOwnFewCommands() {
         XCTAssertEqual(PlayerCommands.script(for: "toggle"), "window.dispatchEvent(new CustomEvent('synamp:player-command', { detail: 'toggle' }))")
-        for command in ["next", "previous", "love"] { XCTAssertNotNil(PlayerCommands.script(for: command)) }
-        XCTAssertNil(PlayerCommands.script(for: "remove"), "nothing that changes a playlist")
+        for command in ["next", "previous", "love", "remove", "more-like-this", "wrong-vibe", "undo-remove"] { XCTAssertNotNil(PlayerCommands.script(for: command)) }
+        XCTAssertNil(PlayerCommands.script(for: "visuals"), "nothing but the song's own buttons")
         XCTAssertNil(PlayerCommands.script(for: "'); alert(1); ('"), "never anything but a known word")
+    }
+
+    func testTheArrowsOfferTheSameChoicesAsThePlayerBar() {
+        let playlist: [String: Any] = ["title": "Himitsu", "playlist": "focus"]
+        XCTAssertEqual(PlayerCommands.menu("skip", view: playlist).map(\.title), ["Skip: not for this playlist", "Skip: wrong energy", "Skip: wrong vibe"])
+        XCTAssertEqual(PlayerCommands.menu("love", view: playlist), [.init("More like this next", "more-like-this")])
+        XCTAssertEqual(PlayerCommands.menu("remove", view: playlist).map(\.command), ["remove-wrong-energy", "remove-wrong-vibe"])
+        var removed = playlist
+        removed["undo"] = "Weightless"
+        XCTAssertEqual(PlayerCommands.menu("remove", view: removed).last, .init("Put back “Weightless”", "undo-remove"))
+        for choice in ["skip", "love", "remove"].flatMap({ PlayerCommands.menu($0, view: removed) }) {
+            XCTAssertNotNil(PlayerCommands.script(for: choice.command), "\(choice.command) is a command the player knows")
+        }
+        XCTAssertEqual(PlayerCommands.menu("skip", view: ["title": "Himitsu"]), [], "from the Library there's no playlist to learn from")
+        XCTAssertEqual(PlayerCommands.menu("skip", view: nil), [])
+        XCTAssertEqual(PlayerCommands.menu("volume", view: playlist), [])
     }
 
     func testTheMiniPlayerShowsTheSongOrNothing() {
@@ -614,6 +630,10 @@ final class SystemStatusTests: XCTestCase {
         XCTAssertEqual(view?["paused"] as? Bool, false)
         XCTAssertEqual(view?["loved"] as? Bool, true)
         XCTAssertNil(view?["status"], "only what the mini player shows is passed on")
+        XCTAssertNil(view?["undo"])
+        var afterRemoval = playing
+        afterRemoval["undo"] = ["title": "Weightless", "at": 1.0] as [String: Any]
+        XCTAssertEqual(PlayerCommands.view(from: afterRemoval)?["undo"] as? String, "Weightless")
         XCTAssertNil(PlayerCommands.view(from: ["empty": true, "title": "Nothing playing"]))
         XCTAssertNil(PlayerCommands.view(from: ["title": "End of queue", "available": false, "empty": true]))
         XCTAssertNil(PlayerCommands.view(from: [:]))

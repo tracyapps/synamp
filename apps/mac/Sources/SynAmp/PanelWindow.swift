@@ -71,6 +71,33 @@ final class PanelWindow: NSObject, NSWindowDelegate, WKScriptMessageHandler, WKN
         webView.evaluateJavaScript("window.SynAmpPanel && window.SynAmpPanel.receive(\(json))", completionHandler: nil)
     }
 
+    /// A menu opened by a button in the page (a split button's arrow). A real Mac
+    /// menu, so it can be bigger than a small window, and the keyboard and
+    /// VoiceOver use it like any other. `at` is in the page's own measurements,
+    /// from its top-left corner.
+    func popUpMenu(_ choices: [(title: String, pick: () -> Void)], at point: CGPoint) {
+        guard !choices.isEmpty else { return }
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let picks = choices.map { MenuPick($0.pick) }
+        for (choice, pick) in zip(choices, picks) {
+            let item = NSMenuItem(title: choice.title, action: #selector(MenuPick.run), keyEquivalent: "")
+            item.target = pick
+            menu.addItem(item)
+        }
+        let y = webView.isFlipped ? point.y : webView.bounds.height - point.y
+        // Runs until a choice is made or the menu is dismissed; `picks` live until then.
+        withExtendedLifetime(picks) {
+            _ = menu.popUp(positioning: nil, at: NSPoint(x: point.x, y: y), in: webView)
+        }
+    }
+
+    private final class MenuPick: NSObject {
+        let pick: () -> Void
+        init(_ pick: @escaping () -> Void) { self.pick = pick }
+        @objc func run() { pick() }
+    }
+
     // MARK: the page
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {

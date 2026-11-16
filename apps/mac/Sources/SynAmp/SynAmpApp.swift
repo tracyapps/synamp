@@ -30,7 +30,13 @@ struct SynAmpApp: App {
                 Label(model.menuLabel, systemImage: model.menuSymbol)
             }
         }
-
+        // The menus across the top of the screen, for when one of SynAmp's
+        // windows is in front: the same things as the menu-bar icon's menu,
+        // where Mac apps usually keep them.
+        .commands {
+            CommandGroup(after: .appInfo) { UpdateCommand(model: model) }
+            CommandGroup(before: .toolbar) { MiniPlayerCommands(model: model) }
+        }
     }
 }
 
@@ -197,7 +203,6 @@ final class AppModel: ObservableObject {
         if let miniPanel { miniPanel.show(); return }
         let panel = PanelWindow(title: "SynAmp mini player", page: "mini.html", width: 340, state: [
             "view": playerView.map { $0 as Any } ?? NSNull(),
-            "stayOnTop": settings.miniPlayerOnTop,
         ])
         panel.window.level = settings.miniPlayerOnTop ? .floating : .normal
         panel.window.setFrameAutosaveName("SynAmpMiniPlayer")  // comes back where you put it
@@ -208,11 +213,14 @@ final class AppModel: ObservableObject {
                 guard let name = message["name"] as? String else { return }
                 // Nothing loaded yet (SynAmp's window was never opened): open it, there's nothing to press.
                 if self.mainWindow?.hasPage == true { self.mainWindow?.playerCommand(name) } else { self.open() }
-            case "stayOnTop":
-                let on = message["on"] as? Bool ?? true
-                try? self.engine.update { $0.miniPlayerOnTop = on }
-                self.settings = self.engine.settings
-                panel?.window.level = on ? .floating : .normal
+            case "menu":
+                // The arrow beside Skip, Love or Remove: a real menu, under the arrow.
+                guard let name = message["name"] as? String, let x = message["x"] as? Double, let y = message["y"] as? Double else { return }
+                let choices = PlayerCommands.menu(name, view: self.playerView).map { choice in
+                    (title: choice.title, pick: { [weak self] in self?.mainWindow?.playerCommand(choice.command); return })
+                }
+                // After this message has been answered: the menu keeps the app busy until it closes.
+                DispatchQueue.main.async { panel?.popUpMenu(choices, at: CGPoint(x: x, y: y)) }
             case "open":
                 self.open()
             default:
@@ -222,6 +230,13 @@ final class AppModel: ObservableObject {
         panel.onClose = { [weak self, weak panel] in if self?.miniPanel === panel { self?.miniPanel = nil } }
         miniPanel = panel
         panel.show()
+    }
+
+    /// Keep the mini player in front of other windows, or let it go behind them like any window.
+    func setMiniPlayerOnTop(_ on: Bool) {
+        try? engine.update { $0.miniPlayerOnTop = on }
+        settings = engine.settings
+        miniPanel?.window.level = on ? .floating : .normal
     }
 
     /// "Open on your phone": QR codes for the addresses a phone uses.
@@ -575,6 +590,28 @@ final class AppModel: ObservableObject {
     }
 }
 
+/// "Check for updates…", in the SynAmp menu at the top of the screen as well as the menu-bar icon's menu.
+struct UpdateCommand: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        if model.updates.available {
+            Button("Check for updates…") { model.updates.checkNow() }
+        }
+    }
+}
+
+/// The mini player and whether it stays in front: in the View menu, and in the menu-bar icon's menu.
+struct MiniPlayerCommands: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
+        Button("Mini player") { model.showMiniPlayer() }
+            .keyboardShortcut("m", modifiers: [.command, .option])
+        Toggle("Keep mini player on top", isOn: Binding(get: { model.settings.miniPlayerOnTop }, set: { model.setMiniPlayerOnTop($0) }))
+    }
+}
+
 struct MenuContent: View {
     @ObservedObject var model: AppModel
 
@@ -585,8 +622,7 @@ struct MenuContent: View {
             Divider()
             Button("Open SynAmp") { model.open() }
                 .keyboardShortcut("o")
-            Button("Mini player") { model.showMiniPlayer() }
-                .keyboardShortcut("m")
+            MiniPlayerCommands(model: model)
             Button("Open in browser") { model.openInBrowser() }
             Button("Open on your phone…") { model.showPhoneLinks() }
             if model.system?.anywhere.ready == false {

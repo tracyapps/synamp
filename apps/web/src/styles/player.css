@@ -95,9 +95,16 @@
 .split__arrow { transform: rotate(-90deg); }
 .split .btn + .split__more { border-color: var(--border-strong); }
 /* Beside the round Skip button, the arrow is a small round button of its own. */
-.split--round { align-items: center; gap: 2px; }
-.split--round > :first-child:not(:last-child) { border-radius: 50%; }
-.split--round .split__more { width: 28px; min-width: 28px; height: 28px; padding: 0; margin: 0; border-radius: 50%; border-color: var(--border-strong); }
+.split--round:has(.split__more) {
+  align-items: stretch; height: 40px; border: 1px solid var(--border-strong); border-radius: var(--r-pill); background: var(--ghost);
+  transition: border-color var(--dur-1) var(--ease);
+}
+.split--round:has(.split__more):hover { border-color: rgba(255, 255, 255, 0.3); }
+/* One shape, two buttons: Skip on the left, its arrow on the right, a hairline between. */
+.split--round:has(.split__more) > .player__btn { width: 42px; height: auto; border: 0; background: none; border-radius: var(--r-pill) 0 0 var(--r-pill); padding-left: 4px; }
+.split--round .split__more { min-width: 30px; padding: 0 8px 0 4px; margin: 0; border: 0; border-left: 1px solid var(--border); background: none; border-radius: 0 var(--r-pill) var(--r-pill) 0; }
+.split--round > .player__btn:hover:not(:disabled), .split--round .split__more:hover:not(:disabled) { background: var(--ghost-hi); }
+.split--round > :focus-visible { outline-offset: -2px; }
 
 /* What you think of this song. The buttons keep their place; messages, and Undo
    after a removal, go after them (to the right when there's room, underneath when not). */
