@@ -78,9 +78,9 @@
         </div>
 
         <div class="kb__list" data-kb-list>
-          <a class="article" href="#g-need" data-kb-item data-tags="setup" data-keywords="nas server computer mac pc requirements hardware">
+          <a class="article" href="#g-need" data-kb-item data-tags="setup" data-keywords="nas server computer mac pc requirements hardware install app menu bar">
             <h3>What you need</h3>
-            <p>Somewhere your music lives (a NAS or always-on computer), and a Mac or PC for the first listen-through.</p>
+            <p>A Mac and a folder of music. A NAS or always-on computer is optional, for music that plays when your Mac is off.</p>
             <div class="article__meta"><span class="tag">Setting up</span><span class="tag">2 min read</span></div>
           </a>
           <a class="article" href="#g-anywhere" data-kb-item data-tags="setup,trouble" data-keywords="remote away from home phone cellular tailscale private network">
@@ -129,8 +129,8 @@
             <div class="article__meta"><span class="tag">Playlists</span><span class="tag">2 min read</span></div>
           </a>
           <a class="article" href="#g-privacy" data-kb-item data-tags="privacy" data-keywords="privacy data tracking internet musicbrainz last.fm scrobble">
-            <h3>What leaves your house (almost nothing)</h3>
-            <p>SynAmp runs at home. Here's the short list of things that ever talk to the internet, and how to turn them off.</p>
+            <h3>What leaves your house (a short list)</h3>
+            <p>SynAmp runs at home. Here's the whole list of things that ever talk to the internet, and how to turn them off.</p>
             <div class="article__meta"><span class="tag">Privacy</span><span class="tag">2 min read</span></div>
           </a>
           <a class="article" href="#t-stuck" data-kb-item data-tags="trouble,library" data-keywords="stuck stopped analysis not moving paused asleep">
@@ -153,14 +153,15 @@
   <!-- ============ GUIDES ============ -->
   <section class="section section--deep" id="getting-started" aria-labelledby="gs-title">
     <div class="wrap">
-      <div class="section-head reveal"><span class="eyebrow"><span class="amp amp--short"></span>Getting started</span><h2 id="gs-title">From zero to playing.</h2><p>SynAmp isn't ready to install yet. These guides describe how setup works today on the first test system, and will be fleshed out step by step before launch.</p></div>
+      <div class="section-head reveal"><span class="eyebrow"><span class="amp amp--short"></span>Getting started</span><h2 id="gs-title">From zero to playing.</h2><p>SynAmp is in early testing with a small group, and isn't open to everyone yet. These guides describe how it works today, and grow as testers ask questions.</p></div>
       <details class="accordion" id="g-need" open>
         <summary>What you need<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
         <div class="accordion__body">
           <ul>
-            <li><strong>Somewhere your music lives.</strong> A NAS (like a Synology) or any always-on computer at home. It doesn't need to be powerful.</li>
-            <li><strong>A Mac or PC for the first listen-through.</strong> Listening to every song takes real computing power, so SynAmp does it on your computer rather than slowing your server down. It only needs to be on while it works, and it picks up where it left off.</li>
-            <li><strong>Optional: a music app on your phone.</strong> See <a href="#g-phone">Use the phone and car apps you like</a>.</li>
+            <li><strong>A Mac, for now.</strong> SynAmp for Mac is one app that carries everything it needs: drag it into Applications, open it, and choose your music folder. It works on Apple and Intel Macs alike, and sits in the menu bar, where its icon tells you in plain words what it's doing. Windows comes later.</li>
+            <li><strong>A folder of music.</strong> On the Mac itself, on an external drive, or on a NAS. SynAmp listens to every song once, on your Mac. It picks up where it left off, and you can choose how much of your Mac it may use.</li>
+            <li><strong>Optional: a NAS or always-on computer.</strong> Put SynAmp there too and your music keeps playing when your Mac is asleep or away. The Mac app connects to it: in SynAmp's Settings on the NAS, press <strong>Connect the Mac app</strong>.</li>
+            <li><strong>Optional: your phone.</strong> The Mac app's menu has <strong>Open on your phone</strong>, which shows a code to scan. Or use a music app you already like: see <a href="#g-phone">Use the phone and car apps you like</a>.</li>
           </ul>
         </div>
       </details>
@@ -246,16 +247,18 @@
           <p>Type something like <em>&ldquo;upbeat, under 130 bpm, nothing too loud&rdquo;</em> and SynAmp turns it into a playlist. Each song shows the reasons it was picked.</p>
           <p>When SynAmp hasn't measured something yet — say, whether a song has piano — it won't guess. Those songs appear separately as &ldquo;not measured yet&rdquo;, so a &ldquo;no piano&rdquo; playlist never sneaks one in.</p>
           <p>Smart playlists stay up to date by themselves: add an album and matching songs appear without you doing anything.</p>
-          <p class="note">Coming as the Brain grows: &ldquo;no words&rdquo; and instrument detection, &ldquo;sounds like these two songs&rdquo;, moods and lyrics. See the <a href="/roadmap#brain">roadmap</a>.</p>
+          <p>Before you save, you can hear a 30-second clip of any song in the preview and mark the ones that don't fit.</p>
+          <p>&ldquo;No words&rdquo;, &ldquo;no piano&rdquo; and <strong>Sounds like these songs</strong> (pick up to five) work for the songs SynAmp has listened to so far, and get better as it gets through your library.</p>
+          <p class="note">Still being built: moods, and playlists from what the lyrics are about. See the <a href="/roadmap#brain">roadmap</a>.</p>
         </div>
       </details>
       <details class="accordion" id="g-learn">
         <summary>How SynAmp learns what you like<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
         <div class="accordion__body">
           <ul>
-            <li><strong>Love</strong> a song to see more like it.</li>
-            <li><strong>Skip</strong> early and it counts as &ldquo;not now&rdquo;. Jumping around in a song, an error, or a phone call interrupting never counts against it.</li>
-            <li><strong>Remove</strong> a song from a playlist and it stays out of <em>that</em> playlist. It's not banned everywhere — and &ldquo;Removed by you&rdquo; lets you bring it back.</li>
+            <li><strong>Love</strong> a song to see more like it. The small arrow beside Love has <strong>More like this next</strong>, which lines up a similar song straight away.</li>
+            <li><strong>Skip</strong> early and it counts as &ldquo;not now&rdquo;. Jumping around in a song, an error, or a phone call interrupting never counts against it. To say why, use the small arrow beside Skip: not for this playlist, wrong energy, or wrong vibe.</li>
+            <li><strong>Remove</strong> a song from a playlist and it stays out of <em>that</em> playlist. It's not banned everywhere. <strong>Undo</strong> appears beside the message for a short while; after that, the arrow beside Remove still has &ldquo;Put back&rdquo;, and the playlist's &ldquo;Removed by you&rdquo; list lets you bring any song back later.</li>
           </ul>
           <p>Plays from your phone apps count too, when they use your SynAmp address.</p>
         </div>
@@ -269,11 +272,18 @@
       <details class="accordion" id="g-privacy" open>
         <summary>What leaves your house (almost nothing)<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
         <div class="accordion__body">
-          <p>SynAmp runs on your own hardware. There's no SynAmp account, no tracking, and no ads. The only things that ever reach the internet are:</p>
+          <p>SynAmp runs on your own hardware. There's no SynAmp account, no tracking, and no ads. Nothing about you or what you play is sent to us. This is everything that reaches the internet:</p>
           <ul>
-            <li><strong>Album lookups on MusicBrainz</strong> — artist and album names, to find missing tracks. Nothing about you or what you play.</li>
-            <li><strong>Last.fm, only if you connect it</strong> — your plays, sent to your own Last.fm profile. Leave it off and nothing is sent.</li>
+            <li><strong>Album lookups on MusicBrainz</strong>: artist and album names, to find missing tracks and fix song details. Nothing about you or what you play.</li>
+            <li><strong>Last.fm, only if you connect it</strong>: your plays, sent to your own Last.fm profile. Leave it off and nothing is sent.</li>
+            <li><strong>Lyrics from LRCLIB, only if you switch it on</strong>: song and artist names, to look up missing words. It's off until you turn it on in Settings.</li>
+            <li><strong>Radio, only when you use it</strong>: the station list comes from Radio Browser, a free community directory, and a station you play can see that someone is listening, as with any internet radio.</li>
+            <li><strong>Checking for a new version</strong>: SynAmp reads GitHub's public list of releases. It sends nothing about you or your music, and you can turn the checks off in Settings.</li>
+            <li><strong>One download when listening first starts</strong>: the part that hears singing and instruments is fetched once from Zenodo, a research archive.</li>
+            <li><strong>The lettering</strong>: for now, SynAmp's fonts load from Google Fonts when you open it, which means Google sees that a browser asked for them. We plan to build the fonts in so this stops.</li>
+            <li><strong>Listen anywhere, only if you set it up</strong>: your devices reach each other through Tailscale's private network. Your music is never open to the public internet.</li>
           </ul>
+          <p>Feedback never sends itself: you read every word, then send it from your own mail app.</p>
         </div>
       </details>
     </div>
@@ -293,7 +303,7 @@
       </details>
       <details class="accordion" id="t-stutter">
         <summary>Music stutters away from home<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
-        <div class="accordion__body"><p>Streaming from home depends on your home internet's <em>upload</em> speed, which is often much slower than download. Many phone apps have a &ldquo;streaming quality&rdquo; setting — try a lower one on mobile data. Automatic lighter streams away from home are on the <a href="/roadmap#listen-anywhere">roadmap</a>.</p></div>
+        <div class="accordion__body"><p>Streaming from home depends on your home internet's <em>upload</em> speed, which is often much slower than download. SynAmp's own player switches to a lighter stream by itself when you're away from home (Settings has the choice). In a phone app, look for a &ldquo;streaming quality&rdquo; or &ldquo;max bit rate&rdquo; setting and try a lower one on mobile data.</p></div>
       </details>
       <details class="accordion" id="t-plays">
         <summary>Plays from my phone app don't show up<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary>
@@ -305,8 +315,8 @@
   <section class="section" id="faq" aria-labelledby="faq-title">
     <div class="wrap">
       <div class="section-head reveal"><span class="eyebrow"><span class="amp amp--short"></span>FAQ</span><h2 id="faq-title">Straight answers.</h2></div>
-      <details class="accordion"><summary>Is SynAmp available yet?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>Not yet. It's being built in the open and tested on a real 46,000-song library. <a href="/coming-soon">Join the early-access list</a> for one email when it's ready, and follow along on the <a href="/roadmap">roadmap</a>.</p></div></details>
-      <details class="accordion"><summary>Do I need a NAS?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>No. Any computer that's always on at home will do — a mini PC or an old laptop, for example. A NAS is just what SynAmp is being tested on.</p></div></details>
+      <details class="accordion"><summary>Is SynAmp available yet?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>Not for everyone yet. It's being built in the open, runs every day on a real 46,000-song library, and a small group is testing the Mac app. <a href="/coming-soon">Join the early-access list</a> for one email when it's ready, and follow along on the <a href="/roadmap">roadmap</a>.</p></div></details>
+      <details class="accordion"><summary>Do I need a NAS?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>No. SynAmp for Mac works with a folder of music on the Mac itself or on a drive plugged into it. A NAS, or any always-on computer, is an optional extra for music that keeps playing when your Mac is off.</p></div></details>
       <details class="accordion"><summary>Will it mess with my files?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>Only when you say so. SynAmp suggests changes and waits for your approval, every change can be undone, and nothing is ever deleted.</p></div></details>
       <details class="accordion"><summary>Do I need a SynAmp app on my phone?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>No. SynAmp works with many existing music apps, so your phone, car and computer can play your library from day one. A SynAmp app only happens if those leave a real gap.</p></div></details>
       <details class="accordion"><summary>Is it a subscription?<span class="acc-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></summary><div class="accordion__body"><p>No, and it won't be. Getting away from renting your own music is the whole point.</p></div></details>
