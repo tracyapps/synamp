@@ -84,9 +84,10 @@ export default function SongControls({ view, transport = false }: { view: Player
       <SplitButton label="More like this, and more" items={loveChoices(view)} disabled={idle}>
         <button type="button" className={`chip song-controls__love ${view.loved ? "is-loved" : ""}`} disabled={idle || view.loved} aria-pressed={view.loved} title="Love · Option/Alt + Shift + L" onClick={() => command("love")}><Icon name="heart" size={17} />{view.loved ? "Loved" : "Love"}</button>
       </SplitButton>
-      {view.playlist && <SplitButton label="Remove, and say why" items={removeChoices(view)} disabled={view.busy}>
-        <button type="button" className="chip song-controls__remove" disabled={idle} title={`Remove from ${view.playlist}, then skip · Option/Alt + Shift + R`} onClick={() => command("remove")}>
-          <span className="song-controls__label">Remove<span className="song-controls__from"> from <span className="song-controls__playlist">{view.playlist}</span></span></span></button>
+      {/* After the last song there's no playlist to name, but a removed song can still be put back. */}
+      {(view.playlist || view.undo) && <SplitButton label="Remove, and say why" items={removeChoices(view)} disabled={view.busy}>
+        <button type="button" className="chip song-controls__remove" disabled={idle || !view.playlist} title={view.playlist ? `Remove from ${view.playlist}, then skip · Option/Alt + Shift + R` : undefined} onClick={() => command("remove")}>
+          <span className="song-controls__label">Remove{view.playlist && <span className="song-controls__from"> from <span className="song-controls__playlist">{view.playlist}</span></span>}</span></button>
       </SplitButton>}
     </div>
     <div className={`song-controls__note ${view.busy ? "is-pending" : ""}`}>
