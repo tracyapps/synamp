@@ -81,3 +81,26 @@ then delete that file. Builds without the public key never check for updates.
 ## Tests
 
     cd apps/mac && swift test
+
+## The app's own small windows (`ui/`)
+
+The setup window and "Open on your phone" are web pages in `apps/mac/ui`, shown
+in a web view (`PanelWindow.swift`). They use the web app's own `tokens.css` and
+`ui.css` (`ui/styles` and `ui/assets` are links to the web app's folders; link folders, not single files, which the web view won't load), so they look like
+SynAmp without a second copy of the design. `panel.css` adds only layout.
+
+- Edit them like any page. To look at one in a browser, open it with a state:
+  `setup.html?state={"place":"elsewhere"}`. Outside the app, button presses are
+  written to the console.
+- `bridge.js` is the whole contract: the page calls `SynAmp.send(action, data)`,
+  the app answers with `SynAmp.on(type, …)`. The window sizes itself to the page.
+- While one of these windows (or SynAmp's main window) is open, the app is in
+  the Dock and Command-Tab; with none open it is a menu-bar icon only.
+- `build-app.sh` copies the folder into the app, following the links.
+
+## "Connect the Mac app" links
+
+`synamp://connect?home=…&token=…&away=…` opens the setup window with the
+connection filled in (`ConnectLink.swift`). SynAmp's web page makes the link in
+Settings (`apps/web/src/connect-link.ts`). It only fills the form in: the person
+still presses Connect, and the address is checked as usual.

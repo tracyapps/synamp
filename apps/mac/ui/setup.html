@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SynAmp setup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Momo+Trust+Display&family=Space+Grotesk:wght@300;400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/ui.css">
+  <link rel="stylesheet" href="panel.css">
+  <script src="bridge.js"></script>
+</head>
+<body>
+<main class="macwin">
+  <header class="macwin__head">
+    <img class="macwin__mark" src="assets/synamp-mark.svg" alt="">
+    <div>
+      <h1 class="macwin__title" id="title">Welcome to SynAmp</h1>
+      <p class="macwin__lead">SynAmp listens to the music you own and makes playlists from it, on this Mac and your phone.</p>
+    </div>
+  </header>
+
+  <form id="form" novalidate>
+    <div style="display:grid;gap:18px">
+      <fieldset class="group">
+        <legend>Where does SynAmp run?</legend>
+        <div class="choices">
+          <label class="choice">
+            <input type="radio" name="place" value="thisMac">
+            <span class="choice__body">
+              <span class="choice__name">On this Mac</span>
+              <span class="choice__what">Your music is on this Mac, or on a drive or NAS it can see.</span>
+            </span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="place" value="elsewhere">
+            <span class="choice__body">
+              <span class="choice__name">On my NAS or another computer</span>
+              <span class="choice__what">SynAmp is already running there. This Mac connects to it.</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- SynAmp on this Mac -->
+      <section class="card-well" id="thisMac" aria-labelledby="thisMac-title">
+        <h2 class="group__title" id="thisMac-title">Where’s your music?</h2>
+        <div class="pick">
+          <span class="path path--none" id="music-path">No folder chosen yet</span>
+          <button type="button" class="btn btn--ghost" id="music-choose">Choose folder…</button>
+        </div>
+        <p class="fine" id="music-share-note" hidden>This folder is on another drive or a NAS. Keep it connected so SynAmp can play and listen.</p>
+        <p class="fine">SynAmp reads this folder and changes nothing in it until you approve a change. Listening to your library takes a while the first time; you can play music the whole time.</p>
+      </section>
+
+      <!-- SynAmp somewhere else -->
+      <section class="card-well" id="elsewhere" aria-labelledby="elsewhere-title" hidden>
+        <h2 class="group__title" id="elsewhere-title">Connect to your SynAmp</h2>
+        <p class="fine" id="filled-note" hidden><strong>Filled in from your SynAmp.</strong> Check the address is yours, then press Connect.</p>
+        <p class="fine" id="tip-note">Quickest: open SynAmp’s web page on this Mac, go to <strong>Settings</strong>, and press <strong>Connect the Mac app</strong>. It fills this in for you. Do it once, at home.</p>
+        <div class="two">
+          <div class="field">
+            <label for="home">Address at home</label>
+            <input class="input" id="home" name="home" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="nas-name.local:8080" aria-describedby="home-hint">
+            <span class="hint" id="home-hint">What you type in a browser to open it.</span>
+          </div>
+          <div class="field">
+            <label for="token">Access token</label>
+            <input class="input" id="token" name="token" type="password" autocomplete="off" spellcheck="false" aria-describedby="token-hint">
+            <span class="hint" id="token-hint">The one SynAmp’s web page asks for.</span>
+          </div>
+        </div>
+        <div class="two">
+          <div class="field">
+            <label for="remote">Address away from home <span style="text-transform:none;letter-spacing:0">(optional)</span></label>
+            <input class="input" id="remote" name="remote" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Filled in from Listen anywhere" aria-describedby="remote-hint">
+            <span class="hint" id="remote-hint">Empty is fine if Listen anywhere is set up.</span>
+          </div>
+          <div class="field">
+            <label for="whenAway">When I’m away from home</label>
+            <select class="select" id="whenAway" name="whenAway">
+              <option value="ask">Ask me</option>
+              <option value="connect">Connect automatically</option>
+              <option value="offline">Stay offline</option>
+            </select>
+          </div>
+        </div>
+        <hr class="divider">
+        <label class="switch">
+          <input type="checkbox" id="listenHere" role="switch" aria-describedby="listen-note">
+          <span>Use this Mac to listen to the library</span>
+        </label>
+        <p class="fine" id="listen-note" style="padding-left:56px;margin-top:-8px">SynAmp learns your songs by listening to them, and a NAS is usually too slow for that. This Mac can do it whenever it’s at home.</p>
+        <div class="sub" id="listen-sub" hidden>
+          <div class="pick">
+            <span class="path path--none" id="listen-path">No folder chosen yet</span>
+            <button type="button" class="btn btn--ghost" id="listen-choose">Choose music folder…</button>
+          </div>
+          <p class="fine">The same music folder your SynAmp uses, as this Mac sees it: for example “library” on your NAS share.</p>
+        </div>
+      </section>
+
+      <label class="check">
+        <input type="checkbox" id="startAtLogin">
+        <span>Start SynAmp when this Mac starts</span>
+      </label>
+
+      <p class="form-status" id="problem" role="alert" data-tone="error" tabindex="-1" hidden></p>
+
+      <div class="macwin__foot">
+        <span class="fine" id="working" role="status"></span>
+        <button type="submit" class="btn btn--primary" id="go">Start SynAmp</button>
+      </div>
+    </div>
+  </form>
+</main>
+<script>
+(function () {
+  const example = { isSetUp: false, place: "thisMac", musicFolder: "", home: "", remote: "", whenAway: "ask", listenHere: false, listenFolder: "", hasSavedToken: false, startAtLogin: true, filled: false, token: "" };
+  const s = Object.assign(example, SynAmp.state);
+  const $ = (id) => document.getElementById(id);
+  let musicFolder = s.musicFolder || "", listenFolder = s.listenFolder || "", working = false;
+
+  $("title").textContent = s.isSetUp ? "Where SynAmp runs" : "Welcome to SynAmp";
+  document.title = $("title").textContent;
+  for (const radio of document.querySelectorAll('input[name="place"]')) radio.checked = radio.value === s.place;
+  $("home").value = s.home; $("remote").value = s.remote; $("whenAway").value = s.whenAway;
+  $("token").value = s.token || "";
+  if (s.hasSavedToken && !s.token) { $("token").placeholder = "Saved"; $("token-hint").textContent = "Saved. Type a new one only to change it."; }
+  $("listenHere").checked = s.listenHere; $("startAtLogin").checked = s.startAtLogin;
+  $("filled-note").hidden = !s.filled; $("tip-note").hidden = Boolean(s.filled) || Boolean(s.home);
+
+  function place() { return document.querySelector('input[name="place"]:checked').value; }
+  function showPath(el, path) {
+    el.textContent = path || "No folder chosen yet";
+    el.classList.toggle("path--none", !path);
+  }
+  function ready() {
+    if (working) return false;
+    if (place() === "thisMac") return Boolean(musicFolder);
+    return Boolean($("home").value.trim()) && (Boolean($("token").value) || s.hasSavedToken) && (!$("listenHere").checked || Boolean(listenFolder));
+  }
+  function draw() {
+    const here = place() === "thisMac";
+    $("thisMac").hidden = !here; $("elsewhere").hidden = here;
+    showPath($("music-path"), musicFolder); showPath($("listen-path"), listenFolder);
+    $("music-share-note").hidden = !musicFolder.startsWith("/Volumes/");
+    $("listen-sub").hidden = !$("listenHere").checked;
+    $("music-choose").textContent = musicFolder ? "Change…" : "Choose folder…";
+    $("listen-choose").textContent = listenFolder ? "Change…" : "Choose music folder…";
+    $("go").textContent = working ? (here ? "Starting…" : "Checking…") : (here ? "Start SynAmp" : "Connect");
+    $("go").disabled = !ready();
+  }
+  function problem(text) {
+    $("problem").textContent = text || ""; $("problem").hidden = !text;
+    if (text) $("problem").focus();  // VoiceOver goes to what went wrong
+  }
+
+  document.addEventListener("input", draw);
+  document.addEventListener("change", draw);
+  $("music-choose").addEventListener("click", () => SynAmp.send("chooseFolder", { for: "music" }));
+  $("listen-choose").addEventListener("click", () => SynAmp.send("chooseFolder", { for: "listen" }));
+  SynAmp.on("folder", (m) => { if (m.for === "music") musicFolder = m.path; else listenFolder = m.path; draw(); });
+  SynAmp.on("problem", (m) => { working = false; problem(m.text); draw(); });
+
+  $("form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!ready()) return;
+    working = true; problem(""); draw();
+    if (place() === "thisMac") {
+      SynAmp.send("startThisMac", { musicFolder, startAtLogin: $("startAtLogin").checked });
+    } else {
+      SynAmp.send("connect", {
+        home: $("home").value.trim(), token: $("token").value, remote: $("remote").value.trim(), whenAway: $("whenAway").value,
+        listenFolder: $("listenHere").checked ? listenFolder : "", startAtLogin: $("startAtLogin").checked,
+      });
+    }
+  });
+  draw();
+})();
+</script>
+</body>
+</html>

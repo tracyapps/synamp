@@ -1,0 +1,77 @@
+/* SynAmp for Mac — the app's own small windows (setup, "Open on your phone").
+   They are web pages inside the app, drawn with the same design tokens and
+   components as the web app (styles/tokens.css, styles/ui.css are the web
+   app's own files), so the Mac app looks like SynAmp, not a system utility. */
+
+*, *::before, *::after { box-sizing: border-box; }
+html { background: var(--bg); color-scheme: dark; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 400 0.9375rem/1.5 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  /* The window is sized to this page, so nothing scrolls sideways. */
+  overflow-x: hidden;
+}
+/* The window's title bar takes this page's colour, so page and bar read as one. */
+.macwin { padding: 14px 32px 28px; display: grid; gap: 22px; }
+
+.macwin__head { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 18px; align-items: center; }
+.macwin__mark { width: 60px; height: 60px; transform: rotate(-9deg); filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.45)); }
+.macwin__title { margin: 0; font: 400 1.7rem/1.1 var(--font-display); letter-spacing: -0.01em; }
+.macwin__lead { margin: 6px 0 0; color: var(--muted); max-width: 46ch; }
+
+.group { display: grid; gap: 14px; border: 0; padding: 0; margin: 0; min-width: 0; }
+.group > legend, .group__title {
+  padding: 0; margin: 0 0 2px;
+  font: 500 0.75rem/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
+
+/* "Where does SynAmp run?": two big choices. A radio group underneath. */
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.choice { position: relative; display: block; cursor: pointer; }
+.choice input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.choice__body {
+  display: grid; gap: 6px; height: 100%; padding: 16px 16px 16px 46px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.choice__body::before {
+  content: ""; position: absolute; left: 16px; top: 17px; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--well); border: 1px solid var(--border-strong);
+}
+.choice__name { font: 600 1rem/1.25 var(--font-sans); }
+.choice__what { color: var(--muted); font-size: 0.875rem; line-height: 1.45; }
+.choice:hover .choice__body { border-color: var(--border-strong); }
+.choice input:checked + .choice__body { border-color: var(--gold); background: var(--surface-2); }
+.choice input:checked + .choice__body::before { background: var(--gold); border-color: var(--gold); box-shadow: inset 0 0 0 4px var(--well); }
+.choice input:focus-visible + .choice__body { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+.card-well { display: grid; gap: 14px; padding: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); }
+.card-well[hidden] { display: none; }
+.pick { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; }
+.path { font: 400 0.875rem/1.4 var(--font-mono); color: var(--fg); overflow-wrap: anywhere; }
+.path--none { color: var(--muted); font-family: var(--font-sans); }
+.two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.fine { margin: 0; color: var(--muted); font-size: 0.8125rem; line-height: 1.5; }
+.fine strong { color: var(--fg); font-weight: 600; }
+.divider { height: 1px; background: var(--border); border: 0; margin: 2px 0; }
+.sub { display: grid; gap: 10px; padding-left: 56px; }
+.sub[hidden] { display: none; }
+
+.macwin__foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.macwin__foot .btn { min-width: 150px; }
+.form-status[hidden] { display: none; }
+.btn[disabled] { opacity: 1; background: var(--surface-2); border-color: var(--border); color: var(--muted); cursor: default; box-shadow: none; }
+
+/* "Open on your phone" */
+.codes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.code { display: grid; gap: 12px; justify-items: start; padding: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); }
+.code__title { margin: 0; font: 600 1rem/1.2 var(--font-sans); }
+.code__qr { width: 100%; max-width: 240px; aspect-ratio: 1; padding: 12px; background: #fff; border-radius: var(--r-sm); image-rendering: pixelated; justify-self: center; }
+.code__what { margin: 0; color: var(--muted); font-size: 0.875rem; }
+.code__address { font: 400 0.8125rem/1.4 var(--font-mono); overflow-wrap: anywhere; user-select: text; -webkit-user-select: text; }
+.code__copy { display: flex; align-items: center; gap: 10px; }
+.lock { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; margin: 0; color: var(--muted); font-size: 0.875rem; }
+.lock svg { width: 18px; height: 18px; margin-top: 2px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

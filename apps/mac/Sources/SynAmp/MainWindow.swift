@@ -105,7 +105,7 @@ final class MainWindowController: NSWindowController, NSWindowDelegate, WKNaviga
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         sender.orderOut(nil)                 // hide, keep playing
-        NSApp.setActivationPolicy(.accessory)
+        Presence.afterClose()                // out of the Dock unless another window is open
         return false
     }
 
